@@ -1,10 +1,10 @@
 name: Update Wiki
 
 on:
+  schedule:
+    # Weekly, Monday 04:00 UTC.
+    - cron: '0 4 * * 1'
   workflow_dispatch:
-  push:
-    branches:
-      - main
 
 concurrency:
   group: ${{ github.workflow }}
@@ -25,12 +25,33 @@ jobs:
           ref: main
           fetch-depth: 0
 
+      - name: Skip while a wiki refresh PR is open
+        id: open-pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          open_pr="$(gh pr list \
+            --repo "$GITHUB_REPOSITORY" \
+            --state open \
+            --search 'in:title "Refresh codebase wiki"' \
+            --json number,title \
+            --jq '[.[] | select(.title | contains("Refresh codebase wiki"))][0].number // empty')"
+          if [ -n "$open_pr" ]; then
+            echo "::notice::Wiki refresh PR #$open_pr is still open; skipping this run. Merge or close it first."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Configure git identity
+        if: steps.open-pr.outputs.skip != 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
       - name: Refresh wiki with Claude Code
+        if: steps.open-pr.outputs.skip != 'true'
         uses: anthropics/claude-code-action/base-action@99ca333651aa9a8becc279065fad21c4ef1c4494 # v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
@@ -40,6 +61,12 @@ jobs:
             Scope:
             - Edit only files under core/docs/wiki/.
             - Keep the existing wiki structure unless the codebase genuinely needs a new or renamed wiki page.
+            - Never delete or rename an existing section or heading, even if it looks stale or was hand-written.
+              Update its content when the source clearly supports it. If you believe a section is stale but cannot
+              confidently update it, leave it in place and list it instead.
+            - List every such stale section in core/docs/wiki/.stale-sections.txt, one per line as
+              `<file> | <heading> | <short reason>`. Do not create that file if there is nothing to list.
+              The workflow moves this list into the pull request description; it is not committed.
             - Ground every update in the current repository source, tests, specs, and ADRs.
             - Preserve relative Markdown links and Mermaid diagrams where useful.
             - Do not modify production code, tests, package files, workflows, or non-wiki docs.
@@ -52,7 +79,80 @@ jobs:
             --allowed-tools
             "Edit(core/docs/wiki/**),Write(core/docs/wiki/**),Bash(rg:* .),Bash(git diff:*),Bash(git status:*),Bash(ls:* .),Bash(wc:*)"
 
+      - name: Collect stale-section report
+        if: steps.open-pr.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          report="core/docs/wiki/.stale-sections.txt"
+          if [ -f "$report" ] && [ ! -L "$report" ]; then
+            mv "$report" "$RUNNER_TEMP/stale-sections.txt"
+            echo "Collected $(grep -c . "$RUNNER_TEMP/stale-sections.txt" || true) stale-section entries."
+          else
+            rm -f "$report"
+            echo "No stale sections reported."
+          fi
+
+      - name: Verify existing wiki headings are preserved
+        if: steps.open-pr.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import re
+          import subprocess
+          import sys
+          from pathlib import Path
+
+          heading = re.compile(r"^(#{1,6})\s+(.*?)\s*#*\s*$")
+          fence = re.compile(r"^\s*(```|~~~)")
+
+          def headings(text):
+              found = []
+              in_fence = False
+              for line in text.splitlines():
+                  if fence.match(line):
+                      in_fence = not in_fence
+                      continue
+                  if in_fence:
+                      continue
+                  match = heading.match(line)
+                  if match:
+                      found.append(f"{match.group(1)} {match.group(2).strip()}")
+              return found
+
+          base_files = subprocess.run(
+              ["git", "ls-tree", "-r", "--name-only", "HEAD", "--", "core/docs/wiki"],
+              check=True, capture_output=True, text=True,
+          ).stdout.split()
+          base_files = [path for path in base_files if path.endswith(".md")]
+
+          generated = {
+              str(path): headings(path.read_text(encoding="utf-8"))
+              for path in Path("core/docs/wiki").rglob("*.md")
+          }
+          all_generated = {item for items in generated.values() for item in items}
+
+          missing = []
+          for path in base_files:
+              base = subprocess.run(
+                  ["git", "show", f"HEAD:{path}"], check=True, capture_output=True, text=True,
+              ).stdout
+              # A heading must survive in the same file, or anywhere in the wiki if the page was renamed.
+              available = set(generated[path]) if path in generated else all_generated
+              for item in headings(base):
+                  if item not in available:
+                      missing.append((path, item))
+
+          if missing:
+              print("Headings present on main are missing from the generated wiki:", file=sys.stderr)
+              for path, item in missing:
+                  print(f"::error file={path}::Missing heading: {item}")
+              sys.exit(1)
+
+          print(f"All headings from {len(base_files)} wiki pages on main are preserved.")
+          PY
+
       - name: Verify wiki-only changes
+        if: steps.open-pr.outputs.skip != 'true'
         run: |
           set -euo pipefail
           python3 - <<'PY'
@@ -107,6 +207,7 @@ jobs:
           fi
 
       - name: Verify local wiki links
+        if: steps.open-pr.outputs.skip != 'true'
         run: |
           set -euo pipefail
 
@@ -149,6 +250,7 @@ jobs:
           PY
 
       - name: Open or update wiki refresh pull request
+        if: steps.open-pr.outputs.skip != 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BASE_BRANCH: main
@@ -158,6 +260,18 @@ jobs:
 
           if git diff --quiet -- core/docs/wiki && [ -z "$(git ls-files --others --exclude-standard core/docs/wiki)" ]; then
             echo "No wiki changes to publish."
+            exit 0
+          fi
+
+          # Re-check right before pushing: never overwrite a branch behind an open wiki refresh PR.
+          open_pr="$(gh pr list \
+            --repo "$GITHUB_REPOSITORY" \
+            --state open \
+            --search 'in:title "Refresh codebase wiki"' \
+            --json number,title \
+            --jq '[.[] | select(.title | contains("Refresh codebase wiki"))][0].number // empty')"
+          if [ -n "$open_pr" ]; then
+            echo "::notice::Wiki refresh PR #$open_pr is open; not pushing."
             exit 0
           fi
 
@@ -182,16 +296,23 @@ jobs:
           body="$(cat <<'MD'
           ## Summary
 
-          Refreshes the repo-local `core/docs/wiki/` documentation after changes landed on `main`.
+          Refreshes the repo-local `core/docs/wiki/` documentation against the current `main`.
 
           ## Validation
 
           - Verified the workflow changed only files under `core/docs/wiki/`.
+          - Verified every Markdown heading present on `main` under `core/docs/wiki/` is preserved.
           - Verified all local Markdown links under `core/docs/wiki/` recursively resolve.
 
           This PR was opened automatically by the Update Wiki workflow.
           MD
           )"
+
+          stale_report="$RUNNER_TEMP/stale-sections.txt"
+          if [ -s "$stale_report" ]; then
+            stale_list="$(grep -v '^[[:space:]]*$' "$stale_report" | head -n 100 | sed 's/^/- /')"
+            body="$(printf '%s\n\n## Possibly stale sections\n\nKept in place for review; not deleted.\n\n%s\n' "$body" "$stale_list")"
+          fi
 
           if [ -n "$existing_pr" ]; then
             gh pr edit "$existing_pr" \
