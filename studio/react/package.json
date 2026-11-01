@@ -90,18 +90,5 @@
     }
   },
   "packageManager": "pnpm@10.33.0",
-  "type": "module",
-  "pnpm": {
-    "overrides": {
-      "eslint>minimatch": "11.0.3",
-      "@eslint/config-array>minimatch": "11.0.3",
-      "@eslint/eslintrc>minimatch": "11.0.3",
-      "eslint-plugin-react>minimatch": "11.0.3",
-      "@typescript-eslint/typescript-estree>minimatch": "11.0.3",
-      "typedoc>minimatch": "11.0.3"
-    },
-    "patchedDependencies": {
-      "minimatch@11.0.3": "patches/minimatch@11.0.3.patch"
-    }
-  }
+  "type": "module"
 }
