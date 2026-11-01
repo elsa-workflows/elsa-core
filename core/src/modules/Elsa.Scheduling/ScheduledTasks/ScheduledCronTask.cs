@@ -21,6 +21,7 @@ public class ScheduledCronTask : IScheduledTask, IDisposable
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly CancellationTokenSource _cancellationTokenSource;
     private readonly SemaphoreSlim _executionSemaphore = new(1, 1);
+    private DateTimeOffset _nextOccurrence;
     private bool _executing;
     private bool _cancellationRequested;
     private bool _disposed;
@@ -71,6 +72,7 @@ public class ScheduledCronTask : IScheduledTask, IDisposable
                 continue;
             }
 
+            _nextOccurrence = nextOccurence;
             TrySetupTimer(delay);
             break;
         }
@@ -98,7 +100,7 @@ public class ScheduledCronTask : IScheduledTask, IDisposable
 
     private void SetupTimer(TimeSpan delay)
     {
-        _timer = new(delay.TotalMilliseconds)
+        _timer = new(TimerInterval.Clamp(delay).TotalMilliseconds)
         {
             Enabled = true
         };
@@ -111,6 +113,17 @@ public class ScheduledCronTask : IScheduledTask, IDisposable
             // Early exit if disposed to prevent accessing disposed resources
             if (_disposed)
                 return;
+
+            // System.Timers.Timer cannot handle intervals greater than int.MaxValue milliseconds.
+            // For later cron occurrences, keep scheduling capped intervals until the next occurrence arrives.
+            if (_nextOccurrence > _systemClock.UtcNow)
+            {
+                if (_disposed || _cancellationTokenSource.IsCancellationRequested)
+                    return;
+
+                TrySetupTimer(_nextOccurrence - _systemClock.UtcNow);
+                return;
+            }
 
             IServiceScope? scope = null;
             try
