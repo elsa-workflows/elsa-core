@@ -23,8 +23,17 @@ public static class ActivityTypeNameHelper
             var backtickIndex = type.Name.IndexOf("`", StringComparison.InvariantCulture);
             var baseTypeName = backtickIndex >= 0 ? type.Name.Substring(0, backtickIndex) : type.Name;
             var sanitizedTypeName = activityAttr?.Type ?? baseTypeName;
-            var genericArgs = type.GenericTypeArguments.Select(type1 => GenerateTypeName(type1, null));
-            typeName = $"{sanitizedTypeName}<{string.Join(',', genericArgs)}>";
+            var declaringTypeName = type.DeclaringType is null
+                ? string.Empty
+                : $"{GenerateTypeName(type.DeclaringType, null)}.";
+            // Generic arguments of a nested type start with the arguments inherited from its declaring type;
+            // only the arguments beyond those belong to the nested type itself, which avoids duplication.
+            var declaringArgCount = type.DeclaringType?.GetGenericArguments().Length ?? 0;
+            var ownArgs = type.GetGenericArguments().Skip(declaringArgCount).ToArray();
+            var ownSuffix = ownArgs.Length == 0
+                ? string.Empty
+                : $"<{string.Join(',', ownArgs.Select(type1 => GenerateTypeName(type1, null)))}>";
+            typeName = $"{declaringTypeName}{sanitizedTypeName}{ownSuffix}";
         }
         else
             typeName = activityAttr?.Type ?? type.Name;

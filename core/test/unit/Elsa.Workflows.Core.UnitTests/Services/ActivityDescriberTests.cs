@@ -41,7 +41,16 @@ public class ActivityDescriberTests
         var descriptor = await _describer.DescribeActivityAsync(typeof(Container<string>.NestedActivity));
 
         Assert.Equal("NestedActivity<String>", descriptor.Name);
-        Assert.Equal("Elsa.Workflows.Core.UnitTests.Services.NestedActivity<String>", descriptor.TypeName);
+        Assert.Equal("Elsa.Workflows.Core.UnitTests.Services.ActivityDescriberTests.Container<T>.NestedActivity", descriptor.TypeName);
+    }
+
+    [Fact]
+    public async Task DescribeActivityAsync_OpenNestedActivityInsideGenericType_CreatesDescriptor()
+    {
+        var descriptor = await _describer.DescribeActivityAsync(typeof(Container<>.NestedActivity));
+
+        Assert.Equal("NestedActivity<T>", descriptor.Name);
+        Assert.Equal("Elsa.Workflows.Core.UnitTests.Services.ActivityDescriberTests.Container<T>.NestedActivity", descriptor.TypeName);
     }
 
     [Fact]
@@ -50,7 +59,7 @@ public class ActivityDescriberTests
         var descriptor = await _describer.DescribeActivityAsync(typeof(GenericActivity<string>));
 
         Assert.Equal("GenericActivity<String>", descriptor.Name);
-        Assert.Equal("Elsa.Workflows.Core.UnitTests.Services.GenericActivity<String>", descriptor.TypeName);
+        Assert.Equal("Elsa.Workflows.Core.UnitTests.Services.ActivityDescriberTests.GenericActivity<String>", descriptor.TypeName);
     }
 
     private sealed class ActivityWithSensitiveInputs : CodeActivity
