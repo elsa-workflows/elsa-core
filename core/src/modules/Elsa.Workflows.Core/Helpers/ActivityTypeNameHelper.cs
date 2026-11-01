@@ -18,7 +18,11 @@ public static class ActivityTypeNameHelper
         
         if (type.IsGenericType)
         {
-            var sanitizedTypeName = activityAttr?.Type ?? type.Name.Substring(0, type.Name.IndexOf("`", StringComparison.InvariantCulture));
+            // Nested types of generic types are generic types themselves but do not have their own backtick suffix in their name.
+            // Only strip the generic arity suffix when it is present.
+            var backtickIndex = type.Name.IndexOf("`", StringComparison.InvariantCulture);
+            var baseTypeName = backtickIndex >= 0 ? type.Name.Substring(0, backtickIndex) : type.Name;
+            var sanitizedTypeName = activityAttr?.Type ?? baseTypeName;
             var genericArgs = type.GenericTypeArguments.Select(type1 => GenerateTypeName(type1, null));
             typeName = $"{sanitizedTypeName}<{string.Join(',', genericArgs)}>";
         }

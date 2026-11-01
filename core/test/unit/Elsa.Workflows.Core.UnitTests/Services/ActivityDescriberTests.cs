@@ -35,6 +35,22 @@ public class ActivityDescriberTests
         Assert.False(publicInput.IsSensitive);
     }
 
+    [Fact]
+    public async Task DescribeActivityAsync_NestedActivityInsideGenericType_CreatesDescriptor()
+    {
+        var descriptor = await _describer.DescribeActivityAsync(typeof(Container<string>.NestedActivity));
+
+        Assert.Equal("NestedActivity<String>", descriptor.Name);
+    }
+
+    [Fact]
+    public async Task DescribeActivityAsync_GenericActivity_PreservesName()
+    {
+        var descriptor = await _describer.DescribeActivityAsync(typeof(GenericActivity<string>));
+
+        Assert.Equal("GenericActivity<String>", descriptor.Name);
+    }
+
     private sealed class ActivityWithSensitiveInputs : CodeActivity
     {
         [Input(CanContainSecrets = true)]
@@ -42,5 +58,16 @@ public class ActivityDescriberTests
 
         [Input]
         public Input<string?> PublicText { get; set; } = new("public");
+    }
+
+    private sealed class Container<T>
+    {
+        public sealed class NestedActivity : CodeActivity
+        {
+        }
+    }
+
+    private sealed class GenericActivity<T> : CodeActivity
+    {
     }
 }
