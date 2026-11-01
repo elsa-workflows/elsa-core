@@ -49,7 +49,46 @@ public class ActivityDescriberTests
         var descriptor = await _describer.DescribeActivityAsync(typeof(Container<string>.NestedActivity));
 
         Assert.Equal("NestedActivity<String>", descriptor.Name);
-        Assert.Equal("Elsa.Workflows.Core.UnitTests.Services.NestedActivity<String>", descriptor.TypeName);
+        Assert.Equal("Elsa.Workflows.Core.UnitTests.Services.Container<T>.NestedActivity<String>", descriptor.TypeName);
+    }
+
+    [Fact]
+    public async Task DescribeActivityAsync_TopLevelAndNestedInsideGenericDeclarer_HaveDistinctTypeNames()
+    {
+        // Regression: both activities previously generated the same type name,
+        // "Elsa.Workflows.Core.UnitTests.Services.NestedActivity<String>", which made them collide in the registry.
+        var topLevelDescriptor = await _describer.DescribeActivityAsync(typeof(NestedActivity<string>));
+        var nestedDescriptor = await _describer.DescribeActivityAsync(typeof(Container<string>.NestedActivity));
+
+        Assert.Equal("Elsa.Workflows.Core.UnitTests.Services.NestedActivity<String>", topLevelDescriptor.TypeName);
+        Assert.Equal("Elsa.Workflows.Core.UnitTests.Services.Container<T>.NestedActivity<String>", nestedDescriptor.TypeName);
+        Assert.NotEqual(topLevelDescriptor.TypeName, nestedDescriptor.TypeName);
+    }
+
+    [Fact]
+    public async Task DescribeActivityAsync_NestedActivityWithOwnGenericParameter_PreservesPrefixAndOwnArg()
+    {
+        // Regression for Container<T>.NestedActivity<U>: the declaring prefix carries the container's real
+        // arguments for closed types and the nested activity's own generic argument is preserved.
+        var closedDescriptor = await _describer.DescribeActivityAsync(typeof(Container<string>.NestedGenericActivity<int>));
+        var openDescriptor = await _describer.DescribeActivityAsync(typeof(Container<>.NestedGenericActivity<>));
+
+        Assert.Equal("Elsa.Workflows.Core.UnitTests.Services.Container<String>.NestedGenericActivity<Int32>", closedDescriptor.TypeName);
+        Assert.Equal("Elsa.Workflows.Core.UnitTests.Services.Container<T>.NestedGenericActivity<U>", openDescriptor.TypeName);
+    }
+
+    [Fact]
+    public async Task DescribeActivityAsync_NestedActivityClosingsOverContainer_HaveDistinctTypeNames()
+    {
+        // Regression: different closings of the declaring type, with the nested activity closed to the same own
+        // argument, previously produced the same type name because the declaring prefix rendered the container's
+        // open generic definition.
+        var stringDescriptor = await _describer.DescribeActivityAsync(typeof(Container<string>.NestedGenericActivity<int>));
+        var guidDescriptor = await _describer.DescribeActivityAsync(typeof(Container<Guid>.NestedGenericActivity<int>));
+
+        Assert.Equal("Elsa.Workflows.Core.UnitTests.Services.Container<String>.NestedGenericActivity<Int32>", stringDescriptor.TypeName);
+        Assert.Equal("Elsa.Workflows.Core.UnitTests.Services.Container<Guid>.NestedGenericActivity<Int32>", guidDescriptor.TypeName);
+        Assert.NotEqual(stringDescriptor.TypeName, guidDescriptor.TypeName);
     }
 
     [Fact]
@@ -58,9 +97,26 @@ public class ActivityDescriberTests
         var stringDescriptor = await _describer.DescribeActivityAsync(typeof(Container<string>.NestedActivity));
         var intDescriptor = await _describer.DescribeActivityAsync(typeof(Container<int>.NestedActivity));
 
-        Assert.Equal("Elsa.Workflows.Core.UnitTests.Services.NestedActivity<String>", stringDescriptor.TypeName);
-        Assert.Equal("Elsa.Workflows.Core.UnitTests.Services.NestedActivity<Int32>", intDescriptor.TypeName);
+        Assert.Equal("Elsa.Workflows.Core.UnitTests.Services.Container<T>.NestedActivity<String>", stringDescriptor.TypeName);
+        Assert.Equal("Elsa.Workflows.Core.UnitTests.Services.Container<T>.NestedActivity<Int32>", intDescriptor.TypeName);
         Assert.NotEqual(stringDescriptor.TypeName, intDescriptor.TypeName);
+    }
+
+    [Fact]
+    public async Task DescribeActivityAsync_OpenNestedGenericActivityInsideGenericType_CreatesDescriptor()
+    {
+        var descriptor = await _describer.DescribeActivityAsync(typeof(Container<>.NestedActivity));
+
+        Assert.Equal("NestedActivity<T>", descriptor.Name);
+        Assert.Equal("Elsa.Workflows.Core.UnitTests.Services.Container<T>.NestedActivity", descriptor.TypeName);
+    }
+
+    [Fact]
+    public async Task DescribeActivityAsync_GenericActivityInsideNonGenericType_KeepsTypeName()
+    {
+        var descriptor = await _describer.DescribeActivityAsync(typeof(PlainContainer.GenericNestedActivity<string>));
+
+        Assert.Equal("Elsa.Workflows.Core.UnitTests.Services.GenericNestedActivity<String>", descriptor.TypeName);
     }
 
     [Fact]
@@ -95,6 +151,17 @@ public class ActivityDescriberTests
         public sealed class NestedActivity : CodeActivity
         {
         }
+
+        // C# forbids a second "NestedActivity<U>" in the same declaring type, so this sibling carries the
+        // requested shape: a nested activity with its own generic argument.
+        public sealed class NestedGenericActivity<U> : CodeActivity;
+    }
+
+    private sealed class NestedActivity<T> : CodeActivity;
+
+    private sealed class PlainContainer
+    {
+        public sealed class GenericNestedActivity<T> : CodeActivity;
     }
 
     private sealed class GenericActivity<T> : CodeActivity
