@@ -37,5 +37,5 @@ internal interface IMqttSubscriberManager
     /// <summary>
     /// Stops all subscriber connections and clears internal state.
     /// </summary>
-    public void StopAll();
+    public Task StopAllAsync(CancellationToken cancellationToken = default);
 }

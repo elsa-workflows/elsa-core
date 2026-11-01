@@ -15,59 +15,69 @@ namespace Elsa.ServiceBus.Kafka.Implementations;
 public class WorkerManager(IHasher hasher, IServiceScopeFactory scopeFactory) : IWorkerManager
 {
     private static readonly string MessageReceivedActivityTypeName = ActivityTypeNameHelper.GenerateTypeName<MessageReceived>();
+    private readonly SemaphoreSlim _updateLock = new(1, 1);
     private IDictionary<string, IWorker> Workers { get; set; } = new Dictionary<string, IWorker>();
 
     public async Task UpdateWorkersAsync(CancellationToken cancellationToken = default)
     {
-        await using var scope = scopeFactory.CreateAsyncScope();
-        var consumerDefinitionEnumerator = scope.ServiceProvider.GetRequiredService<IConsumerDefinitionEnumerator>();
-        var consumerDefinitions = await consumerDefinitionEnumerator.EnumerateAsync(cancellationToken).ToList();
-        var workers = new Dictionary<string, IWorker>(Workers);
-        var workersToRemove = workers.Keys.Except(consumerDefinitions.Select(x => x.Id)).ToList();
+        await _updateLock.WaitAsync(cancellationToken);
 
-        // Remove workers that are no longer needed.
-        foreach (var workerToRemove in workersToRemove)
+        try
         {
-            if (workers.TryGetValue(workerToRemove, out var worker))
-            {
-                worker.Stop();
-                workers.Remove(workerToRemove);
-            }
-        }
+            await using var scope = scopeFactory.CreateAsyncScope();
+            var consumerDefinitionEnumerator = scope.ServiceProvider.GetRequiredService<IConsumerDefinitionEnumerator>();
+            var consumerDefinitions = await consumerDefinitionEnumerator.EnumerateAsync(cancellationToken).ToList();
+            var workers = new Dictionary<string, IWorker>(Workers);
+            var workersToRemove = workers.Keys.Except(consumerDefinitions.Select(x => x.Id)).ToList();
 
-        // Add or update workers.
-        foreach (var consumerDefinition in consumerDefinitions)
-        {
-            var existingWorker = workers.GetValueOrDefault(consumerDefinition.Id);
-
-            if (existingWorker == null)
+            // Remove workers that are no longer needed.
+            foreach (var workerToRemove in workersToRemove)
             {
-                // Add a new worker.
-                var worker = await CreateWorkerAsync(scope.ServiceProvider, consumerDefinition, cancellationToken);
-                workers.Add(consumerDefinition.Id, worker);
-            }
-            else
-            {
-                // Compare the existing worker's consumer definition with the new consumer definition using a hash.
-                var existingHash = ComputeHash(existingWorker.ConsumerDefinition);
-                var hash = ComputeHash(consumerDefinition);
-
-                // If the hash is different, update the worker.
-                if (existingHash != hash)
+                if (workers.TryGetValue(workerToRemove, out var worker))
                 {
-                    existingWorker.Stop();
-                    var worker = await CreateWorkerAsync(scope.ServiceProvider, consumerDefinition, cancellationToken);
-                    workers[consumerDefinition.Id] = worker;
+                    worker.Stop();
+                    workers.Remove(workerToRemove);
                 }
             }
+
+            // Add or update workers.
+            foreach (var consumerDefinition in consumerDefinitions)
+            {
+                var existingWorker = workers.GetValueOrDefault(consumerDefinition.Id);
+
+                if (existingWorker == null)
+                {
+                    // Add a new worker.
+                    var worker = await CreateWorkerAsync(scope.ServiceProvider, consumerDefinition, cancellationToken);
+                    workers.Add(consumerDefinition.Id, worker);
+                }
+                else
+                {
+                    // Compare the existing worker's consumer definition with the new consumer definition using a hash.
+                    var existingHash = ComputeHash(existingWorker.ConsumerDefinition);
+                    var hash = ComputeHash(consumerDefinition);
+
+                    // If the hash is different, update the worker.
+                    if (existingHash != hash)
+                    {
+                        existingWorker.Stop();
+                        var worker = await CreateWorkerAsync(scope.ServiceProvider, consumerDefinition, cancellationToken);
+                        workers[consumerDefinition.Id] = worker;
+                    }
+                }
+            }
+
+            // Ensure all workers are running.
+            foreach (var worker in workers.Values)
+                worker.Start(cancellationToken);
+
+            // Update the worker dictionary.
+            Workers = workers;
         }
-
-        // Ensure all workers are running.
-        foreach (var worker in workers.Values)
-            worker.Start(cancellationToken);
-
-        // Update the worker dictionary.
-        Workers = workers;
+        finally
+        {
+            _updateLock.Release();
+        }
     }
 
     public async Task BindTriggersAsync(IEnumerable<StoredTrigger> triggers, CancellationToken cancellationToken = default)

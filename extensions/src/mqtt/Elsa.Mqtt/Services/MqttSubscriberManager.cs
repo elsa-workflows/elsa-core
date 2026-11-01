@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Elsa.Extensions;
 using Elsa.Mqtt.Contracts;
 using Elsa.Mqtt.Models;
@@ -25,7 +26,8 @@ internal class MqttSubscriberManager : IMqttSubscriberManager
     private readonly ILoggerFactory _loggerFactory;
     private readonly ILogger<MqttSubscriberManager> _logger;
     private readonly IMqttClientFactory _mqttClientFactory;
-    private readonly Dictionary<string, MqttSubscriber> _subscribers = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, MqttSubscriber> _subscribers = new(StringComparer.OrdinalIgnoreCase);
+    private readonly SemaphoreSlim _subscriberCreationLock = new(1, 1);
 
     public MqttSubscriberManager(
         IOptions<MqttOptions> options,
@@ -152,14 +154,23 @@ internal class MqttSubscriberManager : IMqttSubscriberManager
     }
 
     /// <inheritdoc/>
-    public void StopAll()
+    public async Task StopAllAsync(CancellationToken cancellationToken = default)
     {
-        foreach (var subscriber in _subscribers.Values)
-        {
-            subscriber.Dispose();
-        }
+        await _subscriberCreationLock.WaitAsync(cancellationToken);
 
-        _subscribers.Clear();
+        try
+        {
+            foreach (var subscriber in _subscribers.Values)
+            {
+                subscriber.Dispose();
+            }
+
+            _subscribers.Clear();
+        }
+        finally
+        {
+            _subscriberCreationLock.Release();
+        }
     }
 
     private async Task<MqttSubscriber?> GetOrCreateSubscriberAsync(string connectionName, CancellationToken cancellationToken)
@@ -169,19 +180,33 @@ internal class MqttSubscriberManager : IMqttSubscriberManager
             return existing;
         }
 
-        var mqttClient = await _mqttClientFactory.CreateClientAsync(connectionName, cancellationToken);
+        await _subscriberCreationLock.WaitAsync(cancellationToken);
 
-        var subscriberLogger = _loggerFactory.CreateLogger<MqttSubscriber>();
-        var subscriber = new MqttSubscriber(
-            connectionName: connectionName,
-            mqttClient: mqttClient,
-            scopeFactory: _scopeFactory,
-            logger: subscriberLogger,
-            maxReconnectAttempts: _options.MaxReconnectAttempts,
-            reconnectBaseDelay: _options.ReconnectBaseDelay);
+        try
+        {
+            if (_subscribers.TryGetValue(connectionName, out existing))
+            {
+                return existing;
+            }
 
-        _subscribers[connectionName] = subscriber;
+            var mqttClient = await _mqttClientFactory.CreateClientAsync(connectionName, cancellationToken);
 
-        return subscriber;
+            var subscriberLogger = _loggerFactory.CreateLogger<MqttSubscriber>();
+            var subscriber = new MqttSubscriber(
+                connectionName: connectionName,
+                mqttClient: mqttClient,
+                scopeFactory: _scopeFactory,
+                logger: subscriberLogger,
+                maxReconnectAttempts: _options.MaxReconnectAttempts,
+                reconnectBaseDelay: _options.ReconnectBaseDelay);
+
+            _subscribers[connectionName] = subscriber;
+
+            return subscriber;
+        }
+        finally
+        {
+            _subscriberCreationLock.Release();
+        }
     }
 }

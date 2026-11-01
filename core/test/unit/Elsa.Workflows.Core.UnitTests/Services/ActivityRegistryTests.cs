@@ -217,6 +217,36 @@ public class ActivityRegistryTests
     }
 
     [Fact]
+    public async Task GetDescriptorsAsync_WhileRegisterAsyncRunsConcurrently_DoesNotThrow()
+    {
+        const int writers = 4;
+        const int registrationsPerWriter = 200;
+        var counter = 0;
+        _activityDescriber.DescribeActivityAsync(typeof(ActivityRegistryTests), Arg.Any<CancellationToken>())
+            .Returns(_ => Task.FromResult(CreateDescriptor($"ConcurrentActivity{Interlocked.Increment(ref counter)}", 1, Tenant.AgnosticTenantId)));
+        using var stop = new CancellationTokenSource();
+        var readers = Enumerable.Range(0, 2).Select(_ => Task.Run(async () =>
+        {
+            while (!stop.IsCancellationRequested)
+            {
+                foreach (var descriptor in await _registry.GetDescriptorsAsync())
+                    GC.KeepAlive(descriptor.TypeName);
+            }
+        })).ToArray();
+        var registrations = Enumerable.Range(0, writers).Select(_ => Task.Run(async () =>
+        {
+            for (var i = 0; i < registrationsPerWriter; i++)
+                await _registry.RegisterAsync(typeof(ActivityRegistryTests), CancellationToken.None);
+        })).ToArray();
+
+        await Task.WhenAll(registrations);
+        await stop.CancelAsync();
+        await Task.WhenAll(readers);
+
+        Assert.Equal(writers * registrationsPerWriter, (await _registry.GetDescriptorsAsync()).Count());
+    }
+
+    [Fact]
     public void Find_IgnoresOtherTenantDescriptors_OnlyReturnsCurrentTenantOrAgnostic()
     {
         // Arrange

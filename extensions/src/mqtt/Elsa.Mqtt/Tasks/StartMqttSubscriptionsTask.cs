@@ -16,10 +16,8 @@ internal class StartMqttSubscriptionsTask(IMqttSubscriberManager subscriberManag
         return subscriberManager.UpdateSubscriptionsAsync(cancellationToken);
     }
 
-    public override Task StopAsync(CancellationToken cancellationToken)
+    public override async Task StopAsync(CancellationToken cancellationToken)
     {
-        subscriberManager.StopAll();
-
-        return Task.CompletedTask;
+        await subscriberManager.StopAllAsync(cancellationToken);
     }
 }

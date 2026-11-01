@@ -7,6 +7,7 @@ using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Common.Features;
 
@@ -56,5 +57,9 @@ public class MultitenancyFeature(IModule module) : FeatureBase(module)
             .AddScoped<IBackgroundTaskStarter, TaskExecutor>()
             .AddBackgroundTask<TenantBackgroundWorkQueueWorker>()
             .AddScoped(_tenantsProviderFactory);
+
+        Services
+            .AddOptions<TenantActivationOptions>()
+            .Services.TryAddEnumerable(ServiceDescriptor.Singleton<IValidateOptions<TenantActivationOptions>, TenantActivationOptionsValidator>());
     }
 }

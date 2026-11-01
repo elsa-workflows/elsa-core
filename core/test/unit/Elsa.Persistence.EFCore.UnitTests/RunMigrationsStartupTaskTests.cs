@@ -1,6 +1,9 @@
+using System.Collections.Concurrent;
 using System.Data.Common;
 using Elsa.Common;
+using Elsa.Common.DistributedHosting.DistributedLocks;
 using Elsa.Extensions;
+using Medallion.Threading;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
@@ -73,14 +76,32 @@ public class RunMigrationsStartupTaskTests
     }
 
     [Fact]
-    public void TryClaim_WithoutAConnectionString_AlwaysSucceeds()
+    public async Task ExecuteAsync_ForTheSameDatabaseAtTheSameTime_MigratesOnce()
     {
-        Assert.True(_registry.TryClaim(typeof(FirstDbContext), null));
-        Assert.True(_registry.TryClaim(typeof(FirstDbContext), null));
-        Assert.True(_registry.TryClaim(typeof(FirstDbContext), ""));
+        await RunAsync<FirstDbContext>(DatabaseB);
+        var openedByOneMigration = _connections.Opened;
+
+        var tasks = Enumerable.Range(0, 8).Select(_ => RunAsync<FirstDbContext>(DatabaseA)).ToArray();
+        await Task.WhenAll(tasks);
+
+        Assert.True(openedByOneMigration > 0);
+        Assert.Equal(openedByOneMigration * 2, _connections.Opened);
     }
 
-    private async Task RunAsync<TDbContext>(string connectionString, IInterceptor? interceptor = null, bool registerRegistry = true) where TDbContext : DbContext
+    [Fact]
+    public async Task ExecuteAsync_TakesADistributedLockPerDatabaseWithoutExposingTheConnectionString()
+    {
+        var locks = new RecordingLockProvider();
+
+        await RunAsync<FirstDbContext>(DatabaseA, lockProvider: locks);
+        await RunAsync<FirstDbContext>(DatabaseB, lockProvider: locks);
+        await RunAsync<SecondDbContext>(DatabaseB, lockProvider: locks);
+
+        Assert.Equal(3, locks.Names.Distinct().Count());
+        Assert.All(locks.Names, name => Assert.DoesNotContain("Data Source", name));
+    }
+
+    private async Task RunAsync<TDbContext>(string connectionString, IInterceptor? interceptor = null, bool registerRegistry = true, IDistributedLockProvider? lockProvider = null) where TDbContext : DbContext
     {
         var services = new ServiceCollection();
         services.AddDbContextFactory<TDbContext>(options =>
@@ -96,10 +117,26 @@ public class RunMigrationsStartupTaskTests
         if (registerRegistry)
             services.AddSingleton(_registry);
 
+        if (lockProvider != null)
+            services.AddSingleton(lockProvider);
+
         await using var serviceProvider = services.BuildServiceProvider();
         await using var scope = serviceProvider.CreateAsyncScope();
         var task = Assert.Single(scope.ServiceProvider.GetServices<IStartupTask>());
         await task.ExecuteAsync(CancellationToken.None);
+    }
+
+    private class RecordingLockProvider : IDistributedLockProvider
+    {
+        private readonly ConcurrentQueue<string> _names = new();
+
+        public IReadOnlyCollection<string> Names => _names.ToArray();
+
+        public IDistributedLock CreateLock(string name)
+        {
+            _names.Enqueue(name);
+            return new NoopDistributedSynchronizationProvider().CreateLock(name);
+        }
     }
 
     private class FirstDbContext(DbContextOptions<FirstDbContext> options) : DbContext(options);

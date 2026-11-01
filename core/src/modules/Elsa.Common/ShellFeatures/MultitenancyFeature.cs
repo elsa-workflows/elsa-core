@@ -7,6 +7,8 @@ using Elsa.Common.ShellHandlers;
 using Elsa.Extensions;
 using Elsa.Platform.PackageManifest.Generator.Hints;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Common.ShellFeatures;
 
@@ -48,5 +50,9 @@ public class MultitenancyFeature : IShellFeature
             .AddTransient<IShellInitializer, ActivateShellTenants>()
             .AddTransient<IDrainHandler, ActivateShellTenants>()
             ;
+
+        services
+            .AddOptions<TenantActivationOptions>()
+            .Services.TryAddEnumerable(ServiceDescriptor.Singleton<IValidateOptions<TenantActivationOptions>, TenantActivationOptionsValidator>());
     }
 }
