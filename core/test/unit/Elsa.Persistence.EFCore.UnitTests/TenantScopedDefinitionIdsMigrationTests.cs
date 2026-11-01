@@ -119,7 +119,7 @@ public class TenantScopedDefinitionIdsMigrationTests
         await using var services = new ServiceCollection()
             .AddLogging()
             .AddSqliteEntityModelCreatingHandlers()
-            .AddDbContextFactory<ManagementElsaDbContext>((_, builder) => builder.UseElsaSqlite(typeof(ManagementDbContextFactory).Assembly, $"Data Source={databasePath}"))
+            .AddDbContextFactory<ManagementElsaDbContext>((_, builder) => builder.UseElsaSqlite(typeof(ManagementDbContextFactory).Assembly, $"Data Source={databasePath}").EnableServiceProviderCaching(false))
             .AddScoped<EntityStore<ManagementElsaDbContext, WorkflowDefinition>>()
             .BuildServiceProvider();
 
@@ -261,8 +261,15 @@ public class TenantScopedDefinitionIdsMigrationTests
         public static SqliteDatabase Create()
         {
             var path = Path.Join(Path.GetTempPath(), $"elsa-definition-uniqueness-{Guid.NewGuid():N}.db");
-            var dbContext = new ManagementDbContextFactory().CreateDbContext(["--connectionString", $"Data Source={path}"]);
+            var dbContext = new IsolatedManagementDbContextFactory().CreateDbContext(["--connectionString", $"Data Source={path}"]);
             return new SqliteDatabase(path, dbContext);
+        }
+
+        // This model has no tenant query filter; a shared EF model cache would hand it to tests that expect the filter.
+        private sealed class IsolatedManagementDbContextFactory : SqliteDesignTimeDbContextFactory<ManagementElsaDbContext>
+        {
+            protected override void ConfigureBuilder(DbContextOptionsBuilder<ManagementElsaDbContext> builder, string connectionString) =>
+                builder.UseElsaSqlite(typeof(ManagementDbContextFactory).Assembly, connectionString).EnableServiceProviderCaching(false);
         }
 
         public async Task MigrateAsync(string? targetMigration = null)
