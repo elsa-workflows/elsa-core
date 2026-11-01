@@ -7,6 +7,8 @@ using Elsa.Common.ShellHandlers;
 using Elsa.Extensions;
 using Elsa.Platform.PackageManifest.Generator.Hints;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Common.ShellFeatures;
 
@@ -51,6 +53,6 @@ public class MultitenancyFeature : IShellFeature
 
         services
             .AddOptions<TenantActivationOptions>()
-            .Validate(x => x.MaxDegreeOfParallelism == -1 || x.MaxDegreeOfParallelism >= 1, "TenantActivationOptions.MaxDegreeOfParallelism must be -1 (no limit) or at least 1.");
+            .Services.TryAddEnumerable(ServiceDescriptor.Singleton<IValidateOptions<TenantActivationOptions>, TenantActivationOptionsValidator>());
     }
 }

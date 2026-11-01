@@ -7,6 +7,7 @@ using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Common.Features;
 
@@ -59,6 +60,6 @@ public class MultitenancyFeature(IModule module) : FeatureBase(module)
 
         Services
             .AddOptions<TenantActivationOptions>()
-            .Validate(x => x.MaxDegreeOfParallelism == -1 || x.MaxDegreeOfParallelism >= 1, "TenantActivationOptions.MaxDegreeOfParallelism must be -1 (no limit) or at least 1.");
+            .Services.TryAddEnumerable(ServiceDescriptor.Singleton<IValidateOptions<TenantActivationOptions>, TenantActivationOptionsValidator>());
     }
 }

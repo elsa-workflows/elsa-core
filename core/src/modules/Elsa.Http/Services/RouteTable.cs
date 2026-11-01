@@ -11,7 +11,20 @@ public class RouteTable(IMemoryCache cache, ILogger<RouteTable> logger) : IRoute
 {
     private static readonly object Key = new();
 
-    private ConcurrentDictionary<string, HttpRouteData> Routes => cache.GetOrCreate(Key, _ => new ConcurrentDictionary<string, HttpRouteData>())!;
+    private static readonly object CreationLock = new();
+
+    private ConcurrentDictionary<string, HttpRouteData> Routes
+    {
+        get
+        {
+            if (cache.TryGetValue(Key, out ConcurrentDictionary<string, HttpRouteData>? routes) && routes != null)
+                return routes;
+
+            // IMemoryCache.GetOrCreate is not atomic: tenants activating in parallel could each create a dictionary and lose the other's routes.
+            lock (CreationLock)
+                return cache.GetOrCreate(Key, _ => new ConcurrentDictionary<string, HttpRouteData>())!;
+        }
+    }
 
     /// <inheritdoc />
     public void Add(string route)

@@ -15,7 +15,7 @@ public class WorkerManager(IServiceProvider serviceProvider) : IWorkerManager, I
     /// <summary>
     /// A list of workers under management.
     /// </summary>
-    public IEnumerable<Worker> Workers => _workers.ToList();
+    public IEnumerable<Worker> Workers => _workers.ToArray();
 
     /// <inheritdoc />
     public async Task StartWorkerAsync(string queueOrTopic, string? subscription, CancellationToken cancellationToken = default)
@@ -43,8 +43,17 @@ public class WorkerManager(IServiceProvider serviceProvider) : IWorkerManager, I
         subscription ??= "";
         var worker = ActivatorUtilities.CreateInstance<Worker>(serviceProvider, queueOrTopic, subscription!);
 
+        try
+        {
+            await worker.StartAsync(cancellationToken);
+        }
+        catch
+        {
+            await worker.DisposeAsync();
+            throw;
+        }
+
         _workers.Add(worker);
-        await worker.StartAsync(cancellationToken);
     }
 
     /// <inheritdoc />

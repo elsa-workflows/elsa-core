@@ -3,6 +3,7 @@ using Elsa.Common.Multitenancy;
 using Elsa.Common.Multitenancy.EventHandlers;
 using Elsa.Common.RecurringTasks;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using NSubstitute;
 
@@ -238,43 +239,6 @@ public class DefaultTenantServiceTests
     }
 
     [Fact]
-    public async Task ActivateTenantsAsync_ActivatesFirstTenantAloneBeforeAnyOther()
-    {
-        var tenants = CreateTenants(6);
-        var log = new ConcurrentQueue<string>();
-        var otherStarted = NewGate();
-        var handler = new DelegateActivationHandler(async args =>
-        {
-            log.Enqueue($"start:{args.Tenant.Id}");
-
-            if (args.Tenant != tenants[0])
-            {
-                otherStarted.TrySetResult();
-                return;
-            }
-
-            // Gives a wrongly started second tenant the chance to show up while the first is still running.
-            await Task.WhenAny(otherStarted.Task, Task.Delay(100));
-            log.Enqueue($"end:{args.Tenant.Id}");
-        });
-        var (tenantService, serviceProvider) = await CreateTenantServiceAsync(tenants, activatedEvent: handler);
-
-        try
-        {
-            await tenantService.ActivateTenantsAsync();
-
-            var entries = log.ToArray();
-            Assert.Equal($"start:{tenants[0].Id}", entries[0]);
-            Assert.Equal($"end:{tenants[0].Id}", entries[1]);
-            Assert.Equal(tenants.Count + 1, entries.Length);
-        }
-        finally
-        {
-            await DisposeAsync(tenantService, serviceProvider);
-        }
-    }
-
-    [Fact]
     public async Task ActivateTenantsAsync_ActivatesAtMostMaxDegreeOfParallelismTenantsAtOnce()
     {
         var tenants = CreateTenants(7);
@@ -296,8 +260,7 @@ public class DefaultTenantServiceTests
             if (now == 2)
                 limitReached.TrySetResult();
 
-            if (args.Tenant != tenants[0])
-                await release.Task;
+            await release.Task;
 
             lock (sync)
                 current--;
@@ -324,7 +287,36 @@ public class DefaultTenantServiceTests
     }
 
     [Fact]
-    public async Task ActivateTenantsAsync_WithUnboundedMaxDegreeOfParallelism_ActivatesAllOtherTenantsAtOnce()
+    public async Task ActivateTenantsAsync_WithTheDefaultOptions_ActivatesOneTenantAtATime()
+    {
+        var tenants = CreateTenants(4);
+        var current = 0;
+        var peak = 0;
+        var handler = new DelegateActivationHandler(async _ =>
+        {
+            var now = Interlocked.Increment(ref current);
+            peak = Math.Max(peak, now);
+            await Task.Delay(20);
+            Interlocked.Decrement(ref current);
+        });
+        var (tenantService, serviceProvider) = await CreateTenantServiceAsync(tenants, activatedEvent: handler);
+
+        try
+        {
+            await tenantService.ActivateTenantsAsync();
+
+            Assert.Equal(1, new TenantActivationOptions().MaxDegreeOfParallelism);
+            Assert.Equal(1, peak);
+            Assert.Equal(tenants.Count, handler.Started.Count);
+        }
+        finally
+        {
+            await DisposeAsync(tenantService, serviceProvider);
+        }
+    }
+
+    [Fact]
+    public async Task ActivateTenantsAsync_WithUnboundedMaxDegreeOfParallelism_ActivatesAllTenantsAtOnce()
     {
         var tenants = CreateTenants(Environment.ProcessorCount * 2 + 2);
         var started = 0;
@@ -332,10 +324,7 @@ public class DefaultTenantServiceTests
         var release = NewGate();
         var handler = new DelegateActivationHandler(async args =>
         {
-            if (args.Tenant == tenants[0])
-                return;
-
-            if (Interlocked.Increment(ref started) == tenants.Count - 1)
+            if (Interlocked.Increment(ref started) == tenants.Count)
                 allStarted.TrySetResult();
 
             await release.Task;
@@ -437,38 +426,6 @@ public class DefaultTenantServiceTests
             Assert.Equal(2, deactivated.Deactivated.Count);
             Assert.Equal(tenants.Count * 2, scopeFactory.Created.Count);
             Assert.All(scopeFactory.Created.Skip(tenants.Count), x => Assert.False(RecordingTenantScopeFactory.IsDisposed(x.Scope)));
-        }
-        finally
-        {
-            await DisposeAsync(tenantService, serviceProvider);
-        }
-    }
-
-    [Fact]
-    public async Task ListAsync_WhenFirstTenantFails_ActivatesNoOtherTenant()
-    {
-        var tenants = CreateTenants(4);
-        var fail = true;
-        var handler = new DelegateActivationHandler(async args =>
-        {
-            await Task.Yield();
-
-            if (fail && args.Tenant == tenants[0])
-                throw new InvalidOperationException("Migration failed");
-        });
-        var deactivated = new RecordingDeactivatedHandler();
-        var (tenantService, serviceProvider) = await CreateTenantServiceAsync(tenants, activatedEvent: handler, deactivatedEvent: deactivated);
-
-        try
-        {
-            await Assert.ThrowsAsync<InvalidOperationException>(() => tenantService.ListAsync());
-
-            Assert.Equal([tenants[0].Id], handler.Started);
-            Assert.Empty(deactivated.Deactivated);
-
-            fail = false;
-
-            Assert.Equal(tenants.Count, (await tenantService.ListAsync()).Count());
         }
         finally
         {
@@ -949,7 +906,7 @@ public class DefaultTenantServiceTests
         services.AddSingleton<RecurringTaskScheduleManager>();
         services.AddSingleton<ITenantService, DefaultTenantService>();
         services.AddLogging();
-        services.AddOptions<TenantActivationOptions>().Validate(x => x.MaxDegreeOfParallelism == -1 || x.MaxDegreeOfParallelism >= 1, "Invalid MaxDegreeOfParallelism.");
+        services.AddOptions<TenantActivationOptions>().Services.TryAddEnumerable(ServiceDescriptor.Singleton<IValidateOptions<TenantActivationOptions>, TenantActivationOptionsValidator>());
 
         if (maxDegreeOfParallelism != null)
             services.Configure<TenantActivationOptions>(x => x.MaxDegreeOfParallelism = maxDegreeOfParallelism.Value);

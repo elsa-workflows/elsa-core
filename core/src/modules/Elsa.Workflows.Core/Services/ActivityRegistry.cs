@@ -12,6 +12,7 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
 {
     // Legacy support for manually registered activities
     private readonly ISet<ActivityDescriptor> _manualActivityDescriptors = new HashSet<ActivityDescriptor>();
+    private readonly object _manualActivityDescriptorsLock = new();
 
     // Per-tenant activity descriptors (workflow-as-activities, tenant-specific providers, etc.)
     private readonly ConcurrentDictionary<string, TenantRegistryData> _tenantRegistries = new();
@@ -184,7 +185,8 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
 
         lock (registry)
         {
-            Add(activityDescriptor, registry, _manualActivityDescriptors);
+            lock (_manualActivityDescriptorsLock)
+                Add(activityDescriptor, registry, _manualActivityDescriptors);
         }
     }
 
@@ -196,7 +198,11 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
     }
 
     /// <inheritdoc />
-    public ValueTask<IEnumerable<ActivityDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default) => new(_manualActivityDescriptors);
+    public ValueTask<IEnumerable<ActivityDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default)
+    {
+        lock (_manualActivityDescriptorsLock)
+            return new(_manualActivityDescriptors.ToArray());
+    }
 
     /// <inheritdoc />
     public async Task RefreshDescriptorsAsync(IEnumerable<IActivityProvider> activityProviders, CancellationToken cancellationToken = default)
@@ -333,7 +339,9 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
     {
         lock (_agnosticRegistry)
         {
-            _manualActivityDescriptors.Clear();
+            lock (_manualActivityDescriptorsLock)
+                _manualActivityDescriptors.Clear();
+
             _agnosticRegistry.ActivityDescriptors.Clear();
             _agnosticRegistry.LatestActivityDescriptors.Clear();
             _agnosticRegistry.ProvidedActivityDescriptors.Clear();

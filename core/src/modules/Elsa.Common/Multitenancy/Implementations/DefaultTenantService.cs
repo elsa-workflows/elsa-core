@@ -193,9 +193,7 @@ public class DefaultTenantService(
     private PendingTenant RegisterTenant(Tenant tenant) => new(tenant, tenantScopeFactory.CreateScope(tenant));
 
     /// <summary>
-    /// Activates the first tenant on its own and the rest in parallel. The first activation applies the migrations of
-    /// the database the tenants share, and no tenant may run its startup tasks against that database before it is done.
-    /// If an activation fails, only the tenants that completed stay registered.
+    /// Activates the pending tenants in parallel. If an activation fails, only the tenants that completed stay registered.
     /// </summary>
     private async Task ActivatePendingTenantsAsync(IReadOnlyList<PendingTenant> pendingTenants, CancellationToken cancellationToken)
     {
@@ -208,8 +206,6 @@ public class DefaultTenantService(
         {
             var maxDegreeOfParallelism = activationOptions.Value.MaxDegreeOfParallelism;
 
-            await ActivateTenantAsync(pendingTenants[0], activatedTenants, cancellationToken);
-
             var parallelOptions = new ParallelOptions
             {
                 // Parallel.ForEachAsync treats -1 as the processor count, not as unlimited.
@@ -217,7 +213,7 @@ public class DefaultTenantService(
                 CancellationToken = cancellationToken
             };
 
-            await Parallel.ForEachAsync(pendingTenants.Skip(1), parallelOptions, async (pendingTenant, _) => await ActivateTenantAsync(pendingTenant, activatedTenants, cancellationToken));
+            await Parallel.ForEachAsync(pendingTenants, parallelOptions, async (pendingTenant, _) => await ActivateTenantAsync(pendingTenant, activatedTenants, cancellationToken));
         }
         catch
         {
