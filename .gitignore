@@ -127,3 +127,7 @@ docker/docker-compose-datadog.yml
 TestResults/
 artifacts/
 BenchmarkDotNet.Artifacts/
+
+# Python bytecode
+__pycache__/
+*.py[cod]
