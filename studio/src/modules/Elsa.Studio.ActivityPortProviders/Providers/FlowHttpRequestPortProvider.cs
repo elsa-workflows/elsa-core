@@ -26,7 +26,9 @@ public class FlowHttpRequestPortProvider : ActivityPortProviderBase
     public override bool GetSupportsActivityType(PortProviderContext context)
     {
         if (context.ActivityDescriptor.TypeName is "Elsa.FlowSendHttpRequest" or "Elsa.DownloadHttpFile")
+        {
             return true;
+        }
 
         // Subclasses register under their own type name. The server descriptor already
         // carries the inherited wrapped ExpectedStatusCodes input, which SendHttpRequest
@@ -37,6 +39,18 @@ public class FlowHttpRequestPortProvider : ActivityPortProviderBase
 
     /// <inheritdoc />
     public override IEnumerable<Port> GetPorts(PortProviderContext context)
+    {
+        var httpPorts = GetHttpPorts(context).ToList();
+        var httpPortNames = httpPorts.Select(port => port.Name).ToHashSet();
+
+        // A subclass can declare its own outcomes (e.g. [FlowNode("Escalated")]). Keep the
+        // descriptor's ports too, skipping names the HTTP ports already cover (such as "Done").
+        var declaredPorts = context.ActivityDescriptor.Ports.Where(port => !httpPortNames.Contains(port.Name));
+
+        return httpPorts.Concat(declaredPorts);
+    }
+
+    private static IEnumerable<Port> GetHttpPorts(PortProviderContext context)
     {
         var expectedStatusCodes = GetExpectedStatusCodes(context.Activity);
 

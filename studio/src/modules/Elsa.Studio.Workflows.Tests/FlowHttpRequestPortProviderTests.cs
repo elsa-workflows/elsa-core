@@ -58,10 +58,27 @@ public class FlowHttpRequestPortProviderTests
         Assert.All(subclassPorts, port => Assert.Equal(PortType.Flow, port.Type));
     }
 
+    [Fact]
+    public void GetPorts_KeepsOutcomesDeclaredByASubclass_WithoutDuplicates()
+    {
+        // The subclass descriptor carries the inherited "Done" port and its own [FlowNode("Escalated")] outcome.
+        var declaredPorts = new List<Port>
+        {
+            new() { Name = "Done", DisplayName = "Done", Type = PortType.Flow },
+            new() { Name = "Escalated", DisplayName = "Escalated", Type = PortType.Flow }
+        };
+        var context = CreateContext("MyApp.EscalatingFlowSendHttpRequest", wrappedExpectedStatusCodes: true, ports: declaredPorts);
+
+        var ports = _provider.GetPorts(context).ToList();
+
+        Assert.Equal(["200", "Unmatched status code", "Failed to connect", "Timeout", "Done", "Escalated"], ports.Select(x => x.Name));
+    }
+
     private static PortProviderContext CreateContext(
         string typeName,
         bool wrappedExpectedStatusCodes = false,
-        bool includeExpectedStatusCodes = false)
+        bool includeExpectedStatusCodes = false,
+        IReadOnlyCollection<Port>? ports = null)
     {
         var inputs = new List<InputDescriptor>();
 
@@ -81,7 +98,8 @@ public class FlowHttpRequestPortProviderTests
             TypeName = typeName,
             Name = typeName,
             Version = 1,
-            Inputs = inputs
+            Inputs = inputs,
+            Ports = ports ?? []
         };
 
         var activity = new JsonObject
