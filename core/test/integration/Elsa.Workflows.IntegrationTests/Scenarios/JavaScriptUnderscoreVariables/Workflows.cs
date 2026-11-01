@@ -1,5 +1,6 @@
 using Elsa.Expressions.JavaScript.Models;
 using Elsa.Workflows.Activities;
+using Elsa.Workflows.Memory;
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.JavaScriptUnderscoreVariables;
 
@@ -51,6 +52,27 @@ public class DigitLeadingVariableWorkflow : WorkflowBase
             Activities =
             {
                 new WriteLine(JavaScriptExpression.Create("get1234()"))
+            }
+        };
+    }
+}
+
+public class CollidingAccessorWorkflow : WorkflowBase
+{
+    protected override void Build(IWorkflowBuilder workflow)
+    {
+        workflow.WithDefinitionId(Guid.NewGuid().ToString());
+        // Explicit IDs: the name-derived default ID camelizes both names to the same value.
+        workflow.WithVariable(new Variable<string>("fooBar", "legacy") { Id = "legacyVariable" });
+        workflow.WithVariable(new Variable<string>("foo_bar", "new") { Id = "underscoreVariable" });
+
+        workflow.Root = new Sequence
+        {
+            Activities =
+            {
+                new WriteLine(JavaScriptExpression.Create("getFooBar()")),
+                new WriteLine(JavaScriptExpression.Create("setFooBar('updated'); variables.foo_bar + ',' + getFooBar()")),
+                new WriteLine(JavaScriptExpression.Create("variables.foo_bar"))
             }
         };
     }

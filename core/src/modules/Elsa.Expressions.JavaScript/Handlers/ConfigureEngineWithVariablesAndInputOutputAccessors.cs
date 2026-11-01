@@ -1,6 +1,7 @@
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Expressions.JavaScript.Extensions;
+using Elsa.Expressions.JavaScript.Helpers;
 using Elsa.Expressions.JavaScript.Notifications;
 using Elsa.Expressions.JavaScript.Options;
 using Elsa.Mediator.Contracts;
@@ -84,7 +85,7 @@ public class ConfigureEngineWithVariablesAndInputOutputAccessors(IOptions<JintOp
 
     private void CreateVariableAccessors(Engine engine, ExpressionExecutionContext context, ReferencedGlobals? referencedGlobals)
     {
-        var variableNames = context.GetVariableNamesInScope().FilterInvalidVariableNames().ToList();
+        var variableNames = context.GetVariableNamesInScope().Where(VariableNameValidator.HasVariableAccessors).ToList();
 
         foreach (var variableName in variableNames)
         {

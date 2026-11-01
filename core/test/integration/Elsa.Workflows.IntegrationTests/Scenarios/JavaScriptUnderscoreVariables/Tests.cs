@@ -48,4 +48,13 @@ public class Tests
         await _workflowRunner.RunAsync(workflow);
         Assert.Equal("Numeric name", _capturingTextWriter.Lines.ToList().ElementAt(0));
     }
+
+    [Fact(DisplayName = "An underscore name does not take over the accessor of its letters-and-digits counterpart")]
+    public async Task UnderscoreVariableDoesNotTakeOverAccessor()
+    {
+        await _services.PopulateRegistriesAsync();
+        var workflow = await _workflowBuilderFactory.CreateBuilder().BuildWorkflowAsync<CollidingAccessorWorkflow>();
+        await _workflowRunner.RunAsync(workflow);
+        Assert.Equal(["legacy", "new,updated", "new"], _capturingTextWriter.Lines.ToList());
+    }
 }
