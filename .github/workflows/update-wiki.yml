@@ -1,18 +1,50 @@
 name: Update Wiki
 
 on:
+  schedule:
+    # Weekly, Monday 04:00 UTC.
+    - cron: '0 4 * * 1'
   workflow_dispatch:
-  push:
-    branches:
-      - main
 
 concurrency:
   group: ${{ github.workflow }}
   cancel-in-progress: false
 
+env:
+  # The only branch this workflow pushes; its open same-repository PR is the refresh PR.
+  UPDATE_BRANCH: codex/update-wiki
+  # Open PRs from UPDATE_BRANCH in this repository (fork PRs reusing the branch name are ignored).
+  REFRESH_PR_FILTER: >-
+    [.[] | select((.isCrossRepository | not) and .headRepositoryOwner.login == $ENV.GITHUB_REPOSITORY_OWNER)][0].number // empty
+
 jobs:
+  guard:
+    name: Skip while a wiki refresh PR is open
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    outputs:
+      skip: ${{ steps.open-pr.outputs.skip }}
+    steps:
+      - name: Look up the open refresh PR by head branch
+        id: open-pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          open_pr="$(gh pr list --repo "$GITHUB_REPOSITORY" --state open --head "$UPDATE_BRANCH" \
+            --json number,isCrossRepository,headRepositoryOwner --jq "$REFRESH_PR_FILTER")"
+          if [ -n "$open_pr" ]; then
+            echo "::notice::Wiki refresh PR #$open_pr ($UPDATE_BRANCH) is still open; skipping this run. Merge or close it first."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
   update-wiki:
     name: Refresh repo wiki
+    needs: guard
+    if: needs.guard.outputs.skip == 'false'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -40,6 +72,12 @@ jobs:
             Scope:
             - Edit only files under core/docs/wiki/.
             - Keep the existing wiki structure unless the codebase genuinely needs a new or renamed wiki page.
+            - Never delete or rename an existing section or heading, even if it looks stale or was hand-written.
+              Update its content when the source clearly supports it. If you believe a section is stale but cannot
+              confidently update it, leave it in place and list it instead.
+            - List every such stale section in core/docs/wiki/.stale-sections.txt, one per line as
+              `<file> | <heading> | <short reason>`. Do not create that file if there is nothing to list.
+              The workflow moves this list into the pull request description; it is not committed.
             - Ground every update in the current repository source, tests, specs, and ADRs.
             - Preserve relative Markdown links and Mermaid diagrams where useful.
             - Do not modify production code, tests, package files, workflows, or non-wiki docs.
@@ -51,6 +89,96 @@ jobs:
           claude_args: >-
             --allowed-tools
             "Edit(core/docs/wiki/**),Write(core/docs/wiki/**),Bash(rg:* .),Bash(git diff:*),Bash(git status:*),Bash(ls:* .),Bash(wc:*)"
+
+      - name: Collect stale-section report
+        run: |
+          set -euo pipefail
+          report="core/docs/wiki/.stale-sections.txt"
+          if [ -f "$report" ] && [ ! -L "$report" ]; then
+            mv "$report" "$RUNNER_TEMP/stale-sections.txt"
+            echo "Collected $(grep -c . "$RUNNER_TEMP/stale-sections.txt" || true) stale-section entries."
+            {
+              echo "## Possibly stale wiki sections"
+              echo
+              awk '!/^[[:space:]]*$/ { print "- " $0; if (++count == 100) exit }' "$RUNNER_TEMP/stale-sections.txt"
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            rm -f "$report"
+            echo "No stale sections reported."
+          fi
+
+      - name: Verify existing wiki headings are preserved
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import re
+          import subprocess
+          import sys
+          from collections import Counter
+          from pathlib import Path
+
+          heading = re.compile(r"^(#{1,6})\s+(.*?)\s*#*\s*$")
+          fence = re.compile(r"^ {0,3}(`{3,}|~{3,})")
+
+          def headings(text):
+              found = []
+              open_fence = None
+              for line in text.splitlines():
+                  match = fence.match(line)
+                  if match:
+                      marker = match.group(1)
+                      if open_fence is None:
+                          open_fence = marker
+                      elif marker[0] == open_fence[0] and len(marker) >= len(open_fence) and not line.strip()[len(marker):].strip():
+                          open_fence = None
+                      continue
+                  if open_fence is not None:
+                      continue
+                  match = heading.match(line)
+                  if match:
+                      found.append(f"{match.group(1)} {match.group(2).strip()}")
+              return found
+
+          base_files = subprocess.run(
+              ["git", "ls-tree", "-r", "--name-only", "HEAD", "--", "core/docs/wiki"],
+              check=True, capture_output=True, text=True,
+          ).stdout.split()
+          base_files = [path for path in base_files if path.endswith(".md")]
+
+          generated = {
+              str(path): Counter(headings(path.read_text(encoding="utf-8")))
+              for path in Path("core/docs/wiki").rglob("*.md")
+          }
+          wiki_wide = sum(generated.values(), Counter())
+
+          base_pages = {}
+          for path in base_files:
+              base_pages[path] = Counter(headings(subprocess.run(
+                  ["git", "show", f"HEAD:{path}"], check=True, capture_output=True, text=True,
+              ).stdout))
+
+          missing = []
+          # Surviving pages must keep every heading as often as on main (duplicates included).
+          for path, base in base_pages.items():
+              if path in generated:
+                  missing.extend((path, item) for item, count in base.items() if generated[path][item] < count)
+          # Headings of removed or renamed pages must survive somewhere in the wiki, on top of
+          # the occurrences the surviving pages still need.
+          required = sum(base_pages.values(), Counter())
+          for item, count in required.items():
+              if wiki_wide[item] < count:
+                  pages = [path for path, base in base_pages.items() if item in base and path not in generated]
+                  missing.extend((path, item) for path in pages)
+          missing = sorted(set(missing))
+
+          if missing:
+              print("Headings present on main are missing from the generated wiki:", file=sys.stderr)
+              for path, item in missing:
+                  print(f"::error file={path}::Missing heading: {item}")
+              sys.exit(1)
+
+          print(f"All headings from {len(base_files)} wiki pages on main are preserved.")
+          PY
 
       - name: Verify wiki-only changes
         run: |
@@ -148,16 +276,23 @@ jobs:
           print("All local markdown links resolve.")
           PY
 
-      - name: Open or update wiki refresh pull request
+      - name: Open wiki refresh pull request
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BASE_BRANCH: main
-          UPDATE_BRANCH: codex/update-wiki
         run: |
           set -euo pipefail
 
           if git diff --quiet -- core/docs/wiki && [ -z "$(git ls-files --others --exclude-standard core/docs/wiki)" ]; then
             echo "No wiki changes to publish."
+            exit 0
+          fi
+
+          # Re-check right before pushing (same lookup as the guard job): never push under an open refresh PR.
+          open_pr="$(gh pr list --repo "$GITHUB_REPOSITORY" --state open --head "$UPDATE_BRANCH" \
+            --json number,isCrossRepository,headRepositoryOwner --jq "$REFRESH_PR_FILTER")"
+          if [ -n "$open_pr" ]; then
+            echo "::notice::Wiki refresh PR #$open_pr ($UPDATE_BRANCH) is open; not pushing."
             exit 0
           fi
 
@@ -172,39 +307,31 @@ jobs:
             git push origin "HEAD:$UPDATE_BRANCH"
           fi
 
-          # Look the PR up via the REST API: its `head=<owner>:<branch>` filter is applied
-          # server-side, so fork PRs reusing the branch name never match and no client-side
-          # limit can hide ours. (`gh pr list --head` does not support the "<owner>:<branch>"
-          # form; it silently matched nothing, so every run fell through to `gh pr create`.)
-          existing_pr="$(gh api \
-            "repos/$GITHUB_REPOSITORY/pulls?state=open&head=$GITHUB_REPOSITORY_OWNER:$UPDATE_BRANCH" \
-            --jq '.[0].number // empty')"
           body="$(cat <<'MD'
           ## Summary
 
-          Refreshes the repo-local `core/docs/wiki/` documentation after changes landed on `main`.
+          Refreshes the repo-local `core/docs/wiki/` documentation against the current `main`.
 
           ## Validation
 
           - Verified the workflow changed only files under `core/docs/wiki/`.
+          - Verified every Markdown heading present on `main` under `core/docs/wiki/` is preserved.
           - Verified all local Markdown links under `core/docs/wiki/` recursively resolve.
 
           This PR was opened automatically by the Update Wiki workflow.
           MD
           )"
 
-          if [ -n "$existing_pr" ]; then
-            gh pr edit "$existing_pr" \
-              --repo "$GITHUB_REPOSITORY" \
-              --title "[codex] Refresh codebase wiki" \
-              --body "$body" \
-              --base "$BASE_BRANCH"
-            echo "Updated existing PR #$existing_pr."
-          else
-            gh pr create \
-              --repo "$GITHUB_REPOSITORY" \
-              --title "[codex] Refresh codebase wiki" \
-              --body "$body" \
-              --base "$BASE_BRANCH" \
-              --head "$GITHUB_REPOSITORY_OWNER:$UPDATE_BRANCH"
+          stale_report="$RUNNER_TEMP/stale-sections.txt"
+          if [ -s "$stale_report" ]; then
+            stale_list="$(awk '!/^[[:space:]]*$/ { print "- " $0; if (++count == 100) exit }' "$stale_report")"
+            body="$(printf '%s\n\n## Possibly stale sections\n\nKept in place for review; not deleted.\n\n%s\n' "$body" "$stale_list")"
           fi
+
+          # No open refresh PR exists here (checked above), so always open a new one.
+          gh pr create \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "[codex] Refresh codebase wiki" \
+            --body "$body" \
+            --base "$BASE_BRANCH" \
+            --head "$GITHUB_REPOSITORY_OWNER:$UPDATE_BRANCH"
