@@ -22,6 +22,8 @@ public abstract class DrainOrchestratorTestsBase
     protected readonly IExecutionCycleRegistry ExecutionCycleRegistry = Substitute.For<IExecutionCycleRegistry>();
     protected readonly IWorkflowInstanceStore InstanceStore = Substitute.For<IWorkflowInstanceStore>();
     protected readonly IWorkflowExecutionLogStore LogStore = Substitute.For<IWorkflowExecutionLogStore>();
+    protected readonly IWorkflowInstanceManager InstanceManager = Substitute.For<IWorkflowInstanceManager>();
+    protected readonly IBookmarkQueueStore BookmarkQueueStore = Substitute.For<IBookmarkQueueStore>();
     protected readonly DefaultTenantAccessor TenantAccessor = new();
     protected readonly GracefulShutdownOptions Options = new();
     protected readonly HostOptions HostOptionsValue = new() { ShutdownTimeout = TimeSpan.FromSeconds(60) };
@@ -56,6 +58,8 @@ public abstract class DrainOrchestratorTestsBase
         var sp = Substitute.For<IServiceProvider>();
         sp.GetService(typeof(IWorkflowInstanceStore)).Returns(InstanceStore);
         sp.GetService(typeof(IWorkflowExecutionLogStore)).Returns(LogStore);
+        sp.GetService(typeof(IWorkflowInstanceManager)).Returns(InstanceManager);
+        sp.GetService(typeof(IBookmarkQueueStore)).Returns(BookmarkQueueStore);
         scope.ServiceProvider.Returns(sp);
         scopeFactory.CreateScope().Returns(scope);
 
