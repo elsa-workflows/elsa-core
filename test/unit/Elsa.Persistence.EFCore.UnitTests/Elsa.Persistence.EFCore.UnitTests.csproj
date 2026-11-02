@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="../../../src/modules/Elsa.Persistence.EFCore/Elsa.Persistence.EFCore.csproj" />
+    </ItemGroup>
+
+</Project>
