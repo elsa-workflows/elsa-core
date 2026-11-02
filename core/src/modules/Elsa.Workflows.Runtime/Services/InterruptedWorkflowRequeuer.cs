@@ -42,16 +42,12 @@ internal static class InterruptedWorkflowRequeuer
             {
                 if (tenantService is not null && tenantAccessor is not null)
                 {
-                    var tenantKey = TenantKey.From(instanceTenantId);
+                    // A tenant-agnostic instance restarts under "*" when the host registers it: its rows are shared, and the store refuses to replace them under any other tenant.
+                    var tenantKey = instanceTenantId == Tenant.AgnosticTenantId ? Tenant.AgnosticTenantId : TenantKey.From(instanceTenantId);
 
                     if (!tenants.TryGetValue(tenantKey, out var tenant))
                     {
-                        tenant = await tenantService.FindAsync(tenantKey, cancellationToken);
-
-                        if (tenant is null && tenantKey == Tenant.DefaultTenantId)
-                            tenant = Tenant.Default;
-
-                        tenants[tenantKey] = tenant;
+                        tenant = await FindTenantAsync(tenantService, tenants, tenantKey, cancellationToken);
 
                         if (tenant is null)
                             logger.LogWarning("Skipping {Count} interrupted workflow(s): their tenant {TenantId} was not found.", collected.Count(x => TenantKey.From(x.TenantId) == tenantKey), tenantKey);
@@ -77,5 +73,23 @@ internal static class InterruptedWorkflowRequeuer
         }
 
         return requeued;
+    }
+
+    // Without a registered "*" tenant, tenant-agnostic instances restart under the default tenant.
+    private static async Task<Tenant?> FindTenantAsync(ITenantService tenantService, Dictionary<string, Tenant?> tenants, string tenantKey, CancellationToken cancellationToken)
+    {
+        if (tenants.TryGetValue(tenantKey, out var cached))
+            return cached;
+
+        var tenant = await tenantService.FindAsync(tenantKey, cancellationToken);
+
+        if (tenant is null && tenantKey == Tenant.AgnosticTenantId)
+            tenant = await FindTenantAsync(tenantService, tenants, Tenant.DefaultTenantId, cancellationToken);
+
+        if (tenant is null && tenantKey == Tenant.DefaultTenantId)
+            tenant = Tenant.Default;
+
+        tenants[tenantKey] = tenant;
+        return tenant;
     }
 }
