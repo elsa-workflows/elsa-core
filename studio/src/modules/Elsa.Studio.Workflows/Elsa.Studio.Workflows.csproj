@@ -15,6 +15,10 @@
 	</ItemGroup>
 
     <ItemGroup>
+        <InternalsVisibleTo Include="Elsa.Studio.Workflows.Tests" />
+    </ItemGroup>
+
+    <ItemGroup>
       <ProjectReference Include="../../framework/Elsa.Studio.DomInterop/Elsa.Studio.DomInterop.csproj" />
       <ProjectReference Include="../Elsa.Studio.Bpmn/Elsa.Studio.Bpmn.csproj" />
       <ProjectReference Include="../Elsa.Studio.Bpmn.BpmnJs/Elsa.Studio.Bpmn.BpmnJs.csproj" />

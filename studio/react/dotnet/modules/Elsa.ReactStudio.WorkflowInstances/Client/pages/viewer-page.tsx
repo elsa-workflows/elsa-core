@@ -178,6 +178,7 @@ export function WorkflowInstanceViewerPage({ params }: { params: RouteParams }) 
               root={root}
               store={store}
               definitionName={definition?.name}
+              customProperties={definition?.customProperties}
               journal={journal}
               executions={executions}
               variables={variables}
@@ -211,6 +212,7 @@ function ViewerBody({
   root,
   store,
   definitionName,
+  customProperties,
   journal,
   executions,
   variables,
@@ -219,6 +221,7 @@ function ViewerBody({
   root: Activity;
   store: DesignerStore;
   definitionName?: string;
+  customProperties?: Record<string, unknown>;
   journal: ReturnType<typeof useInstanceJournal>;
   executions: ReturnType<typeof useActivityExecutions>;
   variables: ReturnType<typeof useInstanceVariables>;
@@ -300,7 +303,7 @@ function ViewerBody({
               {_t("Input/Output")}</TabsTrigger>
           </TabsList>
           <TabsContent value="details" className="min-h-0 flex-1 overflow-y-auto">
-            <InstanceDetails instance={instance} definitionName={definitionName} />
+            <InstanceDetails instance={instance} definitionName={definitionName} customProperties={customProperties} />
           </TabsContent>
           <TabsContent value="incidents" className="min-h-0 flex-1 overflow-y-auto">
             <IncidentsPanel incidents={incidents} onSelectActivity={selectActivity} />
