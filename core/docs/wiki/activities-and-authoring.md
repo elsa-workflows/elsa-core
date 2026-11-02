@@ -17,6 +17,8 @@ Source landmarks:
 
 The reference server registers workflows from its assembly with `AddWorkflowsFrom<Program>()` in [Program.cs](../../src/apps/Elsa.Server.Web/Program.cs).
 
+`IWorkflow.Build` runs once per service container, not once per tenant. The definition is built in the scope of the first tenant to activate and every other tenant reuses that result. Do not read tenant-scoped services or the ambient tenant inside `Build`. If a workflow must differ per tenant, register it through a provider that does not implement `ITenantAgnosticWorkflowsProvider`. See the [CLR workflows built-once note](../migrations/clr-workflows-built-once.md).
+
 ## JSON Workflows
 
 JSON definitions are materialized by [JsonWorkflowMaterializer](../../src/modules/Elsa.Workflows.Management/Materializers/JsonWorkflowMaterializer.cs). Sample JSON workflows appear in:
