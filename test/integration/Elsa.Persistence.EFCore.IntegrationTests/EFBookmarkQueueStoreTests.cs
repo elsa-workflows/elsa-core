@@ -15,7 +15,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using NSubstitute;
 
-namespace Elsa.Persistence.EFCore.UnitTests;
+namespace Elsa.Persistence.EFCore.IntegrationTests;
 
 public class EFBookmarkQueueStoreTests : IAsyncLifetime
 {
