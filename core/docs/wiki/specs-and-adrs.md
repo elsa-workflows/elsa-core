@@ -2,14 +2,14 @@
 
 The repository carries two useful design-history systems:
 
-- ADRs in [doc/adr](../../../docs/adr), which document durable architecture decisions.
+- ADRs in [docs/adr](../../../docs/adr), which document durable architecture decisions.
 - Spec Kit feature specs in [specs](../specs), which document planned and recently implemented feature work.
 
 Use both before making architectural changes. Specs often explain the "why now"; ADRs explain decisions intended to outlive a single feature.
 
 ## ADR Index
 
-The table of contents is [doc/adr/toc.md](../../../docs/adr/toc.md).
+The table of contents is [docs/adr/toc.md](../../../docs/adr/toc.md).
 
 Current ADRs:
 
