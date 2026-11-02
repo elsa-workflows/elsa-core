@@ -243,6 +243,8 @@ The interrupted-workflow scan runs once per host or shell activation, after all 
 
 The recurring `RestartInterruptedWorkflowsTask` restarts running instances still marked as executing and not updated within the inactivity threshold, once per cycle across all tenants. Both run one node at a time. Instances whose tenant is not active on this host are skipped with a warning. A tenant with any connection string in its configuration is also scanned separately in its own scope, at startup and each cycle.
 
+When a drain force-cancels a cycle, it reads and marks the instance under the tenant that was current when the cycle began, in a scope for that tenant, so a tenant with its own database is read from that database.
+
 The design intent is captured in [specs/002-graceful-shutdown/plan.md](../specs/002-graceful-shutdown/plan.md).
 
 Ingress source adapters are currently registered by modules such as HTTP and Scheduling so the runtime can pause external event intake during drain.

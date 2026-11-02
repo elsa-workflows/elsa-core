@@ -1,4 +1,5 @@
 using Elsa.Common;
+using Elsa.Common.Multitenancy;
 
 namespace Elsa.Workflows.Runtime;
 
@@ -70,6 +71,12 @@ public sealed class ExecutionCycleHandle : IDisposable
 
     /// <summary>When the cycle started.</summary>
     public DateTimeOffset StartedAt { get; }
+
+    /// <summary>
+    /// Tenant that was current when the cycle started. The drain does not run in the cycle's tenant, so it reads and
+    /// writes the instance in this tenant's scope. Null when no tenant was current or the registry did not record one.
+    /// </summary>
+    internal Tenant? Tenant { get; init; }
 
     /// <summary>Cancellation token passed into the workflow execution pipeline for this cycle.</summary>
     public CancellationToken CancellationToken => _cycleCts.Token;
