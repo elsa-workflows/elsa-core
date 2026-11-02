@@ -214,6 +214,32 @@ public class OwnDatabaseTenantRecoveryTests
         Assert.Equal([("d", Tenant.DefaultTenantId, "default-scope")], _restarts);
     }
 
+    [Fact(DisplayName = "An agnostic instance in the shared database restarts under the agnostic tenant when it is registered")]
+    public async Task SharedPass_AgnosticInstanceRestartsUnderRegisteredAgnosticTenant()
+    {
+        var tenant = OwnDatabaseTenant("tenant-own");
+        UseTenants(tenant);
+        AddInstance(SharedKey, "agnostic", Tenant.AgnosticTenantId);
+        AddInstance(SharedKey, "default", Tenant.DefaultTenantId);
+
+        var count = await RequeueAsync();
+
+        Assert.Equal(2, count);
+        Assert.Equal([("agnostic", Tenant.AgnosticTenantId, SharedKey), ("default", Tenant.DefaultTenantId, SharedKey)], _restarts);
+    }
+
+    [Fact(DisplayName = "An agnostic instance in the shared database restarts under the default tenant when no agnostic tenant is registered")]
+    public async Task SharedPass_AgnosticInstanceRestartsUnderDefaultTenantWithoutAgnosticTenant()
+    {
+        _tenantService.FindAsync(Tenant.AgnosticTenantId, Arg.Any<CancellationToken>()).Returns(Task.FromResult<Tenant?>(null));
+        AddInstance(SharedKey, "agnostic", Tenant.AgnosticTenantId);
+
+        var count = await RequeueAsync();
+
+        Assert.Equal(1, count);
+        Assert.Equal([("agnostic", Tenant.DefaultTenantId, SharedKey)], _restarts);
+    }
+
     private static Tenant OwnDatabaseTenant(string id) => new()
     {
         Id = id,
