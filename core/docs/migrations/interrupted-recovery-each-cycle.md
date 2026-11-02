@@ -9,7 +9,7 @@ A graceful drain marks the instances it force-cancels as `Running` / `Interrupte
 ## What changes
 
 - Each cycle first restarts stale executing instances, as before, and then stale `Interrupted` instances, with the same tenant handling, including tenants with their own database. An instance found by both queries is restarted once.
-- Right before an `Interrupted` instance is restarted, its `UpdatedAt` is set to the cycle's time. The next cycle skips it while the restart is in flight. If the restarted run never updates the instance, it is restarted again once the inactivity threshold has passed.
+- Right before an `Interrupted` instance is restarted, its `UpdatedAt` is set to the time of that restart. The next cycle skips it while the restart is in flight. If the restarted run never updates the instance, it is restarted again once the inactivity threshold has passed.
 - The cutoff uses `UpdatedAt`, which a drain does not change: it is the instance's last commit or heartbeat. With the defaults (5 minutes threshold, 5 minutes interval), an instance interrupted by another node's drain is restarted within about 10 minutes.
 - The startup scan is unchanged.
 
