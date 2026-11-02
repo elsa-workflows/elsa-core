@@ -13,6 +13,10 @@ A graceful drain marks the instances it force-cancels as `Running` / `Interrupte
 - The cutoff uses `UpdatedAt`, which a drain does not change: it is the instance's last commit or heartbeat. With the defaults (5 minutes threshold, 5 minutes interval), an instance interrupted by another node's drain is restarted within about 10 minutes.
 - The startup scan is unchanged.
 
+## Fix
+
+- On EF Core, `UpdateUpdatedTimestampAsync` (used by this stamp and by the workflow heartbeat) wrote the ambient tenant over the instance's `TenantId`, for example `"*"` or null became `""` under the default tenant. It now writes only `UpdatedAt`.
+
 ## What to do
 
 - Nothing for most hosts.
