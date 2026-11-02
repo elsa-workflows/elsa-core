@@ -25,6 +25,9 @@ public class EFBookmarkQueueStoreTests : IAsyncLifetime
     private readonly ContextFactory _factory;
     private readonly EFBookmarkQueueStore _store;
 
+    /// <summary>
+    /// Creates an isolated SQLite-backed store with Elsa's tenant query filter enabled.
+    /// </summary>
     public EFBookmarkQueueStoreTests()
     {
         _services = new ServiceCollection()
@@ -38,6 +41,9 @@ public class EFBookmarkQueueStoreTests : IAsyncLifetime
         _store = new EFBookmarkQueueStore(new Store<RuntimeElsaDbContext, BookmarkQueueItem>(_factory, _services), Substitute.For<IPayloadSerializer>());
     }
 
+    /// <summary>
+    /// Seeds matching and non-matching workflows across two tenants before observing page queries.
+    /// </summary>
     public async Task InitializeAsync()
     {
         await _connection.OpenAsync();
@@ -55,6 +61,9 @@ public class EFBookmarkQueueStoreTests : IAsyncLifetime
         _observer.MaterializedItems = 0;
     }
 
+    /// <summary>
+    /// Verifies totals, page boundaries and tenant isolation while counting without materializing matching rows.
+    /// </summary>
     [Theory]
     [InlineData(null, 0, 120, 50)]
     [InlineData(null, 50, 120, 50)]
@@ -83,6 +92,7 @@ public class EFBookmarkQueueStoreTests : IAsyncLifetime
         Assert.Contains("OFFSET", _observer.Commands[1], StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <inheritdoc />
     public async Task DisposeAsync()
     {
         await _connection.DisposeAsync();
@@ -91,6 +101,9 @@ public class EFBookmarkQueueStoreTests : IAsyncLifetime
 
     private sealed class ContextFactory(DbContextOptions<RuntimeElsaDbContext> options, IServiceProvider services) : IDbContextFactory<RuntimeElsaDbContext>
     {
+        /// <summary>
+        /// Creates a context scoped to the tenant whose queue is being paged.
+        /// </summary>
         public RuntimeElsaDbContext CreateDbContext() => new(options, services) { TenantId = "tenant-a" };
     }
 
@@ -99,12 +112,16 @@ public class EFBookmarkQueueStoreTests : IAsyncLifetime
         public List<string> Commands { get; } = [];
         public int MaterializedItems { get; set; }
 
+        /// <inheritdoc />
         public override ValueTask<InterceptionResult<DbDataReader>> ReaderExecutingAsync(DbCommand command, CommandEventData eventData, InterceptionResult<DbDataReader> result, CancellationToken cancellationToken = default)
         {
             Commands.Add(command.CommandText);
             return base.ReaderExecutingAsync(command, eventData, result, cancellationToken);
         }
 
+        /// <summary>
+        /// Counts bookmark queue entities materialized by the observed queries.
+        /// </summary>
         public object InitializedInstance(MaterializationInterceptionData materializationData, object entity)
         {
             if (entity is BookmarkQueueItem)

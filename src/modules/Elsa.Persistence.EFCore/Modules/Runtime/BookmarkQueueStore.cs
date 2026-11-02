@@ -41,6 +41,7 @@ public class EFBookmarkQueueStore(Store<RuntimeElsaDbContext, BookmarkQueueItem>
         return await store.QueryAsync(filter.Apply, OnLoadAsync, filter.TenantAgnostic, cancellationToken);
     }
 
+    /// <inheritdoc />
     public async Task<Page<BookmarkQueueItem>> PageAsync<TOrderBy>(PageArgs pageArgs, BookmarkQueueItemOrder<TOrderBy> orderBy, CancellationToken cancellationToken = default)
     {
         var count = await store.CountAsync(queryable => queryable, cancellationToken);
@@ -48,6 +49,7 @@ public class EFBookmarkQueueStore(Store<RuntimeElsaDbContext, BookmarkQueueItem>
         return new(results, count);
     }
 
+    /// <inheritdoc />
     public async Task<Page<BookmarkQueueItem>> PageAsync<TOrderBy>(PageArgs pageArgs, BookmarkQueueFilter filter, BookmarkQueueItemOrder<TOrderBy> orderBy, CancellationToken cancellationToken = default)
     {
         var count = await store.CountAsync(filter.Apply, cancellationToken);
