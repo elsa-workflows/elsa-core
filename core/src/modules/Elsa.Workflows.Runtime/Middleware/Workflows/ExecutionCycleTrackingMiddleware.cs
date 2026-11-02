@@ -1,4 +1,7 @@
+using Elsa.Workflows.Management.Options;
 using Elsa.Workflows.Pipelines.WorkflowExecution;
+using Elsa.Workflows.Runtime.Options;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Workflows.Runtime.Middleware.Workflows;
 
@@ -32,8 +35,43 @@ public class ExecutionCycleTrackingMiddleware(WorkflowMiddlewareDelegate next, I
             var ingressSourceName = context.TransientProperties.TryGetValue(IngressSourceNameKey, out var raw) ? raw as string : null;
             // Keep the existing cancellation bridge. Cancellation requests do not release ownership;
             // drain still waits for the owner to unwind before writing Interrupted.
-            return cycleRegistry.BeginCycle(context.Id, ingressSourceName, context.CancellationToken, cancelCallback: context.Cancel);
+            var handle = cycleRegistry.BeginCycle(context.Id, ingressSourceName, context.CancellationToken, cancelCallback: context.Cancel);
+
+            if (context.GetService<IOptions<GracefulShutdownOptions>>()?.Value.InterruptOnHostStop == true)
+                CaptureRestartPoint(handle, context);
+
+            return handle;
         });
         await Next(context);
+    }
+
+    /// <summary>
+    /// Records what a host-stop drain needs to persist a cycle that never reached a commit, so the next start continues
+    /// it. Captured when the cycle begins, before the workflow changes the context on another thread.
+    /// </summary>
+    private static void CaptureRestartPoint(ExecutionCycleHandle handle, WorkflowExecutionContext context)
+    {
+        if (context.ResumedBookmarkContext is { } resumed)
+        {
+            handle.ResumedBookmark = resumed.Bookmark;
+            handle.ResumeInput = new Dictionary<string, object>(context.Input);
+            return;
+        }
+
+        // Only a fresh run has no activity execution context yet. A trigger-started run is left to its trigger.
+        if (context.ActivityExecutionContexts.Count > 0 || context.TriggerActivityId != null)
+            return;
+
+        var workflow = context.Workflow;
+        var options = new WorkflowInstanceOptions
+        {
+            WorkflowInstanceId = context.Id,
+            CorrelationId = context.CorrelationId,
+            Name = context.Name,
+            ParentWorkflowInstanceId = context.ParentWorkflowInstanceId,
+            Input = new Dictionary<string, object>(context.Input),
+            Properties = new Dictionary<string, object>(context.Properties)
+        };
+        handle.CreatePendingInstance = manager => manager.CreateWorkflowInstance(workflow, options);
     }
 }

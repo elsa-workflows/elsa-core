@@ -27,7 +27,8 @@ namespace Elsa.Workflows.Runtime.Services;
 /// 4. On deadline breach (or on operator force, where deadline is zero), iterate live cycles, cancel each,
 ///    persist still-Running instances as <see cref="WorkflowSubStatus.Interrupted"/>, leave
 ///    Finished/Cancelled rows as they are, and write a <c>WorkflowInterrupted</c> entry in the
-///    per-instance execution log.
+///    per-instance execution log. On a host stop with <see cref="GracefulShutdownOptions.InterruptOnHostStop"/>,
+///    live cycles are interrupted instead of cancelled.
 /// 5. Return a <see cref="DrainOutcome"/>.
 /// </para>
 /// <para>
@@ -142,7 +143,13 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
             int forceCancelled = 0;
             IReadOnlyList<string> forceCancelledIds = Array.Empty<string>();
 
-            if (deadlineBreach || trigger == DrainTrigger.OperatorForce)
+            if (deadlineBreach && trigger == DrainTrigger.HostStopSignal && _options.Value.InterruptOnHostStop)
+            {
+                // The process ends after a host stop, so its cycles are interrupted for the next start instead of cancelled.
+                _logger.LogWarning("Drain deadline exceeded; interrupting {Count} active execution cycle(s).", _cycles.ActiveCount);
+                (forceCancelled, forceCancelledIds) = await InterruptActiveCyclesAsync(_signal.CurrentState.GenerationId);
+            }
+            else if (deadlineBreach || trigger == DrainTrigger.OperatorForce)
             {
                 _logger.LogWarning("Drain {What}; force-cancelling {Count} active execution cycle(s).",
                     deadlineBreach ? "deadline exceeded" : "operator-forced", _cycles.ActiveCount);
@@ -540,6 +547,99 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
         services = scope.ServiceProvider;
         return scope;
     }
+
+    /// <summary>
+    /// Bound on persisting every interrupted cycle together. Unlike force-cancel, the drain does not wait for the cut-off
+    /// runners, so the host's remaining shutdown budget goes to these writes.
+    /// </summary>
+    private static readonly TimeSpan InterruptPersistBudget = TimeSpan.FromSeconds(5);
+
+    private async Task<(int Count, IReadOnlyList<string> Ids)> InterruptActiveCyclesAsync(string generationId)
+    {
+        // Take every live cycle over first. The runners keep going until the process ends, but their commits are dropped
+        // from here on, so what is persisted below is not overwritten.
+        var interrupted = _cycles.ListActiveCycles().Where(handle => handle.TryInterrupt()).ToList();
+        var reportedIds = interrupted.Select(handle => handle.WorkflowInstanceId).Take(_options.Value.MaxForceCancelledInstanceIdsReported).ToList();
+
+        using var budget = new CancellationTokenSource(InterruptPersistBudget);
+
+        foreach (var handle in interrupted.DistinctBy(handle => handle.WorkflowInstanceId))
+        {
+            try
+            {
+                await PersistInterruptionAsync(handle, generationId, budget.Token);
+            }
+            catch (Exception ex) when (!ex.IsFatal())
+            {
+                _logger.LogError(ex, "Failed to persist the interruption of execution cycle {ExecutionCycleId} (instance={InstanceId}).", handle.Id, handle.WorkflowInstanceId);
+            }
+        }
+
+        return (interrupted.Count, reportedIds);
+    }
+
+    private async Task PersistInterruptionAsync(ExecutionCycleHandle handle, string generationId, CancellationToken cancellationToken)
+    {
+        await using var scope = CreateCycleScope(handle, out var services);
+        var instanceStore = services.GetRequiredService<IWorkflowInstanceStore>();
+        var logStore = services.GetRequiredService<IWorkflowExecutionLogStore>();
+        var instance = await instanceStore.FindAsync(new WorkflowInstanceFilter { Id = handle.WorkflowInstanceId }, cancellationToken);
+
+        if (instance is null && handle.CreatePendingInstance is { } createPendingInstance)
+        {
+            // Nothing was committed yet: persist the run as not started, so the next start runs it. Added, not saved, so
+            // it fails rather than overwrite a row that this scope cannot see.
+            var pending = createPendingInstance(services.GetRequiredService<IWorkflowInstanceManager>());
+            pending.Status = WorkflowStatus.Running;
+            pending.SubStatus = WorkflowSubStatus.Interrupted;
+            await instanceStore.AddAsync(pending, cancellationToken);
+            await logStore.LogWorkflowInterruptedAsync(_identityGenerator, pending, CreateInterruptedPayload(handle, generationId), cancellationToken);
+            return;
+        }
+
+        if (instance is not null && IsSuspensionPoint(instance))
+        {
+            // The row still holds the suspension this cycle resumed. Marking it Interrupted would make the scan run the
+            // workflow again from its root, so it stays as it is and the resume is queued again for the next start.
+            if (handle.ResumedBookmark is { } bookmark)
+            {
+                await services.GetRequiredService<IBookmarkQueueStore>().AddAsync(new()
+                {
+                    Id = _identityGenerator.GenerateId(),
+                    TenantId = instance.TenantId,
+                    WorkflowInstanceId = instance.Id,
+                    BookmarkId = bookmark.Id,
+                    Options = new() { Input = handle.ResumeInput },
+                    CreatedAt = _clock.UtcNow
+                }, cancellationToken);
+            }
+
+            await logStore.LogWorkflowInterruptedAsync(_identityGenerator, instance, CreateInterruptedPayload(handle, generationId), cancellationToken);
+            return;
+        }
+
+        // A checkpoint to continue from is marked Interrupted for the scan. A Finished row is left alone, and a missing row
+        // (a trigger-started run that never committed) only gets the forensic log entry.
+        await PersistInterruptedAsync(instanceStore, logStore, handle, generationId, WorkflowInterruptedPayload.ReasonDeadlineBreach, [], requireExecuting: false, cancellationToken);
+    }
+
+    /// <summary>
+    /// Whether the row is suspended with no scheduled work and no activity that was executing. Restarting it would run the
+    /// workflow again from its root; only resuming one of its bookmarks continues it.
+    /// </summary>
+    private static bool IsSuspensionPoint(WorkflowInstance instance) =>
+        instance.WorkflowState is { Status: WorkflowStatus.Running, SubStatus: WorkflowSubStatus.Suspended } state
+        && state.ScheduledActivities.Count == 0
+        && !state.ActivityExecutionContexts.Any(x => x.IsExecuting);
+
+    private WorkflowInterruptedPayload CreateInterruptedPayload(ExecutionCycleHandle handle, string generationId) => new(
+        InterruptedAt: _clock.UtcNow,
+        Reason: WorkflowInterruptedPayload.ReasonDeadlineBreach,
+        GenerationId: generationId,
+        LastActivityId: null,
+        LastActivityNodeId: null,
+        IngressSourceName: handle.IngressSourceName,
+        ExecutionCycleDuration: _clock.UtcNow - handle.StartedAt);
 
     private async Task PersistInterruptedAsync(
         IWorkflowInstanceStore instanceStore,

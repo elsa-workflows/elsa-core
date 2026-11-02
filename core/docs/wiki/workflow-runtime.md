@@ -245,6 +245,8 @@ The recurring `RestartInterruptedWorkflowsTask` restarts running instances still
 
 When a drain force-cancels a cycle, it reads and marks the instance under the tenant that was current when the cycle began, in a scope for that tenant, so a tenant with its own database is read from that database.
 
+With `GracefulShutdownOptions.InterruptOnHostStop` (off by default), a host-stop drain interrupts the cycles still running at its deadline instead of cancelling them. Their later commits are dropped, and the drain persists each instance where the next start continues it: a checkpoint is marked `Interrupted`, an uncommitted resume is queued again, and an uncommitted fresh run is persisted as not started. See the [migration note](../migrations/interrupt-on-host-stop.md).
+
 The design intent is captured in [specs/002-graceful-shutdown/plan.md](../specs/002-graceful-shutdown/plan.md).
 
 Ingress source adapters are currently registered by modules such as HTTP and Scheduling so the runtime can pause external event intake during drain.
