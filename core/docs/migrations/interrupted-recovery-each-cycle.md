@@ -16,6 +16,7 @@ A graceful drain marks the instances it force-cancels as `Running` / `Interrupte
 ## Fix
 
 - On EF Core, `UpdateUpdatedTimestampAsync` (used by this stamp and by the workflow heartbeat) wrote the ambient tenant over the instance's `TenantId`, for example `"*"` or null became `""` under the default tenant. It now writes only `UpdatedAt`.
+- On Dapper, `UpdateUpdatedTimestampAsync` threw "A record with ID '...' already exists in another tenant" for a `"*"` instance, so the stamp failed and the instance was not restarted. It now writes `UpdatedAt` on `"*"` rows too and keeps their `TenantId`.
 
 ## What to do
 

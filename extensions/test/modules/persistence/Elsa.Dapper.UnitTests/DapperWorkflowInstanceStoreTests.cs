@@ -281,6 +281,35 @@ public sealed class DapperWorkflowInstanceStoreTests : IDisposable
         Assert.Equal(("Finished", "Cancelled", 0, "{}"), ReadCancellationRow("wf-1"));
     }
 
+    [Theory(DisplayName = "UpdateUpdatedTimestampAsync writes UpdatedAt and keeps the row's tenant")]
+    [InlineData("*", "")]
+    [InlineData("*", "tenant-a")]
+    [InlineData("tenant-a", "tenant-a")]
+    [InlineData(null, "")]
+    public async Task UpdateUpdatedTimestampAsync_KeepsTenant(string? rowTenantId, string ambientTenantId)
+    {
+        var stampedAt = new DateTimeOffset(2026, 11, 2, 12, 0, 0, TimeSpan.Zero);
+        InsertInterruptible("wf-1", WorkflowStatus.Running, WorkflowSubStatus.Interrupted, isExecuting: false, tenantId: rowTenantId);
+
+        using var tenantScope = _tenantAccessor.PushContext(new Tenant { Id = ambientTenantId });
+        await _store.UpdateUpdatedTimestampAsync("wf-1", stampedAt);
+
+        Assert.Equal(stampedAt, ReadUpdatedAt("wf-1"));
+        Assert.Equal(rowTenantId, ReadTenantId("wf-1"));
+    }
+
+    [Fact(DisplayName = "UpdateUpdatedTimestampAsync refuses a row of another tenant")]
+    public async Task UpdateUpdatedTimestampAsync_RefusesRowOfAnotherTenant()
+    {
+        InsertInterruptible("wf-1", WorkflowStatus.Running, WorkflowSubStatus.Interrupted, isExecuting: false, tenantId: "tenant-b");
+        var updatedAt = ReadUpdatedAt("wf-1");
+
+        using var tenantScope = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _store.UpdateUpdatedTimestampAsync("wf-1", updatedAt.AddMinutes(1)));
+
+        Assert.Equal(updatedAt, ReadUpdatedAt("wf-1"));
+    }
+
     public void Dispose()
     {
         File.Delete(_databasePath);
@@ -314,11 +343,19 @@ public sealed class DapperWorkflowInstanceStoreTests : IDisposable
             new { Id = id });
     }
 
-    private void InsertInterruptible(string id, WorkflowStatus status, WorkflowSubStatus subStatus, bool isExecuting, string tenantId = "tenant-a")
+    private void InsertInterruptible(string id, WorkflowStatus status, WorkflowSubStatus subStatus, bool isExecuting, string? tenantId = "tenant-a")
     {
         using var connection = new SqliteConnection(_connectionString);
         connection.Open();
         Insert(connection, id, DateTimeOffset.UtcNow, isExecuting, status.ToString(), subStatus.ToString(), tenantId);
+    }
+
+    private string? ReadTenantId(string id)
+    {
+        using var connection = new SqliteConnection(_connectionString);
+        return connection.QuerySingle<string?>(
+            "select TenantId from WorkflowInstances where Id = @Id",
+            new { Id = id });
     }
 
     private (string Status, string SubStatus, long IsExecuting) ReadMarkers(string id)
@@ -329,7 +366,7 @@ public sealed class DapperWorkflowInstanceStoreTests : IDisposable
             new { Id = id });
     }
 
-    private static void Insert(SqliteConnection connection, string id, DateTimeOffset updatedAt, bool isExecuting, string status = "Running", string subStatus = "Executing", string tenantId = "tenant-a")
+    private static void Insert(SqliteConnection connection, string id, DateTimeOffset updatedAt, bool isExecuting, string status = "Running", string subStatus = "Executing", string? tenantId = "tenant-a")
     {
         connection.Execute(
             """
