@@ -1,6 +1,5 @@
 using Elsa.Common.Models;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Management.Models;
@@ -66,10 +65,10 @@ namespace Elsa.Workflows.Management.Services
                 if (!string.IsNullOrWhiteSpace(definitionId))
                     draft.DefinitionId = definitionId;
                 
-                // Version ids are primary keys shared by all tenants. An export imported into a second tenant keeps its
-                // definition id but needs a new version id.
-                if (!string.IsNullOrWhiteSpace(model.Id) && !await IsVersionIdTakenAsync(model.Id, cancellationToken))
-                    draft.Id = model.Id;
+                if (!string.IsNullOrWhiteSpace(model.Id))
+                    draft.Id = _workflowDefinitionStore != null
+                        ? await _workflowDefinitionStore.ResolveVersionIdAsync(model.Id, draft.Id, cancellationToken)
+                        : model.Id;
             }
 
             // Update the draft with the received model.
@@ -99,14 +98,6 @@ namespace Elsa.Workflows.Management.Services
 
             await _workflowDefinitionPublisher.SaveDraftAsync(draft, cancellationToken);
             return new ImportWorkflowResult(true, draft, new List<WorkflowValidationError>());
-        }
-
-        private async Task<bool> IsVersionIdTakenAsync(string versionId, CancellationToken cancellationToken)
-        {
-            if (_workflowDefinitionStore == null)
-                return false;
-
-            return await _workflowDefinitionStore.AnyAsync(new WorkflowDefinitionFilter { Id = versionId, TenantAgnostic = true }, cancellationToken);
         }
     }
 }

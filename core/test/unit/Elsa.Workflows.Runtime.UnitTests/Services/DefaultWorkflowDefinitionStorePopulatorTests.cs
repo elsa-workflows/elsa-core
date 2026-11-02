@@ -1,9 +1,12 @@
 using System.Reflection;
 using Elsa.Common;
 using Elsa.Common.Multitenancy;
+using Elsa.Common.Services;
 using Elsa.Mediator.Contracts;
+using Elsa.Testing.Shared.Multitenancy;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Stores;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Notifications;
 using Elsa.Workflows.Management.Filters;
@@ -22,6 +25,7 @@ public class DefaultWorkflowDefinitionStorePopulatorTests
     private readonly IWorkflowDefinitionStore _storeMock;
     private readonly DefaultWorkflowDefinitionStorePopulator _populator;
     private readonly List<WorkflowDefinition> _workflowDefinitionsInStore = new();
+    private string _sharedWorkflowName = "Shared";
 
     private static readonly Dictionary<string, Action<WorkflowDefinition>> StoredValueChanges = new()
     {
@@ -943,6 +947,140 @@ public class DefaultWorkflowDefinitionStorePopulatorTests
         Assert.Equal(1, builds);
     }
 
+    [Fact(DisplayName = "PopulateStoreAsync gives a tenant-specific workflow a fresh version id in a second tenant of a shared store")]
+    public async Task PopulateStoreAsync_SameWorkflowInTwoTenants_SecondTenantGetsFreshVersionId()
+    {
+        var (store, populate) = CreateSharedStorePopulator();
+
+        var resultA = await populate("tenant-a");
+        var resultB = await populate("tenant-b");
+
+        Assert.Single(resultA);
+        Assert.Single(resultB);
+        var rows = (await store.FindManyAsync(new WorkflowDefinitionFilter { TenantAgnostic = true })).ToList();
+        Assert.Equal(2, rows.Count);
+        Assert.All(rows, x => Assert.Equal("shared-workflow", x.DefinitionId));
+        Assert.Equal("shared-v1", Assert.Single(rows, x => x.TenantId == "tenant-a").Id);
+        Assert.Equal("generated-id", Assert.Single(rows, x => x.TenantId == "tenant-b").Id);
+    }
+
+    [Fact(DisplayName = "PopulateStoreAsync keeps the version id and the row when the same tenant is populated again")]
+    public async Task PopulateStoreAsync_SameTenantPopulatedTwice_KeepsExistingRow()
+    {
+        var (store, populate) = CreateSharedStorePopulator();
+
+        await populate("tenant-a");
+        await populate("tenant-a");
+
+        var row = Assert.Single(await store.FindManyAsync(new WorkflowDefinitionFilter { TenantAgnostic = true }));
+        Assert.Equal("shared-v1", row.Id);
+    }
+
+    [Fact(DisplayName = "PopulateStoreAsync keeps the version id of a tenant-agnostic workflow even when the id is in use")]
+    public async Task PopulateStoreAsync_TenantAgnosticWorkflowIdInUse_KeepsVersionId()
+    {
+        _storeMock.AnyAsync(Arg.Any<WorkflowDefinitionFilter>(), Arg.Any<CancellationToken>()).Returns(true);
+        var workflow = CreateMaterializedWorkflow("shared-workflow", "shared-v1", Tenant.AgnosticTenantId);
+
+        await CreatePopulatorWithTenant("tenant-b", workflow).PopulateStoreAsync();
+
+        await _storeMock.Received(1).SaveManyAsync(Arg.Is<IEnumerable<WorkflowDefinition>>(definitions => definitions.Any(x => x.Id == "shared-v1")), Arg.Any<CancellationToken>());
+    }
+
+    [Fact(DisplayName = "PopulateStoreAsync keeps the fresh version id of the second tenant when it is populated again")]
+    public async Task PopulateStoreAsync_SecondTenantPopulatedAgain_KeepsFreshVersionId()
+    {
+        var (store, populate) = CreateSharedStorePopulator();
+
+        await populate("tenant-a");
+        await populate("tenant-b");
+        await populate("tenant-b");
+
+        var rows = (await store.FindManyAsync(new WorkflowDefinitionFilter { TenantAgnostic = true })).ToList();
+        Assert.Equal(2, rows.Count);
+        Assert.Equal("generated-id", Assert.Single(rows, x => x.TenantId == "tenant-b").Id);
+    }
+
+    [Fact(DisplayName = "PopulateStoreAsync updates the fresh-id row of the second tenant in place when the provider content changes")]
+    public async Task PopulateStoreAsync_SecondTenantProviderContentChanged_UpdatesRowInPlace()
+    {
+        var (store, populate) = CreateSharedStorePopulator();
+        await populate("tenant-a");
+        await populate("tenant-b");
+
+        _sharedWorkflowName = "Renamed";
+        await populate("tenant-b");
+
+        var rows = (await store.FindManyAsync(new WorkflowDefinitionFilter { TenantAgnostic = true })).ToList();
+        Assert.Equal(2, rows.Count);
+        var rowB = Assert.Single(rows, x => x.TenantId == "tenant-b");
+        Assert.Equal("generated-id", rowB.Id);
+        Assert.Equal("Renamed", rowB.Name);
+    }
+
+    [Fact(DisplayName = "PopulateStoreAsync logs the id mismatch of a shared provider workflow at debug when another tenant uses the provider id")]
+    public async Task PopulateStoreAsync_IdMismatchProviderIdUsedByAnotherTenant_LogsDebug()
+    {
+        var logger = new CapturingLogger();
+        var (_, populate) = CreateSharedStorePopulator(logger);
+        await populate("tenant-a");
+        await populate("tenant-b");
+
+        await populate("tenant-b");
+
+        var entry = Assert.Single(logger.Entries, x => x.Message.Contains("already exists with a different ID", StringComparison.Ordinal));
+        Assert.Equal(LogLevel.Debug, entry.Level);
+    }
+
+    [Fact(DisplayName = "PopulateStoreAsync logs the id mismatch as a warning when no other tenant uses the provider id")]
+    public async Task PopulateStoreAsync_IdMismatchProviderIdUnused_LogsWarning()
+    {
+        var logger = new CapturingLogger();
+        var (store, populate) = CreateSharedStorePopulator(logger);
+        await store.SaveAsync(new WorkflowDefinition { Id = "legacy-id", DefinitionId = "shared-workflow", Version = 1, TenantId = "tenant-b" });
+
+        await populate("tenant-b");
+
+        var entry = Assert.Single(logger.Entries, x => x.Message.Contains("already exists with a different ID", StringComparison.Ordinal));
+        Assert.Equal(LogLevel.Warning, entry.Level);
+    }
+
+    private (MemoryWorkflowDefinitionStore Store, Func<string, Task<List<WorkflowDefinition>>> Populate) CreateSharedStorePopulator(ILogger<DefaultWorkflowDefinitionStorePopulator>? logger = null)
+    {
+        var tenantAccessor = new TestTenantAccessor("tenant-a");
+        var store = new MemoryWorkflowDefinitionStore(new MemoryStore<WorkflowDefinition>(), tenantAccessor);
+        var identityGenerator = Substitute.For<IIdentityGenerator>();
+        identityGenerator.GenerateId().Returns("generated-id");
+        var provider = Substitute.For<IWorkflowsProvider>();
+        provider.Name.Returns("TestProvider");
+        provider.GetWorkflowsAsync(Arg.Any<CancellationToken>())
+            .Returns(_ => new ValueTask<IEnumerable<MaterializedWorkflow>>([new MaterializedWorkflow(new()
+            {
+                Identity = new("shared-workflow", 1, "shared-v1", tenantAccessor.TenantId),
+                Publication = new(true, true),
+                WorkflowMetadata = new() { Name = _sharedWorkflowName }
+            }, "Test", "TestProvider")]));
+        var populator = new DefaultWorkflowDefinitionStorePopulator(
+            () => new List<IWorkflowsProvider> { provider },
+            Substitute.For<ITriggerIndexer>(),
+            store,
+            Substitute.For<IActivitySerializer>(),
+            Substitute.For<IPayloadSerializer>(),
+            Substitute.For<ISystemClock>(),
+            Substitute.For<IIdentityGraphService>(),
+            tenantAccessor,
+            new TenantAgnosticWorkflowsCache(),
+            logger ?? Substitute.For<ILogger<DefaultWorkflowDefinitionStorePopulator>>(),
+            null,
+            identityGenerator);
+
+        return (store, async tenantId =>
+        {
+            using (tenantAccessor.PushContext(new Tenant { Id = tenantId }))
+                return (await populator.PopulateStoreAsync()).ToList();
+        });
+    }
+
     private static IClrWorkflowDefinitionTenantRestamper? GetClrTenantRestamper(DefaultWorkflowDefinitionStorePopulator populator)
     {
         return (IClrWorkflowDefinitionTenantRestamper?)typeof(DefaultWorkflowDefinitionStorePopulator)
@@ -1204,6 +1342,7 @@ public class DefaultWorkflowDefinitionStorePopulatorTests
     private sealed class CapturingLogger : ILogger<DefaultWorkflowDefinitionStorePopulator>
     {
         public List<string> Messages { get; } = [];
+        public List<(LogLevel Level, string Message)> Entries { get; } = [];
 
         public IDisposable BeginScope<TState>(TState state) where TState : notnull => NullScope.Instance;
 
@@ -1211,7 +1350,9 @@ public class DefaultWorkflowDefinitionStorePopulatorTests
 
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
         {
-            Messages.Add(formatter(state, exception));
+            var message = formatter(state, exception);
+            Messages.Add(message);
+            Entries.Add((logLevel, message));
         }
 
         private sealed class NullScope : IDisposable
