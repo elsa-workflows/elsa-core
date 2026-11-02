@@ -344,6 +344,29 @@ public class RestartInterruptedWorkflowsTaskTests
         Assert.Equal(["interrupted", "interrupted"], restarted);
     }
 
+    [Fact(DisplayName = "Each Interrupted instance is stamped with the time of its own restart, not the time the cycle started")]
+    public async Task ExecuteAsync_InterruptedInstances_StampedAtTheirOwnRestart()
+    {
+        var now = DateTimeOffset.Parse("2026-04-14T12:00:00Z");
+        var current = now;
+        var store = new MemoryWorkflowInstanceStore(new MemoryStore<WorkflowInstance>());
+        await SaveInstanceAsync(store, "first", WorkflowStatus.Running, WorkflowSubStatus.Interrupted, isExecuting: false, now.AddMinutes(-10));
+        await SaveInstanceAsync(store, "second", WorkflowStatus.Running, WorkflowSubStatus.Interrupted, isExecuting: false, now.AddMinutes(-10));
+        var clock = Substitute.For<ISystemClock>();
+        clock.UtcNow.Returns(_ => current);
+        // Each restart takes longer than the inactivity threshold.
+        var restarter = Substitute.For<IWorkflowRestarter>();
+        restarter.When(x => x.RestartWorkflowAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())).Do(_ => current += TimeSpan.FromMinutes(6));
+        var task = CreateTask(store, restarter, clock);
+
+        await task.ExecuteAsync(CancellationToken.None);
+
+        var stamps = new List<DateTimeOffset>();
+        foreach (var id in new[] { "first", "second" })
+            stamps.Add((await store.FindAsync(new WorkflowInstanceFilter { Id = id }))!.UpdatedAt);
+        Assert.Equal([now, now.AddMinutes(6)], stamps.Order());
+    }
+
     [Fact(DisplayName = "An Interrupted instance of a tenant with its own database is stamped in that database before it is restarted")]
     public async Task ExecuteAsync_OwnDatabaseTenant_InterruptedInstanceStampedInOwnStore()
     {

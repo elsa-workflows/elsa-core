@@ -49,8 +49,7 @@ public class RestartInterruptedWorkflowsTask(
     /// <inheritdoc />
     public override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        var now = systemClock.UtcNow;
-        var cutoffTimestamp = now - options.Value.InactivityThreshold;
+        var cutoffTimestamp = systemClock.UtcNow - options.Value.InactivityThreshold;
         var batchSize = options.Value.RestartInterruptedWorkflowsBatchSize;
         var seen = new HashSet<(string TenantKey, string Id)>();
 
@@ -75,7 +74,7 @@ public class RestartInterruptedWorkflowsTask(
             logger,
             cancellationToken,
             seen,
-            stampUpdatedAt: now);
+            stampClock: systemClock);
         logger.LogInformation("Finished restarting interrupted workflows; restarted {Count} instance(s).", restarted);
     }
 
