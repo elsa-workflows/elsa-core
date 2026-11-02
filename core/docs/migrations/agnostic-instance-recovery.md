@@ -4,7 +4,7 @@
 
 ## Who is affected
 
-Only hosts whose `ITenantsProvider` returns a tenant with id `"*"`, for example to run tenant-agnostic CLR workflows as `"*"`. Their `"*"` instances were restarted under `""`, so the resumed run could not replace the instance's existing `"*"` rows (activity execution records, for example). The EF Core store refused with `tenant ownership mismatch. Shared rows need TenantId '*'`, and the instance stayed interrupted. They now recover.
+Only hosts whose `ITenantsProvider` returns a tenant with id `"*"`, for example to author tenant-agnostic workflow definitions in Studio (see the ADR [A host may register "*" as the tenant that authors tenant-agnostic entities](../../../docs/adr/2026-11-02-a-host-may-register-the-asterisk-tenant.md)). Their `"*"` instances were restarted under `""`, so the resumed run could not replace the instance's existing `"*"` rows (activity execution records, for example). The EF Core store refused with `tenant ownership mismatch. Shared rows need TenantId '*'`, and the instance stayed interrupted. They now recover.
 
 Hosts without a `"*"` tenant are unchanged: `"*"` instances still restart under the default tenant. Named tenants, the "tenant not found, skip with a warning" behavior and the once-per-run de-duplication are unchanged.
 

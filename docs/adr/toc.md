@@ -56,3 +56,4 @@
 * [2026-10-21. Use native owned children for compensation scopes](2026-10-21-native-compensation-owned-children.md)
 * [2026-10-21. Protect and authorize native compensation recovery data](2026-10-21-protect-native-compensation-recovery-data.md)
 * [2026-10-22. Use an Elsa fault's code as its BPMN error code](2026-10-22-elsa-fault-codes-are-bpmn-error-codes.md)
+* [2026-11-02. A host may register "*" as the tenant that authors tenant-agnostic entities](2026-11-02-a-host-may-register-the-asterisk-tenant.md)

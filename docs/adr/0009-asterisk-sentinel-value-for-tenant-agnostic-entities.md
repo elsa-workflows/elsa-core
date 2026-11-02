@@ -4,7 +4,7 @@ Date: 2026-01-31
 
 ## Status
 
-Accepted
+Accepted; section 5 superseded by [2026-11-02](2026-11-02-a-host-may-register-the-asterisk-tenant.md)
 
 ## Context
 
