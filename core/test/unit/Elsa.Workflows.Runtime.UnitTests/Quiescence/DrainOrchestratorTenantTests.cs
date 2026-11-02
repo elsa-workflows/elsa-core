@@ -63,6 +63,29 @@ public class DrainOrchestratorTenantTests : DrainOrchestratorTestsBase
         Assert.Empty(_logEntries);
     }
 
+    [Fact(DisplayName = "A cycle without a tenant that is persisted after a named tenant's cycle is not read under that tenant")]
+    public async Task CycleWithoutTenantIsNotReadUnderThePreviousCycleTenant()
+    {
+        const string defaultInstanceId = "instance-default";
+        var tenantHandle = Assert.Single(ExecutionCycleRegistry.ListActiveCycles());
+        var defaultHandle = new ExecutionCycleHandle(Guid.NewGuid(), defaultInstanceId, ingressSourceName: null, startedAt: DateTimeOffset.UtcNow, linkedToken: CancellationToken.None);
+        ExecutionCycleRegistry.ActiveCount.Returns(2);
+        ExecutionCycleRegistry.ListActiveCycles().Returns(new[] { tenantHandle, defaultHandle });
+        StubInstanceVisibleToTenantA(RunningInstance());
+        var defaultInstance = RunningInstance();
+        defaultInstance.Id = defaultInstanceId;
+        defaultInstance.TenantId = Tenant.DefaultTenantId;
+        InstanceStore.FindAsync(Arg.Is<WorkflowInstanceFilter>(f => f.Id == defaultInstanceId), Arg.Any<CancellationToken>())
+            .Returns(_ => new ValueTask<WorkflowInstance?>(TenantAccessor.TenantId == Tenant.DefaultTenantId ? defaultInstance : null));
+
+        var outcome = await BuildSut().DrainAsync(DrainTrigger.OperatorForce);
+
+        Assert.Equal(2, outcome.ExecutionCyclesForceCancelledCount);
+        await InstanceStore.Received(1).TryMarkInterruptedAsync(InstanceId, Arg.Any<CancellationToken>(), false);
+        await InstanceStore.Received(1).TryMarkInterruptedAsync(defaultInstanceId, Arg.Any<CancellationToken>(), false);
+        Assert.Equal([(TenantA.Id, WorkflowInterruptedPayload.ReasonOperatorForce), (null, WorkflowInterruptedPayload.ReasonOperatorForce)], _logEntries);
+    }
+
     [Fact(DisplayName = "The obsolete constructor still reads and writes outside the cycle's tenant")]
     public async Task ObsoleteConstructorIgnoresTheCycleTenant()
     {
