@@ -10,6 +10,10 @@
 - Each instance is persisted in its own scope, instead of one scope shared by all instances of the drain.
 - Instances of named tenants that a drain marks `Interrupted` are now recovered by the interrupted-workflow scan on the next start.
 
+## Tenant scopes
+
+- Disposing a `TenantScope` (from `ITenantScopeFactory.CreateScope`) now restores the previous tenant in the code that disposed it. Before, code that kept running after `await using` a tenant scope stayed under that scope's tenant until its async method returned.
+
 ## What to do
 
 - Code that creates `DrainOrchestrator` or `ExecutionCycleRegistry` with the `[Obsolete]` constructors keeps the old behavior. Switch to the new constructors, which take an `ITenantScopeFactory` and an `ITenantAccessor`.
