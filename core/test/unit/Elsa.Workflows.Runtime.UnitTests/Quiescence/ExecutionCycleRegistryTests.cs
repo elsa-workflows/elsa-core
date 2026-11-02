@@ -1,4 +1,5 @@
 using Elsa.Common;
+using Elsa.Common.Multitenancy;
 using Elsa.Workflows.Runtime.Services;
 using Elsa.Workflows.Runtime.UnitTests.Support;
 using NSubstitute;
@@ -36,6 +37,32 @@ public class ExecutionCycleRegistryTests
 
         b.Dispose();
         Assert.Equal(0, sut.ActiveCount);
+    }
+
+    [Fact(DisplayName = "Begin records the current tenant on the handle")]
+    public void BeginRecordsCurrentTenant()
+    {
+        var tenantAccessor = new DefaultTenantAccessor();
+        var tenant = new Tenant { Id = "tenant-a", Name = "tenant-a" };
+        var sut = new ExecutionCycleRegistry(_sources, _clock, tenantAccessor);
+
+        using (tenantAccessor.PushContext(tenant))
+        {
+            using var handle = sut.BeginCycle("instance-1", ingressSourceName: null, CancellationToken.None);
+            Assert.Same(tenant, handle.Tenant);
+        }
+    }
+
+    [Fact(DisplayName = "The obsolete constructor records no tenant")]
+    public void ObsoleteConstructorRecordsNoTenant()
+    {
+        var sut = new ExecutionCycleRegistry(_sources, _clock);
+
+        using (new DefaultTenantAccessor().PushContext(new Tenant { Id = "tenant-a", Name = "tenant-a" }))
+        {
+            using var handle = sut.BeginCycle("instance-1", ingressSourceName: null, CancellationToken.None);
+            Assert.Null(handle.Tenant);
+        }
     }
 
     [Fact(DisplayName = "Begin with null ingress name does NOT flip any source")]
