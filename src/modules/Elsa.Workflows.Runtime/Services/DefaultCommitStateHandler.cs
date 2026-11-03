@@ -30,6 +30,7 @@ public class DefaultCommitStateHandler(
         await workflowExecutionLogRecordSink.PersistExecutionLogsAsync(workflowExecutionContext, cancellationToken);
         await variablePersistenceManager.SaveVariablesAsync(workflowExecutionContext);
         var workflowInstance = await workflowInstanceManager.SaveAsync(workflowState, cancellationToken);
+        await mediator.SendAsync(new WorkflowBookmarksCommitted(updateBookmarksRequest.Diff), cancellationToken);
         workflowExecutionContext.ExecutionLog.Clear();
         workflowExecutionContext.ClearCompletedActivityExecutionContexts();
         await workflowExecutionContext.ExecuteDeferredTasksAsync();
