@@ -167,6 +167,114 @@ public class BookmarkQueueDeliveryTests
     }
 
     /// <summary>
+    /// Once state is saved, notification errors cannot skip cleanup, deferred work or the final commit event.
+    /// Single errors retain their identity; multiple errors are reported in execution order.
+    /// </summary>
+    [Theory]
+    [InlineData("signal", false, false)]
+    [InlineData("cancel", false, false)]
+    [InlineData("signal", true, false)]
+    [InlineData("signal", false, true)]
+    [InlineData("signal", true, true)]
+    [InlineData("cancel", true, true)]
+    [InlineData("none", true, false)]
+    public async Task PostSaveFailures_AttemptAllCompletionWork_AndPreserveErrors(string wakeupFailure, bool failDeferred, bool failCommitted)
+    {
+        await using var app = await DeliveryApp.CreateAsync();
+        var graph = await app.Services.GetRequiredService<IWorkflowGraphBuilder>().BuildAsync(new Workflow { Root = new Sequence() });
+        var context = await WorkflowExecutionContext.CreateAsync(app.Services, graph, "saved-instance", [], [], DateTimeOffset.UtcNow);
+        context.Bookmarks.Add(new Bookmark { Id = "new-bookmark" });
+        context.ExecutionLog.Add(new WorkflowExecutionLogEntry("activity", null, "activity", "Test", 1, null, "node", null,
+            DateTimeOffset.UtcNow, 0, null, null, null, null));
+        using var cancellation = new CancellationTokenSource();
+        Exception notificationFailure = wakeupFailure == "cancel"
+            ? new OperationCanceledException(cancellation.Token)
+            : new InvalidOperationException("Controlled wakeup failure");
+        var deferredFailure = new InvalidOperationException("Controlled deferred failure");
+        var committedFailure = new InvalidOperationException("Controlled commit-event failure");
+        var expected = new List<Exception>();
+        var saved = false;
+        if (wakeupFailure != "none")
+        {
+            expected.Add(notificationFailure);
+            app.Signaler.OnTrigger = token =>
+            {
+                Assert.True(saved);
+                Assert.Equal(cancellation.Token, token);
+                if (wakeupFailure == "cancel") cancellation.Cancel();
+                return Task.FromException(notificationFailure);
+            };
+        }
+        var deferredRan = false;
+        context.DeferTask(() =>
+        {
+            Assert.Empty(context.ExecutionLog);
+            deferredRan = true;
+            return failDeferred ? Task.FromException(deferredFailure) : Task.CompletedTask;
+        });
+        if (failDeferred) expected.Add(deferredFailure);
+        if (failCommitted)
+        {
+            expected.Add(committedFailure);
+            app.Commits.Failure = committedFailure;
+        }
+        var manager = Substitute.For<IWorkflowInstanceManager>();
+        manager.SaveAsync(Arg.Any<WorkflowState>(), Arg.Any<CancellationToken>()).Returns(call =>
+        {
+            saved = true;
+            return Task.FromResult(new WorkflowInstance { Id = "saved-instance", WorkflowState = call.Arg<WorkflowState>() });
+        });
+        var handler = new DefaultCommitStateHandler(manager, Substitute.For<IBookmarksPersister>(),
+            Substitute.For<IVariablePersistenceManager>(), app.Services.GetRequiredService<IMediator>(),
+            Substitute.For<ILogRecordSink<ActivityExecutionRecord>>(), Substitute.For<ILogRecordSink<WorkflowExecutionLogRecord>>());
+
+        var observed = await Record.ExceptionAsync(() => handler.CommitAsync(context, new WorkflowState { Id = "saved-instance" }, cancellation.Token));
+
+        Assert.True(saved);
+        Assert.True(deferredRan);
+        Assert.Empty(context.ExecutionLog);
+        Assert.Equal(1, app.Commits.Count);
+        Assert.Equal(CancellationToken.None, app.Commits.Token);
+        if (expected.Count == 1)
+            Assert.Same(expected[0], observed);
+        else
+        {
+            var aggregate = Assert.IsType<AggregateException>(observed);
+            Assert.Equal(expected.Count, aggregate.InnerExceptions.Count);
+            for (var i = 0; i < expected.Count; i++) Assert.Same(expected[i], aggregate.InnerExceptions[i]);
+        }
+    }
+
+    /// <summary>
+    /// Fatal notification failures escape immediately instead of being treated as recoverable post-save errors.
+    /// </summary>
+    [Theory]
+    [InlineData(typeof(OutOfMemoryException))]
+    [InlineData(typeof(StackOverflowException))]
+    public async Task FatalPostSaveFailure_PropagatesImmediately(Type exceptionType)
+    {
+        await using var app = await DeliveryApp.CreateAsync();
+        var graph = await app.Services.GetRequiredService<IWorkflowGraphBuilder>().BuildAsync(new Workflow { Root = new Sequence() });
+        var context = await WorkflowExecutionContext.CreateAsync(app.Services, graph, "saved-instance", [], [], DateTimeOffset.UtcNow);
+        context.Bookmarks.Add(new Bookmark { Id = "new-bookmark" });
+        var failure = (Exception)Activator.CreateInstance(exceptionType)!;
+        app.Signaler.OnTrigger = _ => Task.FromException(failure);
+        var deferredRan = false;
+        context.DeferTask(() => { deferredRan = true; return Task.CompletedTask; });
+        var manager = Substitute.For<IWorkflowInstanceManager>();
+        manager.SaveAsync(Arg.Any<WorkflowState>(), Arg.Any<CancellationToken>()).Returns(new WorkflowInstance());
+        var handler = new DefaultCommitStateHandler(manager, Substitute.For<IBookmarksPersister>(),
+            Substitute.For<IVariablePersistenceManager>(), app.Services.GetRequiredService<IMediator>(),
+            Substitute.For<ILogRecordSink<ActivityExecutionRecord>>(), Substitute.For<ILogRecordSink<WorkflowExecutionLogRecord>>());
+
+        var observed = await Record.ExceptionAsync(() => handler.CommitAsync(context, new WorkflowState()));
+
+        Assert.Same(failure, observed);
+        Assert.False(deferredRan);
+        Assert.Equal(0, app.Commits.Count);
+    }
+
+    /// <summary>
     /// A second worker preserves its wakeup while the first finishes an earlier pass that could not yet match the stimulus.
     /// </summary>
     [Fact]
@@ -190,6 +298,7 @@ public class BookmarkQueueDeliveryTests
             await app.ConsumeSignalAsync();
             var secondPass = second.RunOnceAsync();
             await locks.Attempted.Task.WaitAsync(Deadline);
+            Assert.False(secondPass.IsCompleted);
             paused.Release.TrySetResult();
             await Task.WhenAll(firstPass, secondPass).WaitAsync(Deadline);
             await app.AssertFinishedAsync();
@@ -216,6 +325,7 @@ public class BookmarkQueueDeliveryTests
 
         var waiting = worker.RunOnceAsync(cancellation.Token);
         await locks.Attempted.Task.WaitAsync(Deadline);
+        Assert.False(waiting.IsCompleted);
         cancellation.Cancel();
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => waiting.WaitAsync(Deadline));
@@ -225,11 +335,12 @@ public class BookmarkQueueDeliveryTests
     /// <summary>
     /// Queue delivery runs through the real mediator, stores, resumer and workflow runner; recurring jobs are never started.
     /// </summary>
-    private sealed class DeliveryApp(ServiceProvider services, SignalCounter signaler, IndexGate gate) : IAsyncDisposable
+    private sealed class DeliveryApp(ServiceProvider services, SignalCounter signaler, IndexGate gate, CommitObservation commits) : IAsyncDisposable
     {
         public ServiceProvider Services { get; } = services;
         public SignalCounter Signaler { get; } = signaler;
         public IndexGate Gate { get; } = gate;
+        public CommitObservation Commits { get; } = commits;
         public IBookmarkQueueProcessor Processor => Services.GetRequiredService<IBookmarkQueueProcessor>();
 
         /// <summary>
@@ -239,16 +350,19 @@ public class BookmarkQueueDeliveryTests
         {
             var signaler = new SignalCounter();
             var gate = new IndexGate();
+            var commits = new CommitObservation();
             var services = new ServiceCollection();
             services.AddLogging();
             services.AddElsa(elsa => elsa.UseWorkflowManagement().UseWorkflowRuntime(runtime =>
                 runtime.DistributedLockProvider = _ => new NoopDistributedSynchronizationProvider()).AddWorkflow<DeliveryWorkflow>());
             services.AddSingleton<IBookmarkQueueSignaler>(signaler);
             services.AddSingleton(gate);
+            services.AddSingleton(commits);
             services.AddNotificationHandler<PauseAfterIndexing>();
+            services.AddNotificationHandler<ObserveCommit>();
             var provider = services.BuildServiceProvider();
             await provider.GetRequiredService<IRegistriesPopulator>().PopulateAsync();
-            return new(provider, signaler, gate);
+            return new(provider, signaler, gate, commits);
         }
 
         public async Task StartAsync()
@@ -288,12 +402,34 @@ public class BookmarkQueueDeliveryTests
     {
         private readonly BookmarkQueueSignaler _inner = new();
         private int _count;
+        public Func<CancellationToken, Task>? OnTrigger { get; set; }
         public int Count { get => Volatile.Read(ref _count); set => Volatile.Write(ref _count, value); }
         public Task AwaitAsync(CancellationToken cancellationToken) => _inner.AwaitAsync(cancellationToken);
         public Task TriggerAsync(CancellationToken cancellationToken)
         {
             Interlocked.Increment(ref _count);
-            return _inner.TriggerAsync(cancellationToken);
+            return OnTrigger?.Invoke(cancellationToken) ?? _inner.TriggerAsync(cancellationToken);
+        }
+    }
+
+    private sealed class CommitObservation
+    {
+        public int Count { get; set; }
+        public CancellationToken Token { get; set; }
+        public Exception? Failure { get; set; }
+    }
+
+    private sealed class ObserveCommit(CommitObservation observation) : INotificationHandler<WorkflowStateCommitted>
+    {
+        /// <summary>
+        /// Records the final commit event and injects a downstream error when requested by a failure scenario.
+        /// </summary>
+        public Task HandleAsync(WorkflowStateCommitted notification, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            observation.Count++;
+            observation.Token = cancellationToken;
+            return observation.Failure is { } failure ? Task.FromException(failure) : Task.CompletedTask;
         }
     }
 
@@ -355,8 +491,16 @@ public class BookmarkQueueDeliveryTests
             ObservedProvider = Substitute.For<IDistributedLockProvider>();
             ObservedProvider.CreateLock(Arg.Any<string>()).Returns(call =>
             {
-                Attempted.TrySetResult();
-                return Provider.CreateLock(call.Arg<string>());
+                var inner = Provider.CreateLock(call.Arg<string>());
+                var observed = Substitute.For<IDistributedLock>();
+                observed.Name.Returns(inner.Name);
+                observed.AcquireAsync(Arg.Any<TimeSpan?>(), Arg.Any<CancellationToken>()).Returns(acquire =>
+                {
+                    var acquiring = inner.AcquireAsync(acquire.ArgAt<TimeSpan?>(0), acquire.ArgAt<CancellationToken>(1));
+                    Attempted.TrySetResult();
+                    return acquiring;
+                });
+                return observed;
             });
         }
         public void Dispose() => _directory.Delete(true);
