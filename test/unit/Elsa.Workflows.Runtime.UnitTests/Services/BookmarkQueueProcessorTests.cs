@@ -52,6 +52,44 @@ public class BookmarkQueueProcessorTests
     }
 
     /// <summary>
+    /// Keeps equal-timestamp stimuli in ID order across deletions, retained items and later passes.
+    /// </summary>
+    [Theory]
+    [InlineData(-1, 0)]
+    [InlineData(-1, 1)]
+    [InlineData(-1, 3)]
+    [InlineData(49, 3)]
+    [InlineData(50, 3)]
+    public async Task ProcessAsync_AttemptsTiedItemsOnce_InStableOrder(int failedId, int resumeEvery)
+    {
+        for (var i = 119; i >= 0; i--)
+        {
+            await _store.AddAsync(new BookmarkQueueItem
+            {
+                Id = $"item-{i:D3}",
+                BookmarkId = i.ToString(),
+                CreatedAt = DateTimeOffset.UnixEpoch
+            });
+        }
+
+        _resume = (i, _) => i == failedId
+            ? Task.FromException<IEnumerable<RunWorkflowInstanceResponse>>(new InvalidOperationException("Controlled resume failure"))
+            : resumeEvery > 0 && i % resumeEvery == 0 ? Resumed() : NotResumed();
+
+        await CreateProcessor().ProcessAsync();
+
+        Assert.Equal(Enumerable.Range(0, 120), _attempted);
+        var expectedRetained = Enumerable.Range(0, 120).Where(i => i == failedId || resumeEvery == 0 || i % resumeEvery != 0).ToArray();
+        Assert.Equal(expectedRetained, await RemainingIdsAsync());
+
+        _attempted.Clear();
+        await CreateProcessor().ProcessAsync();
+
+        Assert.Equal(expectedRetained, _attempted);
+        Assert.Equal(expectedRetained, await RemainingIdsAsync());
+    }
+
+    /// <summary>
     /// Logs resume failures, retains failed stimuli and reaches later pages without retrying an item within the same pass.
     /// </summary>
     [Theory]
