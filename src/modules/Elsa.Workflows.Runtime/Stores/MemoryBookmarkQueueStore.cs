@@ -1,3 +1,4 @@
+using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Common.Services;
 using Elsa.Extensions;
@@ -34,13 +35,13 @@ public class MemoryBookmarkQueueStore(MemoryStore<BookmarkQueueItem> store) : IB
 
     public Task<Page<BookmarkQueueItem>> PageAsync<TOrderBy>(PageArgs pageArgs, BookmarkQueueItemOrder<TOrderBy> orderBy, CancellationToken cancellationToken = default)
     {
-        var entities = store.Query(query => query.OrderBy(orderBy)).Paginate(pageArgs);
+        var entities = store.Query(query => ApplyOrder(query, orderBy)).Paginate(pageArgs);
         return Task.FromResult(entities);
     }
 
     public Task<Page<BookmarkQueueItem>> PageAsync<TOrderBy>(PageArgs pageArgs, BookmarkQueueFilter filter, BookmarkQueueItemOrder<TOrderBy> orderBy, CancellationToken cancellationToken = default)
     {
-        var entities = store.Query(query => Filter(query, filter).OrderBy(orderBy)).Paginate(pageArgs);
+        var entities = store.Query(query => ApplyOrder(Filter(query, filter), orderBy)).Paginate(pageArgs);
         return Task.FromResult(entities);
     }
 
@@ -57,5 +58,16 @@ public class MemoryBookmarkQueueStore(MemoryStore<BookmarkQueueItem> store) : IB
         return store.DeleteMany(ids);
     }
     
+    /// <summary>
+    /// Uses the unique ID to keep page boundaries stable when primary sort values are equal.
+    /// </summary>
+    private static IOrderedQueryable<BookmarkQueueItem> ApplyOrder<TOrderBy>(IQueryable<BookmarkQueueItem> query, BookmarkQueueItemOrder<TOrderBy> orderBy)
+    {
+        var ordered = orderBy.Direction == OrderDirection.Ascending
+            ? query.OrderBy(orderBy.KeySelector)
+            : query.OrderByDescending(orderBy.KeySelector);
+        return ordered.ThenBy(x => x.Id);
+    }
+
     private static IQueryable<BookmarkQueueItem> Filter(IQueryable<BookmarkQueueItem> query, BookmarkQueueFilter filter) => filter.Apply(query);
 }

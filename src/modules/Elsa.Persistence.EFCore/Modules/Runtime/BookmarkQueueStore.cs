@@ -1,3 +1,4 @@
+using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Workflows;
@@ -45,7 +46,7 @@ public class EFBookmarkQueueStore(Store<RuntimeElsaDbContext, BookmarkQueueItem>
     public async Task<Page<BookmarkQueueItem>> PageAsync<TOrderBy>(PageArgs pageArgs, BookmarkQueueItemOrder<TOrderBy> orderBy, CancellationToken cancellationToken = default)
     {
         var count = await store.CountAsync(queryable => queryable, cancellationToken);
-        var results = await store.QueryAsync(queryable => queryable.OrderBy(orderBy).Paginate(pageArgs), OnLoadAsync, cancellationToken).ToList();
+        var results = await store.QueryAsync(queryable => ApplyOrder(queryable, orderBy).Paginate(pageArgs), OnLoadAsync, cancellationToken).ToList();
         return new(results, count);
     }
 
@@ -53,7 +54,7 @@ public class EFBookmarkQueueStore(Store<RuntimeElsaDbContext, BookmarkQueueItem>
     public async Task<Page<BookmarkQueueItem>> PageAsync<TOrderBy>(PageArgs pageArgs, BookmarkQueueFilter filter, BookmarkQueueItemOrder<TOrderBy> orderBy, CancellationToken cancellationToken = default)
     {
         var count = await store.CountAsync(filter.Apply, cancellationToken);
-        var results = await store.QueryAsync(queryable => filter.Apply(queryable).OrderBy(orderBy).Paginate(pageArgs), OnLoadAsync, cancellationToken).ToList();
+        var results = await store.QueryAsync(queryable => ApplyOrder(filter.Apply(queryable), orderBy).Paginate(pageArgs), OnLoadAsync, cancellationToken).ToList();
         return new(results, count);
     }
 
@@ -61,6 +62,17 @@ public class EFBookmarkQueueStore(Store<RuntimeElsaDbContext, BookmarkQueueItem>
     public async Task<long> DeleteAsync(BookmarkQueueFilter filter, CancellationToken cancellationToken = default)
     {
         return await store.DeleteWhereAsync(filter.Apply, cancellationToken);
+    }
+
+    /// <summary>
+    /// Uses the unique ID to keep page boundaries stable when primary sort values are equal.
+    /// </summary>
+    private static IOrderedQueryable<BookmarkQueueItem> ApplyOrder<TOrderBy>(IQueryable<BookmarkQueueItem> query, BookmarkQueueItemOrder<TOrderBy> orderBy)
+    {
+        var ordered = orderBy.Direction == OrderDirection.Ascending
+            ? query.OrderBy(orderBy.KeySelector)
+            : query.OrderByDescending(orderBy.KeySelector);
+        return ordered.ThenBy(x => x.Id);
     }
 
     private ValueTask OnSaveAsync(RuntimeElsaDbContext dbContext, BookmarkQueueItem entity, CancellationToken cancellationToken)

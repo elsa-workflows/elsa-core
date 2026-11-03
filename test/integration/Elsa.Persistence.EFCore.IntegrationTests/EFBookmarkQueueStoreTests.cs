@@ -3,15 +3,20 @@ using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Persistence.EFCore.EntityHandlers;
 using Elsa.Persistence.EFCore.Modules.Runtime;
+using Elsa.Persistence.EFCore.Sqlite;
 using Elsa.Tenants.Options;
 using Elsa.Workflows;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
+using Elsa.Workflows.Runtime.Messages;
+using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.OrderDefinitions;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using NSubstitute;
 
@@ -32,6 +37,7 @@ public class EFBookmarkQueueStoreTests : IAsyncLifetime
     {
         _services = new ServiceCollection()
             .AddSingleton<IEntityModelCreatingHandler>(new SetTenantIdFilter(Options.Create(new TenantsOptions { IsEnabled = true })))
+            .AddSingleton<IEntityModelCreatingHandler, SetupForSqlite>()
             .BuildServiceProvider();
         var options = new DbContextOptionsBuilder<RuntimeElsaDbContext>()
             .UseSqlite(_connection)
@@ -90,6 +96,102 @@ public class EFBookmarkQueueStoreTests : IAsyncLifetime
         Assert.Contains("COUNT(*)", _observer.Commands[0], StringComparison.OrdinalIgnoreCase);
         Assert.Contains("LIMIT", _observer.Commands[1], StringComparison.OrdinalIgnoreCase);
         Assert.Contains("OFFSET", _observer.Commands[1], StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Orders timestamp ties by ID across SQL pages while preserving primary direction, filters and tenant isolation.
+    /// </summary>
+    [Theory]
+    [InlineData(false, OrderDirection.Ascending)]
+    [InlineData(false, OrderDirection.Descending)]
+    [InlineData(true, OrderDirection.Ascending)]
+    [InlineData(true, OrderDirection.Descending)]
+    public async Task PageAsync_BreaksTimestampTiesById(bool filtered, OrderDirection direction)
+    {
+        await SeedTiedItemsAsync(false);
+        var candidates = Enumerable.Range(0, 120).Where(i => !filtered || i % 2 == 0);
+        var ordered = direction == OrderDirection.Ascending
+            ? candidates.OrderBy(i => i / 40).ThenBy(i => i)
+            : candidates.OrderByDescending(i => i / 40).ThenBy(i => i);
+        var expected = ordered.Select(i => $"item-{i:D3}").ToArray();
+        var observed = new List<string>();
+
+        for (var offset = 0; offset < expected.Length; offset += 50)
+        {
+            var pageArgs = PageArgs.FromRange(offset, 50);
+            var order = new BookmarkQueueItemOrder<DateTimeOffset>(x => x.CreatedAt, direction);
+            var page = filtered
+                ? await _store.PageAsync(pageArgs, new BookmarkQueueFilter { WorkflowInstanceId = "selected" }, order)
+                : await _store.PageAsync(pageArgs, order);
+
+            Assert.Equal(expected.Length, page.TotalCount);
+            Assert.All(page.Items, x => Assert.Equal("tenant-a", x.TenantId));
+            observed.AddRange(page.Items.Select(x => x.Id));
+        }
+
+        Assert.Equal(expected, observed);
+    }
+
+    /// <summary>
+    /// Attempts tied stimuli once per pass through the real EF store, including failures on page boundaries.
+    /// </summary>
+    [Theory]
+    [InlineData(-1, 0)]
+    [InlineData(-1, 1)]
+    [InlineData(-1, 3)]
+    [InlineData(49, 3)]
+    [InlineData(50, 3)]
+    public async Task ProcessAsync_AttemptsTiedItemsOnce_InStableOrder(int failedId, int resumeEvery)
+    {
+        await SeedTiedItemsAsync(true);
+        var attempted = new List<int>();
+        var resumer = Substitute.For<IWorkflowResumer>();
+        resumer.ResumeAsync(Arg.Any<BookmarkFilter>(), Arg.Any<ResumeBookmarkOptions?>(), Arg.Any<CancellationToken>())
+            .Returns(call =>
+            {
+                var id = int.Parse(call.Arg<BookmarkFilter>().BookmarkId!);
+                attempted.Add(id);
+                return id == failedId
+                    ? Task.FromException<IEnumerable<RunWorkflowInstanceResponse>>(new InvalidOperationException("Controlled resume failure"))
+                    : Task.FromResult<IEnumerable<RunWorkflowInstanceResponse>>(resumeEvery > 0 && id % resumeEvery == 0 ? [new()] : []);
+            });
+        var processor = new BookmarkQueueProcessor(_store, resumer, NullLogger<BookmarkQueueProcessor>.Instance);
+
+        await processor.ProcessAsync();
+
+        Assert.Equal(Enumerable.Range(0, 120), attempted);
+        var expectedRetained = Enumerable.Range(0, 120).Where(i => i == failedId || resumeEvery == 0 || i % resumeEvery != 0).ToArray();
+        var remaining = await _store.FindManyAsync(new BookmarkQueueFilter());
+        Assert.Equal(expectedRetained, remaining.Select(x => int.Parse(x.BookmarkId!)).Order());
+
+        attempted.Clear();
+        await processor.ProcessAsync();
+
+        Assert.Equal(expectedRetained, attempted);
+        remaining = await _store.FindManyAsync(new BookmarkQueueFilter());
+        Assert.Equal(expectedRetained, remaining.Select(x => int.Parse(x.BookmarkId!)).Order());
+        await using var context = _factory.CreateDbContext();
+        Assert.Equal(40, await context.BookmarkQueueItems.IgnoreQueryFilters().CountAsync(x => x.TenantId == "tenant-b"));
+    }
+
+    /// <summary>
+    /// Inserts stimuli individually in reverse ID order so database insertion order cannot satisfy the tie-breaker accidentally.
+    /// </summary>
+    private async Task SeedTiedItemsAsync(bool singleTimestamp)
+    {
+        await using var context = _factory.CreateDbContext();
+        await context.BookmarkQueueItems.ExecuteDeleteAsync();
+        for (var i = 119; i >= 0; i--)
+        {
+            await _store.AddAsync(new BookmarkQueueItem
+            {
+                Id = $"item-{i:D3}",
+                BookmarkId = i.ToString(),
+                TenantId = "tenant-a",
+                WorkflowInstanceId = i % 2 == 0 ? "selected" : "other",
+                CreatedAt = DateTimeOffset.UnixEpoch.AddSeconds(singleTimestamp ? 0 : i / 40)
+            });
+        }
     }
 
     /// <inheritdoc />
