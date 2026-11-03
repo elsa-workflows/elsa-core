@@ -18,10 +18,18 @@ namespace Elsa.Secrets.Persistence.EFCore.MySql.Migrations.Secrets
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropIndex(
-                name: "IX_Secret_TenantId_NormalizedName",
-                schema: _schema.Schema,
-                table: "Secrets");
+            // MySQL commits DDL immediately. If CreateIndex fails on duplicates, the
+            // drop is already persisted while EF leaves the migration unapplied, so a
+            // retry must not assume the index still exists.
+            migrationBuilder.Sql("""
+                SET @exist := (SELECT COUNT(*) FROM information_schema.statistics
+                    WHERE table_schema = DATABASE() AND table_name = 'Secrets'
+                    AND index_name = 'IX_Secret_TenantId_NormalizedName');
+                SET @sqlstmt := IF(@exist > 0, 'DROP INDEX `IX_Secret_TenantId_NormalizedName` ON `Secrets`', 'SELECT 1');
+                PREPARE stmt FROM @sqlstmt;
+                EXECUTE stmt;
+                DEALLOCATE PREPARE stmt;
+                """);
 
             // Pomelo SchemaBehavior.Ignore stores tables in DATABASE(), not an Elsa schema.
             // Default tenant is "" (not null). Stamp leftover nulls so the unique index covers them.
@@ -29,36 +37,6 @@ namespace Elsa.Secrets.Persistence.EFCore.MySql.Migrations.Secrets
                 UPDATE `Secrets`
                 SET `TenantId` = ''
                 WHERE `TenantId` IS NULL;
-                """);
-
-            // No silent dedupe. List leftover keys and abort; operators must resolve them before upgrading.
-            // SIGNAL MESSAGE_TEXT is limited to 128 characters, so the listed keys are truncated.
-            migrationBuilder.Sql("""
-                SET @duplicate_keys := (
-                    SELECT GROUP_CONCAT(CONCAT('(', IFNULL(`TenantId`, '<null>'), ', ', `NormalizedName`, ')') SEPARATOR '; ')
-                    FROM (
-                        SELECT `TenantId`, `NormalizedName`
-                        FROM `Secrets`
-                        GROUP BY `TenantId`, `NormalizedName`
-                        HAVING COUNT(*) > 1
-                    ) AS Duplicates
-                );
-
-                SET @sql := IF(
-                    @duplicate_keys IS NOT NULL,
-                    CONCAT(
-                        'SIGNAL SQLSTATE ''45000'' SET MESSAGE_TEXT = ''',
-                        LEFT(REPLACE(CONCAT(
-                            'Duplicate keys. Resolve before upgrade: ',
-                            @duplicate_keys
-                        ), '''', ''), 128),
-                        ''''
-                    ),
-                    'SELECT 1'
-                );
-                PREPARE stmt FROM @sql;
-                EXECUTE stmt;
-                DEALLOCATE PREPARE stmt;
                 """);
 
             migrationBuilder.CreateIndex(

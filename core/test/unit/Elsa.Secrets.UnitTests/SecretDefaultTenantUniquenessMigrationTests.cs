@@ -2,10 +2,12 @@ namespace Elsa.Secrets.UnitTests;
 
 /// <summary>
 /// SecretDefaultTenantUniqueness must stamp null TenantId to "" and must not
-/// auto-delete duplicate secrets. A preflight lists leftover keys and aborts;
-/// CreateIndex then fails loudly if any remain. SQL Server keeps the filtered
-/// unique index (TenantId IS NOT NULL) after leftover nulls become "". Oracle
-/// stores '' as NULL, so it uses NVL(TenantId, CHR(1)) instead of a filter.
+/// auto-delete duplicate secrets. SQL Server, PostgreSQL and Oracle preflight
+/// duplicate keys and abort; MySQL no longer preflights (SIGNAL via PREPARE fails
+/// with ERROR 1295, #9114), so its unique index is the fail-loud path (error 1062).
+/// SQL Server keeps the filtered unique index (TenantId IS NOT NULL) after leftover
+/// nulls become "". Oracle stores '' as NULL, so it uses NVL(TenantId, CHR(1))
+/// instead of a filter.
 /// </summary>
 public class SecretDefaultTenantUniquenessMigrationTests
 {
@@ -39,7 +41,6 @@ public class SecretDefaultTenantUniquenessMigrationTests
     [Theory]
     [InlineData("Elsa.Secrets.Persistence.EFCore.SqlServer", "THROW")]
     [InlineData("Elsa.Secrets.Persistence.EFCore.PostgreSql", "RAISE EXCEPTION")]
-    [InlineData("Elsa.Secrets.Persistence.EFCore.MySql", "SIGNAL")]
     [InlineData("Elsa.Secrets.Persistence.EFCore.Oracle", "RAISE_APPLICATION_ERROR")]
     public void SecretDefaultTenantUniqueness_PreflightsDuplicateKeys(string providerProject, string abortKeyword)
     {
@@ -52,6 +53,24 @@ public class SecretDefaultTenantUniquenessMigrationTests
     }
 
     [Fact]
+    public void SecretDefaultTenantUniqueness_MySqlLetsUniqueIndexFailLoudly()
+    {
+        // SIGNAL via PREPARE fails with MySQL ERROR 1295 (#9114), so MySQL has no
+        // duplicate preflight: CreateIndex aborts with error 1062. PREPARE is still
+        // used for the conditional index drop that makes a retry idempotent.
+        var migration = FindMigration("Elsa.Secrets.Persistence.EFCore.MySql");
+
+        Assert.DoesNotContain("SIGNAL", migration, StringComparison.Ordinal);
+        Assert.DoesNotContain("GROUP_CONCAT", migration, StringComparison.Ordinal);
+        Assert.DoesNotContain("@duplicate_keys", migration, StringComparison.Ordinal);
+        Assert.DoesNotContain("Duplicate keys", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("information_schema.statistics", migration, StringComparison.Ordinal);
+        Assert.Contains("DROP INDEX", migration, StringComparison.Ordinal);
+        Assert.Contains("CreateIndex", migration, StringComparison.Ordinal);
+        Assert.Contains("unique: true", migration, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void SecretDefaultTenantUniqueness_MySqlRawSqlDoesNotQualifySchema()
     {
         // Pomelo SchemaBehavior.Ignore creates tables in DATABASE(), not a database named Elsa.
@@ -61,7 +80,6 @@ public class SecretDefaultTenantUniquenessMigrationTests
         Assert.DoesNotContain("`{_schema.Schema}`.", migration, StringComparison.Ordinal);
         Assert.DoesNotContain("`Elsa`.", migration, StringComparison.Ordinal);
         Assert.Contains("UPDATE `Secrets`", migration, StringComparison.Ordinal);
-        Assert.Contains("FROM `Secrets`", migration, StringComparison.Ordinal);
     }
 
     [Fact]
