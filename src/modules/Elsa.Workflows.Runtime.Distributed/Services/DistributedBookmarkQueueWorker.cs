@@ -12,13 +12,9 @@ public class DistributedBookmarkQueueWorker(
 {
     protected override async Task ProcessAsync(CancellationToken cancellationToken)
     {
-        await using var handle = await distributedLockProvider.TryAcquireLockAsync(nameof(DistributedBookmarkQueueWorker), TimeSpan.Zero, cancellationToken);
-
-        if (handle == null)
-        {
-            logger.LogInformation("Could not acquire lock for distributed bookmark queue worker. This is usually an indication that another application instance is already processing.");
-            return;
-        }
+        // The current owner may already have passed a stimulus whose bookmark just became available.
+        // Preserve this wakeup by waiting for a pass of our own instead of discarding it on contention.
+        await using var handle = await distributedLockProvider.AcquireLockAsync(nameof(DistributedBookmarkQueueWorker), cancellationToken: cancellationToken);
 
         await base.ProcessAsync(cancellationToken);
     }
