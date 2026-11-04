@@ -20,6 +20,8 @@
 
   <ItemGroup>
     <PackageReference Include="Nuke.Components" Version="10.1.0" />
+    <!-- Match the framework parser required by the .NET 10.0.4xx SDK. -->
+    <PackageReference Include="NuGet.Frameworks" Version="7.9.0" />
   </ItemGroup>
 
 </Project>

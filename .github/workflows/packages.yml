@@ -2,6 +2,11 @@ name: Packages
 
 on:
   workflow_dispatch:
+    inputs:
+      qualify_release:
+        description: Build the base version and publish it only to Feedz
+        type: boolean
+        default: false
   push:
     branches:
       - 'main'
@@ -18,7 +23,7 @@ on:
     types: [prereleased, published]
 
 env:
-  base_version: '3.6.3'
+  base_version: '3.6.4'
   feedz_feed_source: 'https://f.feedz.io/elsa-workflows/elsa-3/nuget/index.json'
   nuget_feed_source: 'https://api.nuget.org/v3/index.json'
 
@@ -150,6 +155,8 @@ jobs:
             TAG_NAME=${{ github.ref }} # e.g., refs/tags/3.0.0
             TAG_NAME=${TAG_NAME#refs/tags/} # remove the refs/tags/ prefix
             echo "VERSION=${TAG_NAME}" >> $GITHUB_ENV
+          elif [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.qualify_release }}" == "true" ]]; then
+            echo "VERSION=${{env.base_version}}" >> $GITHUB_ENV
           else
             echo "VERSION=${{env.base_version}}-preview.${{github.run_number}}" >> $GITHUB_ENV
           fi
@@ -166,14 +173,14 @@ jobs:
         with:
           name: elsa-nuget-packages
           path: packages/*nupkg
-        if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
+        if: ${{ github.event_name == 'release' || github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.qualify_release) }}
 
   publish_preview_feedz:
     name: Publish to feedz.io
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
+    if: ${{ github.event_name == 'release' || github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.qualify_release) }}
     steps:
       - name: Download Packages
         uses: actions/download-artifact@v4.1.7
