@@ -27,8 +27,11 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton<IUserTaskInvitationOutbox, InMemoryUserTaskInvitationOutbox>();
         services.TryAddSingleton<IUserTaskInvitationDispatcher, NullUserTaskInvitationDispatcher>();
         services.TryAddSingleton<IUserTaskInvitationVerifier, DefaultUserTaskInvitationVerifier>();
-        services.TryAddSingleton<IUserTaskNotificationSink, DefaultUserTaskNotificationSink>();
-        services.TryAddSingleton<IUserTaskWorkflowResumer, DefaultUserTaskWorkflowResumer>();
+
+        // The notification sink and the workflow resumer resolve the scoped INotificationSender and IWorkflowResumer,
+        // so they are scoped too: as singletons they would resolve them from the root provider.
+        services.TryAddScoped<IUserTaskNotificationSink, DefaultUserTaskNotificationSink>();
+        services.TryAddScoped<IUserTaskWorkflowResumer, DefaultUserTaskWorkflowResumer>();
 
         // Everything that consumes a repository is scoped: a provider-backed repository resolves a DbContext
         // from the ambient scope, and a singleton consumer would capture it.
