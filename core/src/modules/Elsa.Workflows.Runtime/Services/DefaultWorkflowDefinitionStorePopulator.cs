@@ -21,6 +21,7 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
     private readonly ISystemClock _systemClock;
     private readonly IIdentityGraphService _identityGraphService;
     private readonly ITenantAccessor _tenantAccessor;
+    private readonly IIdentityGenerator _versionIdGenerator = new ShortGuidIdentityGenerator();
     private readonly ILogger<DefaultWorkflowDefinitionStorePopulator> _logger;
     private readonly SemaphoreSlim _semaphore = new(1, 1);
 
@@ -194,7 +195,11 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
                 // It's possible that the imported workflow definition has a different ID than the existing one in the store.
                 // In a future update, we might store this discrepancy in a "troubleshooting" table and provide tooling for managing these, and other, discrepancies.
                 // See https://github.com/elsa-workflows/elsa-core/issues/5540
-                _logger.LogWarning("Workflow with ID {WorkflowId} already exists with a different ID {ExistingWorkflowId}", workflow.Identity.Id, existingDefinitionVersion.Id);
+                var idIsTaken = await _workflowDefinitionStore.AnyAsync(new WorkflowDefinitionFilter { Id = workflow.Identity.Id, TenantAgnostic = true }, cancellationToken);
+                if (idIsTaken)
+                    _logger.LogDebug("Workflow with ID {WorkflowId} already exists with a different ID {ExistingWorkflowId}", workflow.Identity.Id, existingDefinitionVersion.Id);
+                else
+                    _logger.LogWarning("Workflow with ID {WorkflowId} already exists with a different ID {ExistingWorkflowId}", workflow.Identity.Id, existingDefinitionVersion.Id);
             }
         }
 
@@ -238,6 +243,9 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
             _logger.LogInformation("Workflow with ID {WorkflowId} already exists", workflowDefinition.Id);
             return workflowDefinition;
         }
+
+        if (existingDefinitionVersion is null && workflowTenantId != Tenant.AgnosticTenantId)
+            workflowDefinition.Id = await _workflowDefinitionStore.ResolveVersionIdAsync(workflowDefinition.Id, _versionIdGenerator.GenerateId(), cancellationToken);
 
         workflowDefinitionsToSave.Add(workflowDefinition);
 

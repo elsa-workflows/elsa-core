@@ -203,10 +203,9 @@ public class MemoryWorkflowDefinitionStore(MemoryStore<WorkflowDefinition> store
     private string CurrentTenantId => tenantAccessor?.TenantId ?? Tenant.DefaultTenantId;
 
     /// <remarks>
-    /// EF enforces <c>(DefinitionId, Version)</c> globally via
-    /// <c>IX_WorkflowDefinition_DefinitionId_Version</c>. Memory keeps tenant in the key so
-    /// same-tenant duplicates fail closed while cross-tenant rows remain distinct until #7539
-    /// adds <c>TenantId</c> to that index.
+    /// Memory counterpart of the EF unique index <c>IX_WorkflowDefinition_DefinitionId_TenantId_Version</c>.
+    /// Tenant is part of the key so same-tenant duplicates fail closed while cross-tenant rows stay distinct.
+    /// A null tenant is normalized to "" because EF stores it that way.
     /// </remarks>
     private void EnsureVersionKeyAvailable(WorkflowDefinition definition)
     {
@@ -236,9 +235,9 @@ public class MemoryWorkflowDefinitionStore(MemoryStore<WorkflowDefinition> store
         new($"A workflow definition already exists for definition '{definition.DefinitionId}' version {definition.Version} tenant '{definition.TenantId}'.");
 
     private static DefinitionVersionKey GetVersionKey(WorkflowDefinition definition) =>
-        new(definition.DefinitionId, definition.Version, definition.TenantId);
+        new(definition.DefinitionId, definition.Version, definition.TenantId.NormalizeTenantId());
 
     private string GetId(WorkflowDefinition workflowDefinition) => workflowDefinition.Id;
 
-    private readonly record struct DefinitionVersionKey(string DefinitionId, int Version, string? TenantId);
+    private readonly record struct DefinitionVersionKey(string DefinitionId, int Version, string TenantId);
 }
