@@ -1,23 +1,32 @@
 using System.Collections.Concurrent;
 using Elsa.Common;
+using Elsa.Common.Multitenancy;
 
 namespace Elsa.Workflows.Runtime.Services;
 
 /// <summary>
 /// Default implementation of <see cref="IExecutionCycleRegistry"/>. Tracks active execution cycles with a
 /// thread-safe dictionary and detects the FR-018 invariant violation (a source that reports
-/// <see cref="IngressSourceState.Paused"/> but initiates an execution cycle).
+/// <see cref="IngressSourceState.Paused"/> but initiates an execution cycle). Each handle records the tenant that is
+/// current when its cycle begins, so the drain can persist the instance under that tenant.
 /// </summary>
 public sealed class ExecutionCycleRegistry : IExecutionCycleRegistry
 {
     private readonly ConcurrentDictionary<Guid, ExecutionCycleHandle> _active = new();
     private readonly IIngressSourceRegistry _sources;
     private readonly ISystemClock _clock;
+    private readonly ITenantAccessor? _tenantAccessor;
 
-    public ExecutionCycleRegistry(IIngressSourceRegistry sources, ISystemClock clock)
+    [Obsolete("Use the constructor that accepts an ITenantAccessor instead. Without it, a drain cannot persist the instances of named tenants. Removed in the next major version.")]
+    public ExecutionCycleRegistry(IIngressSourceRegistry sources, ISystemClock clock) : this(sources, clock, null)
+    {
+    }
+
+    public ExecutionCycleRegistry(IIngressSourceRegistry sources, ISystemClock clock, ITenantAccessor? tenantAccessor)
     {
         _sources = sources;
         _clock = clock;
+        _tenantAccessor = tenantAccessor;
     }
 
     /// <inheritdoc />
@@ -44,7 +53,11 @@ public sealed class ExecutionCycleRegistry : IExecutionCycleRegistry
             startedAt: _clock.UtcNow,
             linkedToken: linkedToken,
             onDisposed: h => _active.TryRemove(h.Id, out _),
-            cancelCallback: cancelCallback);
+            cancelCallback: cancelCallback)
+        {
+            // Recorded before the handle is registered, so a drain never sees it without its tenant.
+            Tenant = _tenantAccessor?.Tenant
+        };
 
         _active[handle.Id] = handle;
         return handle;

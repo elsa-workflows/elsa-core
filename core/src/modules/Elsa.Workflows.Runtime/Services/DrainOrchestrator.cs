@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using Elsa.Common;
+using Elsa.Common.Multitenancy;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
@@ -48,11 +49,13 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
     private readonly ISystemClock _clock;
     private readonly IIdentityGenerator _identityGenerator;
     private readonly ILogger<DrainOrchestrator> _logger;
+    private readonly ITenantScopeFactory? _tenantScopeFactory;
 
     private readonly object _sync = new();
     private DrainOutcome? _previousOutcome;
     private bool _drainInProgress;
 
+    [Obsolete("Use the constructor that accepts an ITenantScopeFactory instead. Without it, the drain cannot persist the instances of named tenants or of tenants with their own database. Removed in the next major version.")]
     public DrainOrchestrator(
         IQuiescenceSignal signal,
         IIngressSourceRegistry registry,
@@ -63,6 +66,21 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
         ISystemClock clock,
         IIdentityGenerator identityGenerator,
         ILogger<DrainOrchestrator> logger)
+        : this(signal, registry, cycles, scopeFactory, options, hostOptions, clock, identityGenerator, logger, null)
+    {
+    }
+
+    public DrainOrchestrator(
+        IQuiescenceSignal signal,
+        IIngressSourceRegistry registry,
+        IExecutionCycleRegistry cycles,
+        IServiceScopeFactory scopeFactory,
+        IOptions<GracefulShutdownOptions> options,
+        IOptions<HostOptions> hostOptions,
+        ISystemClock clock,
+        IIdentityGenerator identityGenerator,
+        ILogger<DrainOrchestrator> logger,
+        ITenantScopeFactory? tenantScopeFactory)
     {
         _signal = signal;
         _registry = registry;
@@ -73,6 +91,7 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
         _clock = clock;
         _identityGenerator = identityGenerator;
         _logger = logger;
+        _tenantScopeFactory = tenantScopeFactory;
     }
 
     /// <inheritdoc />
@@ -310,17 +329,13 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
         var live = _cycles.ListActiveCycles();
         if (live.Count == 0) return (0, Array.Empty<string>());
 
-        using var scope = _scopeFactory.CreateScope();
-        var instanceStore = scope.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>();
-        var logStore = scope.ServiceProvider.GetRequiredService<IWorkflowExecutionLogStore>();
-
         var reason = trigger == DrainTrigger.OperatorForce
             ? WorkflowInterruptedPayload.ReasonOperatorForce
             : WorkflowInterruptedPayload.ReasonDeadlineBreach;
 
         // Snapshot before Phase A. Each Find has its own 250ms budget and its own
-        // DI scope so concurrent reads do not share an EF DbContext (Phase C stays
-        // sequential on the outer scope for the same reason). Finds run concurrently
+        // DI scope, in the cycle's tenant, so concurrent reads do not share an EF
+        // DbContext (Phase C stays sequential for the same reason). Finds run concurrently
         // under a semaphore so a large live-cycle set cannot self-contend into
         // 250ms timeouts. Timeout/error: exclude that id (prefer preserving
         // user-cancel / #8052). A successful null Find is not drain-induced yet —
@@ -339,8 +354,8 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
                 await snapshotGate.WaitAsync(cancellationToken).ConfigureAwait(false);
                 try
                 {
-                    using var findScope = _scopeFactory.CreateScope();
-                    var findStore = findScope.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>();
+                    await using var findScope = CreateCycleScope(handle, out var findServices);
+                    var findStore = findServices.GetRequiredService<IWorkflowInstanceStore>();
                     using var perFindCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
                     perFindCts.CancelAfter(PreCancelSnapshotTimeout);
                     var snapshot = await findStore
@@ -478,6 +493,7 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
 
         // Phase C — persist Interrupted for every cancelled handle and disposed active checkpoint.
         // Sequential to keep DbContext usage single-threaded; per-handle persistence is small.
+        // Each handle is persisted in its own scope, in the cycle's tenant.
         //
         // Each persist runs under its own bounded token that is NOT linked to the drain CT.
         // Phase B's catch on OperationCanceledException explicitly comments "drain CT fired —
@@ -491,6 +507,9 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
             try
             {
                 using var persistCts = new CancellationTokenSource(PersistInterruptedTimeout);
+                await using var persistScope = CreateCycleScope(handle, out var services);
+                var instanceStore = services.GetRequiredService<IWorkflowInstanceStore>();
+                var logStore = services.GetRequiredService<IWorkflowExecutionLogStore>();
                 await PersistInterruptedAsync(instanceStore, logStore, handle, generationId, reason, drainInducedInstanceIds, disposedActiveSnapshotHandleIds.Contains(handle.Id), persistCts.Token);
             }
             catch (Exception ex) when (!ex.IsFatal())
@@ -500,6 +519,26 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
         }
 
         return (totalCancelled, reportedIds);
+    }
+
+    /// <summary>
+    /// Creates the scope that the cycle's instance is read and written in. The drain does not run in the cycle's tenant
+    /// (on host stop it runs outside any tenant), so without it the tenant filter hides the instance row, and a tenant
+    /// with its own database is read from the shared one. Without a recorded tenant or an
+    /// <see cref="ITenantScopeFactory"/>, a plain scope is used.
+    /// </summary>
+    private IAsyncDisposable CreateCycleScope(ExecutionCycleHandle handle, out IServiceProvider services)
+    {
+        if (_tenantScopeFactory is not null && handle.Tenant is { } tenant)
+        {
+            var tenantScope = _tenantScopeFactory.CreateScope(tenant);
+            services = tenantScope.ServiceProvider;
+            return tenantScope;
+        }
+
+        var scope = _scopeFactory.CreateAsyncScope();
+        services = scope.ServiceProvider;
+        return scope;
     }
 
     private async Task PersistInterruptedAsync(
