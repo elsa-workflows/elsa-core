@@ -8,7 +8,7 @@ namespace Elsa.Workflows.Management.UnitTests.Stores;
 
 /// <summary>
 /// Memory must reject colliding <c>(DefinitionId, Version, TenantId)</c> keys the same way EF
-/// rejects <c>IX_WorkflowDefinition_DefinitionId_Version</c> on Save/SaveMany.
+/// rejects <c>IX_WorkflowDefinition_DefinitionId_TenantId_Version</c> on Save/SaveMany.
 /// </summary>
 public class MemoryWorkflowDefinitionStoreUniquenessTests
 {
@@ -40,6 +40,31 @@ public class MemoryWorkflowDefinitionStoreUniquenessTests
         Assert.Contains("already exists", exception.Message);
         var stored = (await store.FindManyAsync(new WorkflowDefinitionFilter { TenantAgnostic = true })).ToList();
         Assert.Equal("def-1", Assert.Single(stored).Id);
+    }
+
+    [Fact(DisplayName = "SaveManyAsync accepts the same definition id and version in two tenants")]
+    public async Task SaveManyAsync_WhenVersionKeyRepeatsAcrossTenants_Succeeds()
+    {
+        var store = CreateStore();
+        var otherTenant = Definition("def-2", "order");
+        otherTenant.TenantId = "tenant-b";
+
+        await store.SaveManyAsync([Definition("def-1", "order"), otherTenant]);
+
+        var stored = (await store.FindManyAsync(new WorkflowDefinitionFilter { TenantAgnostic = true })).ToList();
+        Assert.Equal(2, stored.Count);
+    }
+
+    [Fact(DisplayName = "SaveManyAsync treats a null tenant and the default tenant as the same version key")]
+    public async Task SaveManyAsync_WhenNullAndEmptyTenantShareVersionKey_Throws()
+    {
+        var store = CreateStore();
+        var nullTenant = Definition("def-1", "order");
+        nullTenant.TenantId = null;
+        var emptyTenant = Definition("def-2", "order");
+        emptyTenant.TenantId = "";
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => store.SaveManyAsync([nullTenant, emptyTenant]));
     }
 
     private static MemoryWorkflowDefinitionStore CreateStore() =>

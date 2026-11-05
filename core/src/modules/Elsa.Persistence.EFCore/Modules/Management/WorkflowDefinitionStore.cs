@@ -3,6 +3,7 @@ using System.Linq.Expressions;
 using System.Text.Json.Serialization;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
+using Elsa.Common.Multitenancy;
 using Elsa.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Management;
@@ -177,6 +178,7 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
             if (unmarked == 0)
                 return WorkflowDefinitionUpdateResult.Conflict();
 
+            next.TenantId ??= dbContext.TenantId.NormalizeTenantId();
             dbContext.WorkflowDefinitions.Add(next);
             dbContext.Entry(next).Property("Data").CurrentValue = nextData;
             dbContext.Entry(next).Property("UsableAsActivity").CurrentValue = nextUsableAsActivity;
@@ -260,6 +262,9 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
 
     private ValueTask OnSaveAsync(ManagementElsaDbContext managementElsaDbContext, WorkflowDefinition entity, CancellationToken cancellationToken)
     {
+        // PostgreSQL, MySQL and SQLite treat NULLs as distinct in unique indexes. Stamp the default tenant ("") even when
+        // multitenancy is off (ApplyTenantId is a no-op then) so (DefinitionId, TenantId, Version) stays unique.
+        entity.TenantId ??= managementElsaDbContext.TenantId.NormalizeTenantId();
         WorkflowDefinitionStateCodec.Write(managementElsaDbContext, entity, payloadSerializer);
         return ValueTask.CompletedTask;
     }

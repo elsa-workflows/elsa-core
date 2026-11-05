@@ -1,0 +1,58 @@
+﻿using Microsoft.EntityFrameworkCore.Migrations;
+
+#nullable disable
+
+namespace Elsa.Persistence.EFCore.SqlServer.Migrations.Management
+{
+    /// <inheritdoc />
+    public partial class TenantScopedDefinitionIds : Migration
+    {
+        private readonly Elsa.Persistence.EFCore.IElsaDbContextSchema _schema;
+
+        /// <inheritdoc />
+        public TenantScopedDefinitionIds(Elsa.Persistence.EFCore.IElsaDbContextSchema schema)
+        {
+            _schema = schema;
+        }
+
+        /// <inheritdoc />
+        protected override void Up(MigrationBuilder migrationBuilder)
+        {
+            // Default tenant is "" (not null). SQL Server already treats NULLs as equal in a unique index; stamp leftover
+            // nulls so rows written before and after this migration share one representation of the default tenant.
+            migrationBuilder.Sql($"""
+                UPDATE [{_schema.Schema}].[WorkflowDefinitions]
+                SET [TenantId] = N''
+                WHERE [TenantId] IS NULL;
+                """);
+
+            migrationBuilder.DropIndex(
+                name: "IX_WorkflowDefinition_DefinitionId_Version",
+                schema: _schema.Schema,
+                table: "WorkflowDefinitions");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkflowDefinition_DefinitionId_TenantId_Version",
+                schema: _schema.Schema,
+                table: "WorkflowDefinitions",
+                columns: new[] { "DefinitionId", "TenantId", "Version" },
+                unique: true);
+        }
+
+        /// <inheritdoc />
+        protected override void Down(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.DropIndex(
+                name: "IX_WorkflowDefinition_DefinitionId_TenantId_Version",
+                schema: _schema.Schema,
+                table: "WorkflowDefinitions");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkflowDefinition_DefinitionId_Version",
+                schema: _schema.Schema,
+                table: "WorkflowDefinitions",
+                columns: new[] { "DefinitionId", "Version" },
+                unique: true);
+        }
+    }
+}

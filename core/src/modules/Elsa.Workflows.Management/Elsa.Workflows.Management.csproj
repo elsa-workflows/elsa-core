@@ -26,6 +26,7 @@
 
     <ItemGroup>
         <InternalsVisibleTo Include="Elsa.Workflows.Management.UnitTests" />
+        <InternalsVisibleTo Include="Elsa.Workflows.Runtime" />
     </ItemGroup>
 
 </Project>
