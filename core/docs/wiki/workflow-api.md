@@ -29,6 +29,9 @@ app.MapWorkflowsApi(routePrefix);
 
 With the default prefix, endpoint paths look like `/elsa/api/workflow-definitions`.
 
+When saving or publishing with `POST /elsa/api/workflow-definitions`, supply a nonblank `model.name`.
+The server trims surrounding whitespace. A missing, null, empty, or whitespace-only name returns HTTP 400 with a validation error under `errors.name`; the definition is not saved or published.
+
 ## FastEndpoints Registration
 
 FastEndpoints assemblies are collected through module properties:
