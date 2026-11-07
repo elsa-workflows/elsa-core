@@ -57,6 +57,10 @@ REVIEWED_OPERATIONAL_POLICY = {
 MAX_BYTES = 32 * 1024 * 1024
 MAX_REQUESTS = 5000
 MAX_SECONDS = 1800
+# One process bound from inspector start. Post-upload exact-byte GET of the
+# complete original set keeps this reserved slice; PUT cannot consume it.
+# 900s is inside 1800s, not added to it.
+READBACK_RESERVE_SECONDS = 900
 # NuGet PackagePublish documents 201/202; server implementations vary, and the
 # pinned Feedz endpoint returns 200 on a successful first PUT. Exact-byte
 # readback still decides verified content. 204/409/other statuses stay unknown.
@@ -554,6 +558,9 @@ def observe_symbols(transport, expected, inspector):
                 if result.body != item["pdb"]:
                     row.update(classification="conflicting", failure_category="pdb_bytes_mismatch")
                 else:
+                    # Matching remote PDBs reuse the local inspect cache
+                    # (same assembly bytes, PDB bytes, and name). A cache miss
+                    # after the inspector clock is spent fails closed.
                     value = inspector.inspect(item["assembly"], result.body, item["name"])
                     require(value["symbol"] == item["symbol"], "remote_symbol_identity_invalid")
                     row["classification"] = "matching"
@@ -588,6 +595,21 @@ def reconcile(root, provenance, expected, inspector, transport, index_hash, *, o
             "content_verified": consistent and result["content_converged"] and all(row["classification"] == "matching" for row in symbols)}
 
 
+def _needs_upload(operations, package_rows, symbol_rows, by_package):
+    """True when at least one original archive still needs a PUT."""
+    for operation in operations:
+        row_id, kind = operation["id"], operation["kind"]
+        if kind == "nupkg" and package_rows[row_id]["classification"] == "matching":
+            continue
+        symbols = by_package[row_id]["associations"]
+        if kind == "snupkg" and not symbols:
+            continue
+        if kind == "snupkg" and all(symbol_rows[item["key"]]["classification"] == "matching" for item in symbols):
+            continue
+        return True
+    return False
+
+
 def run_verified(root, provenance, inspector, *, mode, transport=None, authorize=None, credential=None, checkpoint=None):
     """Dependencies may be injected for tests; production CLI supplies native admission only."""
     ledger = {"schema": 1, "mode": mode, "scope": "production" if transport is None else "injected_simulation",
@@ -614,6 +636,8 @@ def run_verified(root, provenance, inspector, *, mode, transport=None, authorize
         ledger.update(result="in_progress", failure_category=None)
         reader = transport or HttpTransport()
         if isinstance(reader, HttpTransport):
+            # One process-wide MAX_SECONDS from inspector start. HTTP must not
+            # add a second 1800s clock after local inspection.
             reader.deadline = min(reader.deadline, inspector.deadline)
         ledger["feed_index_sha256"] = feed_resources(reader)
         ledger["before"] = reconcile(root, provenance, expected, inspector, reader, ledger["feed_index_sha256"],
@@ -637,6 +661,14 @@ def run_verified(root, provenance, inspector, *, mode, transport=None, authorize
         by_package = {row["id"]: row for row in ledger["associations"]}
         manifest_rows = {row["id"]: row for row in manifest["packages"]}
         uploaded_symbol_keys = set()
+        process_deadline = reader.deadline if isinstance(reader, HttpTransport) else None
+        if process_deadline is not None and _needs_upload(
+                ledger["operations"], package_rows, symbol_rows, by_package):
+            # Remaining process time must exceed the reserved GET slice so PUT
+            # cannot start when after-readback would miss the 1800s bound.
+            require(time.monotonic() + READBACK_RESERVE_SECONDS < inspector.deadline,
+                    "readback_budget_exhausted")
+            reader.deadline = min(reader.deadline, inspector.deadline - READBACK_RESERVE_SECONDS)
         for operation in ledger["operations"]:
             row, kind = manifest_rows[operation["id"]], operation["kind"]
             if kind == "nupkg" and package_rows[row["id"]]["classification"] == "matching":
@@ -683,8 +715,16 @@ def run_verified(root, provenance, inspector, *, mode, transport=None, authorize
             except BaseException:
                 operation["failure_category"] = "upload_acceptance_unknown"
                 raise ExecutorError("upload_acceptance_unknown") from None
-        ledger["after"] = reconcile(root, provenance, expected, inspector, reader, ledger["feed_index_sha256"],
-                                    observation_mode=ledger["scope"])
+        if process_deadline is not None:
+            reader.deadline = process_deadline
+        if ledger["upload_attempted"]:
+            ledger["after"] = reconcile(root, provenance, expected, inspector, reader, ledger["feed_index_sha256"],
+                                        observation_mode=ledger["scope"])
+        else:
+            # Disclose: when this run performed no upload, content verification
+            # reuses the pre-upload observation. A second GET pass is not an
+            # extra time budget; it would duplicate work inside MAX_SECONDS.
+            ledger["after"] = copy.deepcopy(ledger["before"])
         ledger["content_verified"] = ledger["after"]["content_verified"]
         require(ledger["content_verified"], "readback_incomplete")
         ledger.update(result="content_verified", failure_category=None)

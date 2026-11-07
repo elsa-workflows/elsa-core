@@ -7,6 +7,8 @@ import unittest
 
 import yaml
 
+import consolidated_package_executor as executor
+
 
 ROOT = Path(__file__).resolve().parents[2]
 WORKFLOW = ROOT / ".github/workflows/publish-consolidated-original-candidate.yml"
@@ -112,6 +114,18 @@ class ExecutorWorkflowTests(unittest.TestCase):
         self.assertIn("--phase publish", recheck["run"])
         self.assertIn("--arg result native_approval_verified", recheck["run"])
         self.assertIn("ELSA_ADMISSION_RECEIPT_FILTER", recheck["run"])
+
+    def test_executor_process_bound_fits_inside_job_timeout(self):
+        for name in ("verify", "publish"):
+            self.assertEqual(self.jobs[name]["timeout-minutes"], 60)
+        self.assertEqual(executor.MAX_SECONDS, 1800)
+        self.assertEqual(executor.READBACK_RESERVE_SECONDS, 900)
+        self.assertGreater(executor.READBACK_RESERVE_SECONDS, 0)
+        self.assertLess(executor.READBACK_RESERVE_SECONDS, executor.MAX_SECONDS)
+        job_seconds = 60 * 60
+        setup_margin_seconds = 900
+        self.assertLessEqual(executor.MAX_SECONDS + setup_margin_seconds, job_seconds)
+        self.assertLessEqual(executor.MAX_SECONDS, job_seconds)
 
     def test_nonpublishing_jobs_cannot_receive_publisher_credentials(self):
         self.assertEqual(self.jobs["publish"]["environment"], "feedz-publish")
