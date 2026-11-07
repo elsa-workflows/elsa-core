@@ -51,10 +51,11 @@ public class InterruptedWorkflowRequeuerTests
         await _tenantService.Received(2).FindAsync("t1", Arg.Any<CancellationToken>());
     }
 
-    [Fact(DisplayName = "When no default tenant is configured, empty, null and agnostic ids restart under a synthesized default tenant")]
+    [Fact(DisplayName = "When no default or agnostic tenant is registered, empty, null and agnostic ids restart under a synthesized default tenant")]
     public async Task UnconfiguredDefaultTenant_SynthesizedDefaultUsed()
     {
         _tenantService.FindAsync(Tenant.DefaultTenantId, Arg.Any<CancellationToken>()).Returns(Task.FromResult<Tenant?>(null));
+        _tenantService.FindAsync(Tenant.AgnosticTenantId, Arg.Any<CancellationToken>()).Returns(Task.FromResult<Tenant?>(null));
 
         var count = await RequeueAsync(Summary("a", ""), Summary("b", null), Summary("c", "*"));
 
@@ -62,6 +63,49 @@ public class InterruptedWorkflowRequeuerTests
         Assert.Equal([("a", Tenant.DefaultTenantId), ("b", Tenant.DefaultTenantId), ("c", Tenant.DefaultTenantId)], _restarts);
         Assert.Empty(WarningCounts());
         await _tenantService.Received(1).FindAsync(Tenant.DefaultTenantId, Arg.Any<CancellationToken>());
+    }
+
+    [Fact(DisplayName = "When the agnostic tenant is registered, an agnostic instance restarts under it and an empty or null id under the default tenant")]
+    public async Task RegisteredAgnosticTenant_AgnosticInstanceRestartsUnderIt()
+    {
+        var count = await RequeueAsync(Summary("a", "*"), Summary("b", ""), Summary("c", null), Summary("d", "*"));
+
+        Assert.Equal(4, count);
+        Assert.Equal([("a", Tenant.AgnosticTenantId), ("b", Tenant.DefaultTenantId), ("c", Tenant.DefaultTenantId), ("d", Tenant.AgnosticTenantId)], _restarts);
+        Assert.Empty(WarningCounts());
+        await _tenantService.Received(1).FindAsync(Tenant.AgnosticTenantId, Arg.Any<CancellationToken>());
+    }
+
+    [Fact(DisplayName = "When the agnostic tenant is not registered, an agnostic instance restarts under the registered default tenant")]
+    public async Task UnregisteredAgnosticTenant_FallsBackToRegisteredDefaultTenant()
+    {
+        var defaultTenant = new Tenant { Id = Tenant.DefaultTenantId, Name = "Configured default" };
+        _tenantService.FindAsync(Tenant.AgnosticTenantId, Arg.Any<CancellationToken>()).Returns(Task.FromResult<Tenant?>(null));
+        _tenantService.FindAsync(Tenant.DefaultTenantId, Arg.Any<CancellationToken>()).Returns(Task.FromResult<Tenant?>(defaultTenant));
+        var restartedUnder = new List<Tenant?>();
+        _restarter
+            .When(x => x.RestartWorkflowAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()))
+            .Do(_ => restartedUnder.Add(_tenantAccessor.Tenant));
+
+        var count = await RequeueAsync(Summary("a", "*"), Summary("b", ""));
+
+        Assert.Equal(2, count);
+        Assert.All(restartedUnder, tenant => Assert.Same(defaultTenant, tenant));
+        Assert.Empty(WarningCounts());
+        await _tenantService.Received(1).FindAsync(Tenant.DefaultTenantId, Arg.Any<CancellationToken>());
+    }
+
+    [Fact(DisplayName = "An instance id seen as agnostic in one scan and as default in another is restarted once")]
+    public async Task SharedSeenSet_AgnosticAndDefaultKeysDedupe()
+    {
+        var seen = new HashSet<(string TenantKey, string Id)>();
+
+        var first = await InterruptedWorkflowRequeuer.RequeueAsync(PageThrough([Summary("a", "*")], int.MaxValue), _restarter, _tenantService, _tenantAccessor, _logger, seen, default);
+        var second = await InterruptedWorkflowRequeuer.RequeueAsync(PageThrough([Summary("a", ""), Summary("b", "")], int.MaxValue), _restarter, _tenantService, _tenantAccessor, _logger, seen, default);
+
+        Assert.Equal(1, first);
+        Assert.Equal(1, second);
+        Assert.Equal([("a", Tenant.AgnosticTenantId), ("b", Tenant.DefaultTenantId)], _restarts);
     }
 
     [Fact(DisplayName = "Every instance is restarted once when requeueing removes rows from the set between pages")]
