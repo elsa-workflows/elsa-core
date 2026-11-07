@@ -82,6 +82,28 @@ public class ExecuteEndpointTests : IAsyncLifetime
         Assert.DoesNotContain(errors, error => error.Contains(NoPublishedVersionMessage));
     }
 
+    [Fact]
+    public async Task Get_PublishedDefinitionWithMissingMaterializer_ReturnsNotFoundWithoutUnpublishedMessage()
+    {
+        var definitionId = await SavePublishedDefinitionAsync("missing-materializer");
+        using var response = await ExecuteAsync(HttpMethod.Get, definitionId);
+        var errors = await ReadErrorsAsync(response);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.DoesNotContain(errors, error => error.Contains(NoPublishedVersionMessage));
+    }
+
+    [Fact]
+    public async Task Post_PublishedDefinitionWithMissingMaterializer_ReturnsNotFoundWithoutUnpublishedMessage()
+    {
+        var definitionId = await SavePublishedDefinitionAsync("missing-materializer");
+        using var response = await ExecuteAsync(HttpMethod.Post, definitionId, JsonContent.Create(new { }));
+        var errors = await ReadErrorsAsync(response);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.DoesNotContain(errors, error => error.Contains(NoPublishedVersionMessage));
+    }
+
     private async Task<string> SaveUnpublishedDraftAsync()
     {
         var definitionId = Guid.NewGuid().ToString("N");
@@ -94,6 +116,23 @@ public class ExecuteEndpointTests : IAsyncLifetime
             IsPublished = false,
             Name = "Draft",
             MaterializerName = JsonWorkflowMaterializer.MaterializerName,
+            StringData = "{}"
+        });
+        return definitionId;
+    }
+
+    private async Task<string> SavePublishedDefinitionAsync(string materializerName)
+    {
+        var definitionId = Guid.NewGuid().ToString("N");
+        await _store.SaveAsync(new WorkflowDefinition
+        {
+            Id = Guid.NewGuid().ToString("N"),
+            DefinitionId = definitionId,
+            Version = 1,
+            IsLatest = true,
+            IsPublished = true,
+            Name = "Published",
+            MaterializerName = materializerName,
             StringData = "{}"
         });
         return definitionId;
