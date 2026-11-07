@@ -166,16 +166,19 @@ class FullInventoryTests(unittest.TestCase):
         self.assertFalse(result["upload_attempted"])
         self.assertEqual(self.feed.calls, [])
 
-    def test_spent_inspector_clock_does_not_starve_live_verify_readback(self):
-        self.fill_feed()
-        with patch.object(executor.HttpTransport, "get", side_effect=self.feed.get) as reader, \
+    def test_spent_inspector_clock_still_bounds_production_http(self):
+        seen = []
+        original = executor.HttpTransport.request
+        def request(self, *args, **kwargs):
+            seen.append(self.deadline)
+            return original(self, *args, **kwargs)
+        with patch.object(executor.HttpTransport, "request", request), \
                 patch.object(self.inspector, "deadline", time.monotonic() - 1, create=True):
             result = executor.run_verified(self.root, self.provenance, self.inspector, mode="verify")
-        self.assertEqual(result["result"], "verified")
-        self.assertTrue(result["content_verified"])
+        self.assertEqual(result["failure_category"], "feed_index_unavailable")
+        self.assertTrue(seen)
+        self.assertLessEqual(seen[0], time.monotonic())
         self.assertFalse(result["publication_performed"])
-        self.assertFalse(result["upload_attempted"])
-        self.assertEqual(reader.call_count, PIN_ARCHIVES + 2)
         self.assertEqual(self.feed.calls, [])
 
     def test_matching_publish_reuses_preupload_observation_without_second_get_pass(self):

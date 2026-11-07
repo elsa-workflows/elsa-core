@@ -613,9 +613,10 @@ def run_verified(root, provenance, inspector, *, mode, transport=None, authorize
         ledger["inspector_source_sha256"] = inspector.source_digest
         ledger.update(result="in_progress", failure_category=None)
         reader = transport or HttpTransport()
-        # Inspector and HTTP each keep MAX_SECONDS. Capping the network clock by
-        # the already-spent inspector clock left too little time for exact-byte
-        # readback after a complete upload. MAX_SECONDS itself is unchanged.
+        if isinstance(reader, HttpTransport):
+            # One process-wide MAX_SECONDS from inspector start. HTTP must not
+            # add a second 1800s clock after local inspection.
+            reader.deadline = min(reader.deadline, inspector.deadline)
         ledger["feed_index_sha256"] = feed_resources(reader)
         ledger["before"] = reconcile(root, provenance, expected, inspector, reader, ledger["feed_index_sha256"],
                                      observation_mode=ledger["scope"])
@@ -688,9 +689,8 @@ def run_verified(root, provenance, inspector, *, mode, transport=None, authorize
             ledger["after"] = reconcile(root, provenance, expected, inspector, reader, ledger["feed_index_sha256"],
                                         observation_mode=ledger["scope"])
         else:
-            # No mutation in this run: the pre-upload observation is the
-            # verification. A second GET pass of an already-matching set is not
-            # required and previously exhausted the network bound.
+            # No mutation in this run: reuse the pre-upload observation. A second
+            # GET pass would duplicate work inside the same 1800s process bound.
             ledger["after"] = copy.deepcopy(ledger["before"])
         ledger["content_verified"] = ledger["after"]["content_verified"]
         require(ledger["content_verified"], "readback_incomplete")
