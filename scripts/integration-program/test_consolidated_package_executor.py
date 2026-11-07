@@ -189,12 +189,73 @@ class FullInventoryTests(unittest.TestCase):
 
     def test_409_and_uncertain_results_stop_without_retry(self):
         for response in (recovery.ReadResult(409, b"raw-private-body", True), recovery.ReadResult(401, b"secret", True),
-                         recovery.ReadResult(None, b"", False, "timeout"), recovery.ReadResult(200, b"", True)):
+                         recovery.ReadResult(204, b"", True), recovery.ReadResult(203, b"", True),
+                         recovery.ReadResult(500, b"", True), recovery.ReadResult(None, b"", False, "timeout")):
             with self.subTest(status=response.status), patch.object(self.feed, "put", return_value=response) as put:
                 result = self.run_executor()
                 self.assertEqual(result["failure_category"], "upload_acceptance_unknown")
                 self.assertEqual(put.call_count, 1)
                 self.assertNotIn("raw-private-body", json.dumps(result))
+                self.assertFalse(result["content_verified"])
+
+    def test_feedz_200_nupkg_and_snupkg_progress_then_require_readback(self):
+        self.assertEqual(executor.ACCEPTED_UPLOAD_STATUSES, frozenset({200, 201, 202}))
+        self.feed.accept_status = 200
+        result = self.run_executor()
+        self.assertEqual(result["result"], "content_verified")
+        self.assertTrue(result["content_verified"])
+        self.assertEqual({row["status"] for row in result["operations"]}, {200})
+        self.assertEqual({row["state"] for row in result["operations"]}, {"accepted_pending_readback"})
+        self.assertEqual(len(self.feed.calls), PIN_ARCHIVES)
+        self.assertFalse(result["publication_performed"])
+        self.assertFalse(result["publication_ready"])
+
+    def test_feedz_200_missing_or_mismatched_readback_is_not_verified(self):
+        self.feed.accept_status = 200
+        original = self.feed.put
+        def invisible(kind, data, key):
+            result = original(kind, data, key)
+            self.feed.accepted.clear()
+            self.feed.symbols.clear()
+            return result
+        with patch.object(self.feed, "put", side_effect=invisible):
+            missing = self.run_executor()
+        self.assertEqual(missing["failure_category"], "readback_incomplete")
+        self.assertFalse(missing["content_verified"])
+        self.assertEqual(len(self.feed.calls), PIN_ARCHIVES)
+        self.feed.calls.clear()
+        def corrupt(kind, data, key):
+            result = original(kind, data, key)
+            if kind == "nupkg":
+                self.feed.accepted[self.feed.calls[-1]["name"]] = package_bytes("Conflict")
+            return result
+        with patch.object(self.feed, "put", side_effect=corrupt):
+            mismatched = self.run_executor()
+        self.assertEqual(mismatched["failure_category"], "readback_incomplete")
+        self.assertFalse(mismatched["content_verified"])
+        self.assertTrue(mismatched["after"]["blocked"])
+        self.assertGreater(mismatched["after"]["packages"]["counts"]["conflicting"], 0)
+
+    def test_existing_matching_elsa_skips_put_and_feedz_200_resumes_remainder(self):
+        self.feed.accept_status = 200
+        elsa = next(row for row in self.manifest["packages"] if row["id"] == "Elsa")
+        self.feed.accepted[elsa["nupkg"].lower()] = (self.root / "artifacts" / elsa["nupkg"]).read_bytes()
+        result = self.run_executor()
+        self.assertEqual(result["result"], "content_verified")
+        self.assertTrue(result["content_verified"])
+        nupkg = next(row for row in result["operations"] if row["id"] == "Elsa" and row["kind"] == "nupkg")
+        snupkg = next(row for row in result["operations"] if row["id"] == "Elsa" and row["kind"] == "snupkg")
+        self.assertEqual(nupkg["state"], "already_matching")
+        self.assertIsNone(nupkg["status"])
+        self.assertEqual(snupkg["state"], "accepted_pending_readback")
+        self.assertEqual(snupkg["status"], 200)
+        self.assertEqual(elsa["nupkg_sha256"],
+                         next(row["remote"]["archive_sha256"] for row in result["before"]["packages"]["packages"]
+                              if row["id"] == "Elsa"))
+        self.assertFalse(any(call["kind"] == "nupkg" and call["name"] == elsa["nupkg"].lower() for call in self.feed.calls))
+        self.assertEqual(len(self.feed.calls), PIN_ARCHIVES - 1)
+        self.assertEqual(sum(call["kind"] == "nupkg" for call in self.feed.calls), PIN_COUNT - 1)
+        self.assertEqual(sum(call["kind"] == "snupkg" for call in self.feed.calls), PIN_COUNT)
 
     def test_delayed_visibility_does_not_certify_or_retry(self):
         put = self.feed.put
@@ -830,6 +891,17 @@ class LoopbackTests(unittest.TestCase):
             self.assertEqual(key, "synthetic-private-key")
             self.assertEqual(path, "/nuget" if kind == "nupkg" else "/symbols")
             self.assertNotIn("synthetic-private-key", repr(result))
+
+    def test_real_feedz_200_upload_is_complete_without_retry(self):
+        self.server.outcome = 200
+        before = len(self.received)
+        for kind in ("nupkg", "snupkg"):
+            result = self.reader.put(kind, b"PK-original-"+kind.encode(), "synthetic-private-key")
+            self.assertTrue(result.complete)
+            self.assertIsNone(result.failure_category)
+            self.assertEqual(result.status, 200)
+            self.assertNotIn("synthetic-private-key", repr(result))
+        self.assertEqual(len(self.received), before + 2)
 
     def test_real_ambiguous_upload_after_acceptance_has_no_retry(self):
         for outcome in (409, "disconnect", "slow"):
