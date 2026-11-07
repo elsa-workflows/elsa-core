@@ -15,6 +15,7 @@
         <PackageReference Include="NuGet.Protocol" />
         <PackageReference Include="ThrottleDebounce" />
 		<PackageReference Include="System.Formats.Asn1" />
+		<PackageReference Include="System.Security.Cryptography.Pkcs" />
 	</ItemGroup>
 
     <ItemGroup>

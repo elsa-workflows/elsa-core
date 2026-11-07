@@ -156,6 +156,8 @@
         <PackageVersion Include="Moq" Version="4.20.72"/>
         <PackageVersion Include="MongoDB.Driver" Version="3.9.0"/>
         <PackageVersion Include="MySql.Data" Version="9.5.0"/>
+        <!-- GHSA-473q-m89c-ghf8: Pomelo 9.0.0 depends on MySqlConnector 2.4.0; first patched is 2.6.1. -->
+        <PackageVersion Include="MySqlConnector" Version="2.6.2"/>
         <PackageVersion Include="Newtonsoft.Json" Version="13.0.4"/>
 		<PackageVersion Include="Npgsql" Version="10.0.3"/>
         <PackageVersion Include="NSubstitute" Version="5.3.0"/>
@@ -193,19 +195,24 @@
         <PackageVersion Include="Serilog.Formatting.Compact" Version="3.0.0"/>
         <PackageVersion Include="ShortGuid" Version="2.0.1"/>
         <PackageVersion Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.3"/>
+        <!-- GHSA-2m69-gcr7-jv3q: last affected 2.1.11 (native sqlite 3.49.1). 2.1.14 ships sqlite 3.54.0. -->
+        <PackageVersion Include="SQLitePCLRaw.lib.e_sqlite3" Version="2.1.14"/>
         <PackageVersion Include="Snappier" Version="1.3.1"/>
         <PackageVersion Include="StackExchange.Redis" Version="2.10.1"/>
         <PackageVersion Include="System.CommandLine" Version="2.0.9"/>
         <PackageVersion Include="System.Data.SqlClient" Version="4.9.0"/>
-		<PackageVersion Include="System.Formats.Asn1" Version="10.0.8"/>
+		<PackageVersion Include="System.Formats.Asn1" Version="10.0.13"/>
         <PackageVersion Include="System.Linq.Async" Version="7.0.1"/>
         <PackageVersion Include="System.Linq.Dynamic.Core" Version="1.7.2"/>
         <PackageVersion Include="System.Net.Http" Version="4.3.4"/>
+        <!-- GHSA-2fmv-rv2c-59x7 / GHSA-846f-f764-76mx: 10.0.0-10.0.12 affected; 10.0.13 first patched. -->
+        <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="10.0.13"/>
 		<PackageVersion Include="System.Text.Json" Version="10.0.9"/>
         <PackageVersion Include="System.Text.RegularExpressions" Version="4.3.1"/>
         <PackageVersion Include="SSH.NET" Version="2026.0.0"/>
         <PackageVersion Include="Testcontainers" Version="4.9.0"/>
         <PackageVersion Include="Testcontainers.MsSql" Version="4.9.0"/>
+        <PackageVersion Include="Testcontainers.MySql" Version="4.9.0"/>
         <PackageVersion Include="Testcontainers.PostgreSql" Version="4.9.0"/>
         <PackageVersion Include="Testcontainers.RabbitMq" Version="4.9.0"/>
         <PackageVersion Include="Testcontainers.Redis" Version="4.9.0"/>
