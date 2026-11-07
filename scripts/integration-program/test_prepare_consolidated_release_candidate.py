@@ -19,6 +19,109 @@ import prove_consolidated_packages as packages
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = "a" * 40
+POSTFIX_SOURCE = "b" * 40
+
+
+def _package_version(include, version, condition=None):
+    attribute = f' Condition="{condition}"' if condition else ""
+    return f'    <PackageVersion Include="{include}" Version="{version}"{attribute}/>'
+
+
+def _item_group(entries, condition=None):
+    attribute = f' Condition="{condition}"' if condition else ""
+    return "<ItemGroup" + attribute + ">\n" + "\n".join(entries) + "\n</ItemGroup>"
+
+
+def _props(groups):
+    return "<Project>\n" + "\n".join(groups) + "\n</Project>\n"
+
+
+def _tfm_eq(tfm):
+    return f"'$(TargetFramework)' == '{tfm}'"
+
+
+def _tfm_ne(tfm):
+    return f"'$(TargetFramework)' != '{tfm}'"
+
+
+def _net89():
+    return f"{_tfm_eq('net8.0')} or {_tfm_eq('net9.0')}"
+
+
+def _pkcs_asn1_groups():
+    per_tfm = []
+    for package_id in ("System.Formats.Asn1", "System.Security.Cryptography.Pkcs"):
+        per_tfm.extend((_package_version(package_id, "8.0.2", _tfm_eq("net8.0")),
+                        _package_version(package_id, "9.0.21", _tfm_eq("net9.0"))))
+    return (
+        _item_group(per_tfm, _net89()),
+        _item_group((_package_version("System.Formats.Asn1", "10.0.13"),
+                     _package_version("System.Security.Cryptography.Pkcs", "10.0.13")), _tfm_eq("net10.0")),
+    )
+
+
+def _connector_groups():
+    return _item_group((_package_version("MySqlConnector", "2.6.2"),
+                        _package_version("SQLitePCLRaw.lib.e_sqlite3", "2.1.14")))
+
+
+def _signalr_groups():
+    return tuple(_item_group((_package_version("Microsoft.AspNetCore.SignalR.Client", version),), _tfm_eq(tfm))
+                 for tfm, version in (("net8.0", "8.0.32"), ("net9.0", "9.0.21"), ("net10.0", "10.0.13")))
+
+
+def _dropins_csproj(*, net8_pkcs="9.0.21", net8_asn1="9.0.21"):
+    references = [
+        f'    <PackageReference Include="System.Formats.Asn1" Condition="{_tfm_ne("net8.0")}" />',
+        f'    <PackageReference Include="System.Formats.Asn1" Condition="{_tfm_eq("net8.0")}" VersionOverride="{net8_asn1}" />',
+        f'    <PackageReference Include="System.Security.Cryptography.Pkcs" Condition="{_tfm_ne("net8.0")}" />',
+        f'    <PackageReference Include="System.Security.Cryptography.Pkcs" Condition="{_tfm_eq("net8.0")}" VersionOverride="{net8_pkcs}" />',
+    ]
+    return "<Project>\n<ItemGroup>\n" + "\n".join(references) + "\n</ItemGroup>\n</Project>\n"
+
+
+def write_advisory_tree(root: Path, *, postfix=True, dropins=True, mutate=None):
+    (root / "extensions/src/dropins/Elsa.DropIns").mkdir(parents=True, exist_ok=True)
+    (root / "studio/src").mkdir(parents=True, exist_ok=True)
+    if postfix:
+        core = _props((*_pkcs_asn1_groups(), _connector_groups()))
+        extensions = _props((*_pkcs_asn1_groups(), _connector_groups()))
+        studio = _props(_signalr_groups())
+        dropins_text = _dropins_csproj()
+    else:
+        core = _props((_item_group((_package_version("MySqlConnector", "2.4.0"),
+                                    _package_version("System.Formats.Asn1", "10.0.8"),
+                                    _package_version("SQLitePCLRaw.lib.e_sqlite3", "2.1.2"))),))
+        extensions = core
+        studio = _props(tuple(_item_group((_package_version("Microsoft.AspNetCore.SignalR.Client", version),), _tfm_eq(tfm))
+                              for tfm, version in (("net8.0", "8.0.24"), ("net9.0", "9.0.13"), ("net10.0", "10.0.3"))))
+        dropins_text = "<Project>\n<ItemGroup>\n    <PackageReference Include=\"System.Formats.Asn1\" />\n</ItemGroup>\n</Project>\n"
+    files = {
+        "Directory.Packages.props": core,
+        "extensions/src/Directory.Packages.props": extensions,
+        "studio/src/Directory.Packages.props": studio,
+    }
+    if dropins:
+        files[candidate.DROPINS_PROJECT] = dropins_text
+    if mutate:
+        mutate(files)
+    for relative, text in files.items():
+        path = root / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text)
+
+
+def init_release_line(root: Path) -> str:
+    def git(*arguments):
+        return subprocess.run(["git", "-C", str(root), *arguments], check=True, capture_output=True, text=True)
+    git("init", "--quiet")
+    git("checkout", "-b", "release/3.10.0")
+    git("add", ".")
+    git("-c", "user.name=Candidate contract", "-c", "user.email=candidate@example.invalid",
+        "commit", "--quiet", "-m", "Advisory pins")
+    sha = git("rev-parse", "HEAD").stdout.strip()
+    git("update-ref", "refs/remotes/origin/release/3.10.0", sha)
+    return sha
 
 
 class CandidateArchiveTests(unittest.TestCase):
@@ -275,18 +378,103 @@ class CandidateContractsTests(unittest.TestCase):
     def test_3101_source_rejects_original_sha_and_missing_pins(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            (root / "Directory.Packages.props").write_text("<Project />\n")
+            write_advisory_tree(root, postfix=False)
             with self.assertRaisesRegex(ValueError, "3.10.0 source"):
                 candidate.require_candidate_source(root, candidate.ORIGINAL_3100_SOURCE, "3.10.1")
             with self.assertRaisesRegex(ValueError, "MySqlConnector"):
-                candidate.require_candidate_source(root, "b" * 40, "3.10.1")
-            (root / "Directory.Packages.props").write_text(
-                '<PackageVersion Include="MySqlConnector" Version="2.6.2"/>\n'
-                '<PackageVersion Include="SQLitePCLRaw.lib.e_sqlite3" Version="2.1.14"/>\n')
-            candidate.require_candidate_source(root, "b" * 40, "3.10.1")
+                candidate.require_candidate_source(root, POSTFIX_SOURCE, "3.10.1")
+            write_advisory_tree(root, postfix=True)
+            candidate.require_candidate_source(root, POSTFIX_SOURCE, "3.10.1")
             candidate.require_candidate_source(root, candidate.ORIGINAL_3100_SOURCE, "3.10.0")
-        with self.assertRaisesRegex(ValueError, "advisory pin"):
-            candidate.require_candidate_source(ROOT, "b" * 40, "3.10.1")
+
+    def test_3101_source_pin_fixtures_cover_pre_and_post_tfm_policy(self):
+        cases = (
+            ("prefix missing pins", False, None, "MySqlConnector|advisory pin"),
+            ("postfix reviewed pins", True, None, None),
+            ("plaintext needles are not pins", True,
+             lambda files: files.__setitem__("Directory.Packages.props",
+                                             '<Project><!-- Include="MySqlConnector" Version="2.6.2" '
+                                             'Include="SQLitePCLRaw.lib.e_sqlite3" Version="2.1.14" --></Project>\n'),
+             "MySqlConnector"),
+            ("unconditional Pkcs conflicts with net8 pin", True,
+             lambda files: files.__setitem__(
+                 "Directory.Packages.props",
+                 _props([*_pkcs_asn1_groups(), _connector_groups(),
+                         _item_group([_package_version("System.Security.Cryptography.Pkcs", "10.0.13")])])
+             ),
+             "conflicting"),
+            ("unpatched net8 Pkcs", True,
+             lambda files: files.update({"Directory.Packages.props": files["Directory.Packages.props"].replace(
+                 _package_version("System.Security.Cryptography.Pkcs", "8.0.2", _tfm_eq("net8.0")),
+                 _package_version("System.Security.Cryptography.Pkcs", "8.0.1", _tfm_eq("net8.0")))}),
+             "8.0.2"),
+            ("SignalR net8 still 8.0.24", True,
+             lambda files: files.update({"studio/src/Directory.Packages.props": files["studio/src/Directory.Packages.props"].replace(
+                 'Version="8.0.32"', 'Version="8.0.24"')}),
+             "8.0.32"),
+            ("DropIns missing net8 override", True,
+             lambda files: files.__setitem__(candidate.DROPINS_PROJECT,
+                                             "<Project>\n<ItemGroup>\n    <PackageReference Include=\"System.Formats.Asn1\" />\n</ItemGroup>\n</Project>\n"),
+             "VersionOverride"),
+            ("DropIns net8 override not 9.0.21", True,
+             lambda files: files.__setitem__(candidate.DROPINS_PROJECT, _dropins_csproj(net8_pkcs="8.0.2")),
+             "9.0.21"),
+            ("extensions missing connector pin", True,
+             lambda files: files.__setitem__("extensions/src/Directory.Packages.props", _props(_pkcs_asn1_groups())),
+             "MySqlConnector"),
+        )
+        for label, postfix, mutate, pattern in cases:
+            with self.subTest(label=label), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                write_advisory_tree(root, postfix=postfix, mutate=mutate)
+                if pattern is None:
+                    candidate.require_candidate_source(root, POSTFIX_SOURCE, "3.10.1")
+                else:
+                    with self.assertRaisesRegex(ValueError, pattern):
+                        candidate.require_candidate_source(root, POSTFIX_SOURCE, "3.10.1")
+
+    def test_check_source_and_nupkg_helpers_are_tested_functions(self):
+        source = POSTFIX_SOURCE
+        for argv in (["--check-source", "--version", "3.10.1", "--source", source],
+                     ["check-source", "--version", "3.10.1", "--source", source]):
+            args = candidate.parse_check_source_args(argv)
+            self.assertEqual("3.10.1", args.version)
+            self.assertEqual(source, args.source)
+        with tempfile.TemporaryDirectory() as temporary:
+            packages_dir = Path(temporary)
+            with self.assertRaisesRegex(ValueError, "no nupkg"):
+                candidate.require_versioned_nupkgs(packages_dir, "3.10.1")
+            (packages_dir / "Elsa.3.10.0.nupkg").write_bytes(b"old")
+            with self.assertRaisesRegex(ValueError, "mixed versions"):
+                candidate.require_versioned_nupkgs(packages_dir, "3.10.1")
+            (packages_dir / "Elsa.3.10.0.nupkg").unlink()
+            (packages_dir / "Elsa.3.10.1.nupkg").write_bytes(b"ok")
+            (packages_dir / "Elsa.Workflows.Core.3.10.1.nupkg").write_bytes(b"ok")
+            nupkgs = candidate.require_versioned_nupkgs(packages_dir, "3.10.1")
+            self.assertEqual(["Elsa.3.10.1.nupkg", "Elsa.Workflows.Core.3.10.1.nupkg"], [path.name for path in nupkgs])
+            parsed = candidate.parse_check_nupkgs_args(["check-nupkgs", "--packages-dir", str(packages_dir), "--version", "3.10.1"])
+            self.assertEqual(packages_dir, parsed.packages_dir)
+            self.assertEqual("check-source", candidate.select_prepare_command(["--check-source", "--version", "3.10.1"]))
+            self.assertEqual("check-nupkgs", candidate.select_prepare_command(["check-nupkgs"]))
+            self.assertEqual("consume", candidate.select_prepare_command(["--consume", "--archive", "x"]))
+            self.assertIsNone(candidate.select_prepare_command(["--version", "3.10.1"]))
+
+    def test_3101_dispatch_requires_release_line_ancestry(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_advisory_tree(root, postfix=True)
+            sha = init_release_line(root)
+            candidate.run_check_source(root, sha, "3.10.1", git_ref=candidate.RELEASE_LINE_REF)
+            with self.assertRaisesRegex(ValueError, "release/3.10.0"):
+                candidate.run_check_source(root, sha, "3.10.1", git_ref="refs/heads/cursor/other")
+            subprocess.run(["git", "-C", str(root), "-c", "user.name=Candidate contract",
+                            "-c", "user.email=candidate@example.invalid", "commit", "--allow-empty",
+                            "--quiet", "-m", "off line"], check=True, capture_output=True)
+            off_line = subprocess.run(["git", "-C", str(root), "rev-parse", "HEAD"],
+                                      check=True, capture_output=True, text=True).stdout.strip()
+            subprocess.run(["git", "-C", str(root), "update-ref", "HEAD", sha], check=True)
+            with self.assertRaisesRegex(ValueError, "not on the release/3.10.0 line"):
+                candidate.require_release_line(root, off_line, git_ref=candidate.RELEASE_LINE_REF)
 
     def test_3101_seal_and_envelope_reject_reused_3100_identity(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -329,18 +517,23 @@ class CandidateContractsTests(unittest.TestCase):
         self.assertIn("type: choice", workflow)
         self.assertIn("- '3.10.1'", workflow)
         self.assertIn("source_commit:", workflow)
-        self.assertIn("--check-source", workflow)
+        self.assertIn("check-source --version 3.10.1", workflow)
+        self.assertIn("check-nupkgs --packages-dir", workflow)
         self.assertIn("--version 3.10.1", workflow)
         self.assertIn("validate_packages_id_set.py", workflow)
         self.assertIn('version:"3.10.1"', workflow)
         self.assertIn(candidate.WORKFLOW_3101, workflow)
         self.assertIn('(.event == "workflow_dispatch")', workflow)
+        self.assertIn('test "$GITHUB_REF" = "refs/heads/release/3.10.0"', workflow)
+        self.assertIn("git merge-base --is-ancestor", workflow)
+        self.assertIn("ref: release/3.10.0", workflow)
         self.assertIn('test "$SOURCE_SHA" != "5cff67228e550b353b3483eb3b37dfdb73a41c74"', workflow)
         self.assertIn('test "$ARTIFACT_ID" != "12664519771"', workflow)
         self.assertIn("--version 3.10.1", workflow.split("--consume", 1)[1])
         for denied in ("secrets.", "packages: write", "deployments:", "environment:", "nuget push", "npm publish", "gh release", "publish_preview", "publish_nuget", "workflow_call:", "workflow_run:", "pull_request:"):
             self.assertNotIn(denied, workflow)
         self.assertNotIn("default: '3.10.0'", workflow)
+        self.assertNotIn("python3 -c", workflow.split("jobs:", 1)[1])
 
     def test_candidate_profile_is_core_owned_feedz_only_and_maintenance_is_preserved(self):
         references = ROOT / ".agents/skills/elsa-release/references"

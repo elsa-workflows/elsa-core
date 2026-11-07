@@ -1135,8 +1135,10 @@ def main(*, mode: str = "proof") -> None:
     output.mkdir(parents=True)
     commit = clean_head(root)
     if mode == "candidate":
-        from prepare_consolidated_release_candidate import require_candidate_source
+        from prepare_consolidated_release_candidate import require_candidate_source, require_release_line
         require_candidate_source(root, commit, args.version)
+        if args.version == "3.10.1":
+            require_release_line(root, commit)
     initial_sources = source_input_hashes(root)
     write_json(output / "source-inputs.json", initial_sources)
     manifest = inventory(root, args.version, commit, mode=mode)
