@@ -3,6 +3,7 @@ using Elsa.Common;
 using Elsa.Common.Codecs;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
+using Elsa.Common.Multitenancy;
 using Elsa.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Management;
@@ -160,6 +161,8 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
         var entity = new WorkflowInstance
         {
             Id = workflowInstanceId,
+            // ApplyTenantId skips "*". With a null TenantId it would set the ambient tenant, and the update would write it over the row's tenant.
+            TenantId = Tenant.AgnosticTenantId,
             UpdatedAt = value
         };
 
