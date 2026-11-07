@@ -42,7 +42,7 @@ public class SaveFile : CodeActivity
         var append = Append.GetOrDefault(context);
         var blobStorageProvider = context.GetRequiredService<IBlobStorageProvider>();
         var blobStorage = blobStorageProvider.GetBlobStorage();
-        await blobStorage.WriteAsync(path, data, append, cancellationToken);
+        await blobStorage.SetObject(path, data, append, cancellationToken);
     }
 
     private async Task<Stream> ResolveAsStreamAsync(object data, CancellationToken cancellationToken)
