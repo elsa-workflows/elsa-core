@@ -57,6 +57,48 @@ public class DigitLeadingVariableWorkflow : WorkflowBase
     }
 }
 
+public class UnderscoreAccessorWorkflow : WorkflowBase
+{
+    protected override void Build(IWorkflowBuilder workflow)
+    {
+        workflow.WithDefinitionId(Guid.NewGuid().ToString());
+        workflow.WithVariable("meting_context", "before");
+
+        workflow.Root = new Sequence
+        {
+            Activities =
+            {
+                new WriteLine(JavaScriptExpression.Create("getMetingContext()")),
+                new WriteLine(JavaScriptExpression.Create("setMetingContext('after'); getMetingContext()")),
+                new WriteLine(JavaScriptExpression.Create("variables.meting_context"))
+            }
+        };
+    }
+}
+
+public class UnderscoreDeclaredFirstCollisionWorkflow : WorkflowBase
+{
+    protected override void Build(IWorkflowBuilder workflow)
+    {
+        workflow.WithDefinitionId(Guid.NewGuid().ToString());
+        // Explicit IDs: the name-derived default ID camelizes each pair to the same value.
+        workflow.WithVariable(new Variable<string>("meting_context", "underscore context") { Id = "underscoreContext" });
+        workflow.WithVariable(new Variable<string>("metingContext", "plain context") { Id = "plainContext" });
+        workflow.WithVariable(new Variable<string>("_foo", "underscore foo") { Id = "underscoreFoo" });
+        workflow.WithVariable(new Variable<string>("foo", "plain foo") { Id = "plainFoo" });
+
+        workflow.Root = new Sequence
+        {
+            Activities =
+            {
+                new WriteLine(JavaScriptExpression.Create("getMetingContext() + ',' + getFoo()")),
+                new WriteLine(JavaScriptExpression.Create("setMetingContext('set context'); setFoo('set foo'); 'set'")),
+                new WriteLine(JavaScriptExpression.Create("[variables.meting_context, variables.metingContext, variables._foo, variables.foo].join(',')"))
+            }
+        };
+    }
+}
+
 public class CollidingAccessorWorkflow : WorkflowBase
 {
     protected override void Build(IWorkflowBuilder workflow)

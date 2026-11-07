@@ -85,11 +85,10 @@ public class ConfigureEngineWithVariablesAndInputOutputAccessors(IOptions<JintOp
 
     private void CreateVariableAccessors(Engine engine, ExpressionExecutionContext context, ReferencedGlobals? referencedGlobals)
     {
-        var variableNames = context.GetVariableNamesInScope().Where(VariableNameValidator.HasVariableAccessors).ToList();
+        var accessors = VariableAccessorNames.Resolve(context.GetVariableNamesInScope(), name => name);
 
-        foreach (var variableName in variableNames)
+        foreach (var (pascalName, variableName) in accessors)
         {
-            var pascalName = variableName.Pascalize();
             var getterName = $"get{pascalName}";
             var setterName = $"set{pascalName}";
 
