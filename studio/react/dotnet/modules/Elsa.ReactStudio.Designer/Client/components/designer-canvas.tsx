@@ -440,7 +440,7 @@ export function DesignerCanvas({ className, minimap = true, onToggleMinimap, onO
         fitView
         fitViewOptions={{ padding: 0.2, maxZoom: 1 }}
         defaultEdgeOptions={{ type: "connection" }}
-        proOptions={{ hideAttribution: true }}
+        attributionPosition="bottom-center"
       >
         <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
         {(helperLines.horizontal || helperLines.vertical) && (
