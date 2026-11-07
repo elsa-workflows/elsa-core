@@ -181,6 +181,81 @@ class FullInventoryTests(unittest.TestCase):
         self.assertFalse(result["publication_performed"])
         self.assertEqual(self.feed.calls, [])
 
+    def test_spent_inspector_clock_still_bounds_production_publish_before_put(self):
+        seen = []
+        original = executor.HttpTransport.request
+
+        def request(self, *args, **kwargs):
+            seen.append(self.deadline)
+            return original(self, *args, **kwargs)
+
+        with patch.object(executor.HttpTransport, "request", request), \
+                patch.object(executor.HttpTransport, "put") as put, \
+                patch.object(self.inspector, "deadline", time.monotonic() - 1, create=True):
+            result = executor.run_verified(self.root, self.provenance, self.inspector, mode="publish")
+        self.assertEqual(result["failure_category"], "feed_index_unavailable")
+        self.assertTrue(seen)
+        self.assertLessEqual(seen[0], time.monotonic())
+        put.assert_not_called()
+        self.assertFalse(result["upload_attempted"])
+        self.assertFalse(result["publication_performed"])
+        self.assertEqual(self.feed.calls, [])
+
+    def test_publish_does_not_start_put_when_readback_reserve_cannot_fit(self):
+        reader = executor.HttpTransport(seconds=1800)
+        with patch.object(reader, "get", side_effect=self.feed.get), \
+                patch.object(reader, "put", side_effect=self.feed.put) as put, \
+                patch.object(self.inspector, "deadline",
+                             time.monotonic() + executor.READBACK_RESERVE_SECONDS, create=True):
+            result = executor.run_verified(
+                self.root, self.provenance, self.inspector, mode="publish",
+                transport=reader, authorize=lambda: {"scope": "simulation_only"},
+                credential=lambda: "synthetic")
+        self.assertEqual(result["failure_category"], "readback_budget_exhausted")
+        put.assert_not_called()
+        self.assertFalse(result["upload_attempted"])
+        self.assertEqual(self.feed.calls, [])
+
+    def test_matching_publish_does_not_require_readback_reserve(self):
+        self.fill_feed()
+        reader = executor.HttpTransport(seconds=1800)
+        with patch.object(reader, "get", side_effect=self.feed.get), \
+                patch.object(reader, "put", side_effect=self.feed.put) as put, \
+                patch.object(self.inspector, "deadline",
+                             time.monotonic() + executor.READBACK_RESERVE_SECONDS, create=True):
+            result = executor.run_verified(
+                self.root, self.provenance, self.inspector, mode="publish",
+                transport=reader, authorize=lambda: {"scope": "simulation_only"},
+                credential=lambda: "synthetic")
+        self.assertEqual(result["result"], "content_verified")
+        self.assertFalse(result["upload_attempted"])
+        put.assert_not_called()
+        self.assertEqual(self.feed.calls, [])
+
+    def test_upload_caps_put_deadline_and_restores_readback_slice(self):
+        reader = executor.HttpTransport(seconds=1800)
+        put_deadlines = []
+
+        def put(kind, data, key):
+            put_deadlines.append(reader.deadline)
+            return self.feed.put(kind, data, key)
+
+        inspector_deadline = time.monotonic() + 1800
+        with patch.object(reader, "get", side_effect=self.feed.get), \
+                patch.object(reader, "put", side_effect=put), \
+                patch.object(self.inspector, "deadline", inspector_deadline, create=True):
+            result = executor.run_verified(
+                self.root, self.provenance, self.inspector, mode="publish",
+                transport=reader, authorize=lambda: {"scope": "simulation_only"},
+                credential=lambda: "synthetic")
+            restored = reader.deadline
+        self.assertEqual(result["result"], "content_verified")
+        self.assertTrue(result["upload_attempted"])
+        self.assertTrue(put_deadlines)
+        put_cap = inspector_deadline - executor.READBACK_RESERVE_SECONDS
+        self.assertTrue(all(deadline <= put_cap + 1e-6 for deadline in put_deadlines))
+        self.assertAlmostEqual(restored, inspector_deadline, delta=1)
+
     def test_matching_publish_reuses_preupload_observation_without_second_get_pass(self):
         self.fill_feed()
         with patch.object(executor, "reconcile", wraps=executor.reconcile) as rec:
