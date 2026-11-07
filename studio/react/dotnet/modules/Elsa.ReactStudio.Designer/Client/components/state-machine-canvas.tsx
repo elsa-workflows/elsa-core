@@ -257,7 +257,7 @@ export function StateMachineCanvas({ minimap = true, onToggleMinimap, onOpenTool
         fitView
         fitViewOptions={{ padding: 0.25, maxZoom: 1 }}
         defaultEdgeOptions={{ type: "transition" }}
-        proOptions={{ hideAttribution: true }}
+        attributionPosition="bottom-center"
       >
         <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
         {minimap && <MiniMap pannable zoomable position="bottom-right" className="!bg-background/80" />}
