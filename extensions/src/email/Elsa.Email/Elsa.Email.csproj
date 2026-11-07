@@ -10,6 +10,7 @@
     <ItemGroup>
 		<PackageReference Include="MailKit" />
 		<PackageReference Include="Microsoft.Extensions.Http" />
+		<PackageReference Include="System.Security.Cryptography.Pkcs" />
     </ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">

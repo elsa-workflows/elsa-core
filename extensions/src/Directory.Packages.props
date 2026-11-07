@@ -87,7 +87,11 @@
         <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4"/>
         <PackageVersion Include="Oracle.EntityFrameworkCore" Version="9.23.26200"/>
         <PackageVersion Include="System.DirectoryServices.Protocols" Version="9.0.13"/>
-        <PackageVersion Include="System.Formats.Asn1" Version="9.0.17"/>
+        <PackageVersion Include="System.Formats.Asn1" Version="8.0.2" Condition="'$(TargetFramework)' == 'net8.0'"/>
+        <PackageVersion Include="System.Formats.Asn1" Version="9.0.21" Condition="'$(TargetFramework)' == 'net9.0'"/>
+        <!-- GHSA-2fmv-rv2c-59x7 / GHSA-846f-f764-76mx: 8.0.0-8.0.1 and 9.0.0-9.0.20 affected; 8.0.2 / 9.0.21 first patched. -->
+        <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="8.0.2" Condition="'$(TargetFramework)' == 'net8.0'"/>
+        <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="9.0.21" Condition="'$(TargetFramework)' == 'net9.0'"/>
     </ItemGroup>
     <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
         <PackageVersion Include="Microsoft.AspNetCore.Components" Version="10.0.9"/>
@@ -122,7 +126,9 @@
         <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.2"/>
         <PackageVersion Include="Oracle.EntityFrameworkCore" Version="10.23.26200"/>
         <PackageVersion Include="System.DirectoryServices.Protocols" Version="10.0.3"/>
-        <PackageVersion Include="System.Formats.Asn1" Version="10.0.9"/>
+        <PackageVersion Include="System.Formats.Asn1" Version="10.0.13"/>
+        <!-- GHSA-2fmv-rv2c-59x7 / GHSA-846f-f764-76mx: 10.0.0-10.0.12 affected; 10.0.13 first patched. -->
+        <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="10.0.13"/>
     </ItemGroup>
     <ItemGroup>
         <PackageVersion Include="AppAny.Quartz.EntityFrameworkCore.Migrations" Version="0.5.1"/>
@@ -208,6 +214,8 @@
         <PackageVersion Include="Moq" Version="4.20.72" />
         <PackageVersion Include="MQTTnet" Version="5.1.0.1559" />
         <PackageVersion Include="MySql.Data" Version="9.5.0"/>
+        <!-- GHSA-473q-m89c-ghf8: Pomelo 9.0.0 depends on MySqlConnector 2.4.0; first patched is 2.6.1. -->
+        <PackageVersion Include="MySqlConnector" Version="2.6.2"/>
         <PackageVersion Include="NSubstitute" Version="5.3.0"/>
         <PackageVersion Include="NuGet.Packaging" Version="7.0.3"/>
         <PackageVersion Include="NuGet.Protocol" Version="7.0.3"/>
@@ -243,6 +251,8 @@
         <PackageVersion Include="System.Memory.Data" Version="10.0.3"/>
         <PackageVersion Include="System.Text.Json" Version="10.0.9"/>
         <PackageVersion Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.3"/>
+        <!-- GHSA-2m69-gcr7-jv3q: last affected 2.1.11 (native sqlite 3.49.1). 2.1.14 ships sqlite 3.54.0. -->
+        <PackageVersion Include="SQLitePCLRaw.lib.e_sqlite3" Version="2.1.14"/>
         <PackageVersion Include="SSH.NET" Version="2026.0.0"/>
         <PackageVersion Include="Testcontainers" Version="4.9.0"/>
         <PackageVersion Include="Testcontainers.MongoDb" Version="4.9.0"/>

@@ -1,7 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFrameworks>net10.0</TargetFrameworks>
+        <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+        <!-- ubuntu-latest installs only the 10.x SDK/runtime; roll forward so testhost can execute. -->
+        <RollForward>LatestMajor</RollForward>
         <IsPackable>false</IsPackable>
         <IsTestProject>true</IsTestProject>
         <GenerateDocumentationFile>false</GenerateDocumentationFile>
@@ -16,6 +18,8 @@
     </ItemGroup>
 
     <ItemGroup>
+        <Compile Include="..\..\..\..\core\src\common\Elsa.Testing.Shared\RestoredPackageVersionReader.cs"
+                 Link="Support\RestoredPackageVersionReader.cs" />
         <Compile Include="..\..\testing\BunitTestDefaults.cs" Link="BunitTestDefaults.cs" />
         <Compile Include="..\..\testing\StubPermissionService.cs" Link="Support\StubPermissionService.cs" />
         <Compile Include="..\..\testing\TestLocalizer.cs" Link="Support\TestLocalizer.cs" />
@@ -24,6 +28,14 @@
 
     <ItemGroup>
         <ProjectReference Include="../Elsa.Studio.Workflows/Elsa.Studio.Workflows.csproj" />
+    </ItemGroup>
+
+    <!-- net8/net9 exist to restore the TFM-specific SignalR pins; keep the existing bunit suite on net10. -->
+    <ItemGroup Condition="'$(TargetFramework)' != 'net10.0'">
+        <Compile Remove="@(Compile)" />
+        <Compile Include="SignalRCommonAdvisoryPinTests.cs" />
+        <Compile Include="..\..\..\..\core\src\common\Elsa.Testing.Shared\RestoredPackageVersionReader.cs"
+                 Link="Support\RestoredPackageVersionReader.cs" />
     </ItemGroup>
 
     <ItemGroup>

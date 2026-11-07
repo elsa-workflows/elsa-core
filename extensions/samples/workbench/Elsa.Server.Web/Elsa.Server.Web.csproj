@@ -34,6 +34,7 @@
         <PackageReference Include="Hangfire.MemoryStorage" />
         <PackageReference Include="Hangfire.PostgreSql" />
         <PackageReference Include="Hangfire.Storage.SQLite" />
+        <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" />
         <PackageReference Include="Hangfire.SqlServer" />
         <PackageReference Include="DistributedLock"/>
         <PackageReference Include="DistributedLock.Postgres"/>

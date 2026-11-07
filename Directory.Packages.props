@@ -46,6 +46,11 @@
 		<PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4"/>
         <PackageVersion Include="Oracle.EntityFrameworkCore" Version="9.23.26200"/>
         <PackageVersion Include="Scrutor" Version="6.1.0"/>
+        <PackageVersion Include="System.Formats.Asn1" Version="8.0.2" Condition="'$(TargetFramework)' == 'net8.0'"/>
+        <PackageVersion Include="System.Formats.Asn1" Version="9.0.21" Condition="'$(TargetFramework)' == 'net9.0'"/>
+        <!-- GHSA-2fmv-rv2c-59x7 / GHSA-846f-f764-76mx: 8.0.0-8.0.1 and 9.0.0-9.0.20 affected; 8.0.2 / 9.0.21 first patched. -->
+        <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="8.0.2" Condition="'$(TargetFramework)' == 'net8.0'"/>
+        <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="9.0.21" Condition="'$(TargetFramework)' == 'net9.0'"/>
     </ItemGroup>
     <!-- .NET 10 specific package versions -->
     <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
@@ -89,6 +94,9 @@
         <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.2"/>
         <PackageVersion Include="Oracle.EntityFrameworkCore" Version="10.23.26200"/>
         <PackageVersion Include="Scrutor" Version="7.0.0"/>
+        <PackageVersion Include="System.Formats.Asn1" Version="10.0.13"/>
+        <!-- GHSA-2fmv-rv2c-59x7 / GHSA-846f-f764-76mx: 10.0.0-10.0.12 affected; 10.0.13 first patched. -->
+        <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="10.0.13"/>
     </ItemGroup>
     <ItemGroup>
         <PackageVersion Include="AspNetCore.Authentication.ApiKey" Version="9.0.0"/>
@@ -156,6 +164,8 @@
         <PackageVersion Include="Moq" Version="4.20.72"/>
         <PackageVersion Include="MongoDB.Driver" Version="3.9.0"/>
         <PackageVersion Include="MySql.Data" Version="9.5.0"/>
+        <!-- GHSA-473q-m89c-ghf8: Pomelo 9.0.0 depends on MySqlConnector 2.4.0; first patched is 2.6.1. -->
+        <PackageVersion Include="MySqlConnector" Version="2.6.2"/>
         <PackageVersion Include="Newtonsoft.Json" Version="13.0.4"/>
 		<PackageVersion Include="Npgsql" Version="10.0.3"/>
         <PackageVersion Include="NSubstitute" Version="5.3.0"/>
@@ -193,11 +203,12 @@
         <PackageVersion Include="Serilog.Formatting.Compact" Version="3.0.0"/>
         <PackageVersion Include="ShortGuid" Version="2.0.1"/>
         <PackageVersion Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.3"/>
+        <!-- GHSA-2m69-gcr7-jv3q: last affected 2.1.11 (native sqlite 3.49.1). 2.1.14 ships sqlite 3.54.0. -->
+        <PackageVersion Include="SQLitePCLRaw.lib.e_sqlite3" Version="2.1.14"/>
         <PackageVersion Include="Snappier" Version="1.3.1"/>
         <PackageVersion Include="StackExchange.Redis" Version="2.10.1"/>
         <PackageVersion Include="System.CommandLine" Version="2.0.9"/>
         <PackageVersion Include="System.Data.SqlClient" Version="4.9.0"/>
-		<PackageVersion Include="System.Formats.Asn1" Version="10.0.8"/>
         <PackageVersion Include="System.Linq.Async" Version="7.0.1"/>
         <PackageVersion Include="System.Linq.Dynamic.Core" Version="1.7.2"/>
         <PackageVersion Include="System.Net.Http" Version="4.3.4"/>
@@ -206,6 +217,7 @@
         <PackageVersion Include="SSH.NET" Version="2026.0.0"/>
         <PackageVersion Include="Testcontainers" Version="4.9.0"/>
         <PackageVersion Include="Testcontainers.MsSql" Version="4.9.0"/>
+        <PackageVersion Include="Testcontainers.MySql" Version="4.9.0"/>
         <PackageVersion Include="Testcontainers.PostgreSql" Version="4.9.0"/>
         <PackageVersion Include="Testcontainers.RabbitMq" Version="4.9.0"/>
         <PackageVersion Include="Testcontainers.Redis" Version="4.9.0"/>
