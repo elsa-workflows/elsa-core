@@ -27,6 +27,28 @@ internal static class WorkflowExecutionHelper
 
         if (workflowGraph == null)
         {
+            // Graph lookup also misses when a published row exists but cannot be loaded (e.g. missing materializer).
+            // Only claim "no published version" when no published definition actually exists and some other version does.
+            if (versionOptions.IsPublished
+                && await workflowDefinitionService.FindWorkflowDefinitionAsync(definitionId, VersionOptions.Published, cancellationToken) == null
+                && await workflowDefinitionService.FindWorkflowDefinitionAsync(definitionId, VersionOptions.Latest, cancellationToken) != null)
+            {
+                var errorResponse = new ErrorResponse
+                {
+                    StatusCode = StatusCodes.Status404NotFound,
+                    Errors =
+                    {
+                        ["generalErrors"] =
+                        [
+                            $"Workflow definition '{definitionId}' has no published version. Publish it before executing, or specify the version to execute."
+                        ]
+                    }
+                };
+
+                await httpContext.Response.SendAsync(errorResponse, StatusCodes.Status404NotFound, cancellation: cancellationToken);
+                return;
+            }
+
             await httpContext.Response.SendNotFoundAsync(cancellation: cancellationToken);
             return;
         }
