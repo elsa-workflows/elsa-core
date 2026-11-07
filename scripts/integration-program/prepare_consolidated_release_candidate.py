@@ -18,6 +18,13 @@ from product_layout import map_path
 
 MANIFEST = "preupload-manifest.json"
 LEGACY_SECRETS = {f"Elsa.Secrets.{suffix}" for suffix in ("Api", "Core", "Management", "Models", "Scripting")}
+ORIGINAL_3100_SOURCE = "5cff67228e550b353b3483eb3b37dfdb73a41c74"
+ORIGINAL_3100_ARTIFACT = 12664519771
+ADVISORY_SOURCE_PINS = (
+    ('Include="MySqlConnector" Version="2.6.2"', "MySqlConnector 2.6.2"),
+    ('Include="SQLitePCLRaw.lib.e_sqlite3" Version="2.1.14"', "SQLitePCLRaw.lib.e_sqlite3 2.1.14"),
+)
+WORKFLOW_3101 = ".github/workflows/prepare-consolidated-3.10.1-release-candidate.yml"
 
 
 def sha256(data: bytes) -> str:
@@ -55,7 +62,20 @@ def compare_inventory(manifest: dict, baseline: dict, output: Path) -> None:
     packages.require("Elsa.SamplePackage" in excluded and "Elsa.SamplePackage" not in included, "SamplePackage must remain unpackable")
 
 
-def seal(root: Path, source: str) -> dict:
+def require_candidate_source(root: Path, source: str, version: str) -> None:
+    """Reject a 3.10.1 pack of the immutable 3.10.0 pin SHA or a tree without the advisory pins."""
+    packages.validate_mode(version, "candidate")
+    packages.require(bool(re.fullmatch(r"[0-9a-f]{40}", source)), "Invalid candidate source SHA")
+    if version == "3.10.0":
+        return
+    packages.require(source != ORIGINAL_3100_SOURCE, "3.10.1 candidate must not reuse the 3.10.0 source commit")
+    props = (root / "Directory.Packages.props").read_text(encoding="utf-8")
+    for needle, label in ADVISORY_SOURCE_PINS:
+        packages.require(needle in props, f"3.10.1 candidate source is missing reviewed advisory pin {label}")
+
+
+def seal(root: Path, source: str, version: str = "3.10.0") -> dict:
+    packages.validate_mode(version, "candidate")
     packages.require(not (root / MANIFEST).exists(), "Refusing to reseal a candidate")
     files = []
     for path in sorted(root.rglob("*")):
@@ -63,21 +83,27 @@ def seal(root: Path, source: str) -> dict:
         if path.is_file():
             data = path.read_bytes()
             files.append({"path": path.relative_to(root).as_posix(), "size": len(data), "sha256": sha256(data)})
-    manifest = {"schema": 1, "published": False, "version": "3.10.0", "source_commit": source,
+    manifest = {"schema": 1, "published": False, "version": version, "source_commit": source,
                 "run_id": int(os.environ.get("GITHUB_RUN_ID", "0")),
                 "run_attempt": int(os.environ.get("GITHUB_RUN_ATTEMPT", "0")), "files": files}
     packages.write_json(root / MANIFEST, manifest)
     return manifest
 
 
-def validate_envelope(envelope: dict, metadata: dict, *, source: str, run_id: int, attempt: int) -> None:
+def validate_envelope(envelope: dict, metadata: dict, *, source: str, run_id: int, attempt: int,
+                      version: str = "3.10.0") -> None:
     expected_name = f"consolidated-candidate-{source}-{run_id}-{attempt}"
+    packages.validate_mode(version, "candidate")
     packages.require(bool(re.fullmatch(r"[0-9a-f]{40}", source)), "Invalid candidate source SHA")
     workflow = metadata.get("workflow_run", {})
     packages.require(envelope.get("schema") == 1 and envelope.get("published") is False and
-                     envelope.get("version") == "3.10.0" and envelope.get("source_commit") == source and
+                     envelope.get("version") == version and envelope.get("source_commit") == source and
                      envelope.get("run_id") == run_id and envelope.get("run_attempt") == attempt,
                      "Candidate envelope source/run identity mismatch")
+    if version == "3.10.1":
+        packages.require(source != ORIGINAL_3100_SOURCE, "3.10.1 candidate must not reuse the 3.10.0 source commit")
+        packages.require(envelope.get("artifact_id") != ORIGINAL_3100_ARTIFACT,
+                         "3.10.1 candidate must not reuse the 3.10.0 artifact identity")
     packages.require(type(envelope.get("artifact_id")) is int and envelope["artifact_id"] > 0 and
                      envelope["artifact_id"] == metadata.get("id") and envelope.get("artifact_name") == expected_name and
                      metadata.get("name") == expected_name and workflow.get("id") == run_id and workflow.get("head_sha") == source,
@@ -103,8 +129,8 @@ def safe_file_name(name: str) -> None:
 
 
 def verify_and_extract(archive: Path, envelope: dict, metadata: dict, destination: Path,
-                       *, source: str, run_id: int, attempt: int) -> dict:
-    validate_envelope(envelope, metadata, source=source, run_id=run_id, attempt=attempt)
+                       *, source: str, run_id: int, attempt: int, version: str = "3.10.0") -> dict:
+    validate_envelope(envelope, metadata, source=source, run_id=run_id, attempt=attempt, version=version)
     packages.require(archive.is_file() and not archive.is_symlink(), "Original candidate archive missing")
     packages.require(archive.stat().st_size == envelope["archive_size"] and
                      file_sha256(archive) == envelope["archive_sha256"], "Original candidate archive hash/size mismatch")
@@ -126,7 +152,7 @@ def verify_and_extract(archive: Path, envelope: dict, metadata: dict, destinatio
         packages.require(sha256(manifest_data) == envelope["preupload_manifest_sha256"], "Pre-upload manifest hash mismatch")
         manifest = json.loads(manifest_data)
         packages.require(manifest.get("schema") == 1 and manifest.get("published") is False and
-                         manifest.get("version") == "3.10.0" and manifest.get("source_commit") == source and
+                         manifest.get("version") == version and manifest.get("source_commit") == source and
                          manifest.get("run_id") == run_id and manifest.get("run_attempt") == attempt, "Pre-upload manifest identity mismatch")
         expected = {}
         for row in manifest["files"]:
@@ -150,6 +176,16 @@ def verify_and_extract(archive: Path, envelope: dict, metadata: dict, destinatio
 
 
 def main() -> None:
+    if "--check-source" in os.sys.argv:
+        parser = argparse.ArgumentParser(description=__doc__)
+        parser.add_argument("--check-source", action="store_true")
+        parser.add_argument("--version", required=True)
+        parser.add_argument("--source", required=True)
+        args = parser.parse_args()
+        root = Path(__file__).resolve().parents[2]
+        require_candidate_source(root, args.source, args.version)
+        print(f"Source {args.source} is acceptable for {args.version}")
+        return
     if "--consume" not in os.sys.argv:
         packages.main(mode="candidate")
         return
@@ -162,14 +198,18 @@ def main() -> None:
     parser.add_argument("--run-id", required=True, type=int)
     parser.add_argument("--attempt", required=True, type=int)
     parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--version", default=None)
     args = parser.parse_args()
     for token in ("GH_TOKEN", "GITHUB_TOKEN", "ACTIONS_READ_TOKEN"):
         packages.require(not os.environ.get(token), "Artifact-reading token must not enter candidate consumers")
     envelope = json.loads(args.envelope.read_text())
+    version = args.version or envelope.get("version")
+    packages.validate_mode(version, "candidate")
+    packages.require(envelope.get("version") == version, "Envelope version does not match consume --version")
     verify_and_extract(args.archive, envelope, json.loads(args.metadata.read_text()), args.output,
-                       source=args.source, run_id=args.run_id, attempt=args.attempt)
+                       source=args.source, run_id=args.run_id, attempt=args.attempt, version=version)
     manifest = json.loads((args.output / "verified-artifacts.json").read_text())
-    packages.require(manifest["version"] == "3.10.0" and manifest["source_commit"] == args.source and manifest["published"] is False,
+    packages.require(manifest["version"] == version and manifest["source_commit"] == args.source and manifest["published"] is False,
                      "Verified inventory does not identify candidate")
     from prove_consolidated_package_consumers import prove
     result = prove(args.output / "artifacts", manifest, args.output.parent / "candidate-consumers")

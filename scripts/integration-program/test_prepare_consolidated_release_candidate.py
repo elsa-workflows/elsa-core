@@ -178,9 +178,12 @@ class CandidateContractsTests(unittest.TestCase):
 
     def test_candidate_and_proof_versions_are_distinct(self):
         packages.validate_mode("3.10.0", "candidate")
+        packages.validate_mode("3.10.1", "candidate")
         packages.validate_mode("3.10.0-proof.1.1", "proof")
-        for mode, versions in (("candidate", ("3.10.0-proof.1.1", "3.10.1", "3.10.0-rc1", "1.0.1")),
-                               ("proof", ("3.10.0", "3.10.0-proof.0.1", "3.10.0-proof.1.0"))):
+        self.assertEqual("3.10.0.0", packages.assembly_identity("3.10.0"))
+        self.assertEqual("3.10.1.0", packages.assembly_identity("3.10.1"))
+        for mode, versions in (("candidate", ("3.10.0-proof.1.1", "3.10.2", "3.10.0-rc1", "1.0.1")),
+                               ("proof", ("3.10.0", "3.10.1", "3.10.0-proof.0.1", "3.10.0-proof.1.0"))):
             for version in versions:
                 with self.subTest(mode=mode, version=version), self.assertRaises(ValueError):
                     packages.validate_mode(version, mode)
@@ -268,6 +271,76 @@ class CandidateContractsTests(unittest.TestCase):
         self.assertIn('"scope": "retrieval_time_snapshot"', runner)
         self.assertIn("deletion after retrieval is not observed", runner)
         self.assertIn("Before approval or publication, recheck live original artifact ID", runner)
+
+    def test_3101_source_rejects_original_sha_and_missing_pins(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "Directory.Packages.props").write_text("<Project />\n")
+            with self.assertRaisesRegex(ValueError, "3.10.0 source"):
+                candidate.require_candidate_source(root, candidate.ORIGINAL_3100_SOURCE, "3.10.1")
+            with self.assertRaisesRegex(ValueError, "MySqlConnector"):
+                candidate.require_candidate_source(root, "b" * 40, "3.10.1")
+            (root / "Directory.Packages.props").write_text(
+                '<PackageVersion Include="MySqlConnector" Version="2.6.2"/>\n'
+                '<PackageVersion Include="SQLitePCLRaw.lib.e_sqlite3" Version="2.1.14"/>\n')
+            candidate.require_candidate_source(root, "b" * 40, "3.10.1")
+            candidate.require_candidate_source(root, candidate.ORIGINAL_3100_SOURCE, "3.10.0")
+        with self.assertRaisesRegex(ValueError, "advisory pin"):
+            candidate.require_candidate_source(ROOT, "b" * 40, "3.10.1")
+
+    def test_3101_seal_and_envelope_reject_reused_3100_identity(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            output = Path(temporary) / "candidate"
+            output.mkdir()
+            (output / "receipt.json").write_text('{"published":false}\n')
+            source = "b" * 40
+            with patch.dict(os.environ, GITHUB_RUN_ID="7", GITHUB_RUN_ATTEMPT="1"):
+                manifest = candidate.seal(output, source, "3.10.1")
+            self.assertEqual("3.10.1", manifest["version"])
+            self.assertEqual(source, manifest["source_commit"])
+            envelope = {"schema": 1, "published": False, "version": "3.10.1", "source_commit": source,
+                        "run_id": 7, "run_attempt": 1, "artifact_id": candidate.ORIGINAL_3100_ARTIFACT,
+                        "retrieved_at": datetime.now(timezone.utc).isoformat(),
+                        "artifact_name": f"consolidated-candidate-{source}-7-1", "retention_days": 30,
+                        "expires_at": (datetime.now(timezone.utc) + timedelta(days=30)).isoformat(),
+                        "archive_sha256": "a" * 64, "archive_size": 1, "preupload_manifest_sha256": "b" * 64}
+            metadata = {"id": candidate.ORIGINAL_3100_ARTIFACT, "name": envelope["artifact_name"], "expired": False,
+                        "expires_at": envelope["expires_at"], "digest": "sha256:" + envelope["archive_sha256"],
+                        "size_in_bytes": 1, "workflow_run": {"id": 7, "head_sha": source}}
+            with self.assertRaisesRegex(ValueError, "3.10.0 artifact"):
+                candidate.validate_envelope(envelope, metadata, source=source, run_id=7, attempt=1, version="3.10.1")
+            reused = dict(envelope)
+            reused["source_commit"] = candidate.ORIGINAL_3100_SOURCE
+            reused["artifact_name"] = f"consolidated-candidate-{candidate.ORIGINAL_3100_SOURCE}-7-1"
+            reused_metadata = copy.deepcopy(metadata)
+            reused_metadata["name"] = reused["artifact_name"]
+            reused_metadata["workflow_run"] = {"id": 7, "head_sha": candidate.ORIGINAL_3100_SOURCE}
+            with self.assertRaisesRegex(ValueError, "3.10.0 source"):
+                candidate.validate_envelope(reused, reused_metadata, source=candidate.ORIGINAL_3100_SOURCE,
+                                            run_id=7, attempt=1, version="3.10.1")
+
+    def test_3101_producer_workflow_is_explicit_unpublished_and_does_not_retarget_3100(self):
+        workflow = (ROOT / candidate.WORKFLOW_3101).read_text()
+        original = (ROOT / ".github/workflows/prepare-consolidated-release-candidate.yml").read_text()
+        self.assertIn("--version 3.10.0", original)
+        self.assertNotIn("3.10.1", original)
+        self.assertIn("permissions: {}", workflow)
+        self.assertIn("type: choice", workflow)
+        self.assertIn("- '3.10.1'", workflow)
+        self.assertIn("source_commit:", workflow)
+        self.assertIn("--check-source", workflow)
+        self.assertIn("--version 3.10.1", workflow)
+        self.assertIn("validate_packages_id_set.py", workflow)
+        self.assertIn('version:"3.10.1"', workflow)
+        self.assertIn(candidate.WORKFLOW_3101, workflow)
+        self.assertIn('(.event == "workflow_dispatch")', workflow)
+        self.assertIn('test "$SOURCE_SHA" != "5cff67228e550b353b3483eb3b37dfdb73a41c74"', workflow)
+        self.assertIn('test "$ARTIFACT_ID" != "12664519771"', workflow)
+        self.assertIn("--version 3.10.1", workflow.split("--consume", 1)[1])
+        for denied in ("secrets.", "packages: write", "deployments:", "environment:", "nuget push", "npm publish", "gh release", "publish_preview", "publish_nuget", "workflow_call:", "workflow_run:", "pull_request:"):
+            self.assertNotIn(denied, workflow)
+        self.assertNotIn("default: '3.10.0'", workflow)
 
     def test_candidate_profile_is_core_owned_feedz_only_and_maintenance_is_preserved(self):
         references = ROOT / ".agents/skills/elsa-release/references"
