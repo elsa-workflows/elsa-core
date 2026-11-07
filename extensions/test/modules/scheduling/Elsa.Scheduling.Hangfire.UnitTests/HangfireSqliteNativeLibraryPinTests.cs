@@ -1,4 +1,4 @@
-using System.Text.Json;
+using Elsa.Testing.Shared;
 
 namespace Elsa.Scheduling.Hangfire.UnitTests;
 
@@ -15,32 +15,11 @@ public class HangfireSqliteNativeLibraryPinTests
     [Fact]
     public void RestoreGraph_PinsSqlitePclRawLibAboveAdvisoryRange()
     {
-        var versions = RestoredPackageVersions(PackageId);
+        var versions = RestoredPackageVersionReader.Read(PackageId);
         Assert.NotEmpty(versions);
         Assert.All(versions, version =>
             Assert.True(
                 version > LastAffected,
                 $"{PackageId} {version} is still in GHSA-2m69-gcr7-jv3q (<= 2.1.11)."));
-    }
-
-    private static IReadOnlyList<Version> RestoredPackageVersions(string packageId)
-    {
-        var libraries = JsonDocument.Parse(File.ReadAllText(FindAssetsPath())).RootElement.GetProperty("libraries");
-        return libraries.EnumerateObject()
-            .Where(property => property.Name.StartsWith(packageId + "/", StringComparison.OrdinalIgnoreCase))
-            .Select(property => Version.Parse(property.Name[(packageId.Length + 1)..]))
-            .ToList();
-    }
-
-    private static string FindAssetsPath()
-    {
-        for (var directory = new DirectoryInfo(AppContext.BaseDirectory); directory is not null; directory = directory.Parent)
-        {
-            var assets = Path.Combine(directory.FullName, "obj", "project.assets.json");
-            if (File.Exists(assets))
-                return assets;
-        }
-
-        throw new FileNotFoundException("project.assets.json", AppContext.BaseDirectory);
     }
 }

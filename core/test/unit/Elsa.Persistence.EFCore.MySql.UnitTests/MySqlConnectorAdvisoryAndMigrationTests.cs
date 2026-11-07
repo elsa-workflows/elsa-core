@@ -1,7 +1,7 @@
 using System.Net.Sockets;
 using System.Reflection;
-using System.Text.Json;
 using Elsa.Persistence.EFCore.Extensions;
+using Elsa.Testing.Shared;
 using Elsa.Persistence.EFCore.Modules.Management;
 using Elsa.Persistence.EFCore.Modules.Runtime;
 using Elsa.Workflows;
@@ -26,7 +26,7 @@ public sealed class MySqlConnectorAdvisoryPinTests
     [Fact]
     public void RestoreGraph_PinsMySqlConnectorAtOrAboveAdvisoryFloor()
     {
-        var versions = MySqlTestContexts.RestoredPackageVersions("MySqlConnector");
+        var versions = RestoredPackageVersionReader.Read("MySqlConnector");
         Assert.NotEmpty(versions);
         Assert.All(versions, version =>
             Assert.True(
@@ -75,7 +75,9 @@ public sealed class MySqlContainerMigrationTests : IAsyncLifetime
     public async Task DisposeAsync()
     {
         if (_container is not null)
+        {
             await _container.DisposeAsync();
+        }
     }
 
     [LiveMySqlFact]
@@ -83,7 +85,9 @@ public sealed class MySqlContainerMigrationTests : IAsyncLifetime
     {
         var connectionString = _container!.GetConnectionString();
         if (!connectionString.Contains("AllowUserVariables", StringComparison.OrdinalIgnoreCase))
+        {
             connectionString += ";AllowUserVariables=True";
+        }
 
         await using (var runtime = MySqlTestContexts.CreateRuntimeContext(connectionString))
         {
@@ -109,7 +113,9 @@ public sealed class MySqlContainerMigrationTests : IAsyncLifetime
 
             var connection = runtime.Database.GetDbConnection();
             if (connection.State != System.Data.ConnectionState.Open)
+            {
                 await connection.OpenAsync();
+            }
 
             await using var command = connection.CreateCommand();
             command.CommandText = """
@@ -128,7 +134,9 @@ public sealed class MySqlContainerMigrationTests : IAsyncLifetime
             await using (var reader = await command.ExecuteReaderAsync())
             {
                 while (await reader.ReadAsync())
+                {
                     prefixLengths.Add(reader.GetInt32(0));
+                }
             }
 
             Assert.Equal(4, prefixLengths.Count);
@@ -192,12 +200,17 @@ internal sealed class LiveMySqlFactAttribute : FactAttribute
         {
             var path = dockerHost["unix://".Length..];
             if (!File.Exists(path))
+            {
                 return false;
+            }
+
             return TryConnectUnix(path);
         }
 
         if (File.Exists("/var/run/docker.sock"))
+        {
             return TryConnectUnix("/var/run/docker.sock");
+        }
 
         return !string.IsNullOrEmpty(dockerHost);
     }
@@ -237,26 +250,5 @@ internal static class MySqlTestContexts
         var builder = new DbContextOptionsBuilder<ManagementElsaDbContext>();
         builder.UseElsaMySql(typeof(StoredTriggerMySqlUniqueIndex).Assembly, connectionString);
         return new ManagementElsaDbContext(builder.Options, provider);
-    }
-
-    public static IReadOnlyList<Version> RestoredPackageVersions(string packageId)
-    {
-        var libraries = JsonDocument.Parse(File.ReadAllText(FindAssetsPath())).RootElement.GetProperty("libraries");
-        return libraries.EnumerateObject()
-            .Where(property => property.Name.StartsWith(packageId + "/", StringComparison.OrdinalIgnoreCase))
-            .Select(property => Version.Parse(property.Name[(packageId.Length + 1)..].Split('-', '+')[0]))
-            .ToList();
-    }
-
-    private static string FindAssetsPath()
-    {
-        for (var directory = new DirectoryInfo(AppContext.BaseDirectory); directory is not null; directory = directory.Parent)
-        {
-            var assets = Path.Combine(directory.FullName, "obj", "project.assets.json");
-            if (File.Exists(assets))
-                return assets;
-        }
-
-        throw new FileNotFoundException("project.assets.json", AppContext.BaseDirectory);
     }
 }
