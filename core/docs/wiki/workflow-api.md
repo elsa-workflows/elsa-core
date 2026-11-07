@@ -32,6 +32,14 @@ With the default prefix, endpoint paths look like `/elsa/api/workflow-definition
 When saving or publishing with `POST /elsa/api/workflow-definitions`, supply a nonblank `model.name`.
 The server trims surrounding whitespace. A missing, null, empty, or whitespace-only name returns HTTP 400 with a validation error under `errors.name`; the definition is not saved or published.
 
+For multipart imports with `POST /elsa/api/workflow-definitions/import-files`, uploads with
+`Content-Type: application/json` are read as definitions; other uploads are read as ZIP
+archives, selecting entries with a case-insensitive `.json` suffix. Malformed JSON,
+JSON `null`, or unreadable ZIP data returns HTTP 400 with a standard validation error
+under `errors.generalErrors`. The message identifies the upload (and the entry for
+malformed JSON inside a ZIP), without parser or exception details. If any selected
+file cannot be read, no definitions from that request are imported.
+
 ## FastEndpoints Registration
 
 FastEndpoints assemblies are collected through module properties:
