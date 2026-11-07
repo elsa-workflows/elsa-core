@@ -17,17 +17,25 @@ public static class RestoredPackageVersionReader
     [MethodImpl(MethodImplOptions.NoInlining)]
     public static IReadOnlyList<Version> Read(string packageId, string? startDirectory = null)
     {
+        return ReadForTarget(packageId, GetTargetMoniker(Assembly.GetCallingAssembly()), startDirectory);
+    }
+
+    /// <summary>
+    /// Returns every restored version of <paramref name="packageId"/> in <paramref name="targetMoniker"/>'s graph.
+    /// </summary>
+    public static IReadOnlyList<Version> ReadForTarget(string packageId, string targetMoniker, string? startDirectory = null)
+    {
         ArgumentException.ThrowIfNullOrWhiteSpace(packageId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(targetMoniker);
 
         using var document = JsonDocument.Parse(File.ReadAllText(FindAssetsPath(startDirectory ?? AppContext.BaseDirectory)));
         var prefix = packageId + "/";
         var versions = new List<Version>();
-        var moniker = GetTargetMoniker(Assembly.GetCallingAssembly());
         var matched = false;
 
         foreach (var target in document.RootElement.GetProperty("targets").EnumerateObject())
         {
-            if (!string.Equals(target.Name.Split('/')[0], moniker, StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(target.Name.Split('/')[0], targetMoniker, StringComparison.OrdinalIgnoreCase))
             {
                 continue;
             }
@@ -46,7 +54,7 @@ public static class RestoredPackageVersionReader
 
         if (!matched)
         {
-            throw new InvalidOperationException($"No project.assets.json target matched {moniker}.");
+            throw new InvalidOperationException($"No project.assets.json target matched {targetMoniker}.");
         }
 
         return versions;
