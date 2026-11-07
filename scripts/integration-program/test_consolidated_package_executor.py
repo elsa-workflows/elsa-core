@@ -166,6 +166,40 @@ class FullInventoryTests(unittest.TestCase):
         self.assertFalse(result["upload_attempted"])
         self.assertEqual(self.feed.calls, [])
 
+    def test_spent_inspector_clock_does_not_starve_live_verify_readback(self):
+        self.fill_feed()
+        with patch.object(executor.HttpTransport, "get", side_effect=self.feed.get) as reader, \
+                patch.object(self.inspector, "deadline", time.monotonic() - 1, create=True):
+            result = executor.run_verified(self.root, self.provenance, self.inspector, mode="verify")
+        self.assertEqual(result["result"], "verified")
+        self.assertTrue(result["content_verified"])
+        self.assertFalse(result["publication_performed"])
+        self.assertFalse(result["upload_attempted"])
+        self.assertEqual(reader.call_count, PIN_ARCHIVES + 2)
+        self.assertEqual(self.feed.calls, [])
+
+    def test_matching_publish_reuses_preupload_observation_without_second_get_pass(self):
+        self.fill_feed()
+        with patch.object(executor, "reconcile", wraps=executor.reconcile) as rec:
+            result = self.run_executor()
+        self.assertEqual(result["result"], "content_verified")
+        self.assertTrue(result["content_verified"])
+        self.assertFalse(result["upload_attempted"])
+        self.assertEqual(rec.call_count, 1)
+        self.assertEqual(result["after"]["packages"]["counts"]["matching"], PIN_COUNT)
+        self.assertEqual(len(result["after"]["symbols"]), PIN_COUNT)
+        self.assertTrue(all(row["classification"] == "matching" for row in result["after"]["symbols"]))
+        self.assertEqual(self.feed.calls, [])
+        self.assertEqual({row["state"] for row in result["operations"] if row["kind"] == "nupkg"}, {"already_matching"})
+
+    def test_uploaded_content_still_requires_post_upload_readback(self):
+        with patch.object(executor, "reconcile", wraps=executor.reconcile) as rec:
+            result = self.run_executor()
+        self.assertEqual(result["result"], "content_verified")
+        self.assertEqual(rec.call_count, 2)
+        self.assertEqual(len(self.feed.calls), PIN_ARCHIVES)
+        self.assertTrue(result["upload_attempted"])
+
     def test_package_present_symbol_missing_and_arbitrary_partial(self):
         for partial in (False, True):
             self.fill_feed()

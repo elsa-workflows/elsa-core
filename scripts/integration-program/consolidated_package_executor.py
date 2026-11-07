@@ -613,8 +613,9 @@ def run_verified(root, provenance, inspector, *, mode, transport=None, authorize
         ledger["inspector_source_sha256"] = inspector.source_digest
         ledger.update(result="in_progress", failure_category=None)
         reader = transport or HttpTransport()
-        if isinstance(reader, HttpTransport):
-            reader.deadline = min(reader.deadline, inspector.deadline)
+        # Inspector and HTTP each keep MAX_SECONDS. Capping the network clock by
+        # the already-spent inspector clock left too little time for exact-byte
+        # readback after a complete upload. MAX_SECONDS itself is unchanged.
         ledger["feed_index_sha256"] = feed_resources(reader)
         ledger["before"] = reconcile(root, provenance, expected, inspector, reader, ledger["feed_index_sha256"],
                                      observation_mode=ledger["scope"])
@@ -683,8 +684,14 @@ def run_verified(root, provenance, inspector, *, mode, transport=None, authorize
             except BaseException:
                 operation["failure_category"] = "upload_acceptance_unknown"
                 raise ExecutorError("upload_acceptance_unknown") from None
-        ledger["after"] = reconcile(root, provenance, expected, inspector, reader, ledger["feed_index_sha256"],
-                                    observation_mode=ledger["scope"])
+        if ledger["upload_attempted"]:
+            ledger["after"] = reconcile(root, provenance, expected, inspector, reader, ledger["feed_index_sha256"],
+                                        observation_mode=ledger["scope"])
+        else:
+            # No mutation in this run: the pre-upload observation is the
+            # verification. A second GET pass of an already-matching set is not
+            # required and previously exhausted the network bound.
+            ledger["after"] = copy.deepcopy(ledger["before"])
         ledger["content_verified"] = ledger["after"]["content_verified"]
         require(ledger["content_verified"], "readback_incomplete")
         ledger.update(result="content_verified", failure_category=None)
