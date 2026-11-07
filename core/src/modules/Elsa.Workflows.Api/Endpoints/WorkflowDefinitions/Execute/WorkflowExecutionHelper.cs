@@ -27,6 +27,24 @@ internal static class WorkflowExecutionHelper
 
         if (workflowGraph == null)
         {
+            if (versionOptions.IsPublished && await workflowDefinitionService.FindWorkflowDefinitionAsync(definitionId, VersionOptions.Latest, cancellationToken) != null)
+            {
+                var errorResponse = new ErrorResponse
+                {
+                    StatusCode = StatusCodes.Status404NotFound,
+                    Errors =
+                    {
+                        ["generalErrors"] =
+                        [
+                            $"Workflow definition '{definitionId}' has no published version. Publish it before executing, or specify the version to execute."
+                        ]
+                    }
+                };
+
+                await httpContext.Response.SendAsync(errorResponse, StatusCodes.Status404NotFound, cancellation: cancellationToken);
+                return;
+            }
+
             await httpContext.Response.SendNotFoundAsync(cancellation: cancellationToken);
             return;
         }
