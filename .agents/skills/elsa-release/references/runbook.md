@@ -429,12 +429,10 @@ publication. The #8629 proof-version persisted matrix cannot certify different
 stable candidate bytes: applicable persisted compatibility checks must bind to
 the admitted candidate production bytes before that candidate is published.
 `publish-consolidated-original-candidate.yml` is the only Feedz publisher for
-those stable 3.10.x bytes. A `packages.yml` nuget.org dispatch on a stable
-3.10.x tag downloads the current pin (run `40347931480`, artifact
-`12664519771`), verifies each `.nupkg` sha256 against the candidate seal, and
-runs the same 231-ID and Studio content guards that the candidate Feedz
-publisher runs before its push. The promote path does not restore, build, or
-pack. `3.10.1` and later stay blocked until a new pin exists.
+those stable 3.10.x bytes. Do not retarget it for 3.10.1. A `packages.yml`
+nuget.org dispatch on `3.10.0` is rejected (the staged candidate must not be
+promoted). `3.10.1` and later stay blocked until a distinct pin exists; the
+3.10.0 pin (run `40347931480`, artifact `12664519771`) must not be reused.
 
 This task implements no publisher handoff. Ordinary approved Core publication
 selection remains a `packages.yml` dispatch: branch previews and 3.10.x
@@ -442,7 +440,6 @@ prerelease tags may publish to Feedz, and release-version tags may publish to
 NuGet.org with `publish_nuget`. Stable 3.10.x Feedz is not a `packages.yml`
 option. That
 workflow has no operator-supplied candidate artifact/run selector; the 3.10.0
-nuget.org path is pinned to the reviewed candidate identity and promotes those
-bytes. Candidate
+nuget.org path must not promote the staged candidate. Candidate
 success does not imply release readiness, publication, source publisher cutover
 or completion of #8219/#8220.
