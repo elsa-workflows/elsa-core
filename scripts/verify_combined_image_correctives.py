@@ -109,17 +109,25 @@ def main() -> int:
         )
         role_name = first["checks"]["identity"]["roleName"]
         workflow_name = first["checks"]["api"]["loadedName"]
+        definition_id = first["checks"]["api"]["definitionId"]
         run(["docker", "restart", container])
         wait_running(container)
-        os.environ["ELSA_COMBINED_EXPECT_ROLE"] = role_name
-        os.environ["ELSA_COMBINED_EXPECT_WORKFLOW"] = workflow_name
-        second = run_smoke(f"http://127.0.0.1:{args.port}", "admin", password, artifacts / "restart")
+        second = run_smoke(
+            f"http://127.0.0.1:{args.port}",
+            "admin",
+            password,
+            artifacts / "restart",
+            expect_definition_id=definition_id,
+            expect_role=role_name,
+            expect_workflow=workflow_name,
+        )
         write_json(artifacts / "restart-smoke.json", second)
         print(json.dumps(redact({
             "firstPassed": first["passed"],
             "restartPassed": second["passed"],
             "roleName": role_name,
             "workflowName": workflow_name,
+            "definitionId": definition_id,
             "sqlitePath": "/app/elsa_workflows.db",
             "image": image,
             "sourceSha": source_sha,

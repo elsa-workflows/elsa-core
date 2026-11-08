@@ -1,5 +1,6 @@
 using Elsa.Extensions;
 using Elsa.Http.Bookmarks;
+using Elsa.Http.Contracts;
 using Elsa.Http.Options;
 using Elsa.Workflows.Runtime.Filters;
 using JetBrains.Annotations;
@@ -43,13 +44,6 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
         var basePath = options.Value.BasePath?.ToString().NormalizeRoute();
 
         if (!string.IsNullOrWhiteSpace(basePath) && !IsBasePathMatch(path, basePath))
-        {
-            await next(httpContext);
-            return;
-        }
-
-        var remainingPath = TryStripBasePath(path, basePath) ?? path;
-        if (IsPassthroughPath(remainingPath, options.Value.PassthroughSubPaths))
         {
             await next(httpContext);
             return;
@@ -125,6 +119,12 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
         if (bookmark != null)
         {
             await ResumeWorkflowAsync(httpContext, bookmark, input, correlationId);
+            return;
+        }
+
+        var unmatchedHandler = serviceProvider.GetService<IHttpWorkflowUnmatchedHandler>();
+        if (unmatchedHandler is not null && await unmatchedHandler.HandleAsync(httpContext, next, cancellationToken))
+        {
             return;
         }
 
@@ -304,23 +304,6 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
         basePath == "/" ||
         string.Equals(route, basePath, StringComparison.OrdinalIgnoreCase) ||
         route.StartsWith($"{basePath}/", StringComparison.OrdinalIgnoreCase);
-
-    private static bool IsPassthroughPath(string remainingPath, IList<string>? passthroughSubPaths)
-    {
-        if (passthroughSubPaths is null || passthroughSubPaths.Count == 0)
-        {
-            return false;
-        }
-
-        var firstSegment = GetRouteSegments(remainingPath).FirstOrDefault();
-        if (string.IsNullOrEmpty(firstSegment))
-        {
-            return false;
-        }
-
-        return passthroughSubPaths.Any(candidate =>
-            string.Equals(candidate.Trim('/'), firstSegment, StringComparison.OrdinalIgnoreCase));
-    }
 
     private static int FindSegmentSequence(string[] routeSegments, string[] candidateSegments)
     {

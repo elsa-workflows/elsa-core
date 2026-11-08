@@ -1,6 +1,7 @@
 using System.Collections;
 using Elsa.Common.Models;
 using Elsa.Http.Bookmarks;
+using Elsa.Http.Contracts;
 using Elsa.Http.Middleware;
 using Elsa.Http.Options;
 using Elsa.Workflows;
@@ -284,41 +285,124 @@ public class HttpWorkflowsMiddlewareTests
         Assert.Equal(triggerHash, runOptions.Properties[TriggerWorkflowProperties.StimulusHash]);
     }
 
-    [Theory]
-    [InlineData("/workflows/definitions")]
-    [InlineData("/workflows/definitions/abc/edit")]
-    [InlineData("/workflows/instances")]
-    [InlineData("/workflows/instances/abc/view")]
-    public async Task InvokeAsync_WithStudioPassthroughSubPath_CallsNext(string path)
+    [Fact]
+    public async Task InvokeAsync_WithMatchingTriggerUnderInstancesPrefix_StartsWorkflowBeforeUnmatchedFallback()
     {
+        const string triggerHash = "http-endpoint-instances-start";
         var nextCalled = false;
-        var routeMatcher = Substitute.For<IRouteMatcher>();
+        var workflow = new Workflow { Id = "workflow" };
+        var root = new ActivityNode(workflow, "Root");
+        var trigger = new StoredTrigger
+        {
+            Id = "trigger-instances-start",
+            WorkflowDefinitionVersionId = "workflow-version",
+            ActivityId = "http-endpoint",
+            Hash = triggerHash,
+            Payload = new HttpEndpointBookmarkPayload("/instances/r2-start", "post", authorize: false)
+        };
+        var workflowRunner = Substitute.For<IWorkflowRunner>();
+        RunWorkflowOptions? runOptions = null;
+        workflowRunner
+            .RunAsync(Arg.Any<WorkflowGraph>(), Arg.Do<RunWorkflowOptions?>(options => runOptions = options), Arg.Any<CancellationToken>())
+            .Returns(new RunWorkflowResult(null!, new WorkflowState(), workflow, null, Journal.Empty));
         var middleware = new HttpWorkflowsMiddleware(_ =>
         {
             nextCalled = true;
             return Task.CompletedTask;
         });
         var serviceProvider = new ServiceCollection()
-            .AddSingleton(routeMatcher)
+            .AddSingleton<IHttpWorkflowUnmatchedHandler>(new AlwaysFallbackUnmatchedHandler())
+            .AddSingleton<IRouteMatcher, ExactRouteMatcher>()
+            .AddSingleton<IRouteTable>(new ListRouteTable([new("/workflows/instances/r2-start")]))
+            .AddSingleton<IStimulusHasher, FixedStimulusHasher>()
+            .AddSingleton(Substitute.For<IHttpEndpointAuthorizationHandler>())
+            .AddSingleton(workflowRunner)
+            .BuildServiceProvider();
+        var httpContext = new DefaultHttpContext
+        {
+            RequestServices = serviceProvider
+        };
+        httpContext.Request.Path = "/workflows/instances/r2-start";
+        httpContext.Request.Method = HttpMethod.Post.Method;
+
+        await middleware.InvokeAsync(
+            httpContext,
+            serviceProvider,
+            Microsoft.Extensions.Options.Options.Create(new HttpActivityOptions { BasePath = "/workflows" }),
+            new FixedHttpWorkflowLookupService(new(new WorkflowGraph(workflow, root, [root]), [trigger])));
+
+        Assert.False(nextCalled);
+        Assert.NotNull(runOptions);
+        Assert.Equal(trigger.ActivityId, runOptions.TriggerActivityId);
+    }
+
+    [Theory]
+    [InlineData("/workflows/definitions")]
+    [InlineData("/workflows/definitions/abc/edit")]
+    [InlineData("/workflows/instances")]
+    [InlineData("/workflows/instances/abc/view")]
+    public async Task InvokeAsync_WithUnmatchedStudioPageAndHostFallback_CallsNext(string path)
+    {
+        var nextCalled = false;
+        var middleware = new HttpWorkflowsMiddleware(_ =>
+        {
+            nextCalled = true;
+            return Task.CompletedTask;
+        });
+        var serviceProvider = new ServiceCollection()
+            .AddSingleton<IHttpWorkflowUnmatchedHandler>(new StudioPageUnmatchedHandler())
+            .AddSingleton<IBookmarkStore>(new CapturingBookmarkStore(CurrentTenantId, []))
+            .AddSingleton<IRouteMatcher, ExactRouteMatcher>()
+            .AddSingleton<IRouteTable>(new ListRouteTable([]))
+            .AddSingleton<IStimulusHasher, FixedStimulusHasher>()
             .BuildServiceProvider();
         var httpContext = new DefaultHttpContext
         {
             RequestServices = serviceProvider
         };
         httpContext.Request.Path = path;
+        httpContext.Request.Method = HttpMethod.Get.Method;
 
         await middleware.InvokeAsync(
             httpContext,
             serviceProvider,
-            Microsoft.Extensions.Options.Options.Create(new HttpActivityOptions
-            {
-                BasePath = "/workflows",
-                PassthroughSubPaths = ["definitions", "instances"]
-            }),
+            Microsoft.Extensions.Options.Options.Create(new HttpActivityOptions { BasePath = "/workflows" }),
             new EmptyHttpWorkflowLookupService());
 
         Assert.True(nextCalled);
-        routeMatcher.DidNotReceive().Match(Arg.Any<string>(), Arg.Any<string>());
+    }
+
+    [Fact]
+    public async Task InvokeAsync_WithUnmatchedReservedPrefixHttpPath_DoesNotCallNext()
+    {
+        var nextCalled = false;
+        var middleware = new HttpWorkflowsMiddleware(_ =>
+        {
+            nextCalled = true;
+            return Task.CompletedTask;
+        });
+        var serviceProvider = new ServiceCollection()
+            .AddSingleton<IHttpWorkflowUnmatchedHandler>(new StudioPageUnmatchedHandler())
+            .AddSingleton<IBookmarkStore>(new CapturingBookmarkStore(CurrentTenantId, []))
+            .AddSingleton<IRouteMatcher, ExactRouteMatcher>()
+            .AddSingleton<IRouteTable>(new ListRouteTable([]))
+            .AddSingleton<IStimulusHasher, FixedStimulusHasher>()
+            .BuildServiceProvider();
+        var httpContext = new DefaultHttpContext
+        {
+            RequestServices = serviceProvider
+        };
+        httpContext.Request.Path = "/workflows/instances/r2-start";
+        httpContext.Request.Method = HttpMethod.Post.Method;
+
+        await middleware.InvokeAsync(
+            httpContext,
+            serviceProvider,
+            Microsoft.Extensions.Options.Options.Create(new HttpActivityOptions { BasePath = "/workflows" }),
+            new EmptyHttpWorkflowLookupService());
+
+        Assert.False(nextCalled);
+        Assert.Equal(StatusCodes.Status404NotFound, httpContext.Response.StatusCode);
     }
 
     [Fact]
@@ -346,11 +430,7 @@ public class HttpWorkflowsMiddlewareTests
         await middleware.InvokeAsync(
             httpContext,
             serviceProvider,
-            Microsoft.Extensions.Options.Options.Create(new HttpActivityOptions
-            {
-                BasePath = "/workflows",
-                PassthroughSubPaths = ["definitions", "instances"]
-            }),
+            Microsoft.Extensions.Options.Options.Create(new HttpActivityOptions { BasePath = "/workflows" }),
             new EmptyHttpWorkflowLookupService());
 
         Assert.False(nextCalled);
@@ -432,6 +512,34 @@ public class HttpWorkflowsMiddlewareTests
                 query = query.Where(x => x.TenantId == currentTenantId);
 
             return query;
+        }
+    }
+
+    private sealed class AlwaysFallbackUnmatchedHandler : IHttpWorkflowUnmatchedHandler
+    {
+        public async Task<bool> HandleAsync(HttpContext httpContext, RequestDelegate next, CancellationToken cancellationToken)
+        {
+            await next(httpContext);
+            return true;
+        }
+    }
+
+    private sealed class StudioPageUnmatchedHandler : IHttpWorkflowUnmatchedHandler
+    {
+        public async Task<bool> HandleAsync(HttpContext httpContext, RequestDelegate next, CancellationToken cancellationToken)
+        {
+            var segments = (httpContext.Request.Path.Value ?? string.Empty).Trim('/').Split('/', StringSplitOptions.RemoveEmptyEntries);
+            var isStudioPage =
+                segments is ["workflows", "definitions"] or ["workflows", "instances"]
+                || segments is ["workflows", "definitions", _, "edit"]
+                || segments is ["workflows", "instances", _, "view"];
+            if (!isStudioPage)
+            {
+                return false;
+            }
+
+            await next(httpContext);
+            return true;
         }
     }
 

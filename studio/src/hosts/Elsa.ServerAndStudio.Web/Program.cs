@@ -1,11 +1,13 @@
 using System.Text.Encodings.Web;
 using Elsa.Extensions;
+using Elsa.Http.Contracts;
 using Elsa.Http.Options;
 using Elsa.Identity.Features;
 using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Identity;
 using Elsa.Persistence.EFCore.Modules.Management;
 using Elsa.Persistence.EFCore.Modules.Runtime;
+using Elsa.ServerAndStudio.Web;
 using Elsa.Studio.Authentication.Abstractions.Models;
 using Elsa.Studio.Authentication.ElsaIdentity.BlazorServer.Extensions;
 using Elsa.Studio.Authentication.ElsaIdentity.HttpMessageHandlers;
@@ -68,6 +70,7 @@ services
     .AddHealthChecks()
     .AddElsaReadinessChecks(includeDistributedLocks: false);
 services.PostConfigure<ApiEndpointOptions>(options => configuration.GetSection("Api").Bind(options));
+services.AddSingleton<IHttpWorkflowUnmatchedHandler, CombinedStudioUnmatchedHttpHandler>();
 
 services.AddElsa(elsa =>
 {

@@ -47,6 +47,8 @@ REQUIRED_PROGRAM_MARKERS = (
     "AddWorkflowsModule",
     "UseEntityFrameworkCore",
     "elsa_workflows.db",
+    "IHttpWorkflowUnmatchedHandler",
+    "CombinedStudioUnmatchedHttpHandler",
 )
 FORBIDDEN_PROGRAM_MARKERS = (
     "MapHealthChecks(\"/\",",
@@ -55,6 +57,7 @@ FORBIDDEN_PROGRAM_MARKERS = (
     "/elsa-http",
     "File.Copy",
     "File.Move",
+    "PassthroughSubPaths",
 )
 REQUIRED_PAGE_MARKERS = (
     '_content/Elsa.Studio.Workflows.Designer/designer.css',
@@ -66,13 +69,11 @@ REQUIRED_SETTINGS_MARKERS = (
     '"RoutePrefix": "elsa/api"',
     "elsa_workflows.db",
     '"BasePath": "/workflows"',
-    '"PassthroughSubPaths"',
-    '"definitions"',
-    '"instances"',
 )
 FORBIDDEN_SETTINGS_MARKERS = (
     "elsa.sqlite.db",
     "/elsa-http",
+    "PassthroughSubPaths",
 )
 REQUIRED_DASHBOARD_MARKERS = (
     '@page "/"',

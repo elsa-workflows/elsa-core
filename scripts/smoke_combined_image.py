@@ -258,6 +258,7 @@ def has_studio_chrome(html: str) -> bool:
 def collect_failures(result: dict[str, Any]) -> list[str]:
     """Fail closed on readiness 503, compressed JS 500, Faulted instances, missing dashboard content, and HTTP regressions."""
     failures: list[str] = []
+    environment = str(result.get("environment") or "Production")
     routing = result.get("checks", {}).get("routing") or {}
     health = result.get("checks", {}).get("health") or {}
     assets = result.get("checks", {}).get("assets") or {}
@@ -278,6 +279,8 @@ def collect_failures(result: dict[str, Any]) -> list[str]:
         failures.append("workflows definitions route did not serve the Studio host")
     if routing.get("workflowsInstancesStatus") != 200 or not routing.get("workflowsInstancesUsesHostFallback"):
         failures.append("workflows instances route did not serve the Studio host")
+    if routing.get("rootStatus") != 200:
+        failures.append("GET / did not return HTTP 200")
     if routing.get("rootIsNotHealthText") is False:
         failures.append("GET / still looks like a health-check body")
     if health.get("live") != 200:
@@ -292,6 +295,9 @@ def collect_failures(result: dict[str, Any]) -> list[str]:
         failures.append("blazor.server.js missing")
     if assets.get("compressionRequestStatus") != 200:
         failures.append("compressed designer.entry.js failed")
+    encoding = str(assets.get("contentEncoding") or "").lower()
+    if environment.lower() != "development" and "gzip" not in encoding:
+        failures.append("Production compressed designer.entry.js missing content encoding")
     if api.get("saveStatus") not in {200, 201} or api.get("editStatus") not in {200, 201}:
         failures.append("workflow save/edit failed")
     if api.get("publishStatus") not in {200, 201} or api.get("published") is not True:
@@ -306,8 +312,8 @@ def collect_failures(result: dict[str, Any]) -> list[str]:
     instance_sub = api.get("instanceSubStatus")
     if instance_status == "Faulted" or instance_sub == "Faulted":
         failures.append("workflow instance Faulted")
-    elif instance_status and instance_status != "Finished":
-        failures.append("workflow instance did not finish")
+    elif instance_status != "Finished" or instance_sub != "Finished":
+        failures.append("workflow instance did not report Finished terminal status")
     if identity.get("createStatus") not in {200, 201} or not identity.get("roleId"):
         failures.append("persisted identity role create failed")
     if identity.get("listStatus") != 200 or not identity.get("rolePresent"):
@@ -318,10 +324,20 @@ def collect_failures(result: dict[str, Any]) -> list[str]:
         failures.append("HTTP trigger start on /workflows/{path} failed")
     if http_triggers.get("resumeStatus") != 200 or "resumed" not in str(http_triggers.get("resumeBody") or ""):
         failures.append("HTTP trigger resume on /workflows/{path} failed")
+    if http_triggers.get("reservedInstancesStartStatus") != 200 or "started" not in str(http_triggers.get("reservedInstancesStartBody") or ""):
+        failures.append("HTTP trigger start on /workflows/instances/{path} failed")
+    if http_triggers.get("reservedInstancesResumeStatus") != 200 or "resumed" not in str(http_triggers.get("reservedInstancesResumeBody") or ""):
+        failures.append("HTTP trigger resume on /workflows/instances/{path} failed")
+    if http_triggers.get("reservedDefinitionsStartStatus") != 200 or "started" not in str(http_triggers.get("reservedDefinitionsStartBody") or ""):
+        failures.append("HTTP trigger start on /workflows/definitions/{path} failed")
+    if http_triggers.get("reservedDefinitionsResumeStatus") != 200 or "resumed" not in str(http_triggers.get("reservedDefinitionsResumeBody") or ""):
+        failures.append("HTTP trigger resume on /workflows/definitions/{path} failed")
     if http_triggers.get("unmatchedStatus") != 404 or http_triggers.get("unmatchedServedStudio"):
         failures.append("unmatched HTTP trigger path did not 404")
     if upgrade.get("expectedWorkflowMissing"):
         failures.append("expected prior-volume workflow missing from elsa_workflows.db")
+    if upgrade.get("expectedDefinitionMissing"):
+        failures.append("expected prior definition ID missing after restart")
     return failures
 
 
@@ -336,9 +352,22 @@ def wait_for_http_trigger(url: str, *, method: str = "GET", timeout_seconds: int
     return last_status, last_body
 
 
-def run_smoke(base_url: str, username: str, password: str, artifacts: Path) -> dict[str, Any]:
+def run_smoke(
+    base_url: str,
+    username: str,
+    password: str,
+    artifacts: Path,
+    *,
+    expect_definition_id: str | None = None,
+    expect_role: str | None = None,
+    expect_workflow: str | None = None,
+) -> dict[str, Any]:
     wait_for_health(base_url)
-    result: dict[str, Any] = {"baseUrl": base_url, "checks": {}}
+    result: dict[str, Any] = {
+        "baseUrl": base_url,
+        "environment": os.environ.get("ASPNETCORE_ENVIRONMENT", "Production"),
+        "checks": {},
+    }
 
     login_status, login_html, _ = request_bytes(f"{base_url}/login")
     dashboard_status, dashboard_html, _ = request_bytes(f"{base_url}/dashboard")
@@ -395,6 +424,22 @@ def run_smoke(base_url: str, username: str, password: str, artifacts: Path) -> d
     }
 
     token = login(base_url, username, password)
+    expected_definition_id = expect_definition_id or os.environ.get("ELSA_COMBINED_EXPECT_DEFINITION_ID")
+    result["checks"]["upgrade"] = {
+        "expectedDefinitionId": expected_definition_id,
+        "expectedDefinitionMissing": False,
+        "priorDefinitionStatus": None,
+        "sqliteFileName": "elsa_workflows.db",
+    }
+    if expected_definition_id:
+        prior_status, prior_payload, _ = request_json(
+            f"{base_url}/elsa/api/workflow-definitions/by-definition-id/{expected_definition_id}?versionOptions=Latest",
+            token=token,
+        )
+        prior_definition = unwrap_definition(prior_payload)
+        result["checks"]["upgrade"]["priorDefinitionStatus"] = prior_status
+        result["checks"]["upgrade"]["priorDefinitionId"] = prior_definition.get("definitionId") or prior_definition.get("id")
+        result["checks"]["upgrade"]["expectedDefinitionMissing"] = prior_status != 200
     definition_id = f"combined-smoke-{secrets.token_hex(4)}"
     save_status, saved, _ = request_json(
         f"{base_url}/elsa/api/workflow-definitions",
@@ -479,7 +524,7 @@ def run_smoke(base_url: str, username: str, password: str, artifacts: Path) -> d
     )
     list_status, listed_roles, _ = request_json(f"{base_url}/elsa/api/identity/roles", token=token)
     listed_names = role_names(listed_roles)
-    expected_role = os.environ.get("ELSA_COMBINED_EXPECT_ROLE")
+    expected_role = expect_role or os.environ.get("ELSA_COMBINED_EXPECT_ROLE")
     result["checks"]["identity"] = {
         "createStatus": create_status,
         "listStatus": list_status,
@@ -509,6 +554,48 @@ def run_smoke(base_url: str, username: str, password: str, artifacts: Path) -> d
     )
     start_status, start_body = wait_for_http_trigger(f"{base_url}{HTTP_TRIGGER_BASE}/{start_path}", method="POST")
     resume_status, resume_body = wait_for_http_trigger(f"{base_url}{HTTP_TRIGGER_BASE}/{resume_path}", method="GET")
+    instances_start = f"instances/qa-start-{secrets.token_hex(3)}"
+    instances_resume = f"instances/qa-resume-{secrets.token_hex(3)}"
+    definitions_start = f"definitions/qa-start-{secrets.token_hex(3)}"
+    definitions_resume = f"definitions/qa-resume-{secrets.token_hex(3)}"
+    instances_save_status, _, _ = request_json(
+        f"{base_url}/elsa/api/workflow-definitions",
+        method="POST",
+        token=token,
+        body={
+            "publish": True,
+            "model": {
+                "definitionId": f"combined-http-instances-{secrets.token_hex(4)}",
+                "name": "Combined Image HTTP Instances Start Resume",
+                "root": http_start_resume_flowchart(instances_start, instances_resume),
+            },
+        },
+    )
+    definitions_save_status, _, _ = request_json(
+        f"{base_url}/elsa/api/workflow-definitions",
+        method="POST",
+        token=token,
+        body={
+            "publish": True,
+            "model": {
+                "definitionId": f"combined-http-definitions-{secrets.token_hex(4)}",
+                "name": "Combined Image HTTP Definitions Start Resume",
+                "root": http_start_resume_flowchart(definitions_start, definitions_resume),
+            },
+        },
+    )
+    reserved_instances_start_status, reserved_instances_start_body = wait_for_http_trigger(
+        f"{base_url}{HTTP_TRIGGER_BASE}/{instances_start}", method="POST"
+    )
+    reserved_instances_resume_status, reserved_instances_resume_body = wait_for_http_trigger(
+        f"{base_url}{HTTP_TRIGGER_BASE}/{instances_resume}", method="GET"
+    )
+    reserved_definitions_start_status, reserved_definitions_start_body = wait_for_http_trigger(
+        f"{base_url}{HTTP_TRIGGER_BASE}/{definitions_start}", method="POST"
+    )
+    reserved_definitions_resume_status, reserved_definitions_resume_body = wait_for_http_trigger(
+        f"{base_url}{HTTP_TRIGGER_BASE}/{definitions_resume}", method="GET"
+    )
     unmatched_status, unmatched_body, _ = request_bytes(f"{base_url}{HTTP_TRIGGER_BASE}/not-a-combined-http-endpoint")
     unmatched_html = unmatched_body.decode("utf-8", "replace")
     result["checks"]["httpTriggers"] = {
@@ -519,23 +606,37 @@ def run_smoke(base_url: str, username: str, password: str, artifacts: Path) -> d
         "startBody": start_body.decode("utf-8", "replace"),
         "resumeStatus": resume_status,
         "resumeBody": resume_body.decode("utf-8", "replace"),
+        "instancesSaveStatus": instances_save_status,
+        "reservedInstancesStartPath": f"{HTTP_TRIGGER_BASE}/{instances_start}",
+        "reservedInstancesResumePath": f"{HTTP_TRIGGER_BASE}/{instances_resume}",
+        "reservedInstancesStartStatus": reserved_instances_start_status,
+        "reservedInstancesStartBody": reserved_instances_start_body.decode("utf-8", "replace"),
+        "reservedInstancesResumeStatus": reserved_instances_resume_status,
+        "reservedInstancesResumeBody": reserved_instances_resume_body.decode("utf-8", "replace"),
+        "definitionsSaveStatus": definitions_save_status,
+        "reservedDefinitionsStartPath": f"{HTTP_TRIGGER_BASE}/{definitions_start}",
+        "reservedDefinitionsResumePath": f"{HTTP_TRIGGER_BASE}/{definitions_resume}",
+        "reservedDefinitionsStartStatus": reserved_definitions_start_status,
+        "reservedDefinitionsStartBody": reserved_definitions_start_body.decode("utf-8", "replace"),
+        "reservedDefinitionsResumeStatus": reserved_definitions_resume_status,
+        "reservedDefinitionsResumeBody": reserved_definitions_resume_body.decode("utf-8", "replace"),
         "unmatchedStatus": unmatched_status,
         "unmatchedServedStudio": "designer.css" in unmatched_html or BLAZOR_NOT_FOUND in unmatched_html,
     }
 
-    expected_workflow = os.environ.get("ELSA_COMBINED_EXPECT_WORKFLOW")
+    expected_workflow = expect_workflow or os.environ.get("ELSA_COMBINED_EXPECT_WORKFLOW")
     definitions_status, definitions_payload, _ = request_json(
         f"{base_url}/elsa/api/workflow-definitions?page=0&pageSize=100",
         token=token,
     )
     listed_definition_names = definition_names(definitions_payload)
-    result["checks"]["upgrade"] = {
+    result["checks"]["upgrade"].update({
         "listStatus": definitions_status,
         "expectedWorkflow": expected_workflow,
         "listedNames": listed_definition_names,
         "expectedWorkflowMissing": bool(expected_workflow) and expected_workflow not in listed_definition_names,
         "sqliteFileName": "elsa_workflows.db",
-    }
+    })
 
     result["failures"] = collect_failures(result)
     result["passed"] = not result["failures"]

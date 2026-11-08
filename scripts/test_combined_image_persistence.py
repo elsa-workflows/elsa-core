@@ -16,9 +16,22 @@ class CombinedImagePersistenceTests(unittest.TestCase):
         self.assertIn("Data Source=elsa_workflows.db;Cache=Shared", settings)
         self.assertNotIn("elsa.sqlite.db", settings)
         self.assertIn("UseEntityFrameworkCore", program)
+        self.assertIn("IHttpWorkflowUnmatchedHandler", program)
+        self.assertNotIn("PassthroughSubPaths", settings)
+        self.assertNotIn("PassthroughSubPaths", program)
         self.assertNotIn("File.Copy", program)
         self.assertNotIn("File.Move", program)
         self.assertNotIn("App_Data/elsa.sqlite.db", program)
+
+    def test_studio_fallback_is_exact_pages_not_reserved_prefixes(self):
+        handler = (ROOT / "studio/src/hosts/Elsa.ServerAndStudio.Web/CombinedStudioUnmatchedHttpHandler.cs").read_text(encoding="utf-8")
+        self.assertIn("IsStudioWorkflowPage", handler)
+        self.assertIn('segments.Length == 2', handler)
+        self.assertIn('segments.Length == 4', handler)
+        self.assertIn('"edit"', handler)
+        self.assertIn('"view"', handler)
+        options = (ROOT / "core/src/modules/Elsa.Http/Options/HttpActivityOptions.cs").read_text(encoding="utf-8")
+        self.assertNotIn("PassthroughSubPaths", options)
 
     def test_wal_safe_in_place_open_sees_legacy_row_without_copying(self):
         with tempfile.TemporaryDirectory() as tmp:
