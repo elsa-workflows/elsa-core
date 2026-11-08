@@ -1,6 +1,8 @@
 {
   "schema": 2,
   "kind": "nonpublication_measurement",
+  "owner_issue": "https://github.com/elsa-workflows/elsa-core/issues/8220",
+  "removal_condition": "Delete when a reviewed 3.10.1 executor supersedes this prototype or the 3.10.1 Feedz path is abandoned.",
   "fit_claim": false,
   "safe_1800_demonstrated": false,
   "gate_waiver": false,

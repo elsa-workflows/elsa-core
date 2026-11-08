@@ -888,15 +888,27 @@ class MeasurementTests(unittest.TestCase):
         self.assertIn("TEMPLATE", plan)
         self.assertIn("No measurement in this document", plan)
         self.assertIn("3.10.0 original.zip is not in this workspace", plan)
-        source = Path(proto.__file__).read_text(encoding="utf-8")
+
+    def test_prototype_files_declare_issue_8220_and_removal_condition(self):
         owner = "https://github.com/elsa-workflows/elsa-core/issues/8220"
-        self.assertIn(owner, source)
-        self.assertIn("Feedz path is abandoned", source.replace("\n", " "))
-        measurement = Path(__file__).with_name("consolidated-3101-executor-measurement.md").read_text(encoding="utf-8")
-        self.assertIn(owner, measurement)
-        self.assertIn("Feedz path is abandoned", measurement.replace("\n", " "))
-        self.assertIn(owner, plan)
-        self.assertIn("Feedz path is abandoned", plan.replace("\n", " "))
+        receipt = json.loads(
+            Path(__file__).with_name("consolidated-3101-executor-measurement.json").read_text(encoding="utf-8"))
+        self.assertEqual(receipt["owner_issue"], owner)
+        self.assertIn("reviewed 3.10.1 executor", receipt["removal_condition"])
+        self.assertIn("supersedes", receipt["removal_condition"])
+        self.assertIn("3.10.1 Feedz path is abandoned", receipt["removal_condition"])
+        self.assertFalse(receipt["fit_claim"])
+        texts = [
+            Path(proto.__file__).read_text(encoding="utf-8"),
+            Path(__file__).read_text(encoding="utf-8"),
+            Path(__file__).with_name("consolidated-3101-executor-measurement.md").read_text(encoding="utf-8"),
+            Path(__file__).with_name("consolidated-3100-readonly-get-sample-plan.md").read_text(encoding="utf-8"),
+        ]
+        for text in texts:
+            collapsed = text.replace("\n", " ")
+            self.assertIn(owner, text)
+            self.assertIn("reviewed 3.10.1 executor", collapsed)
+            self.assertIn("3.10.1 Feedz path is abandoned", collapsed)
 
     def test_zero_latency_mock_is_not_a_fit_proof(self):
         archive = b"x"
