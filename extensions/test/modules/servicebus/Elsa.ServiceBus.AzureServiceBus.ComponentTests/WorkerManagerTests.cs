@@ -76,6 +76,11 @@ public class WorkerManagerTests
         Assert.Equal(1, processor.CloseCalls);
     }
 
+    /// <summary>
+    /// Verifies shutdown attempts to close every worker and repeated disposal callers
+    /// observe the same failure without retrying any worker.
+    /// </summary>
+    /// <param name="failEveryClose">When true, both closes fail; otherwise, only the first close fails.</param>
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
