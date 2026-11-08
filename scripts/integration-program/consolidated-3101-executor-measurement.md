@@ -1,5 +1,10 @@
 # 3.10.1 executor prototype — non-publication measurement
 
+Owning issue: https://github.com/elsa-workflows/elsa-core/issues/8220
+(F3.4 artifact provenance / publication / recovery; no dedicated 3.10.1
+executor issue exists). Removal condition: delete when a reviewed 3.10.1
+executor supersedes this prototype or the 3.10.1 Feedz path is abandoned.
+
 This is **not** a fit claim and **not** release GO. Network PUT is not
 authorized. The 3.10.0 executor, pins, and operational policy are unchanged.
 

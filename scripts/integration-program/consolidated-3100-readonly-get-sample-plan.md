@@ -1,5 +1,9 @@
 # TEMPLATE: report-only 3.10.0 read-only GET sample plan
 
+Owning issue: https://github.com/elsa-workflows/elsa-core/issues/8220
+Removal condition: delete when a reviewed 3.10.1 executor supersedes this
+prototype or the 3.10.1 Feedz path is abandoned.
+
 **Status: TEMPLATE, not executable.** No measurement in this document. No GET
 is issued here. A later reviewed run would still need pinned local 3.10.0
 manifest-derived exact targets before it could execute.

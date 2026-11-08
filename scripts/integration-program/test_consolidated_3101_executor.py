@@ -1,5 +1,9 @@
 """Offline failure-injection tests for the distinct 3.10.1 executor prototype.
 
+Owning issue: https://github.com/elsa-workflows/elsa-core/issues/8220
+Delete with the prototype when a reviewed 3.10.1 executor supersedes it or
+the 3.10.1 Feedz path is abandoned.
+
 No network PUT. Fit against 1800s is not claimed.
 """
 from __future__ import annotations
@@ -264,13 +268,25 @@ class OverlapAndAssociationTests(unittest.TestCase):
     def test_nupkg_resource_lock_serializes_same_id(self):
         inflight = {"n": 0, "max": 0, "lock": threading.Lock()}
         archive = b"nupkg"
+        holding_get = threading.Event()
+        release_get = threading.Event()
+        put_while_get_held = threading.Event()
 
         def handler(method, url, **kwargs):
+            if method == "PUT":
+                if holding_get.is_set() and not release_get.is_set():
+                    put_while_get_held.set()
             with inflight["lock"]:
                 inflight["n"] += 1
                 inflight["max"] = max(inflight["max"], inflight["n"])
             try:
-                return ok(201) if method == "PUT" else ok(200, archive)
+                if method == "GET":
+                    holding_get.set()
+                    self.assertFalse(put_while_get_held.wait(0.05),
+                                     "second PUT entered while GET still held the named lock")
+                    release_get.set()
+                    return ok(200, archive)
+                return ok(201)
             finally:
                 with inflight["lock"]:
                     inflight["n"] -= 1
@@ -289,6 +305,7 @@ class OverlapAndAssociationTests(unittest.TestCase):
         for thread in threads:
             thread.join()
         self.assertEqual(inflight["max"], 1)
+        self.assertFalse(put_while_get_held.is_set())
 
 
 class TransportAndReceiptTests(unittest.TestCase):
@@ -352,8 +369,11 @@ class TransportAndReceiptTests(unittest.TestCase):
         operation = proto.Operation("Elsa", "nupkg", proto.sha(archive), archive)
         proto_exec.put_and_prove_nupkg(operation, publish_key="k")
         self.assertEqual(operation.upload_outcome, "acceptance_unknown")
-        self.assertTrue(any(row.get("event") == "nupkg_put_get" or row.get("id") == "Elsa"
-                            for row in proto_exec.receipt.rows))
+        self.assertEqual(operation.failure_category, "transport_failed")
+        self.assertEqual(operation.state, "acceptance_unknown")
+        self.assertTrue(any(row.get("event") == "nupkg_put_get" for row in proto_exec.receipt.rows))
+        self.assertTrue(any(row.get("id") == "Elsa" for row in proto_exec.receipt.rows))
+        self.assertEqual(coordinator.outstanding_proof, 0)
         self.assertTrue(coordinator.put_admission_stopped)
 
     def test_finalize_reaps_and_records_deadline(self):
@@ -692,6 +712,151 @@ class ArchitectR3CounterexampleTests(unittest.TestCase):
         lock.release()
 
 
+class ArchitectR4ReceiptOverflowTests(unittest.TestCase):
+    def test_deadline_seconds_must_equal_max_seconds(self):
+        with self.assertRaisesRegex(proto.PrototypeError, "deadline_invalid"):
+            proto.Coordinator(proto.ImmutableDeadline(start=0.0, seconds=1799), clock=Clock(0.0))
+
+    def test_pre_send_size_check_is_definitely_not_sent(self):
+        puts = []
+
+        def handler(method, url, **kwargs):
+            puts.append(method)
+            return ok(201) if method == "PUT" else ok(200, b"x")
+
+        proto_exec, coordinator, _ = harness(handler)
+        archive = b"x" * (proto.MAX_BYTES + 1)
+        operation = proto.Operation("Elsa", "nupkg", proto.sha(archive), archive)
+        proto_exec.put_and_prove_nupkg(operation, publish_key="k")
+        self.assertEqual(operation.state, "not_attempted")
+        self.assertEqual(operation.failure_category, "unsafe_request")
+        self.assertIsNone(operation.upload_outcome)
+        self.assertEqual(puts, [])
+        self.assertFalse(coordinator.writes_halted)
+
+    def test_snupkg_without_indexed_keys_does_not_put(self):
+        puts = []
+
+        def handler(method, url, **kwargs):
+            puts.append(method)
+            return ok(201)
+
+        proto_exec, coordinator, _ = harness(handler)
+        operation = proto.Operation("Elsa", "snupkg", proto.sha(b"s"), b"s")
+        proto_exec.put_snupkg_serialized(operation, publish_key="k")
+        self.assertEqual(operation.failure_category, "snupkg_keys_missing")
+        self.assertEqual(operation.content_presence, "snupkg_archive_unverified")
+        self.assertEqual(puts, [])
+        self.assertTrue(coordinator.writes_halted)
+
+    def test_nupkg_receipt_overflow_keeps_receipt_limit_and_halts_second_put(self):
+        puts = []
+        archive = b"x"
+
+        def handler(method, url, **kwargs):
+            if method == "PUT":
+                puts.append(url)
+                return ok(201)
+            return ok(200, archive)
+
+        proto_exec, coordinator, _ = harness(handler)
+        proto_exec.receipt.max_bytes = 1
+        first = proto.Operation("Elsa", "nupkg", proto.sha(archive), archive)
+        proto_exec.put_and_prove_nupkg(first, publish_key="k")
+        self.assertEqual(first.put_outcome, "accepted_pending_proof")
+        self.assertEqual(first.content_presence, "matching")
+        self.assertEqual(first.failure_category, "receipt_limit")
+        self.assertNotEqual(first.failure_category, "transport_failed")
+        self.assertTrue(coordinator.writes_halted)
+        self.assertTrue(coordinator.put_admission_stopped)
+        self.assertTrue(proto_exec.receipt.overflowed)
+        self.assertEqual(len(proto_exec.receipt.rows), 0)
+        self.assertEqual(puts, [proto.PACKAGE_PUBLISH])
+        self.assertEqual(coordinator.outstanding_proof, 0)
+        second = proto.Operation("Elsa.Other", "nupkg", proto.sha(archive), archive)
+        proto_exec.put_and_prove_nupkg(second, publish_key="k")
+        self.assertEqual(second.state, "not_attempted")
+        self.assertEqual(second.failure_category, "receipt_limit")
+        self.assertEqual(puts, [proto.PACKAGE_PUBLISH])
+        self.assertEqual(len(proto_exec.receipt.rows), 0)
+
+    def test_snupkg_receipt_overflow_keeps_receipt_limit_and_halts_second_put(self):
+        digest = proto.sha(b"pdb")
+        symbol = key("elsa.pdb", digest)
+        puts = []
+        uploaded = {"n": 0}
+
+        def handler(method, url, **kwargs):
+            if method == "PUT":
+                puts.append(url)
+                uploaded["n"] += 1
+                return ok(201)
+            if uploaded["n"]:
+                return ok(200, b"pdb")
+            return ok(404, b"")
+
+        proto_exec, coordinator, _ = harness(handler)
+        proto_exec.receipt.max_bytes = 1
+        proto_exec.preflight_keys([proto.SymbolKey(symbol, digest, "Elsa", b"pdb")])
+        first = proto.Operation("Elsa", "snupkg", proto.sha(b"s"), b"s")
+        proto_exec.put_snupkg_serialized(first, publish_key="k")
+        self.assertEqual(first.put_outcome, "accepted_pending_proof")
+        self.assertEqual(first.failure_category, "receipt_limit")
+        self.assertNotEqual(first.failure_category, "transport_failed")
+        self.assertTrue(coordinator.writes_halted)
+        self.assertEqual(puts, [proto.SYMBOL_PUBLISH])
+        self.assertEqual(len(proto_exec.receipt.rows), 0)
+        second = proto.Operation("Other", "snupkg", proto.sha(b"t"), b"t")
+        proto_exec.put_snupkg_serialized(second, publish_key="k")
+        self.assertEqual(second.state, "not_attempted")
+        self.assertEqual(second.failure_category, "receipt_limit")
+        self.assertEqual(puts, [proto.SYMBOL_PUBLISH])
+
+    def test_receipt_overflow_retains_queued_admission_proofs_and_reap_drains_them(self):
+        archive = b"x"
+        puts = []
+
+        def handler(method, url, **kwargs):
+            if method == "PUT":
+                puts.append(url)
+                return ok(201)
+            return ok(200, archive)
+
+        proto_exec, coordinator, _ = harness(handler)
+        proto_exec.receipt.max_bytes = 1
+        queued = coordinator.admit_put("queued", proof_slots=1)
+        self.assertNotIsInstance(queued, str)
+        self.assertEqual(queued.state, "reserved")
+        self.assertEqual(queued.remaining_proofs, 1)
+        first = proto.Operation("Elsa", "nupkg", proto.sha(archive), archive)
+        proto_exec.put_and_prove_nupkg(first, publish_key="k")
+        self.assertEqual(first.failure_category, "receipt_limit")
+        self.assertTrue(coordinator.writes_halted)
+        self.assertEqual(queued.state, "reserved")
+        self.assertEqual(queued.remaining_proofs, 1)
+        self.assertEqual(coordinator.outstanding_proof, 1)
+        self.assertEqual(puts, [proto.PACKAGE_PUBLISH])
+        later = proto.Operation("Later", "nupkg", proto.sha(archive), archive)
+        proto_exec.put_and_prove_nupkg(later, publish_key="k")
+        self.assertEqual(later.state, "not_attempted")
+        self.assertEqual(puts, [proto.PACKAGE_PUBLISH])
+        result = proto_exec.finalize()
+        self.assertEqual(queued.state, "not_attempted")
+        self.assertEqual(queued.remaining_proofs, 0)
+        self.assertEqual(result["unresolved_proofs"], 0)
+        self.assertEqual(coordinator.outstanding_proof, 0)
+
+    def test_pre_acquire_validation_is_definitely_not_sent(self):
+        def handler(method, url, **kwargs):
+            return ok(201)
+
+        proto_exec, _, transport = harness(handler)
+        oversized = proto_exec._put_exchange(proto.PACKAGE_PUBLISH, b"x" * (proto.MAX_BYTES + 1), "k")
+        self.assertEqual(oversized.disposition, proto.DEFINITELY_NOT_SENT)
+        self.assertEqual(oversized.failure_category, "unsafe_request")
+        self.assertEqual(transport.exchange.calls, [])
+
+
 class MeasurementTests(unittest.TestCase):
     def test_reconciled_dag_uses_archive_puts_as_u_and_withdraws_2529(self):
         report = proto.offline_measurement_report()
@@ -723,6 +888,15 @@ class MeasurementTests(unittest.TestCase):
         self.assertIn("TEMPLATE", plan)
         self.assertIn("No measurement in this document", plan)
         self.assertIn("3.10.0 original.zip is not in this workspace", plan)
+        source = Path(proto.__file__).read_text(encoding="utf-8")
+        owner = "https://github.com/elsa-workflows/elsa-core/issues/8220"
+        self.assertIn(owner, source)
+        self.assertIn("Feedz path is abandoned", source.replace("\n", " "))
+        measurement = Path(__file__).with_name("consolidated-3101-executor-measurement.md").read_text(encoding="utf-8")
+        self.assertIn(owner, measurement)
+        self.assertIn("Feedz path is abandoned", measurement.replace("\n", " "))
+        self.assertIn(owner, plan)
+        self.assertIn("Feedz path is abandoned", plan.replace("\n", " "))
 
     def test_zero_latency_mock_is_not_a_fit_proof(self):
         archive = b"x"

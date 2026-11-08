@@ -1,5 +1,11 @@
 """Distinct 3.10.1 Feedz executor prototype. Does not replace the 3.10.0 executor.
 
+Owning issue: https://github.com/elsa-workflows/elsa-core/issues/8220
+(F3.4 artifact provenance / publication / recovery; no dedicated 3.10.1
+executor issue exists). Delete this prototype, its tests, measurement
+record, and the 3.10.0 GET-sample template when a reviewed 3.10.1 executor
+supersedes it or the 3.10.1 Feedz path is abandoned.
+
 Single immutable deadline from inspector start (MAX_SECONDS = 1800) covers
 admission, metadata, queue, PUT, GET, cleanup, and receipt. There is no
 GitHubApi 120s clock, no 100-request sidecar, and no mutating a shared
@@ -74,6 +80,8 @@ def symbol_get_url(key: str) -> str:
 
 @dataclass(frozen=True)
 class ImmutableDeadline:
+    """Parent bound. `start` and the coordinator clock must both be `time.monotonic`."""
+
     start: float
     seconds: int = MAX_SECONDS
 
@@ -140,6 +148,7 @@ class Coordinator:
                  reserve: int = READBACK_RESERVE_SECONDS, cleanup: int = CLEANUP_MARGIN_SECONDS,
                  clock=time.monotonic):
         require(isinstance(deadline, ImmutableDeadline), "deadline_invalid")
+        require(deadline.seconds == MAX_SECONDS, "deadline_invalid")
         require(max_requests == MAX_REQUESTS, "request_budget_invalid")
         require(http_cap == HTTP_CAP_SECONDS, "http_cap_invalid")
         require(reserve == READBACK_RESERVE_SECONDS, "reserve_invalid")
@@ -625,12 +634,60 @@ class Prototype3101:
 
     def _record(self, operation: Operation, **extra) -> None:
         drop = extra.pop("drop_if_full", False)
-        self.receipt.append({
-            "id": operation.id, "kind": operation.kind, "state": operation.state,
-            "upload_outcome": operation.upload_outcome, "content_presence": operation.content_presence,
-            "key_presence": dict(operation.key_presence),
-            "failure_category": operation.failure_category, **extra,
-        }, drop_if_full=drop)
+        try:
+            self.receipt.append({
+                "id": operation.id, "kind": operation.kind, "state": operation.state,
+                "upload_outcome": operation.upload_outcome, "content_presence": operation.content_presence,
+                "key_presence": dict(operation.key_presence),
+                "failure_category": operation.failure_category, **extra,
+            }, drop_if_full=drop)
+        except PrototypeError as error:
+            self.coordinator.halt_puts()
+            if str(error) == "receipt_limit":
+                operation.failure_category = "receipt_limit"
+            raise
+        if self.receipt.overflowed:
+            self.coordinator.halt_puts()
+            if drop and operation.failure_category is None:
+                operation.failure_category = "receipt_limit"
+
+    def _refuse_unreceiptable(self, operation: Operation) -> bool:
+        if not (self.receipt.overflowed or self.receipt.size >= self.receipt.max_bytes):
+            return False
+        self.coordinator.halt_puts()
+        operation.state = "not_attempted"
+        operation.failure_category = "receipt_limit"
+        return True
+
+    def _put_exchange(self, url: str, archive: bytes, publish_key: str) -> ExchangeResult:
+        sent_before = len(self.transport.exchange.calls)
+        try:
+            return self.transport.request(
+                "PUT", url,
+                headers={"X-NuGet-ApiKey": publish_key, "Content-Type": "application/octet-stream"},
+                data=archive, credential_role="publish", limit=4096)
+        except PrototypeError as error:
+            sent = len(self.transport.exchange.calls) > sent_before
+            return ExchangeResult(None, b"", False, str(error),
+                                  MAY_HAVE_SENT if sent else DEFINITELY_NOT_SENT)
+        except Exception:
+            return ExchangeResult(None, b"", False, "transport_failed", MAY_HAVE_SENT)
+
+    def _on_upload_exception(self, operation: Operation, reservation: Reservation | None,
+                             error: BaseException, *, event: str) -> bool:
+        """Return True when the PrototypeError is handled and the caller should return."""
+        self._complete_reservation(reservation)
+        self._terminal_state(operation)
+        if isinstance(error, PrototypeError) and str(error) == "receipt_limit":
+            self.coordinator.halt_puts()
+            operation.failure_category = "receipt_limit"
+        else:
+            if operation.state == "not_attempted" and operation.upload_outcome is None:
+                operation.state = "acceptance_unknown"
+            if operation.failure_category is None:
+                operation.failure_category = "transport_failed"
+        self._record(operation, event=event, error_type=type(error).__name__, drop_if_full=True)
+        return isinstance(error, PrototypeError)
 
     def _complete_reservation(self, reservation: Reservation | None) -> None:
         if not isinstance(reservation, Reservation):
@@ -695,6 +752,13 @@ class Prototype3101:
                             version: str = "3.10.1") -> Operation:
         require(operation.kind == "nupkg", "kind_invalid")
         require(sha(operation.archive) == operation.archive_sha256, "original_archive_changed")
+        if self._refuse_unreceiptable(operation):
+            return operation
+        if len(operation.archive) > MAX_BYTES:
+            operation.state = "not_attempted"
+            operation.failure_category = "unsafe_request"
+            self._record(operation, event="nupkg_archive_too_large")
+            return operation
         if self.coordinator.writes_halted or self.coordinator.put_admission_stopped:
             operation.state = "not_attempted"
             operation.failure_category = "not_attempted"
@@ -716,15 +780,7 @@ class Prototype3101:
                 return operation
             reservation = admitted
             self.coordinator.start_put(reservation)
-            try:
-                result = self.transport.request(
-                    "PUT", PACKAGE_PUBLISH,
-                    headers={"X-NuGet-ApiKey": publish_key, "Content-Type": "application/octet-stream"},
-                    data=operation.archive, credential_role="publish", limit=4096)
-            except PrototypeError as error:
-                result = ExchangeResult(None, b"", False, str(error), MAY_HAVE_SENT)
-            except Exception:
-                result = ExchangeResult(None, b"", False, "transport_failed", MAY_HAVE_SENT)
+            result = self._put_exchange(PACKAGE_PUBLISH, operation.archive, publish_key)
             self.coordinator.finish_put(reservation, disposition=result.disposition)
             operation.put_status = result.status
             operation.put_outcome, failure = classify_put(result)
@@ -761,19 +817,10 @@ class Prototype3101:
             self._record(operation, event="nupkg_put_get")
             return operation
         except Exception as error:
-            self._complete_reservation(reservation)
-            reservation = None
-            self._terminal_state(operation)
-            if operation.state == "not_attempted" and operation.upload_outcome is None:
-                operation.state = "acceptance_unknown"
-            operation.failure_category = operation.failure_category or "transport_failed"
-            try:
-                self._record(operation, event="nupkg_exception", error_type=type(error).__name__,
-                             drop_if_full=True)
-            except PrototypeError:
-                pass
-            if isinstance(error, PrototypeError):
+            if self._on_upload_exception(operation, reservation, error, event="nupkg_exception"):
+                reservation = None
                 return operation
+            reservation = None
             raise
         finally:
             try:
@@ -788,6 +835,20 @@ class Prototype3101:
         keys = sorted(self.symbols.by_snupkg.get(operation.id, ()))
         names = [f"snupkg:{name}" for name in (*overlap, operation.id)] + [f"key:{k}" for k in keys]
         reservation = None
+        if self._refuse_unreceiptable(operation):
+            return operation
+        if len(operation.archive) > MAX_BYTES:
+            operation.state = "not_attempted"
+            operation.failure_category = "unsafe_request"
+            self._record(operation, event="snupkg_archive_too_large")
+            return operation
+        if not keys:
+            self.coordinator.halt_puts()
+            operation.state = "pre_observation_unverified"
+            operation.failure_category = "snupkg_keys_missing"
+            operation.content_presence = "snupkg_archive_unverified"
+            self._record(operation, event="snupkg_keys_missing")
+            return operation
         if self.coordinator.writes_halted or self.coordinator.put_admission_stopped:
             operation.state = "not_attempted"
             operation.failure_category = "not_attempted"
@@ -839,15 +900,7 @@ class Prototype3101:
                 return operation
             reservation = admitted
             self.coordinator.start_put(reservation)
-            try:
-                result = self.transport.request(
-                    "PUT", SYMBOL_PUBLISH,
-                    headers={"X-NuGet-ApiKey": publish_key, "Content-Type": "application/octet-stream"},
-                    data=operation.archive, credential_role="publish", limit=4096)
-            except PrototypeError as error:
-                result = ExchangeResult(None, b"", False, str(error), MAY_HAVE_SENT)
-            except Exception:
-                result = ExchangeResult(None, b"", False, "transport_failed", MAY_HAVE_SENT)
+            result = self._put_exchange(SYMBOL_PUBLISH, operation.archive, publish_key)
             self.coordinator.finish_put(reservation, disposition=result.disposition)
             operation.put_status = result.status
             operation.put_outcome, failure = classify_put(result)
@@ -859,8 +912,7 @@ class Prototype3101:
                 operation.state = "not_attempted"
                 self._record(operation, event="snupkg_not_sent")
                 return operation
-            targets = list(keys) or [None]
-            for key in targets:
+            for key in keys:
                 proof = self.coordinator.admit_proof_get(reservation)
                 if isinstance(proof, str):
                     operation.failure_category = proof
@@ -870,10 +922,6 @@ class Prototype3101:
                     self._terminal_state(operation)
                     self._record(operation, event="snupkg_proof_refused")
                     return operation
-                if key is None:
-                    operation.key_presence["snupkg"] = "snupkg_archive_unverified"
-                    self.coordinator.finish_proof_get(reservation)
-                    break
                 item = self.symbols.by_key[key]
                 try:
                     get = self.transport.request("GET", symbol_get_url(key), limit=MAX_BYTES)
@@ -899,19 +947,10 @@ class Prototype3101:
             self._record(operation, event="snupkg_put_get")
             return operation
         except Exception as error:
-            self._complete_reservation(reservation)
-            reservation = None
-            self._terminal_state(operation)
-            if operation.state == "not_attempted" and operation.upload_outcome is None:
-                operation.state = "acceptance_unknown"
-            operation.failure_category = operation.failure_category or "transport_failed"
-            try:
-                self._record(operation, event="snupkg_exception", error_type=type(error).__name__,
-                             drop_if_full=True)
-            except PrototypeError:
-                pass
-            if isinstance(error, PrototypeError):
+            if self._on_upload_exception(operation, reservation, error, event="snupkg_exception"):
+                reservation = None
                 return operation
+            reservation = None
             raise
         finally:
             try:
