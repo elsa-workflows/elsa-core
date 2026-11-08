@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 2,
   "kind": "nonpublication_measurement",
   "fit_claim": false,
   "safe_1800_demonstrated": false,
@@ -18,59 +18,71 @@
     "MAX_REQUESTS": 5000,
     "HTTP_CAP_SECONDS": 25,
     "READBACK_RESERVE_SECONDS": 900,
+    "CLEANUP_MARGIN_SECONDS": 30,
     "JOB_TIMEOUT_SECONDS": 3600,
     "REVIEWED_CONCURRENCY": 4,
-    "concurrency_4_worst_case_guarantee": false
+    "concurrency_4_worst_case_guarantee": false,
+    "ceil_work_over_4_invalid_with_locks": true
   },
-  "architect_assumed": {
-    "formula": "465+2S+U",
-    "465": "2*231 nupkg GET passes + 3 extras",
-    "S": 688,
-    "U": 462,
-    "total": 2303
+  "dag": {
+    "nupkg_puts": 231,
+    "snupkg_puts": 231,
+    "archive_puts_U": 462,
+    "associations_S": 688,
+    "unique_symbol_keys": {
+      "status": "not_extracted_without_inspector",
+      "unique_pdb_sha256": 688,
+      "unique_pdb_names": 231
+    },
+    "metadata_index_extras_in_465": 3,
+    "github_metadata_pages": "unmeasured_offline",
+    "nupkg_get_passes": 2,
+    "overlap_rereads": "conditional; unique pdb sha overlap 0; keys unmeasured without inspector",
+    "conditional_proof_operations": "GET after PUT unless definitely_not_sent",
+    "architect_formula": "465+2S+U",
+    "architect_465": 465,
+    "architect_2S": 1376,
+    "architect_U": 462,
+    "architect_total": 2303,
+    "withdrawn_2529": "invalid; treated unique PDB bytes as U",
+    "independent_pair_counterexample": {
+      "pairs": 462,
+      "seconds": 5800,
+      "full_cold_upper_bound": false,
+      "omits": [
+        "observation GETs",
+        "overlap serialization",
+        "sequential multi-PDB proofs",
+        "metadata paging",
+        "queue wait",
+        "cleanup margin",
+        "receipt"
+      ]
+    }
   },
-  "measured": {
+  "local_fixture_counts": {
     "nupkgs": 231,
     "snupkgs": 231,
-    "artifacts": 462,
     "symbol_associations_S": 688,
     "unique_pdb_names": 231,
     "unique_pdb_sha256": 688,
     "shared_pdb_sha256": 0,
-    "pdb_names_used_more_than_once": 231,
-    "max_tfms_per_pdb_name": 3,
-    "unique_feedz_symbol_keys": "not_extracted_without_inspector",
-    "unique_pdb_bytes_U_used_in_formula": 688,
-    "two_nupkg_passes_plus_three": 465,
-    "measured_http_total": 2304,
-    "measured_formula_465_2S_U": 2529,
-    "admission_gets_in_465_extras": 3,
-    "github_metadata_pages": "unmeasured_offline",
     "nupkg_bytes": 33506468,
     "snupkg_bytes": 29715284,
     "nupkg_size_bytes": {"p50": 66459, "p95": 452268, "p99": 1297362, "max": 2789617},
     "snupkg_size_bytes": {"p50": 77128, "p95": 369299, "p99": 1061971, "max": 1682082},
     "latency_tails": "unmeasured_no_network",
-    "throttling": "unmeasured_no_network",
-    "coordinator_overhead": "unmeasured_beyond_zero_latency_mock"
-  },
-  "worst_case_at_http_cap_25s": {
-    "before_observation_gets": 923,
-    "before_observation_seconds_c4": 5775,
-    "put_then_get_pairs": 462,
-    "put_then_get_seconds_c4": 5800,
-    "sequential_seconds_all_measured_http": 57600,
-    "naive_c4_wave_seconds_all_measured_http": 14400,
-    "fits_1800": false,
-    "margin_seconds_before_observation_vs_1800": -3975
+    "throttling": "unmeasured_no_network"
   },
   "limitations": [
-    "HTTP_CAP 25s worst-case is the reviewed bound, not typical latency.",
+    "Architect U is archive PUTs (462), not unique PDB bytes (688).",
+    "2529 is withdrawn; it is not a reconciled HTTP count.",
+    "5800s is a counterexample for 462 independent PUT then GET pairs at 25s cap and concurrency 4. It is not a full cold-publish upper bound.",
+    "ceil(work/4) is invalid with overlap locks and sequential multi-PDB proofs.",
     "Zero-latency local mock is not a fit proof.",
     "Real network publication measurement is not authorized.",
-    "Feedz symbol-store GUIDs were not extracted; U=688 is unique PDB bytes, not assumed U=462 artifacts.",
-    "GitHub admission paging is extra load on the same 1800s/5000 clock in this prototype.",
-    "Concurrency 4 does not give a worst-case guarantee.",
+    "Unique Feedz symbol-store keys were not extracted (no inspector).",
+    "GitHub admission paging is extra load on the same 1800s/5000 clock and is unmeasured.",
     "Cannot demonstrate a safe 1800s fit. No GO. No gate waiver."
   ]
 }

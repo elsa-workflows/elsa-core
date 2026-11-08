@@ -11,52 +11,49 @@ authorized. The 3.10.0 executor, pins, and operational policy are unchanged.
 | `MAX_REQUESTS` | 5000 |
 | HTTP cap | 25s |
 | readback reserve | 900s |
+| cleanup margin | 30s |
 | job timeout | 60 min |
-| concurrency | 4 (reviewed constant; **not** a worst-case guarantee) |
+| concurrency | 4 (fixed semaphore; **not** a worst-case guarantee) |
 
-The deadline is a single immutable clock from inspector start. It covers
-admission, metadata, queue, PUT, GET, and cleanup. This prototype does not
-inherit the 3.10.0 `GitHubApi` 120s / 100-request sidecar or mutate a shared
-transport deadline.
+`ceil(work/4)` is invalid once overlap locks and sequential multi-PDB proofs
+exist. Concurrency 4 is an exchange semaphore, not a proof that a DAG fits
+1800s.
 
-## Measured vs assumed
+## Reconciled DAG
 
-Architect formula `465+2S+U` with assumed **S=688**, **U=462** → **2303**.
-`465` matches `2×231+3` (two nupkg GET passes plus three extras).
+Architect formula `465+2S+U` with **S=688 associations** and **U=462 archive
+PUTs** (231 nupkg + 231 snupkg) → **2303**. `465` is `2×231+3` (two nupkg GET
+passes plus three extras).
 
-Local measurement of unpublished artifact `13609452227`
-(`original.zip` SHA-256 `76a79c05967f8d5f74cb29e551518d1a6d4a4e74e1fcca924044e252ffee7d29`):
+**U is not unique PDB bytes.** Treating U as 688 unique PDB SHA-256 values
+produced **2529**, which is withdrawn and is not a reconciled HTTP count.
 
-| Count | Assumed | Measured |
-| --- | ---: | ---: |
-| nupkg | 231 | 231 |
-| snupkg | 231 | 231 |
-| artifacts | 462 | 462 |
-| symbol associations S (PDB files in snupkgs) | 688 | 688 |
-| unique PDB SHA-256 (bytes) | 462 | **688** |
-| unique PDB names | — | 231 (each used 3 times) |
-| shared PDB content | — | 0 |
-| `465+2S+U` | 2303 | **2529** using U=688 unique bytes |
+Separated operations:
 
-Assumed U=462 is the artifact count, not unique PDB bytes. Unique Feedz
-symbol-store keys were not extracted (no inspector in this offline pass). Unique
-PDB bytes (688) is the GET-target upper bound used in the formula. Unique names
-(231) would be a lower bound if keys collided across TFMs; preflight rejects
-same key / different bytes.
+| Kind | Count |
+| --- | ---: |
+| nupkg PUT | 231 |
+| snupkg PUT | 231 |
+| archive PUT (U) | 462 |
+| associations (S) | 688 |
+| unique symbol keys | not extracted without inspector (unique PDB SHA 688, unique names 231) |
+| nupkg GET passes | 2 |
+| metadata/index extras in 465 | 3 (GitHub paging unmeasured) |
+| overlap rereads | conditional |
+| proof GET | after PUT unless `definitely_not_sent` |
 
-Bytes (uncompressed archive members): nupkg 33 506 468 (max 2 789 617),
-snupkg 29 715 284 (max 1 682 082). Latency tails, throttling, and coordinator
-overhead on a live Feedz endpoint are **unmeasured**.
+Local fixture (artifact `13609452227`, `original.zip` SHA-256
+`76a79c05967f8d5f74cb29e551518d1a6d4a4e74e1fcca924044e252ffee7d29`): 231/231
+packages, 688 PDB files, 0 shared PDB content. Latency, throttling, and live
+overhead are unmeasured.
 
-## Worst-case time at HTTP cap 25s
+## 5800s is a pair counterexample, not a cold upper bound
 
-Concurrency 4 does not shrink the 25s cap. PUT and its proof GET are sequential
-per resource.
-
-- Before-observation GETs (3 extras + index + 231 nupkg + 688 PDB) at cap:
-  `ceil(923/4)×25 = 5775s` already **> 1800s** (margin **−3975s**).
-- Cold PUT-then-GET pairs (462) at cap: `ceil(462/4)×50 = 5800s` **> 1800s**.
-- Sequential cap for the measured HTTP total is tens of thousands of seconds.
+`ceil(462/4)×50 = 5800s` shows that **462 independent PUT→GET pairs** at HTTP
+cap 25s and concurrency 4 already exceed 1800s. That figure **omits**
+observation GETs, overlap serialization, sequential multi-PDB proofs, metadata
+paging, queue wait, cleanup margin, and receipt I/O. The full cold-publish
+upper bound is therefore **higher and uncomputed**.
 
 A zero-latency local mock can finish inside 1800s. That is **not** proof of fit.
 
@@ -64,4 +61,5 @@ A zero-latency local mock can finish inside 1800s. That is **not** proof of fit.
 
 Safe 1800s fit is **not demonstrated**. Typical latency is unknown because even
 real-network publication measurement is not authorized. No GO. No gate waiver.
-No dispatch, tag, publish, or merge from this prototype.
+No dispatch, tag, publish, or merge from this prototype. Writes still require
+reviewed invariants, this DAG, QA, and a FINAL hash owner signoff.
