@@ -30,6 +30,13 @@ class CombinedImagePersistenceTests(unittest.TestCase):
         self.assertIn('segments.Length == 4', handler)
         self.assertIn('"edit"', handler)
         self.assertIn('"view"', handler)
+        middleware = (ROOT / "core/src/modules/Elsa.Http/Middleware/HttpWorkflowsMiddleware.cs").read_text(encoding="utf-8")
+        lookup_at = middleware.find("FindWorkflowAsync")
+        reject_at = middleware.find("TryRejectMatchedHttpWorkWhenNotAccepting")
+        unmatched_at = middleware.find("IHttpWorkflowUnmatchedHandler")
+        self.assertGreater(lookup_at, 0)
+        self.assertGreater(reject_at, lookup_at)
+        self.assertGreater(unmatched_at, reject_at)
         options = (ROOT / "core/src/modules/Elsa.Http/Options/HttpActivityOptions.cs").read_text(encoding="utf-8")
         self.assertNotIn("PassthroughSubPaths", options)
 

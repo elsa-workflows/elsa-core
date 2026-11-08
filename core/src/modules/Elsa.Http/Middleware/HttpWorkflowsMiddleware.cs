@@ -52,19 +52,6 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
         var matchingPath = GetMatchingRoute(serviceProvider, path).Route;
         matchingPath = TryStripBasePath(matchingPath, basePath) ?? matchingPath;
 
-        // Graceful-shutdown gate: when the runtime is paused or draining, we don't accept new HTTP-triggered work.
-        // The ingress source registry visibility is provided by HttpTriggerIngressSource — this is the actual mechanism.
-        var quiescenceSignal = serviceProvider.GetService<IQuiescenceSignal>();
-        if (quiescenceSignal is not null && !quiescenceSignal.IsAcceptingNewWork)
-        {
-            httpContext.Response.StatusCode = (int)HttpStatusCode.ServiceUnavailable;
-            // Retry-After is reason-aware: drain is short (host is exiting and will be replaced shortly), but an
-            // administrative pause is indefinite, so a longer back-off avoids a tight retry loop while operators
-            // perform maintenance.
-            httpContext.Response.Headers.RetryAfter = quiescenceSignal.CurrentState.Reason.HasFlag(QuiescenceReason.Drain) ? "5" : "60";
-            return;
-        }
-
         matchingPath = matchingPath.NormalizeRoute();
         
         var input = new Dictionary<string, object>
@@ -87,6 +74,11 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
 
             if (triggers.Count > 1)
             {
+                if (TryRejectMatchedHttpWorkWhenNotAccepting(httpContext, serviceProvider))
+                {
+                    return;
+                }
+
                 await HandleMultipleWorkflowsFoundAsync(httpContext, () => triggers.Select(x => new
                 {
                     x.WorkflowDefinitionId
@@ -97,6 +89,11 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
             var trigger = triggers.FirstOrDefault();
             if (trigger != null)
             {
+                if (TryRejectMatchedHttpWorkWhenNotAccepting(httpContext, serviceProvider))
+                {
+                    return;
+                }
+
                 var workflowGraph = lookupResult.WorkflowGraph!;
                 await StartWorkflowAsync(httpContext, trigger, workflowGraph, input, workflowInstanceId, correlationId);
                 return;
@@ -107,6 +104,11 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
 
         if (bookmarks.Count > 1)
         {
+            if (TryRejectMatchedHttpWorkWhenNotAccepting(httpContext, serviceProvider))
+            {
+                return;
+            }
+
             await HandleMultipleWorkflowsFoundAsync(httpContext, () => bookmarks.Select(x => new
             {
                 x.WorkflowInstanceId
@@ -118,6 +120,11 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
 
         if (bookmark != null)
         {
+            if (TryRejectMatchedHttpWorkWhenNotAccepting(httpContext, serviceProvider))
+            {
+                return;
+            }
+
             await ResumeWorkflowAsync(httpContext, bookmark, input, correlationId);
             return;
         }
@@ -298,6 +305,27 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
 
         var remainingSegments = routeSegments.Skip(basePathIndex + basePathSegments.Length);
         return remainingSegments.Any() ? $"/{string.Join('/', remainingSegments)}" : "/";
+    }
+
+    /// <summary>
+    /// Rejects matched HTTP start/resume while paused or draining without executing the workflow.
+    /// Lookup still runs first so unmatched Studio pages can fall through. Unmatched non-page paths
+    /// keep the existing 404 (or <c>next</c> when no base path is configured).
+    /// </summary>
+    private static bool TryRejectMatchedHttpWorkWhenNotAccepting(HttpContext httpContext, IServiceProvider serviceProvider)
+    {
+        var quiescenceSignal = serviceProvider.GetService<IQuiescenceSignal>();
+        if (quiescenceSignal is null || quiescenceSignal.IsAcceptingNewWork)
+        {
+            return false;
+        }
+
+        httpContext.Response.StatusCode = (int)HttpStatusCode.ServiceUnavailable;
+        // Retry-After is reason-aware: drain is short (host is exiting and will be replaced shortly), but an
+        // administrative pause is indefinite, so a longer back-off avoids a tight retry loop while operators
+        // perform maintenance.
+        httpContext.Response.Headers.RetryAfter = quiescenceSignal.CurrentState.Reason.HasFlag(QuiescenceReason.Drain) ? "5" : "60";
+        return true;
     }
 
     private static bool IsBasePathMatch(string route, string basePath) =>

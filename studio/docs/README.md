@@ -31,8 +31,14 @@ not a host-mapped port. HTTP endpoint start/resume stays on `/workflows/{path}`,
 including existing `definitions/...` and `instances/...` callbacks. When no HTTP
 trigger or bookmark matches, exact Studio pages (`/workflows/definitions`,
 `/workflows/definitions/{id}/edit`, `/workflows/instances`,
-`/workflows/instances/{id}/view`) fall through to Blazor. The dashboard is `/`
-and `/dashboard`. Workflow and identity persistence share `elsa_workflows.db`.
+`/workflows/instances/{id}/view`) fall through to Blazor. A published HTTP
+workflow at an exact Studio page URL hides that Studio page for the matching
+method; choose a distinct HTTP path if both are needed. The combined host
+registers a single unmatched handler (last registration wins). Administrative
+pause still rejects matched HTTP start and resume with 503 after lookup, while
+unmatched Studio pages remain available and unmatched non-page paths stay 404.
+The dashboard is `/` and `/dashboard`. Workflow and identity persistence share
+`elsa_workflows.db`.
 `docker/ElsaServerAndStudio.Dockerfile` publishes this host after generating
 Studio ClientLib assets.
 

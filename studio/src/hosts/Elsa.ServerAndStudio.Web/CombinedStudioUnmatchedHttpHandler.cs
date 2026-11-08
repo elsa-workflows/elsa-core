@@ -7,6 +7,8 @@ namespace Elsa.ServerAndStudio.Web;
 /// After HTTP trigger/bookmark lookup misses, fall through only to exact Studio workflow pages.
 /// Existing HTTP endpoints under <c>/workflows/definitions/...</c> and <c>/workflows/instances/...</c>
 /// still start and resume because lookup runs first. Unmatched non-page paths stay 404.
+/// An HTTP workflow registered at an exact Studio page URL hides that Studio page for the matching
+/// method; choose a distinct HTTP path if both are needed.
 /// </summary>
 internal sealed class CombinedStudioUnmatchedHttpHandler : IHttpWorkflowUnmatchedHandler
 {
