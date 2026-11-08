@@ -50,6 +50,7 @@ Elsa Core is organized as a large multi-project .NET solution. The repo favors s
 ## Reference Hosts
 
 - [Elsa.Server.Web](../../src/apps/Elsa.Server.Web) is the most useful all-up ASP.NET Core sample. Its [Program.cs](../../src/apps/Elsa.Server.Web/Program.cs) shows typical module composition with identity, EF Core SQLite, runtime, management, HTTP, scheduling, scripting, multitenancy, and optional structured logs.
+- [Elsa.ServerAndStudio.Web](../../../studio/src/hosts/Elsa.ServerAndStudio.Web) is the same-process Server API + Studio Blazor Server host used by `docker/ElsaServerAndStudio.Dockerfile` (`elsaworkflows/elsa-server-and-studio-v3`). It is source-referenced; it does not consume independently versioned Apps or Templates packages.
 - [Elsa.ModularServer.Web](../../src/apps/Elsa.ModularServer.Web) demonstrates modular package loading through Nuplane and shell features.
 - [Elsa.Server.LoadBalancer](../../src/apps/Elsa.Server.LoadBalancer) is a load-balancer host.
 - [Elsa.SamplePackage](../../src/apps/Elsa.SamplePackage) is a minimal package-style feature sample.

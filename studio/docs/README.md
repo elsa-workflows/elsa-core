@@ -23,6 +23,13 @@ dotnet build Elsa.Studio.slnf
 dotnet test studio/src/modules/Elsa.Studio.Workflows.Designer.Tests/Elsa.Studio.Workflows.Designer.Tests.csproj
 ```
 
+The Community combined image host is
+[`Elsa.ServerAndStudio.Web`](../src/hosts/Elsa.ServerAndStudio.Web). It serves
+the Elsa Server API and Blazor Server Studio in one process. Same-process Studio
+must call the in-container API (`Backend__Url=http://127.0.0.1:8080/elsa/api`),
+not a host-mapped port. `docker/ElsaServerAndStudio.Dockerfile` publishes this
+host after generating Studio ClientLib assets.
+
 Start a backend such as [`Elsa.Server.Web`](../../core/src/apps/Elsa.Server.Web)
 and run the [`Elsa.Studio.Host.Server`](../src/hosts/Elsa.Studio.Host.Server)
 project in separate terminals to work on the Blazor UI. Its default backend URL is
