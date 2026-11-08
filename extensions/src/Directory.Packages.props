@@ -89,7 +89,7 @@
         <PackageVersion Include="System.DirectoryServices.Protocols" Version="9.0.13"/>
         <PackageVersion Include="System.Formats.Asn1" Version="8.0.2" Condition="'$(TargetFramework)' == 'net8.0'"/>
         <PackageVersion Include="System.Formats.Asn1" Version="9.0.21" Condition="'$(TargetFramework)' == 'net9.0'"/>
-        <!-- GHSA-2fmv-rv2c-59x7 / GHSA-846f-f764-76mx: 8.0.0-8.0.1 and 9.0.0-9.0.20 affected; 8.0.2 / 9.0.21 first patched. -->
+        <!-- GHSA-2fmv-rv2c-59x7 / GHSA-846f-f764-76mx are Pkcs advisories; 8.0.2 / 9.0.21 first patched. Asn1 8.0.2 is the net8 CPM floor. EF SqlServer graphs still resolve Asn1 9.0.17 on net8 (package floor, no Asn1 advisory). -->
         <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="8.0.2" Condition="'$(TargetFramework)' == 'net8.0'"/>
         <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="9.0.21" Condition="'$(TargetFramework)' == 'net9.0'"/>
     </ItemGroup>

@@ -19,6 +19,18 @@ public class CryptographyPkcsAdvisoryPinTests
         Assert.All(versions, version => Assert.Equal(ExpectedPatchedVersion, version));
     }
 
+#if NET8_0
+    [Fact]
+    public void RestoreGraph_SqlServerNet8Asn1ResolvesEfFloorNotCpm802()
+    {
+        // Microsoft.EntityFrameworkCore.SqlServer requires System.Formats.Asn1 >= 9.0.17 on net8.
+        // That is higher than the CPM 8.0.2 floor and is not in an Asn1 advisory. Do not claim 8.0.2 resolves here.
+        var versions = RestoredPackageVersionReader.Read("System.Formats.Asn1");
+        Assert.Contains(new Version(9, 0, 17), versions);
+        Assert.DoesNotContain(versions, version => version == new Version(8, 0, 2));
+    }
+#endif
+
     private static Version ExpectedPatchedVersion
     {
         get
