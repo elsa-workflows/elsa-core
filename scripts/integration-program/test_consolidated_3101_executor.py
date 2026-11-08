@@ -624,6 +624,74 @@ class ArchitectR2CounterexampleTests(unittest.TestCase):
         self.assertTrue(coordinator.put_admission_stopped)
 
 
+class ArchitectR3CounterexampleTests(unittest.TestCase):
+    def test_delayed_proof_get_timeout_is_capped_by_remaining_minus_cleanup(self):
+        clock = Clock(0.0)
+        archive = b"x"
+        timeouts = []
+
+        def handler(method, url, **kwargs):
+            if method == "PUT":
+                clock.now = 1769  # remaining 31s
+                return ok(201)
+            timeouts.append(kwargs["timeout"])
+            return ok(200, archive)
+
+        proto_exec, _, transport = harness(handler, now=clock)
+        proto_exec.put_and_prove_nupkg(
+            proto.Operation("Elsa", "nupkg", proto.sha(archive), archive), publish_key="k")
+        self.assertEqual(timeouts, [1])
+        get_calls = [call for call in transport.exchange.calls if call["method"] == "GET"]
+        self.assertEqual(len(get_calls), 1)
+        self.assertEqual(get_calls[0]["timeout"], 1)
+        self.assertLess(get_calls[0]["timeout"], proto.HTTP_CAP_SECONDS)
+        self.assertLessEqual(get_calls[0]["timeout"], proto.CLEANUP_MARGIN_SECONDS)
+
+    def test_nonpositive_usable_slice_refuses_get(self):
+        clock = Clock(0.0)
+        archive = b"x"
+
+        def handler(method, url, **kwargs):
+            if method == "PUT":
+                clock.now = 1770  # remaining 30s, usable 0
+                return ok(201)
+            return ok(200, archive)
+
+        proto_exec, coordinator, transport = harness(handler, now=clock)
+        proto_exec.put_and_prove_nupkg(
+            proto.Operation("Elsa", "nupkg", proto.sha(archive), archive), publish_key="k")
+        self.assertIsNone(coordinator.exchange_timeout())
+        self.assertEqual([call["method"] for call in transport.exchange.calls], ["PUT"])
+
+    def test_nupkg_admission_refusal_full_receipt_releases_named_lock(self):
+        proto_exec, coordinator, _ = harness(lambda **kwargs: ok(201))
+        coordinator.used = 4999
+        proto_exec.receipt.max_bytes = 8
+        proto_exec.receipt.size = 8
+        operation = proto.Operation("Elsa", "nupkg", proto.sha(b"x"), b"x")
+        try:
+            proto_exec.put_and_prove_nupkg(operation, publish_key="k")
+        except proto.PrototypeError as error:
+            self.assertEqual(str(error), "receipt_limit")
+        lock = proto_exec._lock_for("nupkg:Elsa")
+        self.assertTrue(lock.acquire(timeout=0), "named lock left held after admission refusal")
+        lock.release()
+
+    def test_snupkg_admission_refusal_full_receipt_releases_named_lock(self):
+        proto_exec, coordinator, _ = harness(lambda **kwargs: ok(404, b""))
+        coordinator.used = 4999
+        proto_exec.receipt.max_bytes = 8
+        proto_exec.receipt.size = 8
+        operation = proto.Operation("Elsa", "snupkg", proto.sha(b"s"), b"s")
+        try:
+            proto_exec.put_snupkg_serialized(operation, publish_key="k")
+        except proto.PrototypeError as error:
+            self.assertEqual(str(error), "receipt_limit")
+        lock = proto_exec._lock_for("snupkg:Elsa")
+        self.assertTrue(lock.acquire(timeout=0), "named lock left held after admission refusal")
+        lock.release()
+
+
 class MeasurementTests(unittest.TestCase):
     def test_reconciled_dag_uses_archive_puts_as_u_and_withdraws_2529(self):
         report = proto.offline_measurement_report()

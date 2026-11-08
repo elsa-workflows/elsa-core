@@ -179,11 +179,19 @@ class Coordinator:
         return (self.committed_put_time + extra_put + self.committed_proof_time + extra_proof
                 + self.committed_get_time + extra_get + self.cleanup)
 
+    def exchange_timeout(self) -> float | None:
+        """One-exchange timeout: min(http_cap, remaining-cleanup). None if the usable slice is not positive."""
+        usable = self._usable_remaining(self._now())
+        if usable <= 0:
+            return None
+        return min(float(self.http_cap), usable)
+
     def send_boundary(self, *, is_put: bool) -> str | None:
         """Revalidate immediately before transmission. Halted unsent PUTs do not send."""
         with self._lock:
             now = self._now()
             remaining = self.deadline.remaining(now)
+            usable = remaining - self.cleanup
             if self.abandoned or remaining <= 0:
                 return "not_attempted"
             if is_put and (self.writes_halted or self.put_admission_stopped):
@@ -191,8 +199,10 @@ class Coordinator:
             if is_put:
                 if remaining <= self._owed() or remaining <= self.http_cap + self.committed_proof_time + self.cleanup:
                     return "readback_budget_exhausted"
+                if usable <= 0:
+                    return "readback_budget_exhausted"
                 return None
-            if remaining <= self.cleanup:
+            if usable <= 0:
                 return "readback_budget_exhausted"
             return None
 
@@ -426,10 +436,9 @@ class SharedTransport:
         if refusal:
             return ExchangeResult(None, b"", False, refusal, DEFINITELY_NOT_SENT)
         try:
-            remaining = self.coordinator.deadline.remaining(self.coordinator.clock())
-            if remaining <= 0:
-                return ExchangeResult(None, b"", False, "deadline_exceeded", DEFINITELY_NOT_SENT)
-            timeout = min(HTTP_CAP_SECONDS, remaining)
+            timeout = self.coordinator.exchange_timeout()
+            if timeout is None:
+                return ExchangeResult(None, b"", False, "readback_budget_exhausted", DEFINITELY_NOT_SENT)
             result = self.exchange(method, url, headers=headers, data=data, timeout=timeout, limit=limit)
             if result.redirected or result.failure_category == "redirect_rejected":
                 return ExchangeResult(result.status, b"", False, "redirect_rejected",
@@ -624,7 +633,7 @@ class Prototype3101:
         }, drop_if_full=drop)
 
     def _complete_reservation(self, reservation: Reservation | None) -> None:
-        if reservation is None:
+        if not isinstance(reservation, Reservation):
             return
         if reservation.state == "inflight":
             self.coordinator.finish_put(reservation, disposition=MAY_HAVE_SENT)
@@ -699,13 +708,13 @@ class Prototype3101:
             self._record(operation, event="nupkg_lock_missed")
             return operation
         try:
-            reservation = self.coordinator.admit_put(operation.id, proof_slots=1)
-            if isinstance(reservation, str):
-                operation.state = reservation
-                operation.failure_category = reservation
+            admitted = self.coordinator.admit_put(operation.id, proof_slots=1)
+            if isinstance(admitted, str):
+                operation.state = admitted
+                operation.failure_category = admitted
                 self._record(operation, event="nupkg_put_refused")
-                reservation = None
                 return operation
+            reservation = admitted
             self.coordinator.start_put(reservation)
             try:
                 result = self.transport.request(
@@ -767,8 +776,10 @@ class Prototype3101:
                 return operation
             raise
         finally:
-            self._complete_reservation(reservation)
-            self._release_named(names)
+            try:
+                self._complete_reservation(reservation)
+            finally:
+                self._release_named(names)
 
     def put_snupkg_serialized(self, operation: Operation, *, publish_key: str) -> Operation:
         require(operation.kind == "snupkg", "kind_invalid")
@@ -820,13 +831,13 @@ class Prototype3101:
                 self._record(operation, event="snupkg_skipped_after_reeval")
                 return operation
             proof_slots = max(1, len(keys))
-            reservation = self.coordinator.admit_put(operation.id, proof_slots=proof_slots)
-            if isinstance(reservation, str):
-                operation.state = reservation
-                operation.failure_category = reservation
+            admitted = self.coordinator.admit_put(operation.id, proof_slots=proof_slots)
+            if isinstance(admitted, str):
+                operation.state = admitted
+                operation.failure_category = admitted
                 self._record(operation, event="snupkg_put_refused")
-                reservation = None
                 return operation
+            reservation = admitted
             self.coordinator.start_put(reservation)
             try:
                 result = self.transport.request(
@@ -903,8 +914,10 @@ class Prototype3101:
                 return operation
             raise
         finally:
-            self._complete_reservation(reservation)
-            self._release_named(names)
+            try:
+                self._complete_reservation(reservation)
+            finally:
+                self._release_named(names)
 
     def finalize(self) -> dict:
         accounting = self.coordinator.reap()
