@@ -20,9 +20,12 @@ PACKET_3100 = ROOT / "docs/integration-program/feedz-publish-operational-packet.
 PACKET_3101 = ROOT / "docs/integration-program/feedz-publish-3.10.1-operational-packet.md"
 # Exact bytes of the unsigned 3.10.1 packet in this revision. Sipke signs this
 # digest; the file itself must not contain it (that would change the digest).
-UNSIGNED_PACKET_3101_SHA256 = "6fe9e0b88a6d7503c61ead7a44208364dce1389e2156ccf034299e1b6d2c4bb0"
+UNSIGNED_PACKET_3101_SHA256 = "aa18e121827de2a17e8d503531c5e11b0d0fb0a6b6c0925a594117c7ea001661"
 STAGED_3100_PACKET_SHA256 = "416725fcd31207336a3fd9bd0d4eb18d2ff618ddcda9fb137dcc5b1d87f49d17"
-WITHDRAWN_WRONG_PACKET_SHA256 = "1373d68b2981946fff5d12c039fb43df47344e1d02a443f7947f9351a3497461"
+WITHDRAWN_PACKET_SHA256 = {
+    "1373d68b2981946fff5d12c039fb43df47344e1d02a443f7947f9351a3497461",  # wrong Integration exclusion
+    "6fe9e0b88a6d7503c61ead7a44208364dce1389e2156ccf034299e1b6d2c4bb0",  # claimed 1800s fit without measurement
+}
 
 
 def sha256(path: Path) -> str:
@@ -92,7 +95,7 @@ class Distinct3101PinTests(unittest.TestCase):
         digest = sha256(PACKET_3101)
         self.assertEqual(UNSIGNED_PACKET_3101_SHA256, digest)
         self.assertNotEqual(STAGED_3100_PACKET_SHA256, digest)
-        self.assertNotEqual(WITHDRAWN_WRONG_PACKET_SHA256, digest)
+        self.assertNotIn(digest, WITHDRAWN_PACKET_SHA256)
         self.assertNotEqual(digest, executor.REVIEWED_OPERATIONAL_POLICY["operational_packet_sha256"])
         self.assertNotIn(digest, text)
         self.assertIn("pending", text.lower())
@@ -114,8 +117,13 @@ class Distinct3101PinTests(unittest.TestCase):
         self.assertIn("25739609238", text)
         self.assertIn("refs/heads/main", text)
         self.assertIn("MAX_SECONDS = 1800", text)
+        self.assertIn("proposed design", text)
+        self.assertIn("fit requires measurement", text)
+        self.assertIn("not claimed", text)
         self.assertIn("#9192", text)
         self.assertIn("#9198", text)
+        self.assertNotIn("meets this bound", text)
+        self.assertNotIn("meets that bound", text)
         self.assertNotIn("BEGIN PGP", text)
         self.assertNotIn("sig-ok", text.lower())
         self.assertNotIn("signed-off-by: sfmskywalker", text.lower())

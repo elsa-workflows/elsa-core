@@ -67,21 +67,20 @@ to the environment still fail-closes until a new reviewed PR pins the new values
 | Deployment branch policies | `[{"id": 64850643, "type": "branch", "name": "main"}]` |
 | Allowed ref | `refs/heads/main` |
 
-## Feedz upload path (design; not implemented here)
+## Feedz upload path (proposed design; fit requires measurement)
 
 Owner direction retains Feedz and nuget.org, with all QA gates. A 3.10.1 Feedz
 publish cannot reuse the 3.10.0 executor identity. It also cannot silently reuse
-PR #9192 or raise `MAX_SECONDS = 1800`. That bound is inspect plus all HTTP,
-including sequential PackageBaseAddress GET readback.
+PR #9192 or raise `MAX_SECONDS = 1800`. That bound is a single immutable deadline
+from inspector start covering admission, metadata, queue, PUT, GET, and cleanup.
 
-Cold-feed sequential PUT-then-GET of 231 packages does not fit the remaining
-slice after inspect. The reviewable design that **meets** this bound, without
-weakening it, is a later distinct 3.10.1 executor/workflow that keeps
-`MAX_SECONDS = 1800` and the 60-minute job timeout, uses bounded parallel HTTP
-under that same deadline and `MAX_REQUESTS`, and refuses PUT unless remaining
-time covers post-upload GET of those uploads. Pre-upload GET is not post-upload
-proof. Uploaded bytes still need an after-GET. No new executor is implemented
-until that design is reviewed.
+A later distinct 3.10.1 executor is **proposed**, not proven. Bounded parallel
+HTTP under that same deadline, with PUT refused unless remaining time covers
+post-upload GET, is the candidate design. Fit against 1800s / 5000 requests /
+HTTP cap 25s / reserve 900s / 60-minute job is **not claimed** until
+non-publication measurement and design review. Concurrency is a reviewed
+constant and does not by itself give a worst-case guarantee. No executor is
+implemented in this packet.
 
 ## Status
 

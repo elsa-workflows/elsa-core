@@ -89,7 +89,7 @@ and `docs/integration-program/feedz-publish-3.10.1-operational-packet.md`:
 4. 231 `.nupkg` + 231 `.snupkg` to stage; nuget.org promote later excludes only `Elsa.Platform.Integration` (230). `Elsa.Testing.Shared.Integration` stays in the 230.
 5. Packet is **unsigned** and pending Sipke hash signoff. `REVIEWED_OPERATIONAL_POLICY` still hashes the 3.10.0 packet. Stage `PINNED_TAG` stays `refs/tags/3.10.0`.
 
-A 3.10.1 Feedz upload is **not** implemented here. The 1800-second executor bound (`MAX_SECONDS`) covers inspect plus sequential readback; a from-scratch 231-package publish does not fit. Do not reuse PR #9192 and do not silently raise that bound.
+A 3.10.1 Feedz upload is **not** implemented here. A later distinct 3.10.1 executor is proposed; fit against `MAX_SECONDS = 1800` requires measurement and is not claimed here. Do not reuse PR #9192 and do not silently raise that bound.
 
 Operator inputs that stay rejected until the 3.10.1 packet is signed and a later PR wires it:
 
