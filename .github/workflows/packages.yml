@@ -9,7 +9,7 @@ on:
         type: boolean
         default: false
       publish_nuget:
-        description: Publish a release-tag package to NuGet.org for this run (requires publisher approval). Stable 3.10.0 nuget.org publishes the pinned 231-ID candidate.
+        description: Publish a release-tag package to NuGet.org for this run (requires publisher approval). Stable 3.10.0 nuget.org is rejected (must not promote the staged candidate). 3.10.1 stays blocked until a distinct pin is signed and wired.
         required: true
         type: boolean
         default: false
@@ -470,7 +470,8 @@ jobs:
     # cancel a publish half-done. Move the two together.
     timeout-minutes: 30
     # NuGet publication requires an explicit dispatch on a release tag. Stable
-    # 3.10.0 stages the pinned candidate; other tags push this run's pack.
+    # 3.10.x is rejected by the selection check (3.10.0 must not be promoted;
+    # later patches need a signed and wired distinct pin). Other tags push this run's pack.
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/') }}
     permissions:
       contents: read
