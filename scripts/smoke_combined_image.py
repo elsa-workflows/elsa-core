@@ -153,7 +153,8 @@ def run_smoke(base_url: str, username: str, password: str, artifacts: Path) -> d
 
     login_status, login_html, _ = request_bytes(f"{base_url}/login")
     dashboard_status, dashboard_html, _ = request_bytes(f"{base_url}/dashboard")
-    workflows_status, _, _ = request_bytes(f"{base_url}/workflows")
+    workflows_status, workflows_html, _ = request_bytes(f"{base_url}/workflows/definitions")
+    instances_status, instances_html, _ = request_bytes(f"{base_url}/workflows/instances")
     root_status, root_html, _ = request_bytes(f"{base_url}/")
     live_status, _, _ = request_bytes(f"{base_url}/health/live")
     ready_status, _, _ = request_bytes(f"{base_url}/health/ready")
@@ -171,16 +172,21 @@ def run_smoke(base_url: str, username: str, password: str, artifacts: Path) -> d
     html_blobs = {
         "login": login_html.decode("utf-8", "replace"),
         "dashboard": dashboard_html.decode("utf-8", "replace"),
+        "workflows": workflows_html.decode("utf-8", "replace"),
+        "instances": instances_html.decode("utf-8", "replace"),
         "root": root_html.decode("utf-8", "replace"),
     }
     result["checks"]["routing"] = {
         "loginStatus": login_status,
         "dashboardStatus": dashboard_status,
-        "workflowsStatus": workflows_status,
+        "workflowsDefinitionsStatus": workflows_status,
+        "workflowsInstancesStatus": instances_status,
         "rootStatus": root_status,
         "rootIsNotHealthText": "Healthy" not in html_blobs["root"] or "Elsa Studio" in html_blobs["root"] or "designer.css" in html_blobs["root"],
         "loginHasStudioChrome": "designer.css" in html_blobs["login"] and "blazor.server.js" in html_blobs["login"],
         "dashboardUsesHostFallback": dashboard_status == 200 and "designer.css" in html_blobs["dashboard"],
+        "workflowsDefinitionsUsesHostFallback": workflows_status == 200 and "designer.css" in html_blobs["workflows"],
+        "workflowsInstancesUsesHostFallback": instances_status == 200 and "designer.css" in html_blobs["instances"],
     }
     result["checks"]["health"] = {
         "live": live_status,
@@ -281,8 +287,10 @@ def run_smoke(base_url: str, username: str, password: str, artifacts: Path) -> d
         failures.append("login page did not serve Studio chrome")
     if routing["dashboardStatus"] != 200 or not routing["dashboardUsesHostFallback"]:
         failures.append("dashboard route did not fall back to the Studio host")
-    if routing["workflowsStatus"] != 200:
-        failures.append("workflows route did not serve the Studio host")
+    if routing["workflowsDefinitionsStatus"] != 200 or not routing["workflowsDefinitionsUsesHostFallback"]:
+        failures.append("workflows definitions route did not serve the Studio host")
+    if routing["workflowsInstancesStatus"] != 200 or not routing["workflowsInstancesUsesHostFallback"]:
+        failures.append("workflows instances route did not serve the Studio host")
     if not routing["rootIsNotHealthText"]:
         failures.append("GET / still looks like a health-check body")
     if result["checks"]["health"]["live"] != 200:

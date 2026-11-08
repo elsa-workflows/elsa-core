@@ -96,6 +96,8 @@ jobs:
           curl -fsS "http://127.0.0.1:18080/login" -o /tmp/combined-login.html
           grep -F -q '_content/Elsa.Studio.Workflows.Designer/designer.css' /tmp/combined-login.html
           grep -F -q '_framework/blazor.server.js' /tmp/combined-login.html
+          curl -fsS "http://127.0.0.1:18080/workflows/definitions" -o /tmp/combined-workflows.html
+          grep -F -q '_content/Elsa.Studio.Workflows.Designer/designer.css' /tmp/combined-workflows.html
           if curl -fsS "http://127.0.0.1:18080/" -o /tmp/combined-root.html; then
             if grep -qx 'Healthy' /tmp/combined-root.html; then
               echo 'GET / must not be the health-check body.' >&2
