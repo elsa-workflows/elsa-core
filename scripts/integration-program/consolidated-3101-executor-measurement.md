@@ -19,11 +19,14 @@ authorized. The 3.10.0 executor, pins, and operational policy are unchanged.
 exist. Concurrency 4 is an exchange semaphore, not a proof that a DAG fits
 1800s.
 
-## Reconciled DAG
+## Baseline formula only (DAG incomplete)
 
 Architect formula `465+2S+U` with **S=688 associations** and **U=462 archive
 PUTs** (231 nupkg + 231 snupkg) → **2303**. `465` is `2×231+3` (two nupkg GET
-passes plus three extras).
+passes plus three extras). This is a **baseline formula**, not a complete
+operation DAG and not a global orchestrator. Actual unique Feedz keys, GitHub
+metadata pages, and conditional overlap rereads are **unknown**. Do not invent
+those counts.
 
 **U is not unique PDB bytes.** Treating U as 688 unique PDB SHA-256 values
 produced **2529**, which is withdrawn and is not a reconciled HTTP count.
@@ -36,10 +39,10 @@ Separated operations:
 | snupkg PUT | 231 |
 | archive PUT (U) | 462 |
 | associations (S) | 688 |
-| unique symbol keys | not extracted without inspector (unique PDB SHA 688, unique names 231) |
+| unique symbol keys | unknown (DAG incomplete; local zip has 688 unique PDB SHA / 231 names, not Feedz keys) |
 | nupkg GET passes | 2 |
-| metadata/index extras in 465 | 3 (GitHub paging unmeasured) |
-| overlap rereads | conditional |
+| metadata/index extras in 465 | 3 (GitHub paging unknown) |
+| overlap rereads | unknown |
 | proof GET | after PUT unless `definitely_not_sent` |
 
 Local fixture (artifact `13609452227`, `original.zip` SHA-256
@@ -60,6 +63,8 @@ A zero-latency local mock can finish inside 1800s. That is **not** proof of fit.
 ## Conclusion
 
 Safe 1800s fit is **not demonstrated**. Typical latency is unknown because even
-real-network publication measurement is not authorized. No GO. No gate waiver.
-No dispatch, tag, publish, or merge from this prototype. Writes still require
-reviewed invariants, this DAG, QA, and a FINAL hash owner signoff.
+real-network publication measurement is not authorized. Durable receipt IO and
+process cancel/reap of inflight HTTP are **not implemented**. No GO. No gate
+waiver. No dispatch, tag, publish, or merge from this prototype. Writes still
+require reviewed invariants, the baseline formula (DAG incomplete), QA, and a
+FINAL hash owner signoff.

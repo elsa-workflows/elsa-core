@@ -8,7 +8,7 @@ authority. Fit against 1800s is not claimed.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import hashlib
 import json
 import math
@@ -105,18 +105,31 @@ class ExchangeResult:
 
 
 class BoundedReceipt:
-    """Append-only bounded receipt. Partial rows survive exceptions."""
+    """Synchronized in-memory receipt. Durable IO / process cancel-reap are not implemented."""
+
+    durable_io_implemented = False
+    process_cancel_reap_implemented = False
 
     def __init__(self, *, max_bytes: int = MAX_RECEIPT_BYTES):
         self.max_bytes = max_bytes
         self.size = 0
         self.rows: list[dict] = []
+        self.overflowed = False
+        self.dropped = 0
+        self._lock = threading.Lock()
 
-    def append(self, event: dict) -> None:
+    def append(self, event: dict, *, drop_if_full: bool = False) -> None:
         payload = json.dumps(event, sort_keys=True, default=str) + "\n"
-        require(self.size + len(payload.encode()) <= self.max_bytes, "receipt_limit")
-        self.rows.append(event)
-        self.size += len(payload.encode())
+        encoded = payload.encode()
+        with self._lock:
+            if self.size + len(encoded) > self.max_bytes:
+                self.overflowed = True
+                self.dropped += 1
+                if drop_if_full:
+                    return
+                raise PrototypeError("receipt_limit")
+            self.rows.append(event)
+            self.size += len(encoded)
 
 
 class Coordinator:
@@ -151,6 +164,9 @@ class Coordinator:
         self.put_admission_stopped = False
         self.writes_halted = False
         self.abandoned = False
+        self.committed_put_time = 0
+        self.committed_proof_time = 0
+        self.committed_get_time = 0
         self.reservations: list[Reservation] = []
 
     def _now(self) -> float:
@@ -158,6 +174,27 @@ class Coordinator:
 
     def _usable_remaining(self, now: float) -> float:
         return self.deadline.remaining(now) - self.cleanup
+
+    def _owed(self, extra_put: int = 0, extra_proof: int = 0, extra_get: int = 0) -> float:
+        return (self.committed_put_time + extra_put + self.committed_proof_time + extra_proof
+                + self.committed_get_time + extra_get + self.cleanup)
+
+    def send_boundary(self, *, is_put: bool) -> str | None:
+        """Revalidate immediately before transmission. Halted unsent PUTs do not send."""
+        with self._lock:
+            now = self._now()
+            remaining = self.deadline.remaining(now)
+            if self.abandoned or remaining <= 0:
+                return "not_attempted"
+            if is_put and (self.writes_halted or self.put_admission_stopped):
+                return "not_attempted"
+            if is_put:
+                if remaining <= self._owed() or remaining <= self.http_cap + self.committed_proof_time + self.cleanup:
+                    return "readback_budget_exhausted"
+                return None
+            if remaining <= self.cleanup:
+                return "readback_budget_exhausted"
+            return None
 
     def admit_put(self, resource: str, *, proof_slots: int = 1) -> Reservation | str:
         require(type(proof_slots) is int and proof_slots >= 1, "proof_slots_invalid")
@@ -173,13 +210,15 @@ class Coordinator:
             if remaining <= self.reserve:
                 self.put_admission_stopped = True
                 return "readback_budget_exhausted"
-            sequential = need * self.http_cap + self.cleanup
-            if remaining < sequential:
+            this_put, this_proof = self.http_cap, proof_slots * self.http_cap
+            if remaining <= self._owed(this_put, this_proof, 0):
                 self.put_admission_stopped = True
                 return "readback_budget_exhausted"
             self.used += need
             self.reserved_proof += proof_slots
             self.outstanding_proof += proof_slots
+            self.committed_put_time += this_put
+            self.committed_proof_time += this_proof
             self.queued_puts += 1
             reservation = Reservation("put", need, proof_slots, resource, committed_slots=need)
             self.reservations.append(reservation)
@@ -196,10 +235,12 @@ class Coordinator:
         with self._lock:
             require(reservation.state == "inflight", "reservation_invalid")
             self.inflight_puts -= 1
+            self.committed_put_time -= self.http_cap
             if disposition == DEFINITELY_NOT_SENT:
                 self.used -= reservation.remaining_proofs
                 self.reserved_proof -= reservation.remaining_proofs
                 self.outstanding_proof -= reservation.remaining_proofs
+                self.committed_proof_time -= reservation.remaining_proofs * self.http_cap
                 reservation.remaining_proofs = 0
                 reservation.state = "not_attempted"
                 return
@@ -234,6 +275,7 @@ class Coordinator:
             require(reservation.state == "proving", "reservation_invalid")
             self.inflight_gets -= 1
             self.outstanding_proof -= 1
+            self.committed_proof_time -= self.http_cap
             reservation.state = "cleaned" if reservation.remaining_proofs == 0 else "put_done"
 
     def abandon_remaining_proofs(self, reservation: Reservation, *, release_slots: bool) -> None:
@@ -243,6 +285,7 @@ class Coordinator:
                 self.queued_gets -= leftover
                 self.outstanding_proof -= leftover
                 self.reserved_proof -= leftover
+                self.committed_proof_time -= leftover * self.http_cap
                 if release_slots:
                     self.used -= leftover
                 reservation.remaining_proofs = 0
@@ -250,13 +293,16 @@ class Coordinator:
                 reservation.state = "cleaned"
 
     def admit_get(self, resource: str) -> Reservation | str:
-        """Independent GET. Cannot spend slots already committed as proofs."""
+        """Independent GET. Cannot spend slots or time already committed as proofs."""
         with self._lock:
             now = self._now()
             if self.abandoned or self.deadline.expired(now) or self.used + 1 > self.max_requests:
                 return "not_attempted"
+            if self.deadline.remaining(now) <= self._owed(0, 0, self.http_cap):
+                return "not_attempted"
             self.used += 1
             self.inflight_gets += 1
+            self.committed_get_time += self.http_cap
             reservation = Reservation("get", 1, 0, resource, state="inflight", committed_slots=1)
             self.reservations.append(reservation)
             return reservation
@@ -266,27 +312,53 @@ class Coordinator:
             require(reservation.state == "inflight" and reservation.kind == "get", "reservation_invalid")
             reservation.state = "cleaned"
             self.inflight_gets -= 1
+            self.committed_get_time -= self.http_cap
 
-    def acquire_exchange(self) -> str | None:
+    def acquire_exchange(self, *, is_put: bool) -> str | None:
         now = self._now()
         timeout = self._usable_remaining(now)
         if timeout <= 0 or self.abandoned:
             return "not_attempted"
         if not self._exchange.acquire(timeout=timeout):
             return "readback_budget_exhausted"
-        now = self._now()
-        if self.abandoned or self._usable_remaining(now) <= 0:
+        refusal = self.send_boundary(is_put=is_put)
+        if refusal:
             self._exchange.release()
-            return "not_attempted"
+            return refusal
         return None
 
     def release_exchange(self) -> None:
         self._exchange.release()
 
-    def reap(self) -> None:
+    def reap(self) -> dict:
+        """Flag abandoned and drain unsent PUTs. Process-level cancel of inflight HTTP is not implemented."""
+        drained = 0
+        unresolved = 0
         with self._lock:
             self.abandoned = True
             self.put_admission_stopped = True
+            self.writes_halted = True
+            for reservation in self.reservations:
+                if reservation.kind == "put" and reservation.state == "reserved":
+                    self.queued_puts -= 1
+                    self.committed_put_time -= self.http_cap
+                    leftover = reservation.remaining_proofs
+                    self.used -= leftover
+                    self.reserved_proof -= leftover
+                    self.outstanding_proof -= leftover
+                    self.committed_proof_time -= leftover * self.http_cap
+                    reservation.remaining_proofs = 0
+                    reservation.state = "not_attempted"
+                    drained += 1
+                elif reservation.kind == "put" and reservation.state in {"put_done", "proving", "inflight"}:
+                    unresolved += reservation.remaining_proofs + (1 if reservation.state == "proving" else 0)
+            return {
+                "drained_unsent_puts": drained,
+                "unresolved_proofs": unresolved,
+                "outstanding_proof": self.outstanding_proof,
+                "durable_io_implemented": False,
+                "process_cancel_reap_implemented": False,
+            }
 
 
 class InjectedExchange:
@@ -307,15 +379,18 @@ class InjectedExchange:
 def allowed_url(method: str, url: str, credential_role: str | None) -> bool:
     if not isinstance(url, str) or ".." in url or len(url) > 2048 or any(ord(c) <= 32 for c in url):
         return False
-    if method == "PUT":
-        return url in {PACKAGE_PUBLISH, SYMBOL_PUBLISH}
+    if credential_role == "metadata":
+        return (method == "GET" and url.startswith(METADATA_PREFIX)
+                and bool(METADATA_PATH.fullmatch(url[len(METADATA_PREFIX):])))
+    if credential_role == "publish":
+        return method == "PUT" and url in {PACKAGE_PUBLISH, SYMBOL_PUBLISH}
+    if credential_role is not None:
+        return False
+    if method != "GET":
+        return False
     if url == FEED_INDEX or PACKAGE_GET.fullmatch(url):
         return True
-    if url.startswith(SYMBOL_PUBLISH + "/") and KEY.fullmatch(url[len(SYMBOL_PUBLISH) + 1:]):
-        return True
-    if credential_role == "metadata" and url.startswith(METADATA_PREFIX):
-        return bool(METADATA_PATH.fullmatch(url[len(METADATA_PREFIX):]))
-    return False
+    return url.startswith(SYMBOL_PUBLISH + "/") and bool(KEY.fullmatch(url[len(SYMBOL_PUBLISH) + 1:]))
 
 
 class SharedTransport:
@@ -347,7 +422,7 @@ class SharedTransport:
             require("Authorization" not in headers and "X-NuGet-ApiKey" not in headers
                     and method == "GET", "credential_separation")
         require(limit > 0 and limit <= MAX_BYTES, "response_limit")
-        refusal = self.coordinator.acquire_exchange()
+        refusal = self.coordinator.acquire_exchange(is_put=method == "PUT")
         if refusal:
             return ExchangeResult(None, b"", False, refusal, DEFINITELY_NOT_SENT)
         try:
@@ -439,21 +514,24 @@ class Operation:
     get_status: int | None = None
     get_classification: str | None = None
     content_presence: str | None = None
+    key_presence: dict = field(default_factory=dict)
     failure_category: str | None = None
 
 
 def classify_put(result: ExchangeResult) -> tuple[str, str | None]:
     if result.disposition == DEFINITELY_NOT_SENT:
         return "not_attempted", result.failure_category or DEFINITELY_NOT_SENT
+    if result.failure_category:
+        return "acceptance_unknown", result.failure_category
     if result.disposition == MAY_HAVE_SENT:
-        return "acceptance_unknown", result.failure_category or MAY_HAVE_SENT
+        return "acceptance_unknown", MAY_HAVE_SENT
     if not result.complete or result.status is None:
-        return "acceptance_unknown", result.failure_category or "incomplete_response"
+        return "acceptance_unknown", "incomplete_response"
     if result.status in ACCEPTED_PENDING_PROOF:
         return "accepted_pending_proof", None
     if result.status in NOT_DUPLICATE_SUCCESS:
         return "not_duplicate_success", "ambiguous_put"
-    return "acceptance_unknown", result.failure_category or "ambiguous_put"
+    return "acceptance_unknown", "ambiguous_put"
 
 
 def classify_archive_get(result: ExchangeResult, original: bytes) -> tuple[str, str | None]:
@@ -477,6 +555,27 @@ def classify_association(item: SymbolKey, result: ExchangeResult) -> tuple[str, 
     if item.input_trust != TRUSTED:
         return "bytes_observed_unverified_inputs", "unverified_fixture"
     return "inspector_bound_association_observed", None
+
+
+MATCHING_PRESENCE = frozenset({
+    "matching", "inspector_bound_association_observed", "bytes_observed_unverified_inputs",
+})
+PRE_PUT_SKIP = frozenset({
+    "inspector_bound_association_observed", "bytes_observed_unverified_inputs",
+})
+
+
+def aggregate_presence(keys: list[str], observed: dict[str, str]) -> str:
+    if not keys:
+        return "snupkg_archive_unverified"
+    values = [observed.get(key) for key in keys]
+    if any(value is None for value in values):
+        return "incomplete"
+    if any(value == "conflicting" for value in values):
+        return "conflicting"
+    if all(value in MATCHING_PRESENCE for value in values):
+        return "all_required_observed"
+    return "not_all_required"
 
 
 class Prototype3101:
@@ -516,11 +615,28 @@ class Prototype3101:
             self._lock_for(name).release()
 
     def _record(self, operation: Operation, **extra) -> None:
+        drop = extra.pop("drop_if_full", False)
         self.receipt.append({
             "id": operation.id, "kind": operation.kind, "state": operation.state,
             "upload_outcome": operation.upload_outcome, "content_presence": operation.content_presence,
+            "key_presence": dict(operation.key_presence),
             "failure_category": operation.failure_category, **extra,
-        })
+        }, drop_if_full=drop)
+
+    def _complete_reservation(self, reservation: Reservation | None) -> None:
+        if reservation is None:
+            return
+        if reservation.state == "inflight":
+            self.coordinator.finish_put(reservation, disposition=MAY_HAVE_SENT)
+        elif reservation.state == "proving":
+            self.coordinator.finish_proof_get(reservation)
+            self.coordinator.abandon_remaining_proofs(reservation, release_slots=False)
+        elif reservation.state == "put_done" and reservation.remaining_proofs:
+            self.coordinator.abandon_remaining_proofs(reservation, release_slots=False)
+
+    def _terminal_state(self, operation: Operation) -> None:
+        if operation.upload_outcome and operation.state == "not_attempted":
+            operation.state = operation.upload_outcome
 
     def preflight_keys(self, items: list[SymbolKey]) -> None:
         for item in items:
@@ -588,6 +704,7 @@ class Prototype3101:
                 operation.state = reservation
                 operation.failure_category = reservation
                 self._record(operation, event="nupkg_put_refused")
+                reservation = None
                 return operation
             self.coordinator.start_put(reservation)
             try:
@@ -595,6 +712,8 @@ class Prototype3101:
                     "PUT", PACKAGE_PUBLISH,
                     headers={"X-NuGet-ApiKey": publish_key, "Content-Type": "application/octet-stream"},
                     data=operation.archive, credential_role="publish", limit=4096)
+            except PrototypeError as error:
+                result = ExchangeResult(None, b"", False, str(error), MAY_HAVE_SENT)
             except Exception:
                 result = ExchangeResult(None, b"", False, "transport_failed", MAY_HAVE_SENT)
             self.coordinator.finish_put(reservation, disposition=result.disposition)
@@ -612,29 +731,43 @@ class Prototype3101:
             if isinstance(proof, str):
                 operation.state = proof
                 operation.failure_category = proof
+                self._terminal_state(operation)
                 self._record(operation, event="nupkg_proof_refused")
                 return operation
-            get = self.transport.request("GET", nupkg_get_url(operation.id, version), limit=MAX_BYTES)
+            try:
+                get = self.transport.request("GET", nupkg_get_url(operation.id, version), limit=MAX_BYTES)
+            except PrototypeError as error:
+                get = ExchangeResult(None, b"", False, str(error), DEFINITELY_NOT_SENT)
+            self.coordinator.finish_proof_get(reservation)
             operation.get_status = get.status
             operation.get_classification, get_failure = classify_archive_get(get, operation.archive)
             operation.content_presence = operation.get_classification
+            operation.key_presence[operation.id] = operation.get_classification
             if get_failure and operation.failure_category is None:
                 operation.failure_category = get_failure
             if operation.get_classification == "conflicting":
                 self.coordinator.halt_puts()
             operation.state = operation.put_outcome
-            self.coordinator.finish_proof_get(reservation)
             reservation = None
             self._record(operation, event="nupkg_put_get")
             return operation
         except Exception as error:
-            if reservation is not None and reservation.state == "inflight":
-                self.coordinator.finish_put(reservation, disposition=MAY_HAVE_SENT)
-            operation.state = operation.state or "acceptance_unknown"
+            self._complete_reservation(reservation)
+            reservation = None
+            self._terminal_state(operation)
+            if operation.state == "not_attempted" and operation.upload_outcome is None:
+                operation.state = "acceptance_unknown"
             operation.failure_category = operation.failure_category or "transport_failed"
-            self._record(operation, event="nupkg_exception", error_type=type(error).__name__)
+            try:
+                self._record(operation, event="nupkg_exception", error_type=type(error).__name__,
+                             drop_if_full=True)
+            except PrototypeError:
+                pass
+            if isinstance(error, PrototypeError):
+                return operation
             raise
         finally:
+            self._complete_reservation(reservation)
             self._release_named(names)
 
     def put_snupkg_serialized(self, operation: Operation, *, publish_key: str) -> Operation:
@@ -659,16 +792,21 @@ class Prototype3101:
             for key in keys:
                 item = self.symbols.by_key[key]
                 observed = self.prove_pdb_association(item)
-                self.symbols.observed[key] = observed["classification"]
-                if observed["classification"] == "conflicting":
+                classification = observed["classification"]
+                self.symbols.observed[key] = classification
+                operation.key_presence[key] = classification
+                if observed.get("state") != "observed" or classification not in PRE_PUT_SKIP | {"missing"}:
                     self.coordinator.halt_puts()
-                    operation.state = "symbol_overlap_conflict"
-                    operation.failure_category = "symbol_overlap_conflict"
-                    operation.content_presence = "conflicting"
-                    self._record(operation, event="snupkg_conflict_before_put")
+                    if classification == "conflicting":
+                        operation.state = "symbol_overlap_conflict"
+                        operation.failure_category = "symbol_overlap_conflict"
+                    else:
+                        operation.state = "pre_observation_unverified"
+                        operation.failure_category = observed.get("failure_category") or classification
+                    operation.content_presence = aggregate_presence(list(keys), operation.key_presence)
+                    self._record(operation, event="snupkg_fail_closed_before_put")
                     return operation
-            if keys and all(self.symbols.observed.get(key) in {
-                    "inspector_bound_association_observed", "bytes_observed_unverified_inputs"} for key in keys):
+            if keys and all(self.symbols.observed.get(key) in PRE_PUT_SKIP for key in keys):
                 if all(self.symbols.by_key[key].input_trust == TRUSTED
                        and self.symbols.observed.get(key) == "inspector_bound_association_observed"
                        for key in keys):
@@ -677,6 +815,7 @@ class Prototype3101:
                     operation.state = "pdbs_observed_unverified_skip_put"
                 operation.put_outcome = "not_attempted"
                 operation.upload_outcome = "not_attempted"
+                operation.content_presence = aggregate_presence(list(keys), operation.key_presence)
                 self.remote_snupkg_archive_verified = False
                 self._record(operation, event="snupkg_skipped_after_reeval")
                 return operation
@@ -686,6 +825,7 @@ class Prototype3101:
                 operation.state = reservation
                 operation.failure_category = reservation
                 self._record(operation, event="snupkg_put_refused")
+                reservation = None
                 return operation
             self.coordinator.start_put(reservation)
             try:
@@ -693,6 +833,8 @@ class Prototype3101:
                     "PUT", SYMBOL_PUBLISH,
                     headers={"X-NuGet-ApiKey": publish_key, "Content-Type": "application/octet-stream"},
                     data=operation.archive, credential_role="publish", limit=4096)
+            except PrototypeError as error:
+                result = ExchangeResult(None, b"", False, str(error), MAY_HAVE_SENT)
             except Exception:
                 result = ExchangeResult(None, b"", False, "transport_failed", MAY_HAVE_SENT)
             self.coordinator.finish_put(reservation, disposition=result.disposition)
@@ -706,28 +848,31 @@ class Prototype3101:
                 operation.state = "not_attempted"
                 self._record(operation, event="snupkg_not_sent")
                 return operation
-            operation.get_classification = "association_pending_unverified_archive"
-            targets = keys or [None]
+            targets = list(keys) or [None]
             for key in targets:
                 proof = self.coordinator.admit_proof_get(reservation)
                 if isinstance(proof, str):
-                    operation.state = proof
                     operation.failure_category = proof
                     self.coordinator.abandon_remaining_proofs(reservation, release_slots=False)
+                    operation.content_presence = aggregate_presence(
+                        [k for k in keys], operation.key_presence)
+                    self._terminal_state(operation)
                     self._record(operation, event="snupkg_proof_refused")
                     return operation
                 if key is None:
-                    operation.content_presence = "snupkg_archive_unverified"
+                    operation.key_presence["snupkg"] = "snupkg_archive_unverified"
                     self.coordinator.finish_proof_get(reservation)
                     break
                 item = self.symbols.by_key[key]
-                get = self.transport.request("GET", symbol_get_url(key), limit=MAX_BYTES)
-                operation.get_status = get.status
+                try:
+                    get = self.transport.request("GET", symbol_get_url(key), limit=MAX_BYTES)
+                except PrototypeError as error:
+                    get = ExchangeResult(None, b"", False, str(error), DEFINITELY_NOT_SENT)
                 classification, get_failure = classify_association(item, get)
+                operation.get_status = get.status
                 self.symbols.observed[key] = classification
+                operation.key_presence[key] = classification
                 self.coordinator.finish_proof_get(reservation)
-                operation.get_classification = classification
-                operation.content_presence = classification
                 if classification == "conflicting":
                     self.coordinator.halt_puts()
                     operation.failure_category = get_failure or "symbol_overlap_conflict"
@@ -735,32 +880,50 @@ class Prototype3101:
                     break
                 if get_failure and operation.failure_category is None:
                     operation.failure_category = get_failure
+            operation.content_presence = aggregate_presence([k for k in keys], operation.key_presence)
+            operation.get_classification = operation.content_presence
             operation.state = operation.put_outcome
             self.remote_snupkg_archive_verified = False
             reservation = None
             self._record(operation, event="snupkg_put_get")
             return operation
         except Exception as error:
-            if reservation is not None and reservation.state == "inflight":
-                self.coordinator.finish_put(reservation, disposition=MAY_HAVE_SENT)
-            operation.state = operation.state or "acceptance_unknown"
+            self._complete_reservation(reservation)
+            reservation = None
+            self._terminal_state(operation)
+            if operation.state == "not_attempted" and operation.upload_outcome is None:
+                operation.state = "acceptance_unknown"
             operation.failure_category = operation.failure_category or "transport_failed"
-            self._record(operation, event="snupkg_exception", error_type=type(error).__name__)
+            try:
+                self._record(operation, event="snupkg_exception", error_type=type(error).__name__,
+                             drop_if_full=True)
+            except PrototypeError:
+                pass
+            if isinstance(error, PrototypeError):
+                return operation
             raise
         finally:
+            self._complete_reservation(reservation)
             self._release_named(names)
 
     def finalize(self) -> dict:
+        accounting = self.coordinator.reap()
         now = self.coordinator.clock()
         exceeded = self.coordinator.deadline.expired(now)
         self.receipt.append({
             "event": "final", "deadline_exceeded": exceeded,
             "remaining": self.coordinator.deadline.remaining(now),
             "used": self.coordinator.used, "outstanding_proof": self.coordinator.outstanding_proof,
-        })
-        self.coordinator.reap()
+            "unresolved_proofs": accounting["unresolved_proofs"],
+            "drained_unsent_puts": accounting["drained_unsent_puts"],
+            "durable_io_implemented": False,
+            "process_cancel_reap_implemented": False,
+            "receipt_overflowed": self.receipt.overflowed,
+        }, drop_if_full=True)
         require(not exceeded, "deadline_exceeded")
-        return {"receipt_rows": len(self.receipt.rows), "used": self.coordinator.used}
+        return {"receipt_rows": len(self.receipt.rows), "used": self.coordinator.used,
+                "unresolved_proofs": accounting["unresolved_proofs"],
+                "durable_io_implemented": False, "process_cancel_reap_implemented": False}
 
 
 def independent_put_get_pair_counterexample_seconds(pairs: int) -> int:
@@ -776,24 +939,23 @@ def independent_put_get_pair_counterexample_seconds(pairs: int) -> int:
 def operation_dag(*, nupkgs: int = 231, snupkgs: int = 231, associations: int = 688,
                   unique_pdb_sha256: int = 688, unique_pdb_names: int = 231,
                   extras_in_465: int = 3) -> dict:
-    """One reconciled DAG. Architect U is archive PUTs (462), not PDB associations."""
+    """Baseline formula only. Incomplete DAG. Not a global orchestrator."""
     archive_puts = nupkgs + snupkgs
     two_nupkg_passes_plus_three = 2 * nupkgs + extras_in_465
     architect_total = two_nupkg_passes_plus_three + 2 * associations + archive_puts
     return {
+        "kind": "baseline_formula_only",
+        "dag_complete": False,
+        "orchestrator": False,
         "nupkg_puts": nupkgs,
         "snupkg_puts": snupkgs,
         "archive_puts_U": archive_puts,
         "associations_S": associations,
-        "unique_symbol_keys": {
-            "status": "not_extracted_without_inspector",
-            "unique_pdb_sha256": unique_pdb_sha256,
-            "unique_pdb_names": unique_pdb_names,
-        },
+        "unique_symbol_keys": "unknown",
         "metadata_index_extras_in_465": extras_in_465,
-        "github_metadata_pages": "unmeasured_offline",
+        "github_metadata_pages": "unknown",
         "nupkg_get_passes": 2,
-        "overlap_rereads": "conditional; unique pdb sha overlap 0; keys unmeasured without inspector",
+        "overlap_rereads": "unknown",
         "conditional_proof_operations": "GET after PUT unless definitely_not_sent",
         "architect_formula": "465+2S+U",
         "architect_465": two_nupkg_passes_plus_three,

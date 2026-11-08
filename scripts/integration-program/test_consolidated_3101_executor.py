@@ -244,7 +244,8 @@ class OverlapAndAssociationTests(unittest.TestCase):
         proto_exec.preflight_keys([symbol])
         operation = proto.Operation("Elsa", "snupkg", proto.sha(b"snupkg"), b"snupkg")
         proto_exec.put_snupkg_serialized(operation, publish_key="k")
-        self.assertEqual(operation.get_classification, "bytes_observed_unverified_inputs")
+        self.assertEqual(operation.key_presence[symbol.key], "bytes_observed_unverified_inputs")
+        self.assertEqual(operation.content_presence, "all_required_observed")
         self.assertNotEqual(operation.get_classification, "pdb_association_matching")
         self.assertFalse(proto_exec.remote_snupkg_archive_verified)
         observed = proto_exec.prove_pdb_association(symbol)
@@ -455,6 +456,174 @@ class ExistingContractTests(unittest.TestCase):
         self.assertNotEqual(operation.content_presence, "matching")
 
 
+class ArchitectR2CounterexampleTests(unittest.TestCase):
+    def test_queued_admissions_cannot_oversubscribe_aggregate_time(self):
+        coordinator = proto.Coordinator(proto.ImmutableDeadline(start=0.0), clock=Clock(0.0))
+        accepted = 0
+        while True:
+            result = coordinator.admit_put(f"p{accepted}", proof_slots=1)
+            if isinstance(result, str):
+                break
+            accepted += 1
+            require_bound = accepted * 50 + 30
+            self.assertLessEqual(require_bound, proto.MAX_SECONDS)
+        self.assertGreater(accepted, 0)
+        self.assertLess(accepted, 462)
+        self.assertEqual(result, "readback_budget_exhausted")
+
+    def test_send_boundary_refuses_put_when_remaining_cannot_cover_proof_and_cleanup(self):
+        clock = Clock(0.0)
+        proto_exec, coordinator, transport = harness(lambda **kwargs: ok(201), now=clock)
+        reservation = coordinator.admit_put("Elsa", proof_slots=1)
+        coordinator.start_put(reservation)
+        clock.now = 1769  # remaining 31s
+        result = transport.request(
+            "PUT", proto.PACKAGE_PUBLISH,
+            headers={"X-NuGet-ApiKey": "k", "Content-Type": "application/octet-stream"},
+            data=b"x", credential_role="publish", limit=4096)
+        self.assertEqual(result.disposition, proto.DEFINITELY_NOT_SENT)
+        self.assertEqual(len(transport.exchange.calls), 0)
+
+    def test_independent_get_cannot_consume_committed_proof_time(self):
+        clock = Clock(0.0)
+        coordinator = proto.Coordinator(proto.ImmutableDeadline(start=0.0), clock=clock)
+        reservation = coordinator.admit_put("a", proof_slots=1)
+        self.assertNotIsInstance(reservation, str)
+        clock.now = 1720  # remaining 80s; PUT+proof+cleanup already 80
+        self.assertEqual(coordinator.admit_get("index"), "not_attempted")
+        coordinator.start_put(reservation)
+        coordinator.finish_put(reservation, disposition=proto.RESPONSE_COMPLETE)
+        self.assertNotIsInstance(coordinator.admit_proof_get(reservation), str)
+
+    def test_halt_stops_admitted_unsent_put_waiting_on_semaphore(self):
+        held = threading.Event()
+        release = threading.Event()
+
+        class Hold:
+            def acquire(self, timeout=None):
+                held.set()
+                return release.wait(30)
+
+            def release(self):
+                return None
+
+        proto_exec, coordinator, transport = harness(lambda **kwargs: ok(201))
+        coordinator._exchange = Hold()
+        operation = proto.Operation("Elsa", "nupkg", proto.sha(b"x"), b"x")
+
+        def run():
+            proto_exec.put_and_prove_nupkg(operation, publish_key="k")
+
+        thread = threading.Thread(target=run)
+        thread.start()
+        self.assertTrue(held.wait(2))
+        coordinator.halt_puts()
+        release.set()
+        thread.join()
+        self.assertEqual(operation.state, "not_attempted")
+        self.assertEqual(operation.upload_outcome, "not_attempted")
+        self.assertEqual(transport.exchange.calls, [])
+
+    def test_get_prototype_error_does_not_strand_proving_or_keep_not_attempted(self):
+        archive = b"x"
+
+        def handler(method, url, **kwargs):
+            if method == "PUT":
+                return ok(201)
+            raise proto.PrototypeError("unsafe_request")
+
+        proto_exec, coordinator, _ = harness(handler)
+        operation = proto.Operation("Elsa", "nupkg", proto.sha(archive), archive)
+        proto_exec.put_and_prove_nupkg(operation, publish_key="k")
+        self.assertEqual(operation.upload_outcome, "accepted_pending_proof")
+        self.assertNotEqual(operation.state, "not_attempted")
+        self.assertEqual(coordinator.outstanding_proof, 0)
+        self.assertEqual(coordinator.inflight_gets, 0)
+
+    def test_multipdb_presence_keeps_per_key_and_aggregate(self):
+        digest_a = proto.sha(b"pdb-a")
+        digest_b = proto.sha(b"pdb-b")
+        key_a = key("a.pdb", digest_a)
+        key_b = key("b.pdb", digest_b)
+        uploaded = {"n": 0}
+
+        def handler(method, url, **kwargs):
+            if method == "PUT":
+                uploaded["n"] += 1
+                return ok(201)
+            if uploaded["n"] == 0:
+                return ok(404, b"")
+            if key_a in url:
+                return ok(200, b"pdb-a")
+            return ok(200, b"wrong")
+
+        proto_exec, _, _ = harness(handler)
+        proto_exec.preflight_keys([
+            proto.SymbolKey(key_a, digest_a, "Elsa", b"pdb-a"),
+            proto.SymbolKey(key_b, digest_b, "Elsa", b"pdb-b"),
+        ])
+        operation = proto.Operation("Elsa", "snupkg", proto.sha(b"s"), b"s")
+        proto_exec.put_snupkg_serialized(operation, publish_key="k")
+        self.assertEqual(operation.key_presence[key_a], "bytes_observed_unverified_inputs")
+        self.assertEqual(operation.key_presence[key_b], "conflicting")
+        self.assertEqual(operation.content_presence, "conflicting")
+        self.assertNotEqual(operation.content_presence, "bytes_observed_unverified_inputs")
+
+    def test_finalize_reaps_even_if_receipt_is_full(self):
+        proto_exec, coordinator, _ = harness(lambda **kwargs: ok(200, b"{}"))
+        proto_exec.receipt.max_bytes = len(json.dumps({"event": "final"}))
+        proto_exec.receipt.size = proto_exec.receipt.max_bytes
+        reservation = coordinator.admit_put("queued", proof_slots=1)
+        self.assertNotIsInstance(reservation, str)
+        result = proto_exec.finalize()
+        self.assertTrue(coordinator.abandoned)
+        self.assertEqual(reservation.state, "not_attempted")
+        self.assertTrue(proto_exec.receipt.overflowed)
+        self.assertFalse(result["durable_io_implemented"])
+        self.assertFalse(result["process_cancel_reap_implemented"])
+        self.assertFalse(proto.BoundedReceipt.durable_io_implemented)
+
+    def test_snupkg_pre_observation_unverifiable_fail_closed(self):
+        digest = proto.sha(b"pdb")
+        symbol = key("elsa.pdb", digest)
+        puts = {"n": 0}
+
+        def handler(method, url, **kwargs):
+            if method == "PUT":
+                puts["n"] += 1
+                return ok(201)
+            return proto.ExchangeResult(None, b"", False, "timeout", proto.DEFINITELY_NOT_SENT)
+
+        proto_exec, coordinator, _ = harness(handler)
+        proto_exec.preflight_keys([proto.SymbolKey(symbol, digest, "Elsa", b"pdb")])
+        operation = proto.Operation("Elsa", "snupkg", proto.sha(b"s"), b"s")
+        proto_exec.put_snupkg_serialized(operation, publish_key="k")
+        self.assertEqual(operation.state, "pre_observation_unverified")
+        self.assertEqual(puts["n"], 0)
+        self.assertTrue(coordinator.writes_halted)
+
+    def test_metadata_role_cannot_target_feedz(self):
+        proto_exec, _, transport = harness(lambda **kwargs: ok(200, b"{}"))
+        with self.assertRaisesRegex(proto.PrototypeError, "unsafe_request"):
+            transport.request("GET", proto.FEED_INDEX,
+                              headers={"Authorization": "Bearer t"}, credential_role="metadata")
+
+    def test_failure_category_rejects_complete_201(self):
+        archive = b"x"
+
+        def handler(method, url, **kwargs):
+            if method == "PUT":
+                return ok(201, complete=True, failure="throttled")
+            return ok(200, archive)
+
+        proto_exec, coordinator, _ = harness(handler)
+        operation = proto.Operation("Elsa", "nupkg", proto.sha(archive), archive)
+        proto_exec.put_and_prove_nupkg(operation, publish_key="k")
+        self.assertNotEqual(operation.upload_outcome, "accepted_pending_proof")
+        self.assertEqual(operation.failure_category, "throttled")
+        self.assertTrue(coordinator.put_admission_stopped)
+
+
 class MeasurementTests(unittest.TestCase):
     def test_reconciled_dag_uses_archive_puts_as_u_and_withdraws_2529(self):
         report = proto.offline_measurement_report()
@@ -463,6 +632,12 @@ class MeasurementTests(unittest.TestCase):
         self.assertEqual(report["archive_puts_U"], 462)
         self.assertEqual(report["associations_S"], 688)
         self.assertEqual(report["architect_total"], 2303)
+        self.assertEqual(report["kind"], "baseline_formula_only")
+        self.assertFalse(report["dag_complete"])
+        self.assertFalse(report["orchestrator"])
+        self.assertEqual(report["unique_symbol_keys"], "unknown")
+        self.assertEqual(report["github_metadata_pages"], "unknown")
+        self.assertEqual(report["overlap_rereads"], "unknown")
         self.assertEqual(report["independent_pair_counterexample"]["seconds"], 5800)
         self.assertFalse(report["independent_pair_counterexample"]["full_cold_upper_bound"])
         self.assertFalse(report["fit_claim"])
@@ -472,11 +647,14 @@ class MeasurementTests(unittest.TestCase):
             Path(__file__).with_name("consolidated-3101-executor-measurement.json").read_text(encoding="utf-8"))
         self.assertFalse(receipt["fit_claim"])
         self.assertEqual(receipt["dag"]["architect_total"], 2303)
+        self.assertFalse(receipt["dag"]["dag_complete"])
+        self.assertEqual(receipt["dag"]["kind"], "baseline_formula_only")
         self.assertEqual(receipt["dag"]["withdrawn_2529"], "invalid; treated unique PDB bytes as U")
         self.assertFalse(receipt["dag"]["independent_pair_counterexample"]["full_cold_upper_bound"])
         plan = Path(__file__).with_name("consolidated-3100-readonly-get-sample-plan.md").read_text(encoding="utf-8")
+        self.assertIn("TEMPLATE", plan)
         self.assertIn("No measurement in this document", plan)
-        self.assertIn("not** put latency", plan.lower())
+        self.assertIn("3.10.0 original.zip is not in this workspace", plan)
 
     def test_zero_latency_mock_is_not_a_fit_proof(self):
         archive = b"x"

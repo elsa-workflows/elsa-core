@@ -25,19 +25,18 @@
     "ceil_work_over_4_invalid_with_locks": true
   },
   "dag": {
+    "kind": "baseline_formula_only",
+    "dag_complete": false,
+    "orchestrator": false,
     "nupkg_puts": 231,
     "snupkg_puts": 231,
     "archive_puts_U": 462,
     "associations_S": 688,
-    "unique_symbol_keys": {
-      "status": "not_extracted_without_inspector",
-      "unique_pdb_sha256": 688,
-      "unique_pdb_names": 231
-    },
+    "unique_symbol_keys": "unknown",
     "metadata_index_extras_in_465": 3,
-    "github_metadata_pages": "unmeasured_offline",
+    "github_metadata_pages": "unknown",
     "nupkg_get_passes": 2,
-    "overlap_rereads": "conditional; unique pdb sha overlap 0; keys unmeasured without inspector",
+    "overlap_rereads": "unknown",
     "conditional_proof_operations": "GET after PUT unless definitely_not_sent",
     "architect_formula": "465+2S+U",
     "architect_465": 465,
@@ -83,6 +82,8 @@
     "Real network publication measurement is not authorized.",
     "Unique Feedz symbol-store keys were not extracted (no inspector).",
     "GitHub admission paging is extra load on the same 1800s/5000 clock and is unmeasured.",
-    "Cannot demonstrate a safe 1800s fit. No GO. No gate waiver."
+    "Cannot demonstrate a safe 1800s fit. No GO. No gate waiver.",
+    "2303 is the baseline formula only. Unique keys, metadata pages, and overlap rereads are unknown. DAG incomplete. No global orchestrator.",
+    "Durable receipt IO and process cancel/reap of inflight HTTP are not implemented."
   ]
 }
