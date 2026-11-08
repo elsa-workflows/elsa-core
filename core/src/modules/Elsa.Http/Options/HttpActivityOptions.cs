@@ -49,4 +49,12 @@ public class HttpActivityOptions
     /// <c>null</c> means unspecified and allows a host to assign a default policy; an empty string disables HTTP workflow trigger rate limiting.
     /// </summary>
     public string? RateLimitingPolicyName { get; set; }
+
+    /// <summary>
+    /// First-segment sub-paths under <see cref="BasePath"/> that skip HTTP workflow matching so later
+    /// middleware can handle them. Combined Server+Studio hosts use this for Studio's
+    /// <c>/workflows/definitions</c> and <c>/workflows/instances</c> routes while keeping legacy
+    /// HTTP trigger start/resume under <c>/workflows/{path}</c>. Unmatched HTTP paths still 404.
+    /// </summary>
+    public IList<string> PassthroughSubPaths { get; set; } = new List<string>();
 }

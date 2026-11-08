@@ -3,6 +3,7 @@ using Elsa.Extensions;
 using Elsa.Http.Options;
 using Elsa.Identity.Features;
 using Elsa.Persistence.EFCore.Extensions;
+using Elsa.Persistence.EFCore.Modules.Identity;
 using Elsa.Persistence.EFCore.Modules.Management;
 using Elsa.Persistence.EFCore.Modules.Runtime;
 using Elsa.Studio.Authentication.Abstractions.Models;
@@ -47,7 +48,7 @@ var services = builder.Services;
 var identitySection = configuration.GetSection("Identity");
 var identityTokenSection = identitySection.GetSection("Tokens");
 var sqliteConnectionString = configuration.GetConnectionString("Sqlite")
-    ?? "Data Source=App_Data/elsa.sqlite.db;Cache=Shared;";
+    ?? "Data Source=elsa_workflows.db;Cache=Shared";
 
 builder.WebHost.UseStaticWebAssets();
 services.AddResponseCompression();
@@ -74,6 +75,7 @@ services.AddElsa(elsa =>
         .UseIdentity(identity =>
         {
             identity.TokenOptions += options => identityTokenSection.Bind(options);
+            identity.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
 
             var adminUserName = configuration["DefaultAdminUser:AdminUserName"];
             var adminPassword = configuration["DefaultAdminUser:AdminPassword"];
@@ -118,7 +120,10 @@ services.Configure<IncidentOptions>(options => options.DefaultIncidentStrategy =
 
 var authProvider = configuration["Authentication:Provider"];
 if (string.IsNullOrWhiteSpace(authProvider))
+{
     authProvider = "ElsaIdentity";
+}
+
 if (!Enum.TryParse<StudioAuthenticationProvider>(authProvider, true, out var selectedAuthProvider)
     || (selectedAuthProvider is not StudioAuthenticationProvider.ElsaIdentity and not StudioAuthenticationProvider.ElsaLogin))
 {
@@ -183,12 +188,18 @@ services.AddSignalR(options => options.MaximumReceiveMessageSize = 5 * 1024 * 10
 var app = builder.Build();
 
 if (selectedAuthProvider != StudioAuthenticationProvider.ElsaLogin)
+{
     _ = app.Services.GetRequiredService<IOptions<LoginThemeOptions>>().Value;
+}
 
 if (app.Environment.IsDevelopment())
+{
     app.UseDeveloperExceptionPage();
+}
 else
+{
     app.UseResponseCompression();
+}
 
 app.UseElsaLocalization();
 app.UseCors();

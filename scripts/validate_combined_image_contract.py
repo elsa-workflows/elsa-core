@@ -17,6 +17,7 @@ HOST_PROJECT = ROOT / "studio" / "src" / "hosts" / "Elsa.ServerAndStudio.Web" / 
 HOST_PROGRAM = ROOT / "studio" / "src" / "hosts" / "Elsa.ServerAndStudio.Web" / "Program.cs"
 HOST_PAGE = ROOT / "studio" / "src" / "hosts" / "Elsa.ServerAndStudio.Web" / "Pages" / "_Host.cshtml"
 HOST_SETTINGS = ROOT / "studio" / "src" / "hosts" / "Elsa.ServerAndStudio.Web" / "appsettings.json"
+DASHBOARD_PAGE = ROOT / "studio" / "src" / "modules" / "Elsa.Studio.Dashboard" / "Pages" / "Index.razor"
 
 FORBIDDEN_DOCKERFILE_MARKERS = (
     "Elsa.ModularServer.Web",
@@ -44,10 +45,16 @@ REQUIRED_PROGRAM_MARKERS = (
     "MapFallbackToPage(\"/_Host\")",
     "AddElsaIdentity",
     "AddWorkflowsModule",
+    "UseEntityFrameworkCore",
+    "elsa_workflows.db",
 )
 FORBIDDEN_PROGRAM_MARKERS = (
     "MapHealthChecks(\"/\",",
     "MapHealthChecks(\"/\")",
+    "App_Data/elsa.sqlite.db",
+    "/elsa-http",
+    "File.Copy",
+    "File.Move",
 )
 REQUIRED_PAGE_MARKERS = (
     '_content/Elsa.Studio.Workflows.Designer/designer.css',
@@ -57,6 +64,19 @@ REQUIRED_PAGE_MARKERS = (
 REQUIRED_SETTINGS_MARKERS = (
     '"Url": "http://127.0.0.1:8080/elsa/api"',
     '"RoutePrefix": "elsa/api"',
+    "elsa_workflows.db",
+    '"BasePath": "/workflows"',
+    '"PassthroughSubPaths"',
+    '"definitions"',
+    '"instances"',
+)
+FORBIDDEN_SETTINGS_MARKERS = (
+    "elsa.sqlite.db",
+    "/elsa-http",
+)
+REQUIRED_DASHBOARD_MARKERS = (
+    '@page "/"',
+    '@page "/dashboard"',
 )
 
 
@@ -80,19 +100,26 @@ def validate_combined_image_contract(root: Path | None = None) -> list[str]:
     host_program = base / "studio" / "src" / "hosts" / "Elsa.ServerAndStudio.Web" / "Program.cs"
     host_page = base / "studio" / "src" / "hosts" / "Elsa.ServerAndStudio.Web" / "Pages" / "_Host.cshtml"
     host_settings = base / "studio" / "src" / "hosts" / "Elsa.ServerAndStudio.Web" / "appsettings.json"
+    dashboard_page = base / "studio" / "src" / "modules" / "Elsa.Studio.Dashboard" / "Pages" / "Index.razor"
     errors: list[str] = []
-    for path in (dockerfile, host_project, host_program, host_page, host_settings):
+    required_paths = (dockerfile, host_project, host_program, host_page, host_settings, dashboard_page)
+    for path in required_paths:
         if not path.is_file():
             errors.append(f"Missing required combined-image file: {path.relative_to(base)}")
-    if errors:
-        return errors
-    errors.extend(_require_contains(dockerfile, REQUIRED_DOCKERFILE_MARKERS, FORBIDDEN_DOCKERFILE_MARKERS, root=base))
-    errors.extend(_require_contains(host_project, ('Sdk="Microsoft.NET.Sdk.Web"',), FORBIDDEN_PROJECT_MARKERS, root=base))
-    if '<ProjectReference Include="' not in host_project.read_text(encoding="utf-8"):
-        errors.append("Combined host must reference in-repo Server and Studio projects, not released packages.")
-    errors.extend(_require_contains(host_program, REQUIRED_PROGRAM_MARKERS, FORBIDDEN_PROGRAM_MARKERS, root=base))
-    errors.extend(_require_contains(host_page, REQUIRED_PAGE_MARKERS, root=base))
-    errors.extend(_require_contains(host_settings, REQUIRED_SETTINGS_MARKERS, root=base))
+    if dockerfile.is_file():
+        errors.extend(_require_contains(dockerfile, REQUIRED_DOCKERFILE_MARKERS, FORBIDDEN_DOCKERFILE_MARKERS, root=base))
+    if host_project.is_file():
+        errors.extend(_require_contains(host_project, ('Sdk="Microsoft.NET.Sdk.Web"',), FORBIDDEN_PROJECT_MARKERS, root=base))
+        if '<ProjectReference Include="' not in host_project.read_text(encoding="utf-8"):
+            errors.append("Combined host must reference in-repo Server and Studio projects, not released packages.")
+    if host_program.is_file():
+        errors.extend(_require_contains(host_program, REQUIRED_PROGRAM_MARKERS, FORBIDDEN_PROGRAM_MARKERS, root=base))
+    if host_page.is_file():
+        errors.extend(_require_contains(host_page, REQUIRED_PAGE_MARKERS, root=base))
+    if host_settings.is_file():
+        errors.extend(_require_contains(host_settings, REQUIRED_SETTINGS_MARKERS, FORBIDDEN_SETTINGS_MARKERS, root=base))
+    if dashboard_page.is_file():
+        errors.extend(_require_contains(dashboard_page, REQUIRED_DASHBOARD_MARKERS, root=base))
     return errors
 
 

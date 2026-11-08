@@ -284,6 +284,79 @@ public class HttpWorkflowsMiddlewareTests
         Assert.Equal(triggerHash, runOptions.Properties[TriggerWorkflowProperties.StimulusHash]);
     }
 
+    [Theory]
+    [InlineData("/workflows/definitions")]
+    [InlineData("/workflows/definitions/abc/edit")]
+    [InlineData("/workflows/instances")]
+    [InlineData("/workflows/instances/abc/view")]
+    public async Task InvokeAsync_WithStudioPassthroughSubPath_CallsNext(string path)
+    {
+        var nextCalled = false;
+        var routeMatcher = Substitute.For<IRouteMatcher>();
+        var middleware = new HttpWorkflowsMiddleware(_ =>
+        {
+            nextCalled = true;
+            return Task.CompletedTask;
+        });
+        var serviceProvider = new ServiceCollection()
+            .AddSingleton(routeMatcher)
+            .BuildServiceProvider();
+        var httpContext = new DefaultHttpContext
+        {
+            RequestServices = serviceProvider
+        };
+        httpContext.Request.Path = path;
+
+        await middleware.InvokeAsync(
+            httpContext,
+            serviceProvider,
+            Microsoft.Extensions.Options.Options.Create(new HttpActivityOptions
+            {
+                BasePath = "/workflows",
+                PassthroughSubPaths = ["definitions", "instances"]
+            }),
+            new EmptyHttpWorkflowLookupService());
+
+        Assert.True(nextCalled);
+        routeMatcher.DidNotReceive().Match(Arg.Any<string>(), Arg.Any<string>());
+    }
+
+    [Fact]
+    public async Task InvokeAsync_WithUnmatchedHttpTriggerPath_DoesNotCallNext()
+    {
+        var nextCalled = false;
+        var middleware = new HttpWorkflowsMiddleware(_ =>
+        {
+            nextCalled = true;
+            return Task.CompletedTask;
+        });
+        var serviceProvider = new ServiceCollection()
+            .AddSingleton<IBookmarkStore>(new CapturingBookmarkStore(CurrentTenantId, []))
+            .AddSingleton<IRouteMatcher, ExactRouteMatcher>()
+            .AddSingleton<IRouteTable>(new ListRouteTable([]))
+            .AddSingleton<IStimulusHasher, FixedStimulusHasher>()
+            .BuildServiceProvider();
+        var httpContext = new DefaultHttpContext
+        {
+            RequestServices = serviceProvider
+        };
+        httpContext.Request.Path = "/workflows/qa-hello";
+        httpContext.Request.Method = HttpMethod.Get.Method;
+
+        await middleware.InvokeAsync(
+            httpContext,
+            serviceProvider,
+            Microsoft.Extensions.Options.Options.Create(new HttpActivityOptions
+            {
+                BasePath = "/workflows",
+                PassthroughSubPaths = ["definitions", "instances"]
+            }),
+            new EmptyHttpWorkflowLookupService());
+
+        Assert.False(nextCalled);
+        Assert.Equal(StatusCodes.Status404NotFound, httpContext.Response.StatusCode);
+    }
+
     private static IEnumerable<StoredBookmark> CreateCollidingHttpEndpointBookmarks()
     {
         yield return CreateBookmark("current-tenant-bookmark", CurrentTenantId);

@@ -95,4 +95,8 @@ for asset in "${assets[@]}"; do
     fi
 done
 
-echo "Studio ClientLib proof passed: generated BPMN types, Designer tests, both bundles, six required assets."
+if [[ "$skip_tests" == 1 ]]; then
+    echo "Studio ClientLib proof passed: generated BPMN types, Designer tests skipped, both bundles, six required assets."
+else
+    echo "Studio ClientLib proof passed: generated BPMN types, Designer tests, both bundles, six required assets."
+fi

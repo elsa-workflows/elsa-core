@@ -48,6 +48,13 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
             return;
         }
 
+        var remainingPath = TryStripBasePath(path, basePath) ?? path;
+        if (IsPassthroughPath(remainingPath, options.Value.PassthroughSubPaths))
+        {
+            await next(httpContext);
+            return;
+        }
+
         var matchingPath = GetMatchingRoute(serviceProvider, path).Route;
         matchingPath = TryStripBasePath(matchingPath, basePath) ?? matchingPath;
 
@@ -297,6 +304,23 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
         basePath == "/" ||
         string.Equals(route, basePath, StringComparison.OrdinalIgnoreCase) ||
         route.StartsWith($"{basePath}/", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsPassthroughPath(string remainingPath, IList<string>? passthroughSubPaths)
+    {
+        if (passthroughSubPaths is null || passthroughSubPaths.Count == 0)
+        {
+            return false;
+        }
+
+        var firstSegment = GetRouteSegments(remainingPath).FirstOrDefault();
+        if (string.IsNullOrEmpty(firstSegment))
+        {
+            return false;
+        }
+
+        return passthroughSubPaths.Any(candidate =>
+            string.Equals(candidate.Trim('/'), firstSegment, StringComparison.OrdinalIgnoreCase));
+    }
 
     private static int FindSegmentSequence(string[] routeSegments, string[] candidateSegments)
     {
