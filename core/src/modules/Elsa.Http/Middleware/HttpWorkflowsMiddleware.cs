@@ -52,6 +52,15 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
         var matchingPath = GetMatchingRoute(serviceProvider, path).Route;
         matchingPath = TryStripBasePath(matchingPath, basePath) ?? matchingPath;
 
+        // Default hosts keep the original pre-lookup 503 while paused or draining. Combined hosts
+        // register IHttpWorkflowUnmatchedHandler, which opts into lookup-then-reject so unmatched
+        // Studio pages can still be served without executing matched HTTP work.
+        var unmatchedHandler = serviceProvider.GetService<IHttpWorkflowUnmatchedHandler>();
+        if (unmatchedHandler is null && TryRejectWhenNotAcceptingWork(httpContext, serviceProvider))
+        {
+            return;
+        }
+
         matchingPath = matchingPath.NormalizeRoute();
         
         var input = new Dictionary<string, object>
@@ -74,7 +83,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
 
             if (triggers.Count > 1)
             {
-                if (TryRejectMatchedHttpWorkWhenNotAccepting(httpContext, serviceProvider))
+                if (TryRejectWhenNotAcceptingWork(httpContext, serviceProvider))
                 {
                     return;
                 }
@@ -89,7 +98,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
             var trigger = triggers.FirstOrDefault();
             if (trigger != null)
             {
-                if (TryRejectMatchedHttpWorkWhenNotAccepting(httpContext, serviceProvider))
+                if (TryRejectWhenNotAcceptingWork(httpContext, serviceProvider))
                 {
                     return;
                 }
@@ -104,7 +113,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
 
         if (bookmarks.Count > 1)
         {
-            if (TryRejectMatchedHttpWorkWhenNotAccepting(httpContext, serviceProvider))
+            if (TryRejectWhenNotAcceptingWork(httpContext, serviceProvider))
             {
                 return;
             }
@@ -120,7 +129,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
 
         if (bookmark != null)
         {
-            if (TryRejectMatchedHttpWorkWhenNotAccepting(httpContext, serviceProvider))
+            if (TryRejectWhenNotAcceptingWork(httpContext, serviceProvider))
             {
                 return;
             }
@@ -129,7 +138,6 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
             return;
         }
 
-        var unmatchedHandler = serviceProvider.GetService<IHttpWorkflowUnmatchedHandler>();
         if (unmatchedHandler is not null && await unmatchedHandler.HandleAsync(httpContext, next, cancellationToken))
         {
             return;
@@ -308,11 +316,10 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
     }
 
     /// <summary>
-    /// Rejects matched HTTP start/resume while paused or draining without executing the workflow.
-    /// Lookup still runs first so unmatched Studio pages can fall through. Unmatched non-page paths
-    /// keep the existing 404 (or <c>next</c> when no base path is configured).
+    /// Returns 503 with Retry-After while paused or draining, without starting or resuming a workflow.
+    /// Default hosts call this before lookup. Combined hosts call it after a trigger or bookmark match.
     /// </summary>
-    private static bool TryRejectMatchedHttpWorkWhenNotAccepting(HttpContext httpContext, IServiceProvider serviceProvider)
+    private static bool TryRejectWhenNotAcceptingWork(HttpContext httpContext, IServiceProvider serviceProvider)
     {
         var quiescenceSignal = serviceProvider.GetService<IQuiescenceSignal>();
         if (quiescenceSignal is null || quiescenceSignal.IsAcceptingNewWork)

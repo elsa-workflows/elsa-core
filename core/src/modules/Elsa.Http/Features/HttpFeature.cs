@@ -179,7 +179,7 @@ public class HttpFeature(IModule module) : FeatureBase(module)
             .AddNotificationHandler<UpdateRouteTable>()
 
             // Graceful shutdown: register HTTP ingress for diagnostic visibility in the runtime's IIngressSourceRegistry.
-            // The middleware looks up first, then returns 503 for matched HTTP work when paused (FR-006).
+            // Default hosts 503 before lookup when paused; combined unmatched-handler hosts defer until after lookup (FR-006).
             .AddSingleton<Elsa.Workflows.Runtime.IIngressSource, Elsa.Http.IngressSources.HttpTriggerIngressSource>()
 
             // Content parsers.

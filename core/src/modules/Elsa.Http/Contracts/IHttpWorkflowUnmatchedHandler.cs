@@ -12,8 +12,9 @@ namespace Elsa.Http.Contracts;
 /// are registered, the last registration wins; there is no ordered handler chain.
 /// Returning <c>false</c> preserves the middleware's existing unmatched behavior: 404 when
 /// <c>BasePath</c> is set, otherwise <c>next</c>. Host-specific page matching is not part of
-/// this contract. Matching triggers and bookmarks are rejected before this hook runs, including
-/// during administrative pause.
+/// this contract. Registering a handler also opts the host into lookup-then-reject during
+/// pause or drain so unmatched Studio pages can still be served; hosts without a handler keep
+/// the original pre-lookup 503 and do not touch trigger/bookmark stores or the workflow graph.
 /// </remarks>
 public interface IHttpWorkflowUnmatchedHandler
 {

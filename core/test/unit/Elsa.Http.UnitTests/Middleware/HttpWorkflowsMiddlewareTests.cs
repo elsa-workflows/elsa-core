@@ -7,6 +7,7 @@ using Elsa.Http.Options;
 using Elsa.ServerAndStudio.Web;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime;
@@ -406,6 +407,94 @@ public class HttpWorkflowsMiddlewareTests
         Assert.Equal(StatusCodes.Status404NotFound, httpContext.Response.StatusCode);
     }
 
+    [Fact]
+    public async Task InvokeAsync_WhenPaused_WithoutUnmatchedHandler_Returns503BeforeLookup()
+    {
+        var nextCalled = false;
+        var workflowRunner = Substitute.For<IWorkflowRunner>();
+        var workflowDefinitionService = Substitute.For<IWorkflowDefinitionService>();
+        var lookup = new RecordingHttpWorkflowLookupService();
+        var bookmarkStore = new CapturingBookmarkStore(CurrentTenantId, CreateCollidingHttpEndpointBookmarks());
+        var middleware = new HttpWorkflowsMiddleware(_ =>
+        {
+            nextCalled = true;
+            return Task.CompletedTask;
+        });
+        var serviceProvider = new ServiceCollection()
+            .AddSingleton(CreatePausedQuiescenceSignal())
+            .AddSingleton<IBookmarkStore>(bookmarkStore)
+            .AddSingleton(workflowDefinitionService)
+            .AddSingleton<IRouteMatcher, ExactRouteMatcher>()
+            .AddSingleton<IRouteTable>(new ListRouteTable([new("/workflows/qa-hello")]))
+            .AddSingleton<IStimulusHasher, FixedStimulusHasher>()
+            .AddSingleton(workflowRunner)
+            .BuildServiceProvider();
+        var httpContext = new DefaultHttpContext
+        {
+            RequestServices = serviceProvider
+        };
+        httpContext.Request.Path = "/workflows/qa-hello";
+        httpContext.Request.Method = HttpMethod.Get.Method;
+
+        await middleware.InvokeAsync(
+            httpContext,
+            serviceProvider,
+            Microsoft.Extensions.Options.Options.Create(new HttpActivityOptions { BasePath = "/workflows" }),
+            lookup);
+
+        Assert.False(nextCalled);
+        Assert.Equal(StatusCodes.Status503ServiceUnavailable, httpContext.Response.StatusCode);
+        Assert.Equal("60", httpContext.Response.Headers.RetryAfter.ToString());
+        Assert.Equal(0, lookup.Calls);
+        Assert.Null(bookmarkStore.LastFilter);
+        Assert.Empty(workflowDefinitionService.ReceivedCalls());
+        await workflowRunner.DidNotReceive().RunAsync(Arg.Any<WorkflowGraph>(), Arg.Any<RunWorkflowOptions?>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task InvokeAsync_WhenDraining_WithoutUnmatchedHandler_Returns503BeforeLookup()
+    {
+        var nextCalled = false;
+        var workflowRunner = Substitute.For<IWorkflowRunner>();
+        var workflowDefinitionService = Substitute.For<IWorkflowDefinitionService>();
+        var lookup = new RecordingHttpWorkflowLookupService();
+        var bookmarkStore = new CapturingBookmarkStore(CurrentTenantId, CreateCollidingHttpEndpointBookmarks());
+        var middleware = new HttpWorkflowsMiddleware(_ =>
+        {
+            nextCalled = true;
+            return Task.CompletedTask;
+        });
+        var serviceProvider = new ServiceCollection()
+            .AddSingleton(CreateDrainingQuiescenceSignal())
+            .AddSingleton<IBookmarkStore>(bookmarkStore)
+            .AddSingleton(workflowDefinitionService)
+            .AddSingleton<IRouteMatcher, ExactRouteMatcher>()
+            .AddSingleton<IRouteTable>(new ListRouteTable([new("/workflows/qa-hello")]))
+            .AddSingleton<IStimulusHasher, FixedStimulusHasher>()
+            .AddSingleton(workflowRunner)
+            .BuildServiceProvider();
+        var httpContext = new DefaultHttpContext
+        {
+            RequestServices = serviceProvider
+        };
+        httpContext.Request.Path = "/workflows/qa-hello";
+        httpContext.Request.Method = HttpMethod.Post.Method;
+
+        await middleware.InvokeAsync(
+            httpContext,
+            serviceProvider,
+            Microsoft.Extensions.Options.Options.Create(new HttpActivityOptions { BasePath = "/workflows" }),
+            lookup);
+
+        Assert.False(nextCalled);
+        Assert.Equal(StatusCodes.Status503ServiceUnavailable, httpContext.Response.StatusCode);
+        Assert.Equal("5", httpContext.Response.Headers.RetryAfter.ToString());
+        Assert.Equal(0, lookup.Calls);
+        Assert.Null(bookmarkStore.LastFilter);
+        Assert.Empty(workflowDefinitionService.ReceivedCalls());
+        await workflowRunner.DidNotReceive().RunAsync(Arg.Any<WorkflowGraph>(), Arg.Any<RunWorkflowOptions?>(), Arg.Any<CancellationToken>());
+    }
+
     [Theory]
     [InlineData("/workflows/definitions")]
     [InlineData("/workflows/definitions/")]
@@ -729,6 +818,15 @@ public class HttpWorkflowsMiddlewareTests
         return signal;
     }
 
+    private static IQuiescenceSignal CreateDrainingQuiescenceSignal()
+    {
+        var signal = Substitute.For<IQuiescenceSignal>();
+        var state = new QuiescenceState(QuiescenceReason.Drain, null, DateTimeOffset.UtcNow, null, null, "generation");
+        signal.IsAcceptingNewWork.Returns(false);
+        signal.CurrentState.Returns(state);
+        return signal;
+    }
+
     private class CapturingBookmarkStore(string currentTenantId, IEnumerable<StoredBookmark> bookmarks, bool returnMatches = false) : IBookmarkStore
     {
         private readonly ICollection<StoredBookmark> _bookmarks = bookmarks.ToList();
@@ -802,6 +900,17 @@ public class HttpWorkflowsMiddlewareTests
     private class EmptyHttpWorkflowLookupService : IHttpWorkflowLookupService
     {
         public Task<HttpWorkflowLookupResult?> FindWorkflowAsync(string bookmarkHash, CancellationToken cancellationToken = default) => Task.FromResult<HttpWorkflowLookupResult?>(null);
+    }
+
+    private sealed class RecordingHttpWorkflowLookupService : IHttpWorkflowLookupService
+    {
+        public int Calls { get; private set; }
+
+        public Task<HttpWorkflowLookupResult?> FindWorkflowAsync(string bookmarkHash, CancellationToken cancellationToken = default)
+        {
+            Calls++;
+            return Task.FromResult<HttpWorkflowLookupResult?>(null);
+        }
     }
 
     private class FixedHttpWorkflowLookupService(HttpWorkflowLookupResult result) : IHttpWorkflowLookupService

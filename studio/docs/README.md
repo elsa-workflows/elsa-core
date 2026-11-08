@@ -34,9 +34,11 @@ trigger or bookmark matches, exact Studio pages (`/workflows/definitions`,
 `/workflows/instances/{id}/view`) fall through to Blazor. A published HTTP
 workflow at an exact Studio page URL hides that Studio page for the matching
 method; choose a distinct HTTP path if both are needed. The combined host
-registers a single unmatched handler (last registration wins). Administrative
-pause still rejects matched HTTP start and resume with 503 after lookup, while
-unmatched Studio pages remain available and unmatched non-page paths stay 404.
+registers a single unmatched handler (last registration wins). That registration
+opts this host into lookup-then-reject during pause or drain: matched HTTP start
+and resume still return 503 without executing work, unmatched Studio pages remain
+available, and unmatched non-page paths stay 404. Hosts without the handler keep
+the original pre-lookup 503.
 The dashboard is `/` and `/dashboard`. Workflow and identity persistence share
 `elsa_workflows.db`.
 `docker/ElsaServerAndStudio.Dockerfile` publishes this host after generating
