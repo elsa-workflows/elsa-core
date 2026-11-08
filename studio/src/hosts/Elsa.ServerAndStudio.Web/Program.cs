@@ -74,9 +74,6 @@ services.AddElsa(elsa =>
         .UseIdentity(identity =>
         {
             identity.TokenOptions += options => identityTokenSection.Bind(options);
-            identity.UseConfigurationBasedUserProvider(options => identitySection.Bind(options));
-            identity.UseConfigurationBasedApplicationProvider(options => identitySection.Bind(options));
-            identity.UseConfigurationBasedRoleProvider(options => identitySection.Bind(options));
 
             var adminUserName = configuration["DefaultAdminUser:AdminUserName"];
             var adminPassword = configuration["DefaultAdminUser:AdminPassword"];
