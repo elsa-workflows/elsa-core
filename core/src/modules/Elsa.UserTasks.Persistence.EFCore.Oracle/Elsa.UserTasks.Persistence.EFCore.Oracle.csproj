@@ -3,6 +3,7 @@
     <ItemGroup>
         <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
         <PackageReference Include="Oracle.EntityFrameworkCore" />
+        <PackageReference Include="System.Security.Cryptography.Pkcs" />
         <ProjectReference Include="..\Elsa.Persistence.EFCore.Oracle\Elsa.Persistence.EFCore.Oracle.csproj" />
         <ProjectReference Include="..\Elsa.UserTasks.Persistence.EFCore\Elsa.UserTasks.Persistence.EFCore.csproj" />
     </ItemGroup>

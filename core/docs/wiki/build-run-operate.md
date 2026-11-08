@@ -53,7 +53,7 @@ ElsaScript DSL tests:
 
 The NUKE build lives in [build/Build.cs](../../../build/Build.cs). It defines clean, restore, compile, test, and package behavior through NUKE components. Test projects are discovered as solution projects whose names end with `Tests`.
 
-Source projects multi-target `net8.0`, `net9.0`, and `net10.0` through [core/src/Directory.Build.props](../../src/Directory.Build.props). Central package versions are in [Directory.Packages.props](../../../Directory.Packages.props), including conditional version blocks for .NET 8/9 and .NET 10.
+Source projects multi-target `net8.0`, `net9.0`, and `net10.0` through [core/src/Directory.Build.props](../../src/Directory.Build.props). The EF Core MySQL providers are the exception: they target `net8.0;net9.0` only until Pomelo ships for EF Core 10. Combined net10 MySQL restores are unsupported (NU1608). Central package versions are in [Directory.Packages.props](../../../Directory.Packages.props), including conditional version blocks for .NET 8/9 and .NET 10.
 
 ## Run The Reference Server
 

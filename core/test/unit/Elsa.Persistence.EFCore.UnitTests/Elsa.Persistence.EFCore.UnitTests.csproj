@@ -2,7 +2,9 @@
 
     <PropertyGroup>
         <TargetFramework />
-        <TargetFrameworks>net9.0;net10.0</TargetFrameworks>
+        <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+        <!-- ubuntu-latest installs only the 10.x SDK/runtime; roll forward so testhost can execute. -->
+        <RollForward>LatestMajor</RollForward>
         <!-- The net9.0 target intentionally loads the real MySQL provider alongside the existing same-name exception test double. -->
         <NoWarn Condition="'$(TargetFramework)' == 'net9.0'">$(NoWarn);CS0436</NoWarn>
         <Include>[Elsa.Persistence.EFCore]*</Include>
@@ -11,6 +13,11 @@
 
     <ItemGroup>
         <PackageReference Include="Oracle.EntityFrameworkCore" />
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
+        <!-- Test Directory.Build.props pulls Mvc.Testing; the shared net8/9 CPM group pins 9.0.17, which is net9-only. -->
+        <PackageReference Update="Microsoft.AspNetCore.Mvc.Testing" VersionOverride="8.0.17" />
     </ItemGroup>
 
     <ItemGroup>

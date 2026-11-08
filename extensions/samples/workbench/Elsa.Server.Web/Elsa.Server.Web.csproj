@@ -3,8 +3,7 @@
         <TargetFramework>net10.0</TargetFramework>
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
         <IsPackable>false</IsPackable>
-        <!-- Pomelo.EntityFrameworkCore.MySql 9.0.0 doesn't support EF Core 10; no Pomelo 10.x exists yet -->
-        <NoWarn>$(NoWarn);NU1608</NoWarn>
+        <!-- Combined net10 MySQL restore emits NU1608 (Pomelo 9 vs EF 10). That warning is not a support waiver. -->
     </PropertyGroup>
     
     <ItemGroup>
@@ -34,6 +33,7 @@
         <PackageReference Include="Hangfire.MemoryStorage" />
         <PackageReference Include="Hangfire.PostgreSql" />
         <PackageReference Include="Hangfire.Storage.SQLite" />
+        <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" />
         <PackageReference Include="Hangfire.SqlServer" />
         <PackageReference Include="DistributedLock"/>
         <PackageReference Include="DistributedLock.Postgres"/>
