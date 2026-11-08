@@ -33,9 +33,15 @@ PIN_SNUPKG_COUNT = 231
 PIN_EXCLUSION_COUNT = 135
 ASSEMBLY_RECEIPT_ENTRIES = 688
 ASSEMBLY_VERSION = "3.10.1.0"
-# nuget.org promote, after signoff, excludes this testing ID (231 stage / 230 promote).
-PROMOTE_EXCLUSION_ID = "Elsa.Testing.Shared.Integration"
+# nuget.org promote, after signoff, excludes only the Loom shell package.
+# Elsa.Testing.Shared.Integration and Elsa.Studio.PlatformIntegration stay in the 230.
+PROMOTE_EXCLUSION_ID = "Elsa.Platform.Integration"
 PROMOTE_PACKAGE_COUNT = 230
+STAGE_INTEGRATION_IDS = (
+    "Elsa.Platform.Integration",
+    "Elsa.Studio.PlatformIntegration",
+    "Elsa.Testing.Shared.Integration",
+)
 _ENVELOPE = json.loads(ORIGINAL_ENVELOPE.read_text(encoding="utf-8"))
 ARCHIVE_SIZE = _ENVELOPE["archive_size"]
 EXPIRES_AT = _ENVELOPE["expires_at"]
@@ -66,4 +72,20 @@ require(
         f"consolidated-candidate-{SOURCE}-{RUN}-{ATTEMPT}"),
     "Pinned 3.10.1 envelope identity does not match candidate input constants")
 require(PIN_PACKAGE_COUNT - 1 == PROMOTE_PACKAGE_COUNT, "Promote exclusion must leave 230 packages")
-require(PROMOTE_EXCLUSION_ID.endswith("Integration"), "Promote exclusion must be the Integration ID")
+require(
+    PROMOTE_EXCLUSION_ID == "Elsa.Platform.Integration",
+    "Promote exclusion must be Elsa.Platform.Integration only")
+require(
+    STAGE_INTEGRATION_IDS == (
+        "Elsa.Platform.Integration",
+        "Elsa.Studio.PlatformIntegration",
+        "Elsa.Testing.Shared.Integration",
+    ),
+    "Stage Integration IDs must stay the three candidate identities")
+require(
+    "Elsa.Testing.Shared.Integration" in STAGE_INTEGRATION_IDS
+    and "Elsa.Testing.Shared.Integration" != PROMOTE_EXCLUSION_ID,
+    "Elsa.Testing.Shared.Integration must remain in the 230 promote set")
+require(
+    "Elsa.Studio.PlatformIntegration" != PROMOTE_EXCLUSION_ID,
+    "Elsa.Studio.PlatformIntegration is not an alias of Elsa.Platform.Integration")

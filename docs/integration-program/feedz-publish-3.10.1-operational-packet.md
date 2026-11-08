@@ -33,7 +33,7 @@ signs the exact SHA-256 of this file, a later reviewed PR may introduce a
 | Retrieved at (producer retrieve job) | `2026-11-08T08:01:07Z` |
 | Stage set | 231 `.nupkg` + 231 `.snupkg`, all version `3.10.1` |
 | Assembly receipt | 688 entries, assembly version `3.10.1.0` |
-| nuget.org promote (later) | 230 IDs; exclude `Elsa.Testing.Shared.Integration` |
+| nuget.org promote (later) | 230 IDs; exclude only `Elsa.Platform.Integration`. `Elsa.Testing.Shared.Integration` and `Elsa.Studio.PlatformIntegration` stay in the 230. |
 | Target feed (later) | `https://f.feedz.io/elsa-workflows/elsa-3/nuget` (symbols: `.../elsa-3/symbols`) |
 
 #9198 is open on `release/3.10.0` and is **not** in this candidate. Do not
@@ -69,13 +69,19 @@ to the environment still fail-closes until a new reviewed PR pins the new values
 
 ## Feedz upload path (design; not implemented here)
 
-A 3.10.1 Feedz publish cannot reuse the 3.10.0 executor identity. It also cannot
-silently reuse PR #9192 or raise `MAX_SECONDS = 1800`. That bound is inspect plus
-all HTTP, including sequential PackageBaseAddress GET readback. A from-scratch
-publish of 231 nupkgs plus symbols after inspect does not fit the remaining
-slice; #9192's reserved GET slice / pre-upload observation reuse is not accepted
-here. A later 3.10.1 executor needs its own reviewed bound and workflow, or an
-explicit owner decision to skip Feedz and use nuget.org only after hash signoff.
+Owner direction retains Feedz and nuget.org, with all QA gates. A 3.10.1 Feedz
+publish cannot reuse the 3.10.0 executor identity. It also cannot silently reuse
+PR #9192 or raise `MAX_SECONDS = 1800`. That bound is inspect plus all HTTP,
+including sequential PackageBaseAddress GET readback.
+
+Cold-feed sequential PUT-then-GET of 231 packages does not fit the remaining
+slice after inspect. The reviewable design that **meets** this bound, without
+weakening it, is a later distinct 3.10.1 executor/workflow that keeps
+`MAX_SECONDS = 1800` and the 60-minute job timeout, uses bounded parallel HTTP
+under that same deadline and `MAX_REQUESTS`, and refuses PUT unless remaining
+time covers post-upload GET of those uploads. Pre-upload GET is not post-upload
+proof. Uploaded bytes still need an after-GET. No new executor is implemented
+until that design is reviewed.
 
 ## Status
 

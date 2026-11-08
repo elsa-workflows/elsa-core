@@ -86,7 +86,7 @@ and `docs/integration-program/feedz-publish-3.10.1-operational-packet.md`:
 1. Source `ba2b801a932646e2771167a8e02a93e2f569a104` (not `5cff67228e550b353b3483eb3b37dfdb73a41c74`; #9198 is not in this candidate).
 2. Producer `.github/workflows/prepare-consolidated-3.10.1-release-candidate.yml` run `42458011137` attempt `1`, artifact `13609452227`.
 3. Archive SHA-256 `76a79c05967f8d5f74cb29e551518d1a6d4a4e74e1fcca924044e252ffee7d29`, size `96234443`, expiry `2026-12-08T08:00:48Z`, pre-upload manifest SHA-256 `f2d1a2bdf45aad88a835d827af8d4432df51db4edcc23201f9ebf57520d2444d`.
-4. 231 `.nupkg` + 231 `.snupkg` to stage; nuget.org promote later excludes `Elsa.Testing.Shared.Integration` (230).
+4. 231 `.nupkg` + 231 `.snupkg` to stage; nuget.org promote later excludes only `Elsa.Platform.Integration` (230). `Elsa.Testing.Shared.Integration` stays in the 230.
 5. Packet is **unsigned** and pending Sipke hash signoff. `REVIEWED_OPERATIONAL_POLICY` still hashes the 3.10.0 packet. Stage `PINNED_TAG` stays `refs/tags/3.10.0`.
 
 A 3.10.1 Feedz upload is **not** implemented here. The 1800-second executor bound (`MAX_SECONDS`) covers inspect plus sequential readback; a from-scratch 231-package publish does not fit. Do not reuse PR #9192 and do not silently raise that bound.
