@@ -1,0 +1,76 @@
+{
+  "schema": 1,
+  "kind": "nonpublication_measurement",
+  "fit_claim": false,
+  "safe_1800_demonstrated": false,
+  "gate_waiver": false,
+  "network_put_authorized": false,
+  "publication_measurement_authorized": false,
+  "candidate": {
+    "source": "ba2b801a932646e2771167a8e02a93e2f569a104",
+    "run_id": "42458011137",
+    "artifact_id": "13609452227",
+    "archive_sha256": "76a79c05967f8d5f74cb29e551518d1a6d4a4e74e1fcca924044e252ffee7d29",
+    "measurement_method": "local original.zip fixture; inner snupkg zip members; no network PUT"
+  },
+  "constants": {
+    "MAX_SECONDS": 1800,
+    "MAX_REQUESTS": 5000,
+    "HTTP_CAP_SECONDS": 25,
+    "READBACK_RESERVE_SECONDS": 900,
+    "JOB_TIMEOUT_SECONDS": 3600,
+    "REVIEWED_CONCURRENCY": 4,
+    "concurrency_4_worst_case_guarantee": false
+  },
+  "architect_assumed": {
+    "formula": "465+2S+U",
+    "465": "2*231 nupkg GET passes + 3 extras",
+    "S": 688,
+    "U": 462,
+    "total": 2303
+  },
+  "measured": {
+    "nupkgs": 231,
+    "snupkgs": 231,
+    "artifacts": 462,
+    "symbol_associations_S": 688,
+    "unique_pdb_names": 231,
+    "unique_pdb_sha256": 688,
+    "shared_pdb_sha256": 0,
+    "pdb_names_used_more_than_once": 231,
+    "max_tfms_per_pdb_name": 3,
+    "unique_feedz_symbol_keys": "not_extracted_without_inspector",
+    "unique_pdb_bytes_U_used_in_formula": 688,
+    "two_nupkg_passes_plus_three": 465,
+    "measured_http_total": 2304,
+    "measured_formula_465_2S_U": 2529,
+    "admission_gets_in_465_extras": 3,
+    "github_metadata_pages": "unmeasured_offline",
+    "nupkg_bytes": 33506468,
+    "snupkg_bytes": 29715284,
+    "nupkg_size_bytes": {"p50": 66459, "p95": 452268, "p99": 1297362, "max": 2789617},
+    "snupkg_size_bytes": {"p50": 77128, "p95": 369299, "p99": 1061971, "max": 1682082},
+    "latency_tails": "unmeasured_no_network",
+    "throttling": "unmeasured_no_network",
+    "coordinator_overhead": "unmeasured_beyond_zero_latency_mock"
+  },
+  "worst_case_at_http_cap_25s": {
+    "before_observation_gets": 923,
+    "before_observation_seconds_c4": 5775,
+    "put_then_get_pairs": 462,
+    "put_then_get_seconds_c4": 5800,
+    "sequential_seconds_all_measured_http": 57600,
+    "naive_c4_wave_seconds_all_measured_http": 14400,
+    "fits_1800": false,
+    "margin_seconds_before_observation_vs_1800": -3975
+  },
+  "limitations": [
+    "HTTP_CAP 25s worst-case is the reviewed bound, not typical latency.",
+    "Zero-latency local mock is not a fit proof.",
+    "Real network publication measurement is not authorized.",
+    "Feedz symbol-store GUIDs were not extracted; U=688 is unique PDB bytes, not assumed U=462 artifacts.",
+    "GitHub admission paging is extra load on the same 1800s/5000 clock in this prototype.",
+    "Concurrency 4 does not give a worst-case guarantee.",
+    "Cannot demonstrate a safe 1800s fit. No GO. No gate waiver."
+  ]
+}
