@@ -101,12 +101,22 @@ def solution_projects(root: Path) -> list[Path]:
     return projects
 
 
+CANDIDATE_VERSIONS = frozenset({"3.10.0", "3.10.1"})
+
+
+def assembly_identity(version: str) -> str:
+    """Four-part assembly version for a stable 3.10.x candidate (3.10.1 -> 3.10.1.0)."""
+    require(version in CANDIDATE_VERSIONS or bool(PROOF_VERSION.fullmatch(version)), "Unsupported release identity")
+    numeric = version.split("-", 1)[0]
+    return f"{numeric}.0"
+
+
 def validate_mode(version: str, mode: str) -> None:
     require(mode in ("proof", "candidate"), "Unknown consolidated package mode")
     if mode == "proof":
         require(bool(PROOF_VERSION.fullmatch(version)), "Version must be 3.10.0-proof.<positive run>.<positive attempt>")
     else:
-        require(version == "3.10.0", "Candidate requires exactly stable 3.10.0")
+        require(version in CANDIDATE_VERSIONS, "Candidate requires exactly stable 3.10.0 or 3.10.1")
 
 
 def mode_properties(mode: str, enabled: bool = True) -> list[str]:
@@ -1067,7 +1077,7 @@ def provenance(root: Path, artifacts: Path, manifest: dict, output: Path, *, rem
                     pdb.write_bytes(symbols.read(assembly["pdb"]))
                     inspection = json.loads(run(["dotnet", str(executable), str(dll), str(pdb), "--inspect-documents"], root))
                     require(inspection["assembly_name"] == row["framework_properties"][assembly["framework"]]["assembly_name"], f"Packaged assembly identity mismatch: {row['id']}")
-                    require(inspection["assembly_version"] == "3.10.0.0", f"Packaged assembly was not compiled with common release identity: {row['id']}")
+                    require(inspection["assembly_version"] == assembly_identity(manifest["version"]), f"Packaged assembly was not compiled with common release identity: {row['id']}")
                     require(inspection["informational_version"] == f"{manifest['version']}+{manifest['source_commit']}", f"Assembly informational version does not identify exact source head: {row['id']}")
                     frame = verify_documents(root, row, assembly["framework"], inspection, manifest["source_commit"], remote, cache)
                     frame.update({key: inspection[key] for key in ("assembly_name", "assembly_version", "informational_version")})
@@ -1124,6 +1134,11 @@ def main(*, mode: str = "proof") -> None:
     require(not output.exists() and not output.is_relative_to(root), "Output must be a new directory outside the worktree")
     output.mkdir(parents=True)
     commit = clean_head(root)
+    if mode == "candidate":
+        from prepare_consolidated_release_candidate import require_candidate_source, require_release_line
+        require_candidate_source(root, commit, args.version)
+        if args.version == "3.10.1":
+            require_release_line(root, commit)
     initial_sources = source_input_hashes(root)
     write_json(output / "source-inputs.json", initial_sources)
     manifest = inventory(root, args.version, commit, mode=mode)
@@ -1175,7 +1190,7 @@ def main(*, mode: str = "proof") -> None:
     write_json(output / "receipt.json", receipt)
     if mode == "candidate":
         from prepare_consolidated_release_candidate import seal
-        seal(output, commit)
+        seal(output, commit, args.version)
     print(f"Package {mode} passed: {output / 'receipt.json'}", flush=True)
 
 
