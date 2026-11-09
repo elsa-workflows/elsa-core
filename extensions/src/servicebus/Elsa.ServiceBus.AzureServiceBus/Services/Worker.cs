@@ -56,8 +56,6 @@ public class Worker : IAsyncDisposable
     /// </summary>
     public async ValueTask DisposeAsync()
     {
-        _processor.ProcessMessageAsync -= OnMessageReceivedAsync;
-        _processor.ProcessErrorAsync -= OnErrorAsync;
         await _processor.DisposeAsync();
     }
 
