@@ -18,7 +18,7 @@ public class HangfireWorkflowScheduler(
     /// <inheritdoc />
     public ValueTask ScheduleAtAsync(string taskName, ScheduleNewWorkflowInstanceRequest request, DateTimeOffset at, CancellationToken cancellationToken = default)
     {
-        var tenantId = tenantAccessor.Tenant?.Id;
+        var tenantId = tenantAccessor.TenantId;
         backgroundJobClient.Schedule<RunWorkflowJob>(job => job.ExecuteAsync(taskName, request, tenantId, CancellationToken.None), at);
         return ValueTask.CompletedTask;
     }
@@ -26,7 +26,7 @@ public class HangfireWorkflowScheduler(
     /// <inheritdoc />
     public ValueTask ScheduleAtAsync(string taskName, ScheduleExistingWorkflowInstanceRequest request, DateTimeOffset at, CancellationToken cancellationToken = default)
     {
-        var tenantId = tenantAccessor.Tenant?.Id;
+        var tenantId = tenantAccessor.TenantId;
         backgroundJobClient.Schedule<ResumeWorkflowJob>(job => job.ExecuteAsync(taskName, request, tenantId, CancellationToken.None), at);
         return ValueTask.CompletedTask;
     }
@@ -37,7 +37,7 @@ public class HangfireWorkflowScheduler(
         // Delayed jobs, not cron: first fire at startAt, then every interval (Local/Quartz semantics).
         // RemoveIfExists only clears the cron registry; delayed/queued jobs for this taskName must go too.
         DeleteJobByTaskName(taskName);
-        var tenantId = tenantAccessor.Tenant?.Id;
+        var tenantId = tenantAccessor.TenantId;
         backgroundJobClient.Schedule<RunWorkflowJob>(job => job.ExecuteRecurringAsync(taskName, request, tenantId, startAt, interval, CancellationToken.None), startAt);
         return ValueTask.CompletedTask;
     }
@@ -46,7 +46,7 @@ public class HangfireWorkflowScheduler(
     public ValueTask ScheduleRecurringAsync(string taskName, ScheduleExistingWorkflowInstanceRequest request, DateTimeOffset startAt, TimeSpan interval, CancellationToken cancellationToken = default)
     {
         DeleteJobByTaskName(taskName);
-        var tenantId = tenantAccessor.Tenant?.Id;
+        var tenantId = tenantAccessor.TenantId;
         backgroundJobClient.Schedule<ResumeWorkflowJob>(job => job.ExecuteRecurringAsync(taskName, request, tenantId, startAt, interval, CancellationToken.None), startAt);
         return ValueTask.CompletedTask;
     }
@@ -54,7 +54,7 @@ public class HangfireWorkflowScheduler(
     /// <inheritdoc />
     public ValueTask ScheduleCronAsync(string taskName, ScheduleNewWorkflowInstanceRequest request, string cronExpression, CancellationToken cancellationToken = default)
     {
-        var tenantId = tenantAccessor.Tenant?.Id;
+        var tenantId = tenantAccessor.TenantId;
         recurringJobManager.AddOrUpdate<RunWorkflowJob>(taskName, job => job.ExecuteAsync(taskName, request, tenantId, CancellationToken.None), cronExpression);
         return ValueTask.CompletedTask;
     }
@@ -62,7 +62,7 @@ public class HangfireWorkflowScheduler(
     /// <inheritdoc />
     public ValueTask ScheduleCronAsync(string taskName, ScheduleExistingWorkflowInstanceRequest request, string cronExpression, CancellationToken cancellationToken = default)
     {
-        var tenantId = tenantAccessor.Tenant?.Id;
+        var tenantId = tenantAccessor.TenantId;
         recurringJobManager.AddOrUpdate<ResumeWorkflowJob>(taskName, job => job.ExecuteAsync(taskName, request, tenantId, CancellationToken.None), cronExpression);
         return ValueTask.CompletedTask;
     }

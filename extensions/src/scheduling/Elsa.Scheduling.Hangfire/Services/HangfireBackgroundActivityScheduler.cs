@@ -14,7 +14,7 @@ public class HangfireBackgroundActivityScheduler(IBackgroundJobClient background
 {
     public Task<string> CreateAsync(ScheduledBackgroundActivity scheduledBackgroundActivity, CancellationToken cancellationToken = default)
     {
-        var tenantId = tenantAccessor.Tenant?.Id;
+        var tenantId = tenantAccessor.TenantId;
         var jobId = backgroundJobClient.Create<ExecuteBackgroundActivityJob>(x => x.ExecuteAsync(scheduledBackgroundActivity, tenantId, CancellationToken.None), new PendingState());
         return Task.FromResult(jobId);
     }
@@ -30,7 +30,7 @@ public class HangfireBackgroundActivityScheduler(IBackgroundJobClient background
     /// <inheritdoc />
     public Task<string> ScheduleAsync(ScheduledBackgroundActivity scheduledBackgroundActivity, CancellationToken cancellationToken = default)
     {
-        var tenantId = tenantAccessor.Tenant?.Id;
+        var tenantId = tenantAccessor.TenantId;
         var jobId = backgroundJobClient.Enqueue<ExecuteBackgroundActivityJob>(x => x.ExecuteAsync(scheduledBackgroundActivity, tenantId, CancellationToken.None));
         return Task.FromResult(jobId);
     }
