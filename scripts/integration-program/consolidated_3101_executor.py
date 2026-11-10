@@ -676,11 +676,21 @@ class Prototype3101:
     def _on_upload_exception(self, operation: Operation, reservation: Reservation | None,
                              error: BaseException, *, event: str) -> bool:
         """Return True when the PrototypeError is handled and the caller should return."""
+        # A PUT can only have started once start_put ran (reservation inflight or later) or an
+        # outcome was recorded. Anything raised before that is a pre-PUT failure.
+        put_started = operation.upload_outcome is not None or (
+            isinstance(reservation, Reservation) and reservation.state in {"inflight", "put_done"})
         self._complete_reservation(reservation)
         self._terminal_state(operation)
         if isinstance(error, PrototypeError) and str(error) == "receipt_limit":
             self.coordinator.halt_puts()
             operation.failure_category = "receipt_limit"
+        elif not put_started:
+            # Fail closed: no PUT was sent, so this is not acceptance_unknown, and no later PUT may run.
+            self.coordinator.halt_puts()
+            operation.state = "pre_observation_unverified" if operation.kind == "snupkg" else "not_attempted"
+            if operation.failure_category is None:
+                operation.failure_category = str(error) if isinstance(error, PrototypeError) else "pre_put_exception"
         else:
             if operation.state == "not_attempted" and operation.upload_outcome is None:
                 operation.state = "acceptance_unknown"
@@ -711,10 +721,14 @@ class Prototype3101:
     def metadata_get(self, url: str, token: str) -> ExchangeResult:
         reservation = self.coordinator.admit_get(url)
         if isinstance(reservation, str):
+            self.coordinator.halt_puts()
             raise PrototypeError(reservation)
         try:
             return self.transport.request(
                 "GET", url, headers={"Authorization": "Bearer " + token}, credential_role="metadata")
+        except Exception:
+            self.coordinator.halt_puts()
+            raise
         finally:
             self.coordinator.finish_get(reservation)
 
@@ -722,12 +736,18 @@ class Prototype3101:
         url = nupkg_get_url(package_id, version)
         reservation = self.coordinator.admit_get(url)
         if isinstance(reservation, str):
+            self.coordinator.halt_puts()
             return {"state": reservation, "classification": "unverifiable"}
         try:
             result = self.transport.request("GET", url, limit=MAX_BYTES)
             classification, failure = classify_archive_get(result, original)
+            if classification not in {"missing", "matching"}:
+                self.coordinator.halt_puts()
             return {"state": "observed", "classification": classification, "failure_category": failure,
                     "status": result.status}
+        except Exception:
+            self.coordinator.halt_puts()
+            raise
         finally:
             self.coordinator.finish_get(reservation)
 

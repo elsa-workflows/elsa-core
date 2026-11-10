@@ -857,6 +857,147 @@ class ArchitectR4ReceiptOverflowTests(unittest.TestCase):
         self.assertEqual(transport.exchange.calls, [])
 
 
+class PrePutFailureHaltsWritesTests(unittest.TestCase):
+    """Every failure before a PUT starts must halt all later PUTs (Code Review R4 blocker)."""
+
+    def symbol_harness(self, handler):
+        digest = proto.sha(b"pdb")
+        symbol = proto.SymbolKey(key("elsa.pdb", digest), digest, "Elsa", b"pdb")
+        proto_exec, coordinator, transport = harness(handler)
+        proto_exec.preflight_keys([symbol])
+        return proto_exec, coordinator, transport
+
+    @staticmethod
+    def puts(transport):
+        return [call for call in transport.exchange.calls if call["method"] == "PUT"]
+
+    def assert_later_nupkg_put_is_refused(self, proto_exec, coordinator, transport):
+        self.assertTrue(coordinator.put_admission_stopped)
+        self.assertTrue(coordinator.writes_halted)
+        later = proto.Operation("Later", "nupkg", proto.sha(b"n"), b"n")
+        proto_exec.put_and_prove_nupkg(later, publish_key="k")
+        self.assertEqual(later.state, "not_attempted")
+        self.assertIsNone(later.upload_outcome)
+        self.assertEqual(self.puts(transport), [])
+
+    def test_prototype_error_on_pre_put_symbol_get_halts_later_puts(self):
+        def handler(method, url, **kwargs):
+            if method == "PUT":
+                return ok(201)
+            if "symbols/" in url:
+                raise proto.PrototypeError("invalid_transport")
+            return ok(200, b"n")
+
+        proto_exec, coordinator, transport = self.symbol_harness(handler)
+        operation = proto.Operation("Elsa", "snupkg", proto.sha(b"snupkg"), b"snupkg")
+        proto_exec.put_snupkg_serialized(operation, publish_key="k")
+        self.assertEqual(operation.state, "pre_observation_unverified")
+        self.assertEqual(operation.failure_category, "invalid_transport")
+        self.assertIsNone(operation.upload_outcome)
+        self.assertNotEqual(operation.state, "acceptance_unknown")
+        self.assertEqual(self.puts(transport), [])
+        self.assertTrue(any(row.get("event") == "snupkg_exception" for row in proto_exec.receipt.rows))
+        self.assert_later_nupkg_put_is_refused(proto_exec, coordinator, transport)
+
+    def test_unexpected_exception_on_pre_put_symbol_get_halts_later_puts_and_raises(self):
+        proto_exec, coordinator, transport = self.symbol_harness(lambda method, url, **kwargs: ok(404, b""))
+
+        def boom(item):
+            raise RuntimeError("boom")
+
+        proto_exec.prove_pdb_association = boom
+        operation = proto.Operation("Elsa", "snupkg", proto.sha(b"snupkg"), b"snupkg")
+        with self.assertRaises(RuntimeError):
+            proto_exec.put_snupkg_serialized(operation, publish_key="k")
+        self.assertEqual(operation.state, "pre_observation_unverified")
+        self.assertEqual(operation.failure_category, "pre_put_exception")
+        self.assert_later_nupkg_put_is_refused(proto_exec, coordinator, transport)
+
+    def test_prototype_error_before_snupkg_put_starts_halts_later_puts(self):
+        proto_exec, coordinator, transport = self.symbol_harness(lambda method, url, **kwargs: ok(404, b""))
+
+        def refuse(reservation):
+            raise proto.PrototypeError("reservation_invalid")
+
+        coordinator.start_put = refuse
+        operation = proto.Operation("Elsa", "snupkg", proto.sha(b"snupkg"), b"snupkg")
+        proto_exec.put_snupkg_serialized(operation, publish_key="k")
+        self.assertEqual(operation.state, "pre_observation_unverified")
+        self.assertEqual(operation.failure_category, "reservation_invalid")
+        self.assertEqual(self.puts(transport), [])
+        del coordinator.start_put
+        self.assert_later_nupkg_put_is_refused(proto_exec, coordinator, transport)
+
+    def test_prototype_error_before_nupkg_put_starts_halts_later_puts(self):
+        proto_exec, coordinator, transport = harness(lambda method, url, **kwargs: ok(201))
+
+        def refuse(reservation):
+            raise proto.PrototypeError("reservation_invalid")
+
+        coordinator.start_put = refuse
+        operation = proto.Operation("First", "nupkg", proto.sha(b"n"), b"n")
+        proto_exec.put_and_prove_nupkg(operation, publish_key="k")
+        self.assertEqual(operation.state, "not_attempted")
+        self.assertEqual(operation.failure_category, "reservation_invalid")
+        self.assertIsNone(operation.upload_outcome)
+        self.assertEqual(self.puts(transport), [])
+        del coordinator.start_put
+        self.assert_later_nupkg_put_is_refused(proto_exec, coordinator, transport)
+
+    def test_exception_after_put_started_is_still_acceptance_unknown(self):
+        def handler(method, url, **kwargs):
+            if method == "PUT":
+                raise RuntimeError("boom")
+            return ok(404, b"")
+
+        proto_exec, coordinator, transport = harness(handler)
+        operation = proto.Operation("Elsa", "nupkg", proto.sha(b"n"), b"n")
+        proto_exec.put_and_prove_nupkg(operation, publish_key="k")
+        self.assertEqual(operation.state, "acceptance_unknown")
+        self.assertEqual(operation.failure_category, "transport_failed")
+        self.assertEqual(len(self.puts(transport)), 1)
+
+    def test_metadata_get_failure_halts_later_puts(self):
+        def handler(method, url, **kwargs):
+            if "github" in url:
+                raise proto.PrototypeError("invalid_transport")
+            return ok(201)
+
+        proto_exec, coordinator, transport = harness(handler)
+        with self.assertRaisesRegex(proto.PrototypeError, "invalid_transport"):
+            proto_exec.metadata_get(meta_url(), "token")
+        self.assert_later_nupkg_put_is_refused(proto_exec, coordinator, transport)
+
+    def test_nupkg_pre_get_failure_halts_later_puts(self):
+        def handler(method, url, **kwargs):
+            if method == "GET":
+                raise proto.PrototypeError("invalid_transport")
+            return ok(201)
+
+        proto_exec, coordinator, transport = harness(handler)
+        with self.assertRaisesRegex(proto.PrototypeError, "invalid_transport"):
+            proto_exec.pre_get_nupkg("Elsa", b"n")
+        self.assert_later_nupkg_put_is_refused(proto_exec, coordinator, transport)
+
+    def test_nupkg_pre_get_unverifiable_or_conflicting_halts_later_puts(self):
+        for response in (ok(500, b""), ok(200, b"different")):
+            with self.subTest(status=response.status):
+                proto_exec, coordinator, transport = harness(
+                    lambda method, url, response=response, **kwargs: response if method == "GET" else ok(201))
+                observed = proto_exec.pre_get_nupkg("Elsa", b"n")
+                self.assertIn(observed["classification"], {"unverifiable", "conflicting"})
+                self.assert_later_nupkg_put_is_refused(proto_exec, coordinator, transport)
+
+    def test_nupkg_pre_get_missing_or_matching_does_not_halt(self):
+        for response in (ok(404, b""), ok(200, b"n")):
+            with self.subTest(status=response.status):
+                proto_exec, coordinator, _ = harness(lambda method, url, response=response, **kwargs: response)
+                observed = proto_exec.pre_get_nupkg("Elsa", b"n")
+                self.assertIn(observed["classification"], {"missing", "matching"})
+                self.assertFalse(coordinator.writes_halted)
+                self.assertFalse(coordinator.put_admission_stopped)
+
+
 class MeasurementTests(unittest.TestCase):
     def test_reconciled_dag_uses_archive_puts_as_u_and_withdraws_2529(self):
         report = proto.offline_measurement_report()
