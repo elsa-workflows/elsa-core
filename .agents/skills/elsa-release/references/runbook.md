@@ -168,6 +168,8 @@ Binding checks the worktree, source, notes and policy. A prepublication correcti
 
 ## 5. Publish and verify before proceeding
 
+**3.10.1 hold.** Do not create a `3.10.1` tag or GitHub release (draft, prerelease or published), and do not run `release.py --execute` for `3.10.1`, until the distinct 3.10.1 packet has final signoff and all remaining release gates are complete. The existing release authorization below does not cover it. The `3.10.1` dry-run (without `--execute`) is allowed. This is in addition to the Feedz and nuget.org "do not dispatch" rules above, which stay in force.
+
 Show the resolved repository, SHA, tag, kind and notes in a progress update. Run the helper dry-run, inspect it, then execute under the user's existing release authorization:
 
 ```bash
