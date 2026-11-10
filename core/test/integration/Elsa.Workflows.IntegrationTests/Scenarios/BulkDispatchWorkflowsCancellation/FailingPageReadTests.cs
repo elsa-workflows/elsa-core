@@ -46,7 +46,7 @@ public class FailingPageReadTests(ITestOutputHelper testOutputHelper) : ChildWor
 }
 
 /// <summary>
-/// What happens when every cancel-cascade page read fails, including the one retry, until the consecutive-failure cap.
+/// What happens when every cancel-cascade page read fails, including the retries, until the consecutive-unreadable-page cap.
 /// </summary>
 public class GivingUpPageReadTests : ChildWorkflowCancellationTests
 {
@@ -66,7 +66,7 @@ public class GivingUpPageReadTests : ChildWorkflowCancellationTests
         _logs = logs;
     }
 
-    [Fact(DisplayName = "Paging gives up after three failed reads of the same page")]
+    [Fact(DisplayName = "Every page is tried three times, and paging gives up after three unreadable pages in a row")]
     public async Task CancellingTheWaitingBulkDispatchActivity_WhenEveryPageReadFails_GivesUpAfterTheCap()
     {
         const int childCount = BulkDispatchAndWaitInForkWorkflow.ChildCount;
@@ -75,21 +75,26 @@ public class GivingUpPageReadTests : ChildWorkflowCancellationTests
         var parentId = await StartParentAsync(nameof(BulkDispatchAndWaitInForkWorkflow));
         await WaitForChildrenAsync(parentId, nameof(BlockingChildWorkflow), childCount, IsSuspended);
 
-        // Act: the first page fails on every attempt, up to the cap, and is then left uncancelled. The parent must still finish.
+        // Act: each page fails on every attempt and is left uncancelled, then paging moves on. The parent must still finish.
         var resumed = await ResumeAsync(parentId, BulkDispatchAndWaitInForkWorkflow.ProceedActivityId);
         Assert.Equal(WorkflowStatus.Finished, resumed.Status);
         Assert.Equal(WorkflowSubStatus.Finished, resumed.SubStatus);
         Assert.Empty((await ExportStateAsync(parentId)).Incidents);
 
         Assert.Empty(CancellationTargets);
-        // The first page is tried three times, the cap, and paging stops there without reading the next page.
-        Assert.Equal(3, _rejectedReads.Count);
+        // Three pages, three attempts each. The third unreadable page in a row hits the cap and paging stops.
+        Assert.Equal(9, _rejectedReads.Count);
 
-        // The warning names the abandoned page and the parent, and carries the last read failure.
-        var warning = Assert.Single(_logs.Entries, x => x.Level == LogLevel.Warning && x.Message.Contains("Giving up"));
-        Assert.Contains("page 0 of", warning.Message);
-        Assert.Contains(parentId, warning.Message);
-        Assert.NotNull(warning.Exception);
+        // Each abandoned page is logged with its number, the parent, and the last read failure.
+        var pageWarnings = _logs.Entries.Where(x => x.Level == LogLevel.Warning && x.Message.Contains("Left page")).ToList();
+        Assert.Equal(3, pageWarnings.Count);
+        for (var page = 0; page < 3; page++)
+            Assert.Contains(pageWarnings, x => x.Message.Contains($"page {page} of") && x.Message.Contains(parentId) && x.Exception is not null);
+
+        // The give-up warning is logged once, when the cap is reached.
+        var giveUp = Assert.Single(_logs.Entries, x => x.Level == LogLevel.Warning && x.Message.Contains("Giving up"));
+        Assert.Contains(parentId, giveUp.Message);
+        Assert.NotNull(giveUp.Exception);
     }
 }
 
