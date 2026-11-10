@@ -141,6 +141,45 @@ public class QuartzBackgroundActivitySchedulerTests
         await sut.CreateAsync(CreateActivity());
     }
 
+    [Fact]
+    public async Task CreateAsync_OmitsTenantIdFromJobData_ForDefaultTenant()
+    {
+        // The default tenant (normalized "") must not be stamped into the job data map.
+        var scheduler = new Mock<global::Quartz.IScheduler>();
+        var sut = CreateScheduler(scheduler, out _, Tenant.DefaultTenantId);
+
+        await sut.CreateAsync(CreateActivity());
+
+        scheduler.Verify(s => s.AddJob(
+            It.Is<IJobDetail>(j => j.Key.Group == "Default" && !j.JobDataMap.ContainsKey("TenantId")),
+            false,
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task CancelAsync_LegacyDefaultTenantJob_IsLocatedByDefaultGroup()
+    {
+        // Legacy jobs were created in the "Default" group without a TenantId entry; they must remain deletable
+        // while running in the default tenant context.
+        var scheduler = new Mock<global::Quartz.IScheduler>();
+        var sut = CreateScheduler(scheduler, out _, Tenant.DefaultTenantId);
+
+        await sut.CancelAsync("legacy-job");
+
+        scheduler.Verify(s => s.DeleteJob(new JobKey("legacy-job", "Default"), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task CancelAsync_NamedTenantJob_IsLocatedByTenantGroup()
+    {
+        var scheduler = new Mock<global::Quartz.IScheduler>();
+        var sut = CreateScheduler(scheduler, out _, "tenant-a");
+
+        await sut.CancelAsync("job-1");
+
+        scheduler.Verify(s => s.DeleteJob(new JobKey("job-1", "tenant-a"), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
     private static QuartzBackgroundActivityScheduler CreateScheduler(Mock<global::Quartz.IScheduler> scheduler, out Mock<ISchedulerFactory> factory, string? tenantId = null)
     {
         factory = new Mock<ISchedulerFactory>();
@@ -148,6 +187,7 @@ public class QuartzBackgroundActivitySchedulerTests
 
         var tenantAccessor = new Mock<ITenantAccessor>();
         tenantAccessor.Setup(t => t.Tenant).Returns(tenantId == null ? null : new Tenant { Id = tenantId });
+        tenantAccessor.Setup(t => t.TenantId).Returns(tenantId ?? Tenant.DefaultTenantId);
 
         return new QuartzBackgroundActivityScheduler(
             factory.Object,

@@ -83,7 +83,69 @@ public class RecurringWorkflowJobTests
         workflowClient.Verify(c => c.CreateAndRunInstanceAsync(It.IsAny<CreateAndRunWorkflowInstanceRequest>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
-    private static RunWorkflowJob CreateRunJob(JobStorage storage, out Mock<IWorkflowClient> workflowClient, bool succeed = true)
+    [Fact]
+    public async Task ExecuteRecurringAsync_LegacyNullTenantId_StillArmsNextOccurrenceWithoutTenantLookup()
+    {
+        // Jobs persisted before tenant normalization pass a null tenantId; they must still run and re-arm.
+        var storage = new MemoryStorage();
+        var tenantFinder = new Mock<ITenantFinder>();
+        var job = CreateRunJob(storage, out var workflowClient, tenantFinder: tenantFinder.Object);
+        var scheduledAt = DateTimeOffset.UtcNow.AddHours(1);
+        var interval = TimeSpan.FromHours(1);
+        var request = new ScheduleNewWorkflowInstanceRequest
+        {
+            WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionVersionId("definition-version-1")
+        };
+
+        await job.ExecuteRecurringAsync("task-1", request, null, scheduledAt, interval, CancellationToken.None);
+
+        tenantFinder.Verify(f => f.FindByIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        Assert.Single(GetScheduledJobs(storage, "task-1"));
+        workflowClient.Verify(c => c.CreateAndRunInstanceAsync(It.IsAny<CreateAndRunWorkflowInstanceRequest>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task ExecuteRecurringAsync_DefaultTenant_ResolvesDefaultTenantByEmptyId()
+    {
+        // New jobs persist the normalized TenantId (""), which must resolve the default tenant.
+        var storage = new MemoryStorage();
+        var tenantFinder = new Mock<ITenantFinder>();
+        tenantFinder.Setup(f => f.FindByIdAsync(Tenant.DefaultTenantId, It.IsAny<CancellationToken>())).ReturnsAsync(Tenant.Default);
+        var job = CreateRunJob(storage, out var workflowClient, tenantFinder: tenantFinder.Object);
+        var scheduledAt = DateTimeOffset.UtcNow.AddHours(1);
+        var interval = TimeSpan.FromHours(1);
+        var request = new ScheduleNewWorkflowInstanceRequest
+        {
+            WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionVersionId("definition-version-1")
+        };
+
+        await job.ExecuteRecurringAsync("task-1", request, Tenant.DefaultTenantId, scheduledAt, interval, CancellationToken.None);
+
+        tenantFinder.Verify(f => f.FindByIdAsync(Tenant.DefaultTenantId, It.IsAny<CancellationToken>()), Times.Once);
+        workflowClient.Verify(c => c.CreateAndRunInstanceAsync(It.IsAny<CreateAndRunWorkflowInstanceRequest>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task ExecuteRecurringAsync_NamedTenant_ResolvesTenantByIdAndRuns()
+    {
+        var storage = new MemoryStorage();
+        var tenantFinder = new Mock<ITenantFinder>();
+        tenantFinder.Setup(f => f.FindByIdAsync("tenant-a", It.IsAny<CancellationToken>())).ReturnsAsync(new Tenant { Id = "tenant-a" });
+        var job = CreateResumeJob(storage, out var workflowClient, tenantFinder: tenantFinder.Object);
+        var scheduledAt = DateTimeOffset.UtcNow.AddMinutes(30);
+        var interval = TimeSpan.FromMinutes(30);
+        var request = new ScheduleExistingWorkflowInstanceRequest
+        {
+            WorkflowInstanceId = "instance-1"
+        };
+
+        await job.ExecuteRecurringAsync("task-1", request, "tenant-a", scheduledAt, interval, CancellationToken.None);
+
+        tenantFinder.Verify(f => f.FindByIdAsync("tenant-a", It.IsAny<CancellationToken>()), Times.Once);
+        workflowClient.Verify(c => c.RunInstanceAsync(It.IsAny<RunWorkflowInstanceRequest>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    private static RunWorkflowJob CreateRunJob(JobStorage storage, out Mock<IWorkflowClient> workflowClient, bool succeed = true, ITenantFinder? tenantFinder = null)
     {
         workflowClient = new Mock<IWorkflowClient>();
         var create = workflowClient.Setup(c => c.CreateAndRunInstanceAsync(It.IsAny<CreateAndRunWorkflowInstanceRequest>(), It.IsAny<CancellationToken>()));
@@ -95,10 +157,10 @@ public class RecurringWorkflowJobTests
         var runtime = new Mock<IWorkflowRuntime>();
         runtime.Setup(r => r.CreateClientAsync(It.IsAny<CancellationToken>())).ReturnsAsync(workflowClient.Object);
 
-        return new RunWorkflowJob(runtime.Object, new Mock<ITenantFinder>().Object, CreateTenantAccessor().Object, new BackgroundJobClient(storage));
+        return new RunWorkflowJob(runtime.Object, tenantFinder ?? new Mock<ITenantFinder>().Object, CreateTenantAccessor().Object, new BackgroundJobClient(storage));
     }
 
-    private static ResumeWorkflowJob CreateResumeJob(JobStorage storage, out Mock<IWorkflowClient> workflowClient)
+    private static ResumeWorkflowJob CreateResumeJob(JobStorage storage, out Mock<IWorkflowClient> workflowClient, ITenantFinder? tenantFinder = null)
     {
         workflowClient = new Mock<IWorkflowClient>();
         workflowClient.Setup(c => c.RunInstanceAsync(It.IsAny<RunWorkflowInstanceRequest>(), It.IsAny<CancellationToken>()))
@@ -107,7 +169,7 @@ public class RecurringWorkflowJobTests
         var runtime = new Mock<IWorkflowRuntime>();
         runtime.Setup(r => r.CreateClientAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(workflowClient.Object);
 
-        return new ResumeWorkflowJob(runtime.Object, new Mock<ITenantFinder>().Object, CreateTenantAccessor().Object, new BackgroundJobClient(storage));
+        return new ResumeWorkflowJob(runtime.Object, tenantFinder ?? new Mock<ITenantFinder>().Object, CreateTenantAccessor().Object, new BackgroundJobClient(storage));
     }
 
     private static Mock<ITenantAccessor> CreateTenantAccessor()

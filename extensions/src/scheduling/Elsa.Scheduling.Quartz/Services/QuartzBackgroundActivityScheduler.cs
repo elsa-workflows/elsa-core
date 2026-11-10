@@ -108,7 +108,7 @@ public class QuartzBackgroundActivityScheduler(
     private JobDataMap CreateJobDataMap(ScheduledBackgroundActivity scheduledBackgroundActivity)
     {
         return new JobDataMap()
-            .AddIfNotEmpty("TenantId", tenantAccessor.Tenant?.Id)
+            .AddIfNotEmpty("TenantId", tenantAccessor.TenantId)
             .AddIfNotEmpty(nameof(ScheduledBackgroundActivity.WorkflowInstanceId), scheduledBackgroundActivity.WorkflowInstanceId)
             .AddIfNotEmpty(nameof(ScheduledBackgroundActivity.ActivityNodeId), scheduledBackgroundActivity.ActivityNodeId)
             .AddIfNotEmpty(nameof(ScheduledBackgroundActivity.BookmarkId), scheduledBackgroundActivity.BookmarkId);

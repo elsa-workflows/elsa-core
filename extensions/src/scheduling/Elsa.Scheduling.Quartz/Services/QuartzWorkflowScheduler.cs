@@ -285,7 +285,7 @@ public class QuartzWorkflowScheduler(
     {
         return new JobDataMap()
                 .AddIfNotEmpty(QuartzJobDataKeys.RetryScheduleGeneration, Guid.NewGuid().ToString("N"))
-                .AddIfNotEmpty("TenantId", tenantAccessor.Tenant?.Id)
+                .AddIfNotEmpty("TenantId", tenantAccessor.TenantId)
                 .AddIfNotEmpty(nameof(ScheduleNewWorkflowInstanceRequest.CorrelationId), request.CorrelationId)
                 .AddIfNotEmpty(nameof(ScheduleNewWorkflowInstanceRequest.WorkflowDefinitionHandle.DefinitionVersionId), request.WorkflowDefinitionHandle.DefinitionVersionId)
                 .AddIfNotEmpty(nameof(ScheduleNewWorkflowInstanceRequest.TriggerActivityId), request.TriggerActivityId)
@@ -301,7 +301,7 @@ public class QuartzWorkflowScheduler(
 
         return new JobDataMap()
             .AddIfNotEmpty(QuartzJobDataKeys.RetryScheduleGeneration, Guid.NewGuid().ToString("N"))
-            .AddIfNotEmpty("TenantId", tenantAccessor.Tenant?.Id)
+            .AddIfNotEmpty("TenantId", tenantAccessor.TenantId)
             .AddIfNotEmpty(nameof(ScheduleExistingWorkflowInstanceRequest.WorkflowInstanceId), request.WorkflowInstanceId)
             .AddIfNotEmpty(nameof(ScheduleExistingWorkflowInstanceRequest.Input), request.Input)
             .AddIfNotEmpty(nameof(ScheduleExistingWorkflowInstanceRequest.Properties), request.Properties)
