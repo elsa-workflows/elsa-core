@@ -41,6 +41,23 @@ public class HangfireBackgroundActivitySchedulerTests
     }
 
     [Fact]
+    public async Task ScheduleAsync_UnresolvedTenant_PersistsNormalizedEmptyTenantId()
+    {
+        // Regression: when no tenant was resolved in context (Tenant == null), the scheduler must persist the
+        // accessor's normalized TenantId ("") — not null — so the job still runs in the default tenant context.
+        // Reading Tenant?.Id instead of TenantId persists null and this test fails.
+        var (sut, storage) = CreateScheduler();
+
+        await sut.ScheduleAsync(CreateActivity());
+
+        var enqueued = GetEnqueuedJobs(storage, "default");
+        var job = Assert.Single(enqueued.Values);
+        Assert.Equal(typeof(ExecuteBackgroundActivityJob), job.Job.Type);
+        Assert.NotNull(job.Job.Args[1]);
+        Assert.Equal(Tenant.DefaultTenantId, (string)job.Job.Args[1]!);
+    }
+
+    [Fact]
     public async Task CancelAsync_RemovesLegacyJobPersistedWithNullTenantId()
     {
         // Jobs persisted before tenant normalization store a null tenantId; they must still be cancellable by ID.
