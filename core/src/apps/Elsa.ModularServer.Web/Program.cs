@@ -109,6 +109,15 @@ app.MapShells();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapSampleCatalog();
+
+// Elsa.Server.Web fails fast when the Identity signing key is still a known default outside Development/Demo:
+// AddIdentityTokenOptionsValidation() registers an IStartupValidator on the host, which the generic host runs
+// while starting. This host registers the same validation into each shell collection, and CShells builds shell
+// providers lazily on the first request, so the placeholder booted in Production and failed as a 500 on the
+// first login (issue #9106). Validate the configured shells up front, without activating them, so the same
+// OptionsValidationException aborts the boot before the server listens.
+await IdentityTokenStartupValidation.ValidateConfiguredShellsAsync(app.Services);
+
 app.Run();
 
 static ResourceBuilder CreateOpenTelemetryResource(string serviceName, string? serviceVersion)
