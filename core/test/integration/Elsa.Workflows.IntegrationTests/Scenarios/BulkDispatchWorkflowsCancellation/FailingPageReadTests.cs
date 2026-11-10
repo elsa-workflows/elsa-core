@@ -46,6 +46,83 @@ public class FailingPageReadTests(ITestOutputHelper testOutputHelper) : ChildWor
 }
 
 /// <summary>
+/// What happens when the first page's reads fail twice and then succeed, so the page is recovered on its last attempt.
+/// </summary>
+public class RecoveringPageReadTests : ChildWorkflowCancellationTests
+{
+    private readonly RejectedCascadeReadCounter _rejectedReads;
+
+    public RecoveringPageReadTests(ITestOutputHelper testOutputHelper) : this(testOutputHelper, new RejectedCascadeReadCounter())
+    {
+    }
+
+    private RecoveringPageReadTests(ITestOutputHelper testOutputHelper, RejectedCascadeReadCounter rejectedReads) : base(
+        testOutputHelper,
+        builder => FailingPageReadTests.Configure(builder, failureCount: 2, rejectedReads))
+    {
+        _rejectedReads = rejectedReads;
+    }
+
+    [Fact(DisplayName = "A page whose first two reads fail is recovered on the third attempt and every child is cancelled")]
+    public async Task CancellingTheWaitingBulkDispatchActivity_WhenTheFirstPageFailsTwiceThenSucceeds_CancelsEveryChild()
+    {
+        const int childCount = BulkDispatchAndWaitInForkWorkflow.ChildCount;
+
+        // Arrange: more than one page of children, ordered the same way the cancel cascade reads them.
+        var parentId = await StartParentAsync(nameof(BulkDispatchAndWaitInForkWorkflow));
+        var childIds = (await WaitForChildrenAsync(parentId, nameof(BlockingChildWorkflow), childCount, IsSuspended)).Select(x => x.Id).Order().ToList();
+
+        // Act: page 0 fails on attempts one and two, and succeeds on attempt three. Nothing is left uncancelled.
+        var resumed = await ResumeAsync(parentId, BulkDispatchAndWaitInForkWorkflow.ProceedActivityId);
+        Assert.Equal(WorkflowStatus.Finished, resumed.Status);
+        Assert.Equal(WorkflowSubStatus.Finished, resumed.SubStatus);
+        Assert.Empty((await ExportStateAsync(parentId)).Incidents);
+
+        Assert.Equal(2, _rejectedReads.Count);
+        Assert.Equal(childIds, CancellationTargets.Order());
+    }
+}
+
+/// <summary>
+/// What happens when the first page exhausts all of its attempts but a later page reads normally.
+/// </summary>
+public class SkippedFirstPageReadTests : ChildWorkflowCancellationTests
+{
+    private readonly RejectedCascadeReadCounter _rejectedReads;
+
+    public SkippedFirstPageReadTests(ITestOutputHelper testOutputHelper) : this(testOutputHelper, new RejectedCascadeReadCounter())
+    {
+    }
+
+    private SkippedFirstPageReadTests(ITestOutputHelper testOutputHelper, RejectedCascadeReadCounter rejectedReads) : base(
+        testOutputHelper,
+        builder => FailingPageReadTests.Configure(builder, failureCount: 3, rejectedReads))
+    {
+        _rejectedReads = rejectedReads;
+    }
+
+    [Fact(DisplayName = "After one page exhausts its attempts, the children on a later readable page are still cancelled")]
+    public async Task CancellingTheWaitingBulkDispatchActivity_WhenTheFirstPageExhaustsItsAttempts_CancelsChildrenOnLaterPages()
+    {
+        const int childCount = BulkDispatchAndWaitInForkWorkflow.ChildCount;
+        const int pageSize = 100;
+
+        // Arrange: two pages of children (100 and 1), ordered the same way the cancel cascade reads them.
+        var parentId = await StartParentAsync(nameof(BulkDispatchAndWaitInForkWorkflow));
+        var childIds = (await WaitForChildrenAsync(parentId, nameof(BlockingChildWorkflow), childCount, IsSuspended)).Select(x => x.Id).Order().ToList();
+
+        // Act: page 0 fails on all three attempts and is left uncancelled. Page 1 reads normally.
+        var resumed = await ResumeAsync(parentId, BulkDispatchAndWaitInForkWorkflow.ProceedActivityId);
+        Assert.Equal(WorkflowStatus.Finished, resumed.Status);
+        Assert.Equal(WorkflowSubStatus.Finished, resumed.SubStatus);
+        Assert.Empty((await ExportStateAsync(parentId)).Incidents);
+
+        Assert.Equal(3, _rejectedReads.Count);
+        Assert.Equal(childIds.Skip(pageSize), CancellationTargets.Order());
+    }
+}
+
+/// <summary>
 /// What happens when every cancel-cascade page read fails, including the retries, until the consecutive-unreadable-page cap.
 /// </summary>
 public class GivingUpPageReadTests : ChildWorkflowCancellationTests
