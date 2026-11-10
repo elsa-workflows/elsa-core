@@ -302,9 +302,9 @@ public class BulkDispatchWorkflows : Activity
     /// dispatching activity of the same parent are left alone. Children that already finished are left alone too,
     /// together with anything they dispatched. Children dispatched before the parent commits are not in the store yet
     /// and are not covered. The parent's children are read one page at a time, and each page's matches are cancelled
-    /// before the next page is read. Only a successfully read short page ends the loop. A failed read is retried once
-    /// before that page is skipped and the next page is still attempted. After
-    /// <see cref="MaxConsecutiveReadFailures"/> consecutive skipped pages, paging gives up. A failed cancel of a page
+    /// before the next page is read. Only a successfully read short page ends the loop. A failed read of a page is retried
+    /// up to <see cref="MaxConsecutiveReadFailures"/> attempts in total. If every attempt fails, paging gives up and the
+    /// remaining children are left uncancelled, with a warning. A failed cancel of a page
     /// that was read is logged and paging continues. This best-effort cleanup does not fault the parent's cancel path.
     /// </summary>
     private async ValueTask OnCancelledAsync(CancelSignal signal, SignalContext signalContext)
@@ -333,7 +333,6 @@ public class BulkDispatchWorkflows : Activity
         var order = new WorkflowInstanceOrder<string>(x => x.Id, OrderDirection.Ascending);
         var pageArgs = PageArgs.FromPage(0, ChildPageSize);
         var pageNumber = 0;
-        var consecutiveReadFailures = 0;
         var cancelledCount = 0;
 
         try
@@ -344,33 +343,15 @@ public class BulkDispatchWorkflows : Activity
 
                 if (page is null)
                 {
-                    consecutiveReadFailures++;
-
-                    if (consecutiveReadFailures >= MaxConsecutiveReadFailures)
-                    {
-                        logger.LogWarning(
-                            failure,
-                            "Giving up after {MaxConsecutiveReadFailures} consecutive unreadable pages at page {PageNumber} of parent {ParentWorkflowInstanceId} for activity {ActivityInstanceId}.",
-                            MaxConsecutiveReadFailures,
-                            pageNumber,
-                            parentInstanceId,
-                            context.Id);
-                        return;
-                    }
-
                     logger.LogWarning(
                         failure,
-                        "Failed to read waited-for child workflows of parent {ParentWorkflowInstanceId} for activity {ActivityInstanceId} on page {PageNumber}; skipping this page.",
+                        "Giving up after {MaxConsecutiveReadFailures} failed reads of page {PageNumber} of waited-for child workflows of parent {ParentWorkflowInstanceId} for activity {ActivityInstanceId}; the children on this page and any later pages are left uncancelled.",
+                        MaxConsecutiveReadFailures,
+                        pageNumber,
                         parentInstanceId,
-                        context.Id,
-                        pageNumber);
-
-                    pageArgs = pageArgs.Next();
-                    pageNumber++;
-                    continue;
+                        context.Id);
+                    return;
                 }
-
-                consecutiveReadFailures = 0;
 
                 try
                 {
@@ -424,26 +405,26 @@ public class BulkDispatchWorkflows : Activity
         ILogger logger,
         int pageNumber)
     {
-        try
-        {
-            return (await store.FindManyAsync(filter, pageArgs, order, cancellationToken), null);
-        }
-        catch (Exception ex) when (!IsCallerCancellation(ex, cancellationToken))
-        {
-            logger.LogDebug(
-                ex,
-                "Retrying waited-for child page {PageNumber} after a failed read.",
-                pageNumber);
+        Exception? lastFailure = null;
 
+        for (var attempt = 1; attempt <= MaxConsecutiveReadFailures; attempt++)
+        {
             try
             {
                 return (await store.FindManyAsync(filter, pageArgs, order, cancellationToken), null);
             }
-            catch (Exception retryEx) when (!IsCallerCancellation(retryEx, cancellationToken))
+            catch (Exception ex) when (!IsCallerCancellation(ex, cancellationToken))
             {
-                return (null, retryEx);
+                lastFailure = ex;
+                logger.LogDebug(
+                    ex,
+                    "Attempt {Attempt} to read waited-for child page {PageNumber} failed.",
+                    attempt,
+                    pageNumber);
             }
         }
+
+        return (null, lastFailure);
     }
 
     private static bool IsCallerCancellation(Exception exception, CancellationToken cancellationToken) =>

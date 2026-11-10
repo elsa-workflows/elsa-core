@@ -1,6 +1,9 @@
+using System.Collections.Concurrent;
 using Elsa.Extensions;
 using Elsa.Testing.Shared;
 using Elsa.Workflows.IntegrationTests.Scenarios.DispatchWorkflowCancellation;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.BulkDispatchWorkflowsCancellation;
@@ -48,19 +51,22 @@ public class FailingPageReadTests(ITestOutputHelper testOutputHelper) : ChildWor
 public class GivingUpPageReadTests : ChildWorkflowCancellationTests
 {
     private readonly RejectedCascadeReadCounter _rejectedReads;
+    private readonly WarningLogCapture _logs;
 
-    public GivingUpPageReadTests(ITestOutputHelper testOutputHelper) : this(testOutputHelper, new RejectedCascadeReadCounter())
+    public GivingUpPageReadTests(ITestOutputHelper testOutputHelper) : this(testOutputHelper, new RejectedCascadeReadCounter(), new WarningLogCapture())
     {
     }
 
-    private GivingUpPageReadTests(ITestOutputHelper testOutputHelper, RejectedCascadeReadCounter rejectedReads) : base(
+    private GivingUpPageReadTests(ITestOutputHelper testOutputHelper, RejectedCascadeReadCounter rejectedReads, WarningLogCapture logs) : base(
         testOutputHelper,
-        builder => FailingPageReadTests.Configure(builder, failureCount: int.MaxValue, rejectedReads))
+        builder => FailingPageReadTests.Configure(builder, failureCount: int.MaxValue, rejectedReads)
+            .ConfigureServices(services => services.AddLogging(logging => logging.AddProvider(logs))))
     {
         _rejectedReads = rejectedReads;
+        _logs = logs;
     }
 
-    [Fact(DisplayName = "Paging gives up after three consecutive failed page reads")]
+    [Fact(DisplayName = "Paging gives up after three failed reads of the same page")]
     public async Task CancellingTheWaitingBulkDispatchActivity_WhenEveryPageReadFails_GivesUpAfterTheCap()
     {
         const int childCount = BulkDispatchAndWaitInForkWorkflow.ChildCount;
@@ -69,15 +75,52 @@ public class GivingUpPageReadTests : ChildWorkflowCancellationTests
         var parentId = await StartParentAsync(nameof(BulkDispatchAndWaitInForkWorkflow));
         await WaitForChildrenAsync(parentId, nameof(BlockingChildWorkflow), childCount, IsSuspended);
 
-        // Act: each page fails, is retried, then skipped, until the cap. The parent must still finish.
+        // Act: the first page fails on every attempt, up to the cap, and is then left uncancelled. The parent must still finish.
         var resumed = await ResumeAsync(parentId, BulkDispatchAndWaitInForkWorkflow.ProceedActivityId);
         Assert.Equal(WorkflowStatus.Finished, resumed.Status);
         Assert.Equal(WorkflowSubStatus.Finished, resumed.SubStatus);
         Assert.Empty((await ExportStateAsync(parentId)).Incidents);
 
         Assert.Empty(CancellationTargets);
-        // Three unreadable pages, each tried twice. A cap of 1 or 2, or the #8837 no-retry loop, cannot reach 6.
-        Assert.Equal(6, _rejectedReads.Count);
+        // The first page is tried three times, the cap, and paging stops there without reading the next page.
+        Assert.Equal(3, _rejectedReads.Count);
+
+        // The warning names the abandoned page and the parent, and carries the last read failure.
+        var warning = Assert.Single(_logs.Entries, x => x.Level == LogLevel.Warning && x.Message.Contains("Giving up"));
+        Assert.Contains("page 0 of", warning.Message);
+        Assert.Contains(parentId, warning.Message);
+        Assert.NotNull(warning.Exception);
+    }
+}
+
+/// <summary>
+/// Captures warning-or-higher log entries so a test can assert on what was logged.
+/// </summary>
+internal sealed class WarningLogCapture : ILoggerProvider
+{
+    private readonly ConcurrentQueue<LoggedEntry> _entries = new();
+
+    public IEnumerable<LoggedEntry> Entries => _entries;
+
+    public ILogger CreateLogger(string categoryName) => new CapturingLogger(_entries);
+
+    public void Dispose()
+    {
+    }
+
+    internal sealed record LoggedEntry(LogLevel Level, string Message, Exception? Exception);
+
+    private sealed class CapturingLogger(ConcurrentQueue<LoggedEntry> entries) : ILogger
+    {
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+        public bool IsEnabled(LogLevel logLevel) => logLevel >= LogLevel.Warning;
+
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+        {
+            if (IsEnabled(logLevel))
+                entries.Enqueue(new LoggedEntry(logLevel, formatter(state, exception), exception));
+        }
     }
 }
 
