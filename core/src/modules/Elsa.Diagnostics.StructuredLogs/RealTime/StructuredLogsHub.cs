@@ -1,19 +1,42 @@
+using Elsa.Authorization;
+using Elsa.Common.Multitenancy;
 using Elsa.Diagnostics.StructuredLogs.Contracts;
 using Elsa.Diagnostics.StructuredLogs.Models;
+using Elsa.Diagnostics.StructuredLogs.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 
 namespace Elsa.Diagnostics.StructuredLogs.RealTime;
 
 [Authorize]
-public class StructuredLogsHub(StructuredLogSubscriptionManager subscriptionManager) : Hub<IStructuredLogsClient>
+public class StructuredLogsHub(StructuredLogSubscriptionManager subscriptionManager, ITenantAccessor? tenantAccessor) : Hub<IStructuredLogsClient>
 {
+    public const string SourceChangesGroup = "structured-log-source-changes";
+    private static readonly Permission ReadStructuredLogs = new(StructuredLogsResourcePermissions.StructuredLogs, CoreVerbs.View);
+
+    public StructuredLogsHub(StructuredLogSubscriptionManager subscriptionManager) : this(subscriptionManager, null)
+    {
+    }
+
+    public override async Task OnConnectedAsync()
+    {
+        if (CanReadStructuredLogs())
+            await Groups.AddToGroupAsync(Context.ConnectionId, SourceChangesGroup, Context.ConnectionAborted);
+
+        await base.OnConnectedAsync();
+    }
+
     public async Task SubscribeAsync(StructuredLogFilter? filter)
     {
-        await subscriptionManager.SubscribeAsync(Context.ConnectionId, ValidateFilter(filter), Context.ConnectionAborted);
+        EnsureCanReadStructuredLogs();
+        await subscriptionManager.SubscribeAsync(Context.ConnectionId, ValidateFilter(filter), tenantAccessor?.TenantId, Context.ConnectionAborted);
     }
-    
-    public Task UpdateFilterAsync(StructuredLogFilter? filter) => subscriptionManager.UpdateFilterAsync(Context.ConnectionId, ValidateFilter(filter), Context.ConnectionAborted);
+
+    public Task UpdateFilterAsync(StructuredLogFilter? filter)
+    {
+        EnsureCanReadStructuredLogs();
+        return subscriptionManager.UpdateFilterAsync(Context.ConnectionId, ValidateFilter(filter), tenantAccessor?.TenantId, Context.ConnectionAborted);
+    }
     
     public Task UnsubscribeAsync()
     {
@@ -34,5 +57,17 @@ public class StructuredLogsHub(StructuredLogSubscriptionManager subscriptionMana
             throw new HubException("The log filter 'from' timestamp must be earlier than or equal to 'to'.");
         
         return filter;
+    }
+
+    private bool CanReadStructuredLogs()
+    {
+        var user = Context.User;
+        return user?.Identity?.IsAuthenticated == true && PermissionEvaluator.Shared.HasPermission(user, ReadStructuredLogs);
+    }
+
+    private void EnsureCanReadStructuredLogs()
+    {
+        if (!CanReadStructuredLogs())
+            throw new HubException("Access denied.");
     }
 }

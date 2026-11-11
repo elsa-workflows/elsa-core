@@ -1,3 +1,4 @@
+using Elsa.Common.Multitenancy;
 using Elsa.Diagnostics.StructuredLogs.Models;
 
 namespace Elsa.Diagnostics.StructuredLogs.Services;
@@ -48,6 +49,18 @@ public static class StructuredLogFilterEvaluator
         return true;
     }
     
+    /// <summary>
+    /// Whether a caller in the given tenant may see the event: its own tenant's events and tenant-agnostic ones. Untagged events belong to the default tenant. A null tenant means no tenancy, so everything is visible.
+    /// </summary>
+    public static bool IsVisibleToTenant(StructuredLogEvent logEvent, string? tenantId)
+    {
+        if (tenantId == null)
+            return true;
+
+        var eventTenantId = logEvent.TenantId.NormalizeTenantId();
+        return eventTenantId == Tenant.AgnosticTenantId || eventTenantId == tenantId.NormalizeTenantId();
+    }
+
     private static bool EqualsFilter(string? value, string? filter) => string.IsNullOrWhiteSpace(filter) || string.Equals(value, filter, StringComparison.OrdinalIgnoreCase);
     
     private static bool StartsWith(string value, string? filter) => string.IsNullOrWhiteSpace(filter) || value.StartsWith(filter, StringComparison.OrdinalIgnoreCase);
