@@ -5,8 +5,10 @@ using Elsa.Diagnostics.StructuredLogs.Contracts;
 using Elsa.Diagnostics.StructuredLogs.Models;
 using Elsa.Diagnostics.StructuredLogs.RealTime;
 using Elsa.Diagnostics.StructuredLogs.Services;
+using Elsa.Diagnostics.StructuredLogs.Extensions;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit.Sdk;
 
@@ -60,17 +62,45 @@ public class StructuredLogsHubTests
     }
 
     [Theory]
-    [InlineData(null)]
-    [InlineData("")]
-    [InlineData("tenant-b")]
-    public async Task SubscribeAsync_WhenFilterNamesAnotherTenant_DoesNotWidenScope(string? requestedTenantId)
+    [InlineData(null, new[] { "a-1" })]
+    [InlineData("", new[] { "a-1" })]
+    [InlineData("tenant-b", new string[0])]
+    public async Task SubscribeAsync_WhenFilterNamesAnotherTenant_DoesNotWidenScope(string? requestedTenantId, string[] expectedIds)
     {
         var fixture = CreateFixture(tenantId: "tenant-a", ViewPermission, Event("b-1", "tenant-b"), Event("a-1", "tenant-a"));
 
         await fixture.Hub.SubscribeAsync(new StructuredLogFilter { TenantId = requestedTenantId });
 
-        await AssertEventuallyAsync(() => Assert.True(fixture.ProviderDrained.Task.IsCompleted));
-        Assert.DoesNotContain("b-1", fixture.ReceivedIds);
+        await fixture.ProviderDrained.Task.WaitAsync(TimeSpan.FromSeconds(3));
+        await AssertEventuallyAsync(() => Assert.Equal(expectedIds, fixture.ReceivedIds));
+    }
+
+    [Fact]
+    public async Task SubscribeAsync_WhenNamedTenantCallerSubscribes_ReceivesOwnAndAgnosticEventsOnly()
+    {
+        var fixture = CreateFixture(tenantId: "tenant-a", ViewPermission, Event("b-1", "tenant-b"), Event("agnostic-1", "*"), Event("a-1", "tenant-a"), Event("host-1", null));
+
+        await fixture.Hub.SubscribeAsync(null);
+
+        await fixture.ProviderDrained.Task.WaitAsync(TimeSpan.FromSeconds(3));
+        await AssertEventuallyAsync(() => Assert.Equal(["agnostic-1", "a-1"], fixture.ReceivedIds));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Hub_CanBeActivatedWithOrWithoutTenantAccessor(bool registerTenantAccessor)
+    {
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddSignalR();
+        services.AddStructuredLogsServices();
+        if (registerTenantAccessor)
+            services.AddSingleton<ITenantAccessor>(new TestTenantAccessor("tenant-a"));
+
+        using var serviceProvider = services.BuildServiceProvider();
+
+        Assert.NotNull(ActivatorUtilities.CreateInstance<StructuredLogsHub>(serviceProvider));
     }
 
     [Fact]

@@ -7,7 +7,7 @@ public static class StructuredLogProviderExtensions
 {
     /// <summary>
     /// Gets recent events visible to the given tenant. A null tenant means no tenancy, so nothing is clamped.
-    /// The provider applies the tenant filter before its take limit; the default tenant cannot be expressed as a filter, so its result is clamped afterwards and may hold fewer items than requested.
+    /// For a named tenant the provider applies an exact tenant filter before its take limit, so tenant-agnostic events are not included (the live hub stream does include them); the default tenant cannot be expressed as a filter, so its result is clamped afterwards and may hold fewer items than requested.
     /// </summary>
     public static async ValueTask<RecentStructuredLogsResult> GetRecentForTenantAsync(this IStructuredLogProvider provider, StructuredLogFilter filter, string? tenantId, CancellationToken cancellationToken = default)
     {

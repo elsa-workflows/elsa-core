@@ -28,8 +28,10 @@ public class StructuredLogSubscriptionManager : IDisposable
         _sourceRegistry.SourceChanged += OnSourceChanged;
     }
 
-    // When tenantId is set, only events of that tenant (or of the agnostic tenant) are streamed, whatever the filter says.
-    public Task SubscribeAsync(string connectionId, StructuredLogFilter filter, CancellationToken cancellationToken, string? tenantId = null)
+    public Task SubscribeAsync(string connectionId, StructuredLogFilter filter, CancellationToken cancellationToken) => SubscribeAsync(connectionId, filter, null, cancellationToken);
+
+    // When tenantId is set, only events visible to that tenant are streamed, whatever the filter says.
+    public Task SubscribeAsync(string connectionId, StructuredLogFilter filter, string? tenantId, CancellationToken cancellationToken)
     {
         Unsubscribe(connectionId);
         var subscriptionCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -40,9 +42,11 @@ public class StructuredLogSubscriptionManager : IDisposable
         return Task.CompletedTask;
     }
 
-    public Task UpdateFilterAsync(string connectionId, StructuredLogFilter filter, CancellationToken cancellationToken, string? tenantId = null)
+    public Task UpdateFilterAsync(string connectionId, StructuredLogFilter filter, CancellationToken cancellationToken) => UpdateFilterAsync(connectionId, filter, null, cancellationToken);
+
+    public Task UpdateFilterAsync(string connectionId, StructuredLogFilter filter, string? tenantId, CancellationToken cancellationToken)
     {
-        return SubscribeAsync(connectionId, filter, cancellationToken, tenantId);
+        return SubscribeAsync(connectionId, filter, tenantId, cancellationToken);
     }
 
     public Task UnsubscribeAsync(string connectionId)

@@ -9,10 +9,14 @@ using Microsoft.AspNetCore.SignalR;
 namespace Elsa.Diagnostics.StructuredLogs.RealTime;
 
 [Authorize]
-public class StructuredLogsHub(StructuredLogSubscriptionManager subscriptionManager, ITenantAccessor? tenantAccessor = null) : Hub<IStructuredLogsClient>
+public class StructuredLogsHub(StructuredLogSubscriptionManager subscriptionManager, ITenantAccessor? tenantAccessor) : Hub<IStructuredLogsClient>
 {
     public const string SourceChangesGroup = "structured-log-source-changes";
     private static readonly Permission ReadStructuredLogs = new(StructuredLogsResourcePermissions.StructuredLogs, CoreVerbs.View);
+
+    public StructuredLogsHub(StructuredLogSubscriptionManager subscriptionManager) : this(subscriptionManager, null)
+    {
+    }
 
     public override async Task OnConnectedAsync()
     {
@@ -25,13 +29,13 @@ public class StructuredLogsHub(StructuredLogSubscriptionManager subscriptionMana
     public async Task SubscribeAsync(StructuredLogFilter? filter)
     {
         EnsureCanReadStructuredLogs();
-        await subscriptionManager.SubscribeAsync(Context.ConnectionId, ValidateFilter(filter), Context.ConnectionAborted, tenantAccessor?.TenantId);
+        await subscriptionManager.SubscribeAsync(Context.ConnectionId, ValidateFilter(filter), tenantAccessor?.TenantId, Context.ConnectionAborted);
     }
 
     public Task UpdateFilterAsync(StructuredLogFilter? filter)
     {
         EnsureCanReadStructuredLogs();
-        return subscriptionManager.UpdateFilterAsync(Context.ConnectionId, ValidateFilter(filter), Context.ConnectionAborted, tenantAccessor?.TenantId);
+        return subscriptionManager.UpdateFilterAsync(Context.ConnectionId, ValidateFilter(filter), tenantAccessor?.TenantId, Context.ConnectionAborted);
     }
     
     public Task UnsubscribeAsync()
