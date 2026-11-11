@@ -2,9 +2,12 @@ using Elsa.Alterations.Core.Contracts;
 using Elsa.Alterations.Core.Entities;
 using Elsa.Alterations.Core.Enums;
 using Elsa.Alterations.Core.Filters;
+using Elsa.Alterations.Core.Models;
 using Elsa.Alterations.Core.Notifications;
+using Elsa.Alterations.Core.Results;
 using Elsa.Common;
 using Elsa.Mediator.Contracts;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Alterations.Services;
 
@@ -45,8 +48,23 @@ public class DefaultAlterationJobRunner : IAlterationJobRunner
         job.StartedAt = _systemClock.UtcNow;
         await _alterationJobStore.SaveAsync(job, cancellationToken);
         
-        var result = await _alterationRunner.RunAsync(workflowInstanceId, plan.Alterations, cancellationToken);
-        
+        RunAlterationsResult result;
+
+        try
+        {
+            result = await _alterationRunner.RunAsync(workflowInstanceId, plan.Alterations, cancellationToken);
+        }
+        catch (Exception e) when (e is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
+        {
+            // Don't leave the job in the Running state: record the failure so the plan can complete.
+            job.Status = AlterationJobStatus.Failed;
+            job.Log = [new AlterationLogEntry(e.Message, LogLevel.Error, _systemClock.UtcNow, "Exception")];
+            job.CompletedAt = _systemClock.UtcNow;
+            await _alterationJobStore.SaveAsync(job, cancellationToken);
+            await _notificationSender.SendAsync(new AlterationJobCompleted(job, false), cancellationToken);
+            throw;
+        }
+
         job.Status = result.IsSuccessful ? AlterationJobStatus.Completed : AlterationJobStatus.Failed;
         job.Log = result.Log.LogEntries.ToList();
         job.CompletedAt = _systemClock.UtcNow;

@@ -7,6 +7,7 @@
     <ItemGroup>
         <ProjectReference Include="..\..\..\src\common\Elsa.Testing.Shared\Elsa.Testing.Shared.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.Alterations.Core\Elsa.Alterations.Core.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Alterations\Elsa.Alterations.csproj" />
     </ItemGroup>
 
 </Project>
