@@ -1,5 +1,6 @@
 using Elsa.Common.Entities;
 using Elsa.Common.Multitenancy;
+using Elsa.Extensions;
 using Elsa.Tenants.Options;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
@@ -24,6 +25,13 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
     protected IServiceProvider ServiceProvider { get; }
     private readonly ElsaDbContextOptions? _elsaDbContextOptions;
     public string? TenantId { get; set; }
+
+    /// <summary>
+    /// Indicates whether the context was created inside an ambient tenant context. This is independent of
+    /// <see cref="TenantId"/> so callers that only need the normalized tenant id can keep using that property.
+    /// <see cref="EntityHandlers.ApplyTenantId"/> uses this flag to distinguish a missing context from the default tenant.
+    /// </summary>
+    public bool HasTenantContext { get; set; }
 
     public bool IsTenantFilteringEnabled { get; }
 
@@ -54,8 +62,9 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
         IsTenantFilteringEnabled = serviceProvider.GetService<IOptions<TenantsOptions>>()?.Value.IsEnabled ?? false;
 
         var tenantAccessor = serviceProvider.GetService<ITenantAccessor>();
-        var tenantId = tenantAccessor?.Tenant?.Id;
+        var tenantId = (tenantAccessor?.TenantId).NormalizeTenantId();
         TenantId ??= tenantId;
+        HasTenantContext = tenantAccessor?.Tenant != null;
     }
 
     /// <inheritdoc/>

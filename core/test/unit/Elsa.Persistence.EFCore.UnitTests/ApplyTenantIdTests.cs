@@ -1,4 +1,5 @@
 using Elsa.Common.Multitenancy;
+using Elsa.Extensions;
 using Elsa.Persistence.EFCore.EntityHandlers;
 using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Management;
@@ -40,12 +41,12 @@ public class ApplyTenantIdTests
         Assert.Null(storedTenantId);
     }
 
-    [Theory(DisplayName = "A null ambient tenant keeps explicit tenant ids and leaves unassigned entities unassigned")]
+    [Theory(DisplayName = "A null ambient tenant keeps explicit tenant ids and stamps missing ids with the default tenant")]
     [InlineData("t1", "t1")]
-    [InlineData(null, null)]
-    [InlineData("", null)]
+    [InlineData(null, "")]
+    [InlineData("", "")]
     [InlineData("*", "*")]
-    public async Task NullAmbientContext_KeepsExplicitTenantAndLeavesUnassigned(string? tenantId, string? expectedTenantId)
+    public async Task NullAmbientContext_KeepsExplicitTenantAndStampsMissingWithDefault(string? tenantId, string? expectedTenantId)
     {
         var (exception, storedTenantId) = await SaveWithAmbientAsync(null, tenantId);
 
@@ -87,10 +88,10 @@ public class ApplyTenantIdTests
         Assert.Equal(tenantId, storedTenantId);
     }
 
-    [Theory(DisplayName = "The db context factory propagates the raw ambient tenant: null without a context, empty string for the default tenant")]
-    [InlineData(false, null)]
-    [InlineData(true, "")]
-    public async Task DbContextFactory_PropagatesRawAmbientTenantId(bool pushDefaultTenant, string? expectedTenantId)
+    [Theory(DisplayName = "The db context factory normalizes TenantId to empty string and tracks whether a tenant context exists")]
+    [InlineData(false, "", false)]
+    [InlineData(true, "", true)]
+    public async Task DbContextFactory_NormalizesTenantIdAndTracksContextPresence(bool pushDefaultTenant, string expectedTenantId, bool expectedHasTenantContext)
     {
         var databasePath = Path.Join(Path.GetTempPath(), $"elsa-apply-tenant-id-{Guid.NewGuid():N}.db");
         var tenantAccessor = new DefaultTenantAccessor();
@@ -102,6 +103,7 @@ public class ApplyTenantIdTests
             await using var dbContext = await services.GetRequiredService<IDbContextFactory<ManagementElsaDbContext>>().CreateDbContextAsync();
 
             Assert.Equal(expectedTenantId, dbContext.TenantId);
+            Assert.Equal(expectedHasTenantContext, dbContext.HasTenantContext);
         }
         finally
         {
@@ -129,8 +131,10 @@ public class ApplyTenantIdTests
             Exception? exception;
             await using (var dbContext = await services.GetRequiredService<IDbContextFactory<ManagementElsaDbContext>>().CreateDbContextAsync())
             {
-                // The ambient tenant is assigned the same way TenantAwareDbContextFactory assigns it.
-                dbContext.TenantId = ambientTenantId;
+                // The ambient tenant is assigned the same way TenantAwareDbContextFactory assigns it:
+                // TenantId is always normalized; HasTenantContext distinguishes a real context from its absence.
+                dbContext.TenantId = (ambientTenantId).NormalizeTenantId();
+                dbContext.HasTenantContext = ambientTenantId is not null;
 
                 dbContext.WorkflowInstances.Add(new()
                 {

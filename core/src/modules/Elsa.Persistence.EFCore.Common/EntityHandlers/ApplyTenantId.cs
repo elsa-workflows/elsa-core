@@ -31,30 +31,27 @@ public class ApplyTenantId(IOptions<TenantsOptions> tenantsOptions) : IEntitySav
             return default;
         }
 
-        var ambientTenantId = dbContext.TenantId;
-
-        // Stamp the ambient tenant onto entities without an explicit tenant id (null included, mirroring Dapper).
+        // Stamp the normalized ambient tenant onto entities without an explicit tenant id.
         if (string.IsNullOrEmpty(entity.TenantId))
         {
-            entity.TenantId = ambientTenantId;
+            entity.TenantId = dbContext.TenantId;
             return default;
         }
 
-        // Without a tenant context (ITenantAccessor.Tenant == null) there is nothing to validate against;
-        // keep the explicit tenant id. Mirrors the `ambient == null` branch of Dapper Store<T>.SetTenantId.
-        if (ambientTenantId is null)
+        // Without a real tenant context there is nothing to validate against; keep the explicit tenant id.
+        if (!dbContext.HasTenantContext)
         {
             return default;
         }
 
         // Keep an explicit tenant id that matches the ambient tenant; null and "" are equivalent for the
         // default tenant (mirrors Dapper's SameTenant). Unassigned ids never reach this point.
-        if (string.Equals(entity.TenantId, ambientTenantId, StringComparison.Ordinal))
+        if (string.Equals(entity.TenantId, dbContext.TenantId, StringComparison.Ordinal))
         {
             return default;
         }
 
         // Refuse to save an entity whose explicit tenant id differs from the ambient tenant.
-        throw new InvalidOperationException($"The entity tenant '{entity.TenantId}' does not match the current tenant '{ambientTenantId}'.");
+        throw new InvalidOperationException($"The entity tenant '{entity.TenantId}' does not match the current tenant '{dbContext.TenantId}'.");
     }
 }

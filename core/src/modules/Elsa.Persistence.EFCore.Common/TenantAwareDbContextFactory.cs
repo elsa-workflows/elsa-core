@@ -1,4 +1,5 @@
 using Elsa.Common.Multitenancy;
+using Elsa.Extensions;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 
@@ -30,9 +31,12 @@ public class TenantAwareDbContextFactory<TDbContext>(
 
     private void SetTenantId(TDbContext context)
     {
-        // Propagate the raw tenant id: a missing tenant context (Tenant == null) must stay null on the
-        // context so ApplyTenantId can tell "no context" (keep explicit ids) apart from the default tenant ("").
-        if (context is ElsaDbContextBase elsaContext)
-            elsaContext.TenantId = tenantAccessor.Tenant?.Id;
+        if (context is not ElsaDbContextBase elsaContext)
+            return;
+
+        // Keep TenantId normalized ("" for both missing context and the default tenant) for existing consumers.
+        // ApplyTenantId uses HasTenantContext to distinguish between a genuinely missing context and the default tenant.
+        elsaContext.TenantId = tenantAccessor.TenantId;
+        elsaContext.HasTenantContext = tenantAccessor.Tenant != null;
     }
 }
