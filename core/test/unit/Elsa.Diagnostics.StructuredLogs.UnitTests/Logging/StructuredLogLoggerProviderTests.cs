@@ -1,3 +1,4 @@
+using Elsa.Common.Multitenancy;
 using Elsa.Diagnostics.StructuredLogs.Contracts;
 using Elsa.Diagnostics.StructuredLogs.Logging;
 using Elsa.Diagnostics.StructuredLogs.Models;
@@ -94,6 +95,51 @@ public class StructuredLogLoggerProviderTests
         logger.LogInformation("Internal structured logs chatter");
 
         Assert.Empty(_logProvider.Events);
+    }
+
+    [Fact]
+    public void Log_WhenTenantContextIsActive_StampsAmbientTenant()
+    {
+        var logger = CreateLogger(new TestTenantAccessor("tenant-a"));
+
+        logger.LogInformation("Event without tenant property");
+
+        Assert.Equal("tenant-a", Assert.Single(_logProvider.Events).TenantId);
+    }
+
+    [Fact]
+    public void Log_WhenEventNamesItsOwnTenant_KeepsNamedTenant()
+    {
+        var logger = CreateLogger(new TestTenantAccessor("tenant-a"));
+
+        logger.LogInformation("Tenant {TenantId} activated", "tenant-b");
+
+        Assert.Equal("tenant-b", Assert.Single(_logProvider.Events).TenantId);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    public void Log_WhenThereIsNoTenantContext_LeavesEventUntagged(string? tenantId)
+    {
+        var logger = CreateLogger(tenantId == null ? null : new TestTenantAccessor(tenantId));
+
+        logger.LogInformation("Host event");
+
+        Assert.Null(Assert.Single(_logProvider.Events).TenantId);
+    }
+
+    private ILogger CreateLogger(ITenantAccessor? tenantAccessor)
+    {
+        var options = MicrosoftOptions.Create(new StructuredLogsOptions());
+        return new StructuredLogLoggerProvider(_logProvider, new StructuredLogRedactor(options), _sourceRegistry, options, tenantAccessor).CreateLogger("Elsa.Workflows.Runtime");
+    }
+
+    private sealed class TestTenantAccessor(string tenantId) : ITenantAccessor
+    {
+        public string TenantId { get; } = tenantId;
+        public Tenant? Tenant => null;
+        public IDisposable PushContext(Tenant? tenant) => throw new NotSupportedException();
     }
 
     private sealed class CapturingStructuredLogProvider : IStructuredLogProvider

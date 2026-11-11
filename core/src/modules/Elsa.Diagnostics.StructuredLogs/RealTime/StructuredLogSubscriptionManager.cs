@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
-using Elsa.Common.Multitenancy;
 using Elsa.Diagnostics.StructuredLogs.Contracts;
 using Elsa.Diagnostics.StructuredLogs.Models;
+using Elsa.Diagnostics.StructuredLogs.Services;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 
@@ -115,7 +115,7 @@ public class StructuredLogSubscriptionManager : IDisposable
     {
         await foreach (var logEvent in _logProvider.SubscribeAsync(filter, cancellationToken))
         {
-            if (!IsVisibleToTenant(logEvent, tenantId))
+            if (!StructuredLogFilterEvaluator.IsVisibleToTenant(logEvent, tenantId))
                 continue;
 
             await _hubContext.Clients.Client(connectionId).ReceiveLogEventAsync(logEvent, cancellationToken);
@@ -126,7 +126,7 @@ public class StructuredLogSubscriptionManager : IDisposable
     {
         await foreach (var item in streamProvider.SubscribeWithDroppedEventsAsync(filter, cancellationToken))
         {
-            if (item.LogEvent != null && IsVisibleToTenant(item.LogEvent, tenantId))
+            if (item.LogEvent != null && StructuredLogFilterEvaluator.IsVisibleToTenant(item.LogEvent, tenantId))
                 await _hubContext.Clients.Client(connectionId).ReceiveLogEventAsync(item.LogEvent, cancellationToken);
 
             if (item.DroppedEvents != null)
@@ -148,15 +148,6 @@ public class StructuredLogSubscriptionManager : IDisposable
         {
             _logger.LogDebug(e, "Failed to broadcast structured log source change for source {SourceId}", source.Id);
         }
-    }
-
-    private static bool IsVisibleToTenant(StructuredLogEvent logEvent, string? tenantId)
-    {
-        if (tenantId == null)
-            return true;
-
-        var eventTenantId = logEvent.TenantId.NormalizeTenantId();
-        return eventTenantId == Tenant.AgnosticTenantId || eventTenantId == tenantId.NormalizeTenantId();
     }
 
     private sealed record StructuredLogSubscription(CancellationTokenSource CancellationTokenSource);
