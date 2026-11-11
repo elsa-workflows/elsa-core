@@ -115,6 +115,11 @@ public class DefaultTenantService(
             var addedTenantIds = newTenantIds.Except(currentTenantIds).ToArray();
             var changedTenantIds = newTenantIds.Intersect(currentTenantIds).Where(x => HasChanged(currentTenants[x], newTenants[x])).ToArray();
 
+            // The caller's token only applies up to here, where nothing has been changed yet. Once a tenant is deactivated, the swap runs to completion:
+            // a cancelled request must not leave a tenant deactivated without its replacement, or dispose a scope whose background tasks are still stopping.
+            cancellationToken.ThrowIfCancellationRequested();
+            cancellationToken = CancellationToken.None;
+
             foreach (var removedTenantId in removedTenantIds)
             {
                 if (currentTenants.TryGetValue(removedTenantId, out var removedTenant))
@@ -129,7 +134,7 @@ public class DefaultTenantService(
             }
 
             var pendingTenants = addedTenantIds.Concat(changedTenantIds).Select(x => RegisterTenant(newTenants[x])).ToList();
-            await ActivatePendingTenantsAsync(pendingTenants, cancellationToken);
+            await ActivatePendingTenantsAsync(pendingTenants, changedTenantIds.ToDictionary(x => x, x => currentTenants[x]), cancellationToken);
         }
         finally
         {
@@ -178,7 +183,7 @@ public class DefaultTenantService(
 
             try
             {
-                await ActivatePendingTenantsAsync(tenants.Select(RegisterTenant).ToList(), cancellationToken);
+                await ActivatePendingTenantsAsync(tenants.Select(RegisterTenant).ToList(), replacedTenants: null, cancellationToken);
             }
             catch
             {
@@ -219,7 +224,11 @@ public class DefaultTenantService(
     /// <summary>
     /// Activates the pending tenants in parallel. If an activation fails, only the tenants that completed stay registered.
     /// </summary>
-    private async Task ActivatePendingTenantsAsync(IReadOnlyList<PendingTenant> pendingTenants, CancellationToken cancellationToken)
+    /// <param name="replacedTenants">
+    /// The tenants being replaced, by ID. If a replacement fails to activate, the old tenant is put back in the registry so its ID stays resolvable.
+    /// It has no scope or running tasks then, and the next refresh sees the change again and retries.
+    /// </param>
+    private async Task ActivatePendingTenantsAsync(IReadOnlyList<PendingTenant> pendingTenants, IReadOnlyDictionary<string, Tenant>? replacedTenants, CancellationToken cancellationToken)
     {
         if (pendingTenants.Count == 0)
             return;
@@ -245,8 +254,18 @@ public class DefaultTenantService(
             // Keep the tenants that failed or never started unregistered, so the next refresh retries them.
             foreach (var pendingTenant in pendingTenants.Where(x => !activatedTenants.Contains(x.Tenant)))
             {
-                _tenantsDictionary!.TryRemove(pendingTenant.Tenant.Id.EmptyIfNull(), out _);
+                var tenantId = pendingTenant.Tenant.Id.EmptyIfNull();
                 _tenantScopesDictionary!.TryRemove(pendingTenant.Tenant, out _);
+
+                if (replacedTenants != null && replacedTenants.TryGetValue(tenantId, out var oldTenant))
+                {
+                    _tenantsDictionary![tenantId] = oldTenant;
+                }
+                else
+                {
+                    _tenantsDictionary!.TryRemove(tenantId, out _);
+                }
+
                 await pendingTenant.Scope.DisposeAsync();
             }
 

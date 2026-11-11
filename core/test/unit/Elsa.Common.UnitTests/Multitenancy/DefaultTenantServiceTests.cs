@@ -240,6 +240,112 @@ public class DefaultTenantServiceTests
     }
 
     [Fact]
+    public async Task RefreshAsync_WhenTheTokenIsCancelledAfterTheOldTenantIsDeactivated_CompletesTheSwapAndKeepsTheTenantResolvable()
+    {
+        // Arrange: a client abort (the token is cancelled) while the old tenant "a" is being deactivated.
+        using var cts = new CancellationTokenSource();
+        var host = "a-old.example.com";
+        var deactivatedEvent = Substitute.For<ITenantDeactivatedEvent>();
+        deactivatedEvent.TenantDeactivatedAsync(Arg.Any<TenantDeactivatedEventArgs>()).Returns(_ =>
+        {
+            cts.Cancel();
+            return Task.CompletedTask;
+        });
+        var (tenantService, serviceProvider) = await CreateTenantServiceAsync([], () => [CreateTenant("a", "A", host)], deactivatedEvent: deactivatedEvent);
+
+        try
+        {
+            await tenantService.ActivateTenantsAsync();
+            host = "a-new.example.com";
+
+            // Act
+            await tenantService.RefreshAsync(cts.Token);
+
+            // Assert: the swap ran to completion, and the tenant resolves to its replacement.
+            Assert.True(cts.IsCancellationRequested);
+            Assert.Equal("a-new.example.com", (await tenantService.FindAsync("a"))!.Configuration["Http:Host"]);
+        }
+        finally
+        {
+            await DisposeAsync(tenantService, serviceProvider);
+        }
+    }
+
+    [Fact]
+    public async Task RefreshAsync_WhenTheTokenIsCancelledBeforeAnyTenantIsDeactivated_KeepsTheOldTenant()
+    {
+        // Arrange: the token is cancelled while the provider is listing, so nothing has been changed yet.
+        using var cts = new CancellationTokenSource();
+        var host = "a-old.example.com";
+        var cancelOnList = false;
+        var deactivatedEvent = Substitute.For<ITenantDeactivatedEvent>();
+        var (tenantService, serviceProvider) = await CreateTenantServiceAsync([], () =>
+        {
+            if (cancelOnList)
+            {
+                cts.Cancel();
+            }
+
+            return [CreateTenant("a", "A", host)];
+        }, deactivatedEvent: deactivatedEvent);
+
+        try
+        {
+            await tenantService.ActivateTenantsAsync();
+            host = "a-new.example.com";
+            cancelOnList = true;
+
+            // Act
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => tenantService.RefreshAsync(cts.Token));
+
+            // Assert: the old tenant is untouched.
+            Assert.Equal("a-old.example.com", (await tenantService.FindAsync("a"))!.Configuration["Http:Host"]);
+            await deactivatedEvent.DidNotReceive().TenantDeactivatedAsync(Arg.Any<TenantDeactivatedEventArgs>());
+        }
+        finally
+        {
+            await DisposeAsync(tenantService, serviceProvider);
+        }
+    }
+
+    [Fact]
+    public async Task RefreshAsync_WhenAReplacementFailsToActivate_KeepsTheOldTenantResolvableAndRetriesOnTheNextRefresh()
+    {
+        // Arrange
+        var host = "a-old.example.com";
+        var failActivation = false;
+        var activatedEvent = new DelegateActivationHandler(args =>
+            failActivation && args.Tenant.Configuration["Http:Host"] == "a-new.example.com"
+                ? Task.FromException(new InvalidOperationException("Activation failed."))
+                : Task.CompletedTask);
+        var (tenantService, serviceProvider) = await CreateTenantServiceAsync([], () => [CreateTenant("a", "A", host)], activatedEvent: activatedEvent);
+
+        try
+        {
+            await tenantService.ActivateTenantsAsync();
+            host = "a-new.example.com";
+            failActivation = true;
+
+            // Act
+            await Assert.ThrowsAnyAsync<Exception>(() => tenantService.RefreshAsync());
+
+            // Assert: the ID still resolves to the old tenant.
+            Assert.Equal("a-old.example.com", (await tenantService.FindAsync("a"))!.Configuration["Http:Host"]);
+
+            // Act: the next refresh retries the replacement.
+            failActivation = false;
+            await tenantService.RefreshAsync();
+
+            // Assert
+            Assert.Equal("a-new.example.com", (await tenantService.FindAsync("a"))!.Configuration["Http:Host"]);
+        }
+        finally
+        {
+            await DisposeAsync(tenantService, serviceProvider);
+        }
+    }
+
+    [Fact]
     public async Task RefreshAsync_WhenAReplacedTenantsScopeFailsToDispose_StillAppliesAllChangesAndLaterDeletes()
     {
         // Arrange: tenant "a" has a scope that throws when it is disposed.
