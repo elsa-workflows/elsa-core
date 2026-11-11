@@ -1,6 +1,5 @@
 using Elsa.Common.Entities;
 using Elsa.Common.Multitenancy;
-using Elsa.Extensions;
 using Elsa.Tenants.Options;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
@@ -55,7 +54,7 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
         IsTenantFilteringEnabled = serviceProvider.GetService<IOptions<TenantsOptions>>()?.Value.IsEnabled ?? false;
 
         var tenantAccessor = serviceProvider.GetService<ITenantAccessor>();
-        var tenantId = (tenantAccessor?.TenantId).NormalizeTenantId();
+        var tenantId = tenantAccessor?.Tenant?.Id;
         TenantId ??= tenantId;
     }
 

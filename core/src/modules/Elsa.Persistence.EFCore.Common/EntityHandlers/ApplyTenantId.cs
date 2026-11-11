@@ -14,21 +14,47 @@ public class ApplyTenantId(IOptions<TenantsOptions> tenantsOptions) : IEntitySav
     /// <inheritdoc />
     public ValueTask HandleAsync(ElsaDbContextBase dbContext, EntityEntry entry, CancellationToken cancellationToken = default)
     {
-        // Only apply tenant ID if multitenancy is enabled
+        // Only apply tenant ID if multitenancy is enabled.
         if (!tenantsOptions.Value.IsEnabled)
+        {
             return default;
+        }
 
         if (entry.Entity is not Entity entity)
+        {
             return default;
+        }
 
-        // Don't touch tenant-agnostic entities (marked with "*")
+        // Keep tenant-agnostic entities (marked with "*") untouched.
         if (entity.TenantId == Tenant.AgnosticTenantId)
+        {
             return default;
+        }
 
-        // Apply current tenant ID to entities without one
-        if (entity.TenantId == null && dbContext.TenantId != null)
-            entity.TenantId = dbContext.TenantId;
+        var ambientTenantId = dbContext.TenantId;
 
-        return default;
+        // Stamp the ambient tenant onto entities without an explicit tenant id (null included, mirroring Dapper).
+        if (string.IsNullOrEmpty(entity.TenantId))
+        {
+            entity.TenantId = ambientTenantId;
+            return default;
+        }
+
+        // Without a tenant context (ITenantAccessor.Tenant == null) there is nothing to validate against;
+        // keep the explicit tenant id. Mirrors the `ambient == null` branch of Dapper Store<T>.SetTenantId.
+        if (ambientTenantId is null)
+        {
+            return default;
+        }
+
+        // Keep an explicit tenant id that matches the ambient tenant; null and "" are equivalent for the
+        // default tenant (mirrors Dapper's SameTenant). Unassigned ids never reach this point.
+        if (string.Equals(entity.TenantId, ambientTenantId, StringComparison.Ordinal))
+        {
+            return default;
+        }
+
+        // Refuse to save an entity whose explicit tenant id differs from the ambient tenant.
+        throw new InvalidOperationException($"The entity tenant '{entity.TenantId}' does not match the current tenant '{ambientTenantId}'.");
     }
 }

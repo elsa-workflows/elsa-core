@@ -55,7 +55,8 @@ public class WorkflowInstanceStoreTenantAgnosticEfTests
             {
                 await dbContext.Database.EnsureCreatedAsync();
 
-                foreach (var (id, tenantId) in TenantById)
+                // Seed named and agnostic rows without a tenant context; explicit tenant ids are kept.
+                foreach (var (id, tenantId) in TenantById.Where(x => x.Value != Tenant.DefaultTenantId))
                 {
                     dbContext.WorkflowInstances.Add(new()
                     {
@@ -70,6 +71,25 @@ public class WorkflowInstanceStoreTenantAgnosticEfTests
                 }
 
                 await dbContext.SaveChangesAsync();
+            }
+
+            // Seed the default-tenant row within the default tenant context so it keeps its "" id.
+            using (tenantAccessor.PushContext(Tenant.Default))
+            {
+                await using var defaultDbContext = await services.GetRequiredService<IDbContextFactory<ManagementElsaDbContext>>().CreateDbContextAsync();
+
+                defaultDbContext.WorkflowInstances.Add(new()
+                {
+                    Id = TenantById.First(x => x.Value == Tenant.DefaultTenantId).Key,
+                    DefinitionId = "def",
+                    DefinitionVersionId = "def-v1",
+                    Version = 1,
+                    TenantId = Tenant.DefaultTenantId,
+                    CreatedAt = DateTimeOffset.UnixEpoch,
+                    UpdatedAt = DateTimeOffset.UnixEpoch
+                });
+
+                await defaultDbContext.SaveChangesAsync();
             }
 
             using var scope = services.CreateScope();
