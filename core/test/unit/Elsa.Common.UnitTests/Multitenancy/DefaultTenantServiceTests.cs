@@ -309,6 +309,41 @@ public class DefaultTenantServiceTests
     }
 
     [Fact]
+    public async Task RefreshAsync_WhenAFailedReplacementIsRevertedInTheStore_ActivatesTheRestoredTenantAgain()
+    {
+        // Arrange: the edit of "a" fails to activate, which leaves the old tenant registered without a scope.
+        var host = "a-old.example.com";
+        var activations = new ConcurrentQueue<(string Host, TenantScope Scope)>();
+        var activatedEvent = new DelegateActivationHandler(args =>
+        {
+            var activatedHost = args.Tenant.Configuration["Http:Host"]!;
+            activations.Enqueue((activatedHost, args.TenantScope));
+            return activatedHost == "a-new.example.com" ? Task.FromException(new InvalidOperationException("Activation failed.")) : Task.CompletedTask;
+        });
+        var (tenantService, serviceProvider) = await CreateTenantServiceAsync([], () => [CreateTenant("a", "A", host)], activatedEvent: activatedEvent);
+
+        try
+        {
+            await tenantService.ActivateTenantsAsync();
+            host = "a-new.example.com";
+            await Assert.ThrowsAnyAsync<Exception>(() => tenantService.RefreshAsync());
+
+            // Act: the operator reverts the bad edit, so the store matches the restored tenant again.
+            host = "a-old.example.com";
+            await tenantService.RefreshAsync();
+
+            // Assert: the tenant was activated again with a scope that is still in use, not left without one.
+            Assert.Equal(["a-old.example.com", "a-new.example.com", "a-old.example.com"], activations.Select(x => x.Host));
+            Assert.Equal("a-old.example.com", (await tenantService.FindAsync("a"))!.Configuration["Http:Host"]);
+            Assert.NotSame(activations.First().Scope, activations.Last().Scope);
+        }
+        finally
+        {
+            await DisposeAsync(tenantService, serviceProvider);
+        }
+    }
+
+    [Fact]
     public async Task RefreshAsync_WhenAReplacementScopeCannotBeCreated_LeavesRunningTenantsUntouched()
     {
         // Arrange: creating the scope for the changed tenant "b" fails after the one for "a" was created.

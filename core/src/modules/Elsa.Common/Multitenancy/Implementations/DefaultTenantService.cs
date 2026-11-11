@@ -113,7 +113,7 @@ public class DefaultTenantService(
             var newTenantIds = newTenants.Keys.ToArray();
             var removedTenantIds = currentTenantIds.Except(newTenantIds).ToArray();
             var addedTenantIds = newTenantIds.Except(currentTenantIds).ToArray();
-            var changedTenantIds = newTenantIds.Intersect(currentTenantIds).Where(x => HasChanged(currentTenants[x], newTenants[x])).ToArray();
+            var changedTenantIds = newTenantIds.Intersect(currentTenantIds).Where(x => HasChanged(currentTenants[x], newTenants[x]) || !_tenantScopesDictionary!.ContainsKey(currentTenants[x])).ToArray();
 
             // The caller's token only applies up to here, where nothing has been changed yet. Once a tenant is deactivated, the swap runs to completion:
             // a cancelled request must not leave a tenant deactivated without its replacement, or dispose a scope whose background tasks are still stopping.
