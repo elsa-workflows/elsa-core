@@ -120,6 +120,9 @@ public class DefaultTenantService(
             cancellationToken.ThrowIfCancellationRequested();
             cancellationToken = CancellationToken.None;
 
+            // Create the replacement scopes before anything is deactivated. If one cannot be created, the tenants that are running stay untouched.
+            var pendingTenants = await RegisterTenantsAsync(addedTenantIds.Concat(changedTenantIds).Select(x => newTenants[x]));
+
             foreach (var removedTenantId in removedTenantIds)
             {
                 if (currentTenants.TryGetValue(removedTenantId, out var removedTenant))
@@ -133,7 +136,6 @@ public class DefaultTenantService(
                 await UnregisterTenantAsync(currentTenants[changedTenantId], isDeleted: false, isReplaced: true, cancellationToken);
             }
 
-            var pendingTenants = addedTenantIds.Concat(changedTenantIds).Select(x => RegisterTenant(newTenants[x])).ToList();
             await ActivatePendingTenantsAsync(pendingTenants, changedTenantIds.ToDictionary(x => x, x => currentTenants[x]), cancellationToken);
         }
         finally
@@ -218,6 +220,30 @@ public class DefaultTenantService(
 
     private static IEnumerable<KeyValuePair<string, string?>> GetConfigurationValues(Tenant tenant) =>
         tenant.Configuration.AsEnumerable().OrderBy(x => x.Key, StringComparer.Ordinal);
+
+    private async Task<List<PendingTenant>> RegisterTenantsAsync(IEnumerable<Tenant> tenants)
+    {
+        var pendingTenants = new List<PendingTenant>();
+
+        try
+        {
+            foreach (var tenant in tenants)
+            {
+                pendingTenants.Add(RegisterTenant(tenant));
+            }
+        }
+        catch
+        {
+            foreach (var pendingTenant in pendingTenants)
+            {
+                await pendingTenant.Scope.DisposeAsync();
+            }
+
+            throw;
+        }
+
+        return pendingTenants;
+    }
 
     private PendingTenant RegisterTenant(Tenant tenant) => new(tenant, tenantScopeFactory.CreateScope(tenant));
 
