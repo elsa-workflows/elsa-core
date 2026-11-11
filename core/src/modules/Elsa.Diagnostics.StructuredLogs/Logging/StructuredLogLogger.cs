@@ -15,8 +15,18 @@ public class StructuredLogLogger(
     IStructuredLogSourceRegistry sourceRegistry,
     StructuredLogsOptions options,
     Func<IExternalScopeProvider> getScopeProvider,
-    ITenantAccessor? tenantAccessor = null) : ILogger
+    ITenantAccessor? tenantAccessor) : ILogger
 {
+    public StructuredLogLogger(
+        string categoryName,
+        IStructuredLogProvider logProvider,
+        IStructuredLogRedactor redactor,
+        IStructuredLogSourceRegistry sourceRegistry,
+        StructuredLogsOptions options,
+        Func<IExternalScopeProvider> getScopeProvider) : this(categoryName, logProvider, redactor, sourceRegistry, options, getScopeProvider, null)
+    {
+    }
+
     private long _sequence;
     
     public IDisposable? BeginScope<TState>(TState state) where TState : notnull => getScopeProvider().Push(state);
@@ -50,7 +60,7 @@ public class StructuredLogLogger(
             TraceId = currentActivity?.TraceId.ToString(),
             SpanId = currentActivity?.SpanId.ToString(),
             CorrelationId = currentActivity?.RootId ?? GetContextValue(properties, scopes, nameof(StructuredLogEvent.CorrelationId)),
-            TenantId = GetContextValue(properties, scopes, nameof(StructuredLogEvent.TenantId)) ?? GetAmbientTenantId(),
+            TenantId = GetAmbientTenantId(),
             WorkflowDefinitionId = GetContextValue(properties, scopes, nameof(StructuredLogEvent.WorkflowDefinitionId)),
             WorkflowInstanceId = GetContextValue(properties, scopes, nameof(StructuredLogEvent.WorkflowInstanceId)),
             SourceId = sourceRegistry.Current.Id,
@@ -62,7 +72,8 @@ public class StructuredLogLogger(
         _ = logProvider.PublishAsync(redacted);
     }
     
-    private string? GetAmbientTenantId() => tenantAccessor?.TenantId is { Length: > 0 } tenantId ? tenantId : null;
+    // The tenant comes from the ambient context only. A TenantId property or scope on the event is caller-influenced text and is kept as data, never as the event's tenant.
+    private string? GetAmbientTenantId() => tenantAccessor?.TenantId is { Length: > 0 } tenantId && tenantId != Tenant.AgnosticTenantId ? tenantId : null;
 
     private static StructuredLogLevel ToStructuredLogLevel(LogLevel logLevel)
     {

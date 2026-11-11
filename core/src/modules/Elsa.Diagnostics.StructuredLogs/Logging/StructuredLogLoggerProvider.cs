@@ -12,8 +12,16 @@ public class StructuredLogLoggerProvider(
     IStructuredLogRedactor redactor,
     IStructuredLogSourceRegistry sourceRegistry,
     IOptions<StructuredLogsOptions> options,
-    ITenantAccessor? tenantAccessor = null) : ILoggerProvider, ISupportExternalScope
+    ITenantAccessor? tenantAccessor) : ILoggerProvider, ISupportExternalScope
 {
+    public StructuredLogLoggerProvider(
+        IStructuredLogProvider logProvider,
+        IStructuredLogRedactor redactor,
+        IStructuredLogSourceRegistry sourceRegistry,
+        IOptions<StructuredLogsOptions> options) : this(logProvider, redactor, sourceRegistry, options, null)
+    {
+    }
+
     private IExternalScopeProvider _scopeProvider = new LoggerExternalScopeProvider();
 
     public ILogger CreateLogger(string categoryName)
