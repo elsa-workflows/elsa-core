@@ -1,0 +1,33 @@
+name: Combined image contract
+
+on:
+  pull_request:
+    paths:
+      - 'docker/ElsaServerAndStudio.Dockerfile'
+      - 'studio/src/hosts/Elsa.ServerAndStudio.Web/**'
+      - 'scripts/validate_combined_image_contract.py'
+      - 'scripts/test_validate_combined_image_contract.py'
+      - 'scripts/test_smoke_combined_image.py'
+      - 'scripts/test_combined_image_persistence.py'
+      - 'scripts/smoke_combined_image.py'
+      - 'scripts/integration-program/build_studio_clientlibs.sh'
+      - '.github/workflows/combined-image-contract.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: combined-image-contract-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Validate the combined Server+Studio image contract
+        run: |
+          python3 -m unittest discover -s scripts -p 'test_*combined_image*.py' -v
+          python3 scripts/validate_combined_image_contract.py

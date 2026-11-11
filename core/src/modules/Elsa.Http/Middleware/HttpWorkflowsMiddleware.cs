@@ -1,5 +1,6 @@
 using Elsa.Extensions;
 using Elsa.Http.Bookmarks;
+using Elsa.Http.Contracts;
 using Elsa.Http.Options;
 using Elsa.Workflows.Runtime.Filters;
 using JetBrains.Annotations;
@@ -51,16 +52,12 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
         var matchingPath = GetMatchingRoute(serviceProvider, path).Route;
         matchingPath = TryStripBasePath(matchingPath, basePath) ?? matchingPath;
 
-        // Graceful-shutdown gate: when the runtime is paused or draining, we don't accept new HTTP-triggered work.
-        // The ingress source registry visibility is provided by HttpTriggerIngressSource — this is the actual mechanism.
-        var quiescenceSignal = serviceProvider.GetService<IQuiescenceSignal>();
-        if (quiescenceSignal is not null && !quiescenceSignal.IsAcceptingNewWork)
+        // Default hosts keep the original pre-lookup 503 while paused or draining. Combined hosts
+        // register IHttpWorkflowUnmatchedHandler, which opts into lookup-then-reject so unmatched
+        // Studio pages can still be served without executing matched HTTP work.
+        var unmatchedHandler = serviceProvider.GetService<IHttpWorkflowUnmatchedHandler>();
+        if (unmatchedHandler is null && TryRejectWhenNotAcceptingWork(httpContext, serviceProvider))
         {
-            httpContext.Response.StatusCode = (int)HttpStatusCode.ServiceUnavailable;
-            // Retry-After is reason-aware: drain is short (host is exiting and will be replaced shortly), but an
-            // administrative pause is indefinite, so a longer back-off avoids a tight retry loop while operators
-            // perform maintenance.
-            httpContext.Response.Headers.RetryAfter = quiescenceSignal.CurrentState.Reason.HasFlag(QuiescenceReason.Drain) ? "5" : "60";
             return;
         }
 
@@ -86,6 +83,11 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
 
             if (triggers.Count > 1)
             {
+                if (TryRejectWhenNotAcceptingWork(httpContext, serviceProvider))
+                {
+                    return;
+                }
+
                 await HandleMultipleWorkflowsFoundAsync(httpContext, () => triggers.Select(x => new
                 {
                     x.WorkflowDefinitionId
@@ -96,6 +98,11 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
             var trigger = triggers.FirstOrDefault();
             if (trigger != null)
             {
+                if (TryRejectWhenNotAcceptingWork(httpContext, serviceProvider))
+                {
+                    return;
+                }
+
                 var workflowGraph = lookupResult.WorkflowGraph!;
                 await StartWorkflowAsync(httpContext, trigger, workflowGraph, input, workflowInstanceId, correlationId);
                 return;
@@ -106,6 +113,11 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
 
         if (bookmarks.Count > 1)
         {
+            if (TryRejectWhenNotAcceptingWork(httpContext, serviceProvider))
+            {
+                return;
+            }
+
             await HandleMultipleWorkflowsFoundAsync(httpContext, () => bookmarks.Select(x => new
             {
                 x.WorkflowInstanceId
@@ -117,7 +129,17 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
 
         if (bookmark != null)
         {
+            if (TryRejectWhenNotAcceptingWork(httpContext, serviceProvider))
+            {
+                return;
+            }
+
             await ResumeWorkflowAsync(httpContext, bookmark, input, correlationId);
+            return;
+        }
+
+        if (unmatchedHandler is not null && await unmatchedHandler.HandleAsync(httpContext, next, cancellationToken))
+        {
             return;
         }
 
@@ -291,6 +313,26 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
 
         var remainingSegments = routeSegments.Skip(basePathIndex + basePathSegments.Length);
         return remainingSegments.Any() ? $"/{string.Join('/', remainingSegments)}" : "/";
+    }
+
+    /// <summary>
+    /// Returns 503 with Retry-After while paused or draining, without starting or resuming a workflow.
+    /// Default hosts call this before lookup. Combined hosts call it after a trigger or bookmark match.
+    /// </summary>
+    private static bool TryRejectWhenNotAcceptingWork(HttpContext httpContext, IServiceProvider serviceProvider)
+    {
+        var quiescenceSignal = serviceProvider.GetService<IQuiescenceSignal>();
+        if (quiescenceSignal is null || quiescenceSignal.IsAcceptingNewWork)
+        {
+            return false;
+        }
+
+        httpContext.Response.StatusCode = (int)HttpStatusCode.ServiceUnavailable;
+        // Retry-After is reason-aware: drain is short (host is exiting and will be replaced shortly), but an
+        // administrative pause is indefinite, so a longer back-off avoids a tight retry loop while operators
+        // perform maintenance.
+        httpContext.Response.Headers.RetryAfter = quiescenceSignal.CurrentState.Reason.HasFlag(QuiescenceReason.Drain) ? "5" : "60";
+        return true;
     }
 
     private static bool IsBasePathMatch(string route, string basePath) =>
