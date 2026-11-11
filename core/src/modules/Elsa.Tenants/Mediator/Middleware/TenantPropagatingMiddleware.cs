@@ -22,7 +22,9 @@ public class TenantPropagatingMiddleware(CommandMiddlewareDelegate next, ITenant
             var tenant = await tenantService.FindAsync(tenantId);
 
             if (tenant == null && options.Value.RejectUnresolvedTenants)
+            {
                 throw new InvalidOperationException($"Tenant '{tenantId}' could not be found. The command was not run.");
+            }
 
             await using var tenantScope = tenantScopeFactory.CreateScope(tenant);
             await next(context);
@@ -31,7 +33,9 @@ public class TenantPropagatingMiddleware(CommandMiddlewareDelegate next, ITenant
 
         // A command without a tenant ID still runs when it is sent from inside a tenant scope.
         if (options.Value.RejectUnresolvedTenants && tenantAccessor.Tenant == null)
+        {
             throw new InvalidOperationException("The command has no tenant ID and was not sent from a tenant scope. The command was not run.");
+        }
 
         await next(context);
     }

@@ -37,7 +37,9 @@ public class TenantsFeature : IShellFeature
             .AddScoped<ITenantResolver, DefaultTenantResolver>();
 
         if (RejectUnresolvedTenants)
+        {
             services.Configure<MultitenancyOptions>(options => options.RejectUnresolvedTenants = true);
+        }
     }
 }
 

@@ -25,7 +25,9 @@ public class DefaultTenantResolverPipelineInvoker(
         {
             // The default resolver is the silent fallback to the default tenant that fail-closed hosts opt out of.
             if (options.Value.RejectUnresolvedTenants && resolver is DefaultTenantResolver)
+            {
                 continue;
+            }
 
             var result = await resolver.ResolveAsync(context);
 

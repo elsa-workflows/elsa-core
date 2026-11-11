@@ -1,7 +1,7 @@
 using Elsa.Common.Multitenancy;
 using Elsa.Tenants.AspNetCore.Middleware;
-using Microsoft.AspNetCore.Http;
 using Elsa.Tenants.Options;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using NSubstitute;
@@ -58,6 +58,7 @@ public class TenantResolutionMiddlewareTests
     {
         // Arrange
         var (context, nextWasCalled, middleware, invoker) = CreateMiddleware(resolvedTenant: null);
+        context.Response.Body = new MemoryStream();
 
         // Act
         await middleware.InvokeAsync(context, invoker, Microsoft.Extensions.Options.Options.Create(new MultitenancyOptions { RejectUnresolvedTenants = true }));
@@ -65,6 +66,8 @@ public class TenantResolutionMiddlewareTests
         // Assert
         Assert.False(nextWasCalled());
         Assert.Equal(StatusCodes.Status400BadRequest, context.Response.StatusCode);
+        context.Response.Body.Position = 0;
+        Assert.Equal("The tenant could not be resolved.", await new StreamReader(context.Response.Body).ReadToEndAsync());
     }
 
     [Fact]
