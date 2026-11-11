@@ -196,6 +196,16 @@ public class DefaultTenantResolverPipelineInvokerTests
         new() { Id = "tenant2", Name = "Tenant 2" }
     };
 
+    private static ITenantService CreateTenantService(List<Tenant> tenants)
+    {
+        var tenantsById = tenants.ToDictionary(x => x.Id.NormalizeTenantId());
+        var tenantService = Substitute.For<ITenantService>();
+        tenantService.FindAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(call => tenantsById.GetValueOrDefault(call.Arg<string>().NormalizeTenantId()));
+        tenantService.ListAsync(Arg.Any<CancellationToken>()).Returns(tenants);
+        return tenantService;
+    }
+
     private static ITenantResolver CreateMockResolver(TenantResolverResult result)
     {
         var mockResolver = Substitute.For<ITenantResolver>();
@@ -207,8 +217,7 @@ public class DefaultTenantResolverPipelineInvokerTests
         List<Tenant> tenants,
         TenantResolverResult resolverResult)
     {
-        var tenantsProvider = Substitute.For<ITenantsProvider>();
-        tenantsProvider.ListAsync(Arg.Any<CancellationToken>()).Returns(tenants);
+        var tenantService = CreateTenantService(tenants);
 
         var mockResolver = CreateMockResolver(resolverResult);
 
@@ -223,7 +232,7 @@ public class DefaultTenantResolverPipelineInvokerTests
 
         var serviceProvider = Substitute.For<IServiceProvider>();
         var logger = NullLogger<DefaultTenantResolverPipelineInvoker>.Instance;
-        var invoker = new DefaultTenantResolverPipelineInvoker(options, tenantsProvider, serviceProvider, logger);
+        var invoker = new DefaultTenantResolverPipelineInvoker(options, tenantService, serviceProvider, logger);
 
         return (invoker, mockResolver);
     }
@@ -237,8 +246,7 @@ public class DefaultTenantResolverPipelineInvokerTests
         bool rejectUnresolvedTenants,
         params ITenantResolver[] resolvers)
     {
-        var tenantsProvider = Substitute.For<ITenantsProvider>();
-        tenantsProvider.ListAsync(Arg.Any<CancellationToken>()).Returns(tenants);
+        var tenantService = CreateTenantService(tenants);
 
         // Use a mock pipeline builder that directly returns our mock resolvers
         var pipelineBuilder = Substitute.For<ITenantResolverPipelineBuilder>();
@@ -252,6 +260,6 @@ public class DefaultTenantResolverPipelineInvokerTests
 
         var serviceProvider = Substitute.For<IServiceProvider>();
         var logger = NullLogger<DefaultTenantResolverPipelineInvoker>.Instance;
-        return new(options, tenantsProvider, serviceProvider, logger);
+        return new(options, tenantService, serviceProvider, logger);
     }
 }

@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using Elsa.Common.Multitenancy;
 using Elsa.Common.Multitenancy.EventHandlers;
 using Elsa.Common.RecurringTasks;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
@@ -237,6 +238,370 @@ public class DefaultTenantServiceTests
             await DisposeAsync(tenantService, serviceProvider);
         }
     }
+
+    [Fact]
+    public async Task RefreshAsync_WhenTheTokenIsCancelledAfterTheOldTenantIsDeactivated_CompletesTheSwapAndKeepsTheTenantResolvable()
+    {
+        // Arrange: a client abort (the token is cancelled) while the old tenant "a" is being deactivated.
+        using var cts = new CancellationTokenSource();
+        var host = "a-old.example.com";
+        var deactivatedEvent = Substitute.For<ITenantDeactivatedEvent>();
+        deactivatedEvent.TenantDeactivatedAsync(Arg.Any<TenantDeactivatedEventArgs>()).Returns(_ =>
+        {
+            cts.Cancel();
+            return Task.CompletedTask;
+        });
+        var (tenantService, serviceProvider) = await CreateTenantServiceAsync([], () => [CreateTenant("a", "A", host)], deactivatedEvent: deactivatedEvent);
+
+        try
+        {
+            await tenantService.ActivateTenantsAsync();
+            host = "a-new.example.com";
+
+            // Act
+            await tenantService.RefreshAsync(cts.Token);
+
+            // Assert: the swap ran to completion, and the tenant resolves to its replacement.
+            Assert.True(cts.IsCancellationRequested);
+            Assert.Equal("a-new.example.com", (await tenantService.FindAsync("a"))!.Configuration["Http:Host"]);
+        }
+        finally
+        {
+            await DisposeAsync(tenantService, serviceProvider);
+        }
+    }
+
+    [Fact]
+    public async Task RefreshAsync_WhenTheTokenIsCancelledBeforeAnyTenantIsDeactivated_KeepsTheOldTenant()
+    {
+        // Arrange: the token is cancelled while the provider is listing, so nothing has been changed yet.
+        using var cts = new CancellationTokenSource();
+        var host = "a-old.example.com";
+        var cancelOnList = false;
+        var deactivatedEvent = Substitute.For<ITenantDeactivatedEvent>();
+        var (tenantService, serviceProvider) = await CreateTenantServiceAsync([], () =>
+        {
+            if (cancelOnList)
+            {
+                cts.Cancel();
+            }
+
+            return [CreateTenant("a", "A", host)];
+        }, deactivatedEvent: deactivatedEvent);
+
+        try
+        {
+            await tenantService.ActivateTenantsAsync();
+            host = "a-new.example.com";
+            cancelOnList = true;
+
+            // Act
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => tenantService.RefreshAsync(cts.Token));
+
+            // Assert: the old tenant is untouched.
+            Assert.Equal("a-old.example.com", (await tenantService.FindAsync("a"))!.Configuration["Http:Host"]);
+            await deactivatedEvent.DidNotReceive().TenantDeactivatedAsync(Arg.Any<TenantDeactivatedEventArgs>());
+        }
+        finally
+        {
+            await DisposeAsync(tenantService, serviceProvider);
+        }
+    }
+
+    [Fact]
+    public async Task RefreshAsync_WhenAFailedReplacementIsRevertedInTheStore_ActivatesTheRestoredTenantAgain()
+    {
+        // Arrange: the edit of "a" fails to activate, which leaves the old tenant registered without a scope.
+        var host = "a-old.example.com";
+        var activations = new ConcurrentQueue<(string Host, TenantScope Scope)>();
+        var activatedEvent = new DelegateActivationHandler(args =>
+        {
+            var activatedHost = args.Tenant.Configuration["Http:Host"]!;
+            activations.Enqueue((activatedHost, args.TenantScope));
+            return activatedHost == "a-new.example.com" ? Task.FromException(new InvalidOperationException("Activation failed.")) : Task.CompletedTask;
+        });
+        var (tenantService, serviceProvider) = await CreateTenantServiceAsync([], () => [CreateTenant("a", "A", host)], activatedEvent: activatedEvent);
+
+        try
+        {
+            await tenantService.ActivateTenantsAsync();
+            host = "a-new.example.com";
+            await Assert.ThrowsAnyAsync<Exception>(() => tenantService.RefreshAsync());
+
+            // Act: the operator reverts the bad edit, so the store matches the restored tenant again.
+            host = "a-old.example.com";
+            await tenantService.RefreshAsync();
+
+            // Assert: the tenant was activated again with a scope that is still in use, not left without one.
+            Assert.Equal(["a-old.example.com", "a-new.example.com", "a-old.example.com"], activations.Select(x => x.Host));
+            Assert.Equal("a-old.example.com", (await tenantService.FindAsync("a"))!.Configuration["Http:Host"]);
+            Assert.NotSame(activations.First().Scope, activations.Last().Scope);
+        }
+        finally
+        {
+            await DisposeAsync(tenantService, serviceProvider);
+        }
+    }
+
+    [Fact]
+    public async Task RefreshAsync_WhenAReplacementScopeCannotBeCreated_LeavesRunningTenantsUntouched()
+    {
+        // Arrange: creating the scope for the changed tenant "b" fails after the one for "a" was created.
+        var providerReturns = new List<Tenant> { CreateTenant("a", "A", "a-old.example.com"), CreateTenant("b", "B", "b-old.example.com") };
+        var failScopeCreation = false;
+        var deactivatedEvent = Substitute.For<ITenantDeactivatedEvent>();
+        var (tenantService, serviceProvider) = await CreateTenantServiceAsync(
+            [],
+            () => providerReturns.Select(x => CreateTenant(x.Id!, x.Name, x.Configuration["Http:Host"]!)).ToList(),
+            deactivatedEvent: deactivatedEvent,
+            scopeFactoryFactory: (tenantAccessor, serviceScopeFactory) => new FailingTenantScopeFactory(() => failScopeCreation, "b", tenantAccessor, serviceScopeFactory));
+
+        try
+        {
+            await tenantService.ActivateTenantsAsync();
+            providerReturns[0] = CreateTenant("a", "A", "a-new.example.com");
+            providerReturns[1] = CreateTenant("b", "B", "b-new.example.com");
+            failScopeCreation = true;
+
+            // Act
+            await Assert.ThrowsAsync<InvalidOperationException>(() => tenantService.RefreshAsync());
+
+            // Assert: nothing was deactivated, and both tenants still resolve to their running versions.
+            await deactivatedEvent.DidNotReceive().TenantDeactivatedAsync(Arg.Any<TenantDeactivatedEventArgs>());
+            Assert.Equal("a-old.example.com", (await tenantService.FindAsync("a"))!.Configuration["Http:Host"]);
+            Assert.Equal("b-old.example.com", (await tenantService.FindAsync("b"))!.Configuration["Http:Host"]);
+
+            // Act: the next refresh applies both changes.
+            failScopeCreation = false;
+            await tenantService.RefreshAsync();
+
+            // Assert
+            Assert.Equal("a-new.example.com", (await tenantService.FindAsync("a"))!.Configuration["Http:Host"]);
+            Assert.Equal("b-new.example.com", (await tenantService.FindAsync("b"))!.Configuration["Http:Host"]);
+        }
+        finally
+        {
+            await DisposeAsync(tenantService, serviceProvider);
+        }
+    }
+
+    [Fact]
+    public async Task RefreshAsync_WhenAReplacementFailsToActivate_KeepsTheOldTenantResolvableAndRetriesOnTheNextRefresh()
+    {
+        // Arrange
+        var host = "a-old.example.com";
+        var failActivation = false;
+        var activatedEvent = new DelegateActivationHandler(args =>
+            failActivation && args.Tenant.Configuration["Http:Host"] == "a-new.example.com"
+                ? Task.FromException(new InvalidOperationException("Activation failed."))
+                : Task.CompletedTask);
+        var (tenantService, serviceProvider) = await CreateTenantServiceAsync([], () => [CreateTenant("a", "A", host)], activatedEvent: activatedEvent);
+
+        try
+        {
+            await tenantService.ActivateTenantsAsync();
+            host = "a-new.example.com";
+            failActivation = true;
+
+            // Act
+            await Assert.ThrowsAnyAsync<Exception>(() => tenantService.RefreshAsync());
+
+            // Assert: the ID still resolves to the old tenant.
+            Assert.Equal("a-old.example.com", (await tenantService.FindAsync("a"))!.Configuration["Http:Host"]);
+
+            // Act: the next refresh retries the replacement.
+            failActivation = false;
+            await tenantService.RefreshAsync();
+
+            // Assert
+            Assert.Equal("a-new.example.com", (await tenantService.FindAsync("a"))!.Configuration["Http:Host"]);
+        }
+        finally
+        {
+            await DisposeAsync(tenantService, serviceProvider);
+        }
+    }
+
+    [Fact]
+    public async Task RefreshAsync_WhenAReplacedTenantsScopeFailsToDispose_StillAppliesAllChangesAndLaterDeletes()
+    {
+        // Arrange: tenant "a" has a scope that throws when it is disposed.
+        var providerReturns = new List<Tenant> { CreateTenant("a", "A", "a-old.example.com"), CreateTenant("b", "B", "b-old.example.com") };
+        var deletedEvent = Substitute.For<ITenantDeletedEvent>();
+        var (tenantService, serviceProvider) = await CreateTenantServiceAsync(
+            [],
+            () => providerReturns.Select(x => CreateTenant(x.Id!, x.Name, x.Configuration["Http:Host"]!)).ToList(),
+            deletedEvent: deletedEvent,
+            scopeFactoryFactory: (tenantAccessor, serviceScopeFactory) => new ThrowingOnDisposeTenantScopeFactory("a", tenantAccessor, serviceScopeFactory));
+
+        try
+        {
+            await tenantService.ActivateTenantsAsync();
+            providerReturns[0] = CreateTenant("a", "A", "a-new.example.com");
+            providerReturns[1] = CreateTenant("b", "B", "b-new.example.com");
+
+            // Act: the same-ID edit of both tenants
+            await tenantService.RefreshAsync();
+
+            // Assert: the edit of "a" and the other change in the same refresh are applied, and nothing was reported as deleted.
+            Assert.Equal("a-new.example.com", (await tenantService.FindAsync("a"))!.Configuration["Http:Host"]);
+            Assert.Equal("b-new.example.com", (await tenantService.FindAsync("b"))!.Configuration["Http:Host"]);
+            await deletedEvent.DidNotReceive().TenantDeletedAsync(Arg.Any<TenantDeletedEventArgs>());
+
+            // Act: "a" is deleted
+            providerReturns.RemoveAt(0);
+            await tenantService.RefreshAsync();
+
+            // Assert
+            Assert.Null(await tenantService.FindAsync("a"));
+            Assert.NotNull(await tenantService.FindAsync("b"));
+            await deletedEvent.Received(1).TenantDeletedAsync(Arg.Is<TenantDeletedEventArgs>(x => x.Tenant.Id == "a"));
+        }
+        finally
+        {
+            await DisposeAsync(tenantService, serviceProvider);
+        }
+    }
+
+    [Fact]
+    public async Task RefreshAsync_WhenTenantChangesUnderTheSameId_ReplacesItAndReactivatesOnlyThatTenant()
+    {
+        // Arrange: the provider returns new instances on every call, like an EF-backed store.
+        var providerReturns = new List<Tenant> { CreateTenant("a", "A", "old.example.com"), CreateTenant("b", "B", "b.example.com") };
+        var activatedEvent = Substitute.For<ITenantActivatedEvent>();
+        var deactivatedHandler = new RecordingDeactivatedHandler();
+        var (tenantService, serviceProvider) = await CreateTenantServiceAsync([], () => providerReturns.Select(x => CreateTenant(x.Id!, x.Name, x.Configuration["Http:Host"]!)).ToList(), activatedEvent, deactivatedHandler);
+
+        try
+        {
+            await tenantService.ActivateTenantsAsync();
+            activatedEvent.ClearReceivedCalls();
+            providerReturns[0] = CreateTenant("a", "A", "new.example.com");
+
+            // Act
+            await tenantService.RefreshAsync();
+
+            // Assert
+            Assert.Equal("new.example.com", (await tenantService.FindAsync("a"))!.Configuration["Http:Host"]);
+            Assert.Equal(["a"], deactivatedHandler.Deactivated);
+            await activatedEvent.Received(1).TenantActivatedAsync(Arg.Is<TenantActivatedEventArgs>(x => x.Tenant.Id == "a"));
+            await activatedEvent.DidNotReceive().TenantActivatedAsync(Arg.Is<TenantActivatedEventArgs>(x => x.Tenant.Id == "b"));
+        }
+        finally
+        {
+            await DisposeAsync(tenantService, serviceProvider);
+        }
+    }
+
+    [Fact]
+    public async Task RefreshAsync_WhenTenantChangesUnderTheSameId_KeepsResolvingItWhileItsHandlersShutDown()
+    {
+        // Arrange
+        var providerReturns = new List<Tenant> { CreateTenant("a", "A", "old.example.com") };
+        var deactivatedHandler = new BlockingDeactivatedHandler();
+        var (tenantService, serviceProvider) = await CreateTenantServiceAsync([], () => providerReturns.Select(x => CreateTenant(x.Id!, x.Name, x.Configuration["Http:Host"]!)).ToList(), deactivatedEvent: deactivatedHandler);
+
+        try
+        {
+            await tenantService.ActivateTenantsAsync();
+            providerReturns[0] = CreateTenant("a", "A", "new.example.com");
+
+            // Act
+            var refresh = tenantService.RefreshAsync();
+            await deactivatedHandler.Started.Task.WaitAsync(SafetyTimeout);
+
+            // Assert: the old tenant still resolves while its deactivated handlers run, and the new one resolves afterwards.
+            Assert.Equal("old.example.com", (await tenantService.FindAsync("a"))!.Configuration["Http:Host"]);
+            deactivatedHandler.Release.SetResult();
+            await refresh.WaitAsync(SafetyTimeout);
+            Assert.Equal("new.example.com", (await tenantService.FindAsync("a"))!.Configuration["Http:Host"]);
+        }
+        finally
+        {
+            deactivatedHandler.Release.TrySetResult();
+            await DisposeAsync(tenantService, serviceProvider);
+        }
+    }
+
+    [Fact]
+    public async Task RefreshAsync_WhenTenantChangesUnderTheSameIdRepeatedly_DisposesTheScopesOfTheReplacedTenants()
+    {
+        // Arrange
+        var providerReturns = new List<Tenant> { CreateTenant("a", "A", "host-0.example.com") };
+        var (tenantService, serviceProvider) = await CreateTenantServiceAsync([], () => providerReturns.Select(x => CreateTenant(x.Id!, x.Name, x.Configuration["Http:Host"]!)).ToList());
+        var scopeFactory = serviceProvider.GetRequiredService<RecordingTenantScopeFactory>();
+
+        try
+        {
+            await tenantService.ActivateTenantsAsync();
+
+            // Act
+            for (var edit = 1; edit <= 3; edit++)
+            {
+                providerReturns[0] = CreateTenant("a", "A", $"host-{edit}.example.com");
+                await tenantService.RefreshAsync();
+            }
+
+            // Assert: one scope per version, and only the current one is still alive.
+            var scopes = scopeFactory.Created.Where(x => x.Tenant.Id == "a").Select(x => x.Scope).ToList();
+            Assert.Equal(4, scopes.Count);
+            Assert.All(scopes.Take(3), x => Assert.True(RecordingTenantScopeFactory.IsDisposed(x)));
+            Assert.False(RecordingTenantScopeFactory.IsDisposed(scopes[3]));
+        }
+        finally
+        {
+            await DisposeAsync(tenantService, serviceProvider);
+        }
+    }
+
+    [Fact]
+    public async Task RefreshAsync_WhenTenantNameChangesUnderTheSameId_ReplacesIt()
+    {
+        var providerReturns = new List<Tenant> { CreateTenant("a", "Old name", "a.example.com") };
+        var (tenantService, serviceProvider) = await CreateTenantServiceAsync([], () => providerReturns.Select(x => CreateTenant(x.Id!, x.Name, x.Configuration["Http:Host"]!)).ToList());
+
+        try
+        {
+            await tenantService.ActivateTenantsAsync();
+            providerReturns[0] = CreateTenant("a", "New name", "a.example.com");
+
+            await tenantService.RefreshAsync();
+
+            Assert.Equal("New name", (await tenantService.FindAsync("a"))!.Name);
+        }
+        finally
+        {
+            await DisposeAsync(tenantService, serviceProvider);
+        }
+    }
+
+    [Fact]
+    public async Task RefreshAsync_WhenOnlyTheTenantOwnerChangesUnderTheSameId_ReplacesIt()
+    {
+        var owner = "owner-1";
+        var (tenantService, serviceProvider) = await CreateTenantServiceAsync([], () => [new Tenant { Id = "a", Name = "A", TenantId = owner }]);
+
+        try
+        {
+            await tenantService.ActivateTenantsAsync();
+            owner = "owner-2";
+
+            await tenantService.RefreshAsync();
+
+            Assert.Equal("owner-2", (await tenantService.FindAsync("a"))!.TenantId);
+        }
+        finally
+        {
+            await DisposeAsync(tenantService, serviceProvider);
+        }
+    }
+
+    private static Tenant CreateTenant(string id, string name, string host) => new()
+    {
+        Id = id,
+        Name = name,
+        Configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["Http:Host"] = host }).Build()
+    };
 
     [Fact]
     public async Task ActivateTenantsAsync_ActivatesAtMostMaxDegreeOfParallelismTenantsAtOnce()
@@ -885,7 +1250,9 @@ public class DefaultTenantServiceTests
         ITenantActivatedEvent? activatedEvent = null,
         ITenantDeactivatedEvent? deactivatedEvent = null,
         IAllTenantsActivatedEvent? allTenantsActivatedEvent = null,
-        int? maxDegreeOfParallelism = null)
+        int? maxDegreeOfParallelism = null,
+        ITenantDeletedEvent? deletedEvent = null,
+        Func<ITenantAccessor, IServiceScopeFactory, ITenantScopeFactory>? scopeFactoryFactory = null)
     {
         var tenantList = tenants.ToList();
         var getTenants = tenantsFactory ?? (() => tenantList);
@@ -896,11 +1263,11 @@ public class DefaultTenantServiceTests
         var services = new ServiceCollection();
         services.AddSingleton(_ => tenantsProvider);
         services.AddSingleton<RecordingTenantScopeFactory>();
-        services.AddSingleton<ITenantScopeFactory>(sp => sp.GetRequiredService<RecordingTenantScopeFactory>());
+        services.AddSingleton<ITenantScopeFactory>(sp => scopeFactoryFactory?.Invoke(sp.GetRequiredService<ITenantAccessor>(), sp.GetRequiredService<IServiceScopeFactory>()) ?? sp.GetRequiredService<RecordingTenantScopeFactory>());
         services.AddSingleton<ITenantAccessor, DefaultTenantAccessor>();
         services.AddSingleton(activatedEvent ?? Substitute.For<ITenantActivatedEvent>());
         services.AddSingleton(deactivatedEvent ?? Substitute.For<ITenantDeactivatedEvent>());
-        services.AddSingleton<ITenantDeletedEvent>(Substitute.For<ITenantDeletedEvent>());
+        services.AddSingleton(deletedEvent ?? Substitute.For<ITenantDeletedEvent>());
         services.AddSingleton(allTenantsActivatedEvent ?? Substitute.For<IAllTenantsActivatedEvent>());
         services.AddSingleton<TenantEventsManager>();
         services.AddSingleton<RecurringTaskScheduleManager>();
@@ -923,6 +1290,19 @@ public class DefaultTenantServiceTests
         {
             Started.Enqueue(args.Tenant.Id!);
             return handler(args);
+        }
+    }
+
+    private sealed class BlockingDeactivatedHandler : ITenantDeactivatedEvent
+    {
+        public TaskCompletionSource Started { get; } = NewGate();
+
+        public TaskCompletionSource Release { get; } = NewGate();
+
+        public async Task TenantDeactivatedAsync(TenantDeactivatedEventArgs args)
+        {
+            Started.TrySetResult();
+            await Release.Task;
         }
     }
 
@@ -968,6 +1348,41 @@ public class DefaultTenantServiceTests
                 WaitingCompleted.TrySetResult();
             }
         }
+    }
+
+    private sealed class FailingTenantScopeFactory(Func<bool> shouldFail, string tenantId, ITenantAccessor tenantAccessor, IServiceScopeFactory serviceScopeFactory) : ITenantScopeFactory
+    {
+        public TenantScope CreateScope(Tenant? tenant)
+        {
+            if (shouldFail() && tenant?.Id == tenantId)
+            {
+                throw new InvalidOperationException("The scope could not be created.");
+            }
+
+            return new(serviceScopeFactory.CreateAsyncScope(), tenantAccessor, tenant);
+        }
+    }
+
+    private sealed class ThrowingOnDisposeTenantScopeFactory(string tenantId, ITenantAccessor tenantAccessor, IServiceScopeFactory serviceScopeFactory) : ITenantScopeFactory
+    {
+        public TenantScope CreateScope(Tenant? tenant)
+        {
+            var serviceScope = serviceScopeFactory.CreateAsyncScope();
+            return new(tenant?.Id == tenantId ? new ThrowingOnDisposeServiceScope(serviceScope) : serviceScope, tenantAccessor, tenant);
+        }
+    }
+
+    private sealed class ThrowingOnDisposeServiceScope(AsyncServiceScope inner) : IServiceScope, IAsyncDisposable
+    {
+        public IServiceProvider ServiceProvider => inner.ServiceProvider;
+
+        public async ValueTask DisposeAsync()
+        {
+            await inner.DisposeAsync();
+            throw new InvalidOperationException("The scope failed to dispose.");
+        }
+
+        public void Dispose() => throw new InvalidOperationException("The scope failed to dispose.");
     }
 
     private sealed class RecordingTenantScopeFactory(ITenantAccessor tenantAccessor, IServiceScopeFactory serviceScopeFactory) : ITenantScopeFactory
