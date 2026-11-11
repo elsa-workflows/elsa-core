@@ -270,6 +270,67 @@ public class DefaultTenantServiceTests
     }
 
     [Fact]
+    public async Task RefreshAsync_WhenTenantChangesUnderTheSameId_KeepsResolvingItWhileItsHandlersShutDown()
+    {
+        // Arrange
+        var providerReturns = new List<Tenant> { CreateTenant("a", "A", "old.example.com") };
+        var deactivatedHandler = new BlockingDeactivatedHandler();
+        var (tenantService, serviceProvider) = await CreateTenantServiceAsync([], () => providerReturns.Select(x => CreateTenant(x.Id!, x.Name, x.Configuration["Http:Host"]!)).ToList(), deactivatedEvent: deactivatedHandler);
+
+        try
+        {
+            await tenantService.ActivateTenantsAsync();
+            providerReturns[0] = CreateTenant("a", "A", "new.example.com");
+
+            // Act
+            var refresh = tenantService.RefreshAsync();
+            await deactivatedHandler.Started.Task.WaitAsync(SafetyTimeout);
+
+            // Assert: the old tenant still resolves while its deactivated handlers run, and the new one resolves afterwards.
+            Assert.Equal("old.example.com", (await tenantService.FindAsync("a"))!.Configuration["Http:Host"]);
+            deactivatedHandler.Release.SetResult();
+            await refresh.WaitAsync(SafetyTimeout);
+            Assert.Equal("new.example.com", (await tenantService.FindAsync("a"))!.Configuration["Http:Host"]);
+        }
+        finally
+        {
+            deactivatedHandler.Release.TrySetResult();
+            await DisposeAsync(tenantService, serviceProvider);
+        }
+    }
+
+    [Fact]
+    public async Task RefreshAsync_WhenTenantChangesUnderTheSameIdRepeatedly_DisposesTheScopesOfTheReplacedTenants()
+    {
+        // Arrange
+        var providerReturns = new List<Tenant> { CreateTenant("a", "A", "host-0.example.com") };
+        var (tenantService, serviceProvider) = await CreateTenantServiceAsync([], () => providerReturns.Select(x => CreateTenant(x.Id!, x.Name, x.Configuration["Http:Host"]!)).ToList());
+        var scopeFactory = serviceProvider.GetRequiredService<RecordingTenantScopeFactory>();
+
+        try
+        {
+            await tenantService.ActivateTenantsAsync();
+
+            // Act
+            for (var edit = 1; edit <= 3; edit++)
+            {
+                providerReturns[0] = CreateTenant("a", "A", $"host-{edit}.example.com");
+                await tenantService.RefreshAsync();
+            }
+
+            // Assert: one scope per version, and only the current one is still alive.
+            var scopes = scopeFactory.Created.Where(x => x.Tenant.Id == "a").Select(x => x.Scope).ToList();
+            Assert.Equal(4, scopes.Count);
+            Assert.All(scopes.Take(3), x => Assert.True(RecordingTenantScopeFactory.IsDisposed(x)));
+            Assert.False(RecordingTenantScopeFactory.IsDisposed(scopes[3]));
+        }
+        finally
+        {
+            await DisposeAsync(tenantService, serviceProvider);
+        }
+    }
+
+    [Fact]
     public async Task RefreshAsync_WhenTenantNameChangesUnderTheSameId_ReplacesIt()
     {
         var providerReturns = new List<Tenant> { CreateTenant("a", "Old name", "a.example.com") };
@@ -982,6 +1043,19 @@ public class DefaultTenantServiceTests
         {
             Started.Enqueue(args.Tenant.Id!);
             return handler(args);
+        }
+    }
+
+    private sealed class BlockingDeactivatedHandler : ITenantDeactivatedEvent
+    {
+        public TaskCompletionSource Started { get; } = NewGate();
+
+        public TaskCompletionSource Release { get; } = NewGate();
+
+        public async Task TenantDeactivatedAsync(TenantDeactivatedEventArgs args)
+        {
+            Started.TrySetResult();
+            await Release.Task;
         }
     }
 

@@ -120,10 +120,12 @@ public class DefaultTenantService(
                     await UnregisterTenantAsync(removedTenant, true, cancellationToken);
             }
 
-            // A tenant that changed under the same ID is deactivated and activated again, so the registry, its scope and the
-            // tenant's background tasks all see the new name and configuration. It is not reported as deleted.
+            // A tenant that changed under the same ID is deactivated and activated again, so its scope and background tasks see the
+            // new name and configuration. It is not reported as deleted and stays resolvable until its replacement activates.
             foreach (var changedTenantId in changedTenantIds)
-                await UnregisterTenantAsync(currentTenants[changedTenantId], false, cancellationToken);
+            {
+                await UnregisterTenantAsync(currentTenants[changedTenantId], isDeleted: false, isReplaced: true, cancellationToken);
+            }
 
             var pendingTenants = addedTenantIds.Concat(changedTenantIds).Select(x => RegisterTenant(newTenants[x])).ToList();
             await ActivatePendingTenantsAsync(pendingTenants, cancellationToken);
@@ -201,7 +203,9 @@ public class DefaultTenantService(
     private static bool HasChanged(Tenant current, Tenant updated)
     {
         if (ReferenceEquals(current, updated))
+        {
             return false;
+        }
 
         return current.Name != updated.Name || !GetConfigurationValues(current).SequenceEqual(GetConfigurationValues(updated));
     }
@@ -260,11 +264,21 @@ public class DefaultTenantService(
         activatedTenants.Add(pendingTenant.Tenant);
     }
 
-    private async Task UnregisterTenantAsync(Tenant tenant, bool isDeleted, CancellationToken cancellationToken = default)
+    private Task UnregisterTenantAsync(Tenant tenant, bool isDeleted, CancellationToken cancellationToken = default) =>
+        UnregisterTenantAsync(tenant, isDeleted, isReplaced: false, cancellationToken);
+
+    /// <param name="isReplaced">
+    /// True when a changed tenant with the same ID is about to be activated in its place. The tenant then stays in the registry, so lookups keep
+    /// resolving while its handlers shut down (activation overwrites the entry), and its scope is disposed once they are done.
+    /// </param>
+    private async Task UnregisterTenantAsync(Tenant tenant, bool isDeleted, bool isReplaced, CancellationToken cancellationToken)
     {
         if (_tenantScopesDictionary!.TryRemove(tenant, out var scope))
         {
-            _tenantsDictionary!.TryRemove(tenant.Id.EmptyIfNull(), out _);
+            if (!isReplaced)
+            {
+                _tenantsDictionary!.TryRemove(tenant.Id.EmptyIfNull(), out _);
+            }
 
             using (tenantAccessor.PushContext(tenant))
             {
@@ -272,6 +286,11 @@ public class DefaultTenantService(
 
                 if (isDeleted)
                     await tenantEvents.TenantDeletedAsync(new(tenant, scope, cancellationToken));
+            }
+
+            if (isReplaced)
+            {
+                await scope.DisposeAsync();
             }
         }
     }
