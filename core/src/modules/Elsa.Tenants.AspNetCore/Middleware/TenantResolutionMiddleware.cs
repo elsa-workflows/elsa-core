@@ -1,6 +1,8 @@
 ﻿using Elsa.Common.Multitenancy;
 using JetBrains.Annotations;
+using Elsa.Tenants.Options;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Tenants.AspNetCore.Middleware;
 
@@ -14,10 +16,18 @@ public class TenantResolutionMiddleware(RequestDelegate next, ITenantScopeFactor
     /// Invokes the middleware to ensure the tenant is initialized.
     /// </summary>
     /// <param name="context">The current HTTP context.</param>
-    /// <param name="tenantResolverPipelineInvoker"></param>
-    public async Task InvokeAsync(HttpContext context, ITenantResolverPipelineInvoker tenantResolverPipelineInvoker)
+    /// <param name="tenantResolverPipelineInvoker">The tenant resolver pipeline invoker.</param>
+    /// <param name="options">The multitenancy options.</param>
+    public async Task InvokeAsync(HttpContext context, ITenantResolverPipelineInvoker tenantResolverPipelineInvoker, IOptions<MultitenancyOptions> options)
     {
         var tenant = await tenantResolverPipelineInvoker.InvokePipelineAsync();
+
+        if (tenant == null && options.Value.RejectUnresolvedTenants)
+        {
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            await context.Response.WriteAsync("The tenant could not be resolved.");
+            return;
+        }
 
         if (tenant != null)
         {
