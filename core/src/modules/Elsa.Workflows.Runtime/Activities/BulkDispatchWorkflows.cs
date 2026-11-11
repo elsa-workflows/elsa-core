@@ -446,6 +446,10 @@ public class BulkDispatchWorkflows : Activity
         return (null, lastFailure);
     }
 
+    /// <summary>
+    /// Returns true when the exception is an <see cref="OperationCanceledException"/> caused by the caller's own cancellation token.
+    /// Such exceptions are rethrown rather than retried or logged as page read failures.
+    /// </summary>
     private static bool IsCallerCancellation(Exception exception, CancellationToken cancellationToken) =>
         exception is OperationCanceledException && cancellationToken.IsCancellationRequested;
 

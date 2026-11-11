@@ -143,6 +143,10 @@ public class GivingUpPageReadTests : ChildWorkflowCancellationTests
         _logs = logs;
     }
 
+    /// <summary>
+    /// Verifies that every unreadable page is attempted three times and then left uncancelled, that paging stops after three unreadable pages in a row,
+    /// and that each abandoned page and the give-up are logged as warnings with the parent instance ID.
+    /// </summary>
     [Fact(DisplayName = "Every page is tried three times, and paging gives up after three unreadable pages in a row")]
     public async Task CancellingTheWaitingBulkDispatchActivity_WhenEveryPageReadFails_GivesUpAfterTheCap()
     {
@@ -198,7 +202,10 @@ internal sealed class WarningLogCapture : ILoggerProvider
 
         public bool IsEnabled(LogLevel logLevel) => logLevel >= LogLevel.Warning;
 
-        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+        /// <summary>
+    /// Formats and stores the entry when its level is warning or higher; lower-level entries are dropped.
+    /// </summary>
+    public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
         {
             if (IsEnabled(logLevel))
                 entries.Enqueue(new LoggedEntry(logLevel, formatter(state, exception), exception));
