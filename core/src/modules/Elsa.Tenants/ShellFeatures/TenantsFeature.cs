@@ -20,6 +20,9 @@ public class TenantsFeature : IShellFeature
 {
     public void ConfigureServices(IServiceCollection services)
     {
+        // Matches the classic TenantsFeature: persistence reads this flag to apply tenant query filters and stamp tenant IDs.
+        services.Configure<TenantsOptions>(options => options.IsEnabled = true);
+
         services
             .AddHostedService<SetupMediatorPipelines>()
             .AddScoped<ITenantResolverPipelineInvoker, DefaultTenantResolverPipelineInvoker>()
