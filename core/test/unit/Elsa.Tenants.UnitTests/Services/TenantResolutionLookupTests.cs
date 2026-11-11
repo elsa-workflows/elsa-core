@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 
@@ -159,26 +160,109 @@ public class TenantResolutionLookupTests
         // Arrange: a tenant without a prefix must not get in the way.
         var provider = new CountingTenantsProvider([new Tenant { Id = "", Name = "Default" }, CreateTenant("tenant-a", ("Http:Prefix", "acme"))]);
         await using var fixture = new Fixture(provider);
-        var httpContext = new DefaultHttpContext();
-        httpContext.Request.Path = "/acme/workflows";
-        var routeMatcher = Substitute.For<IRouteMatcher>();
-        routeMatcher.Match(Arg.Any<string>(), Arg.Any<string>()).Returns(new RouteValueDictionary { ["tenantPrefix"] = "acme" });
-        var routeTable = Substitute.For<IRouteTable>();
-        routeTable.GetEnumerator().Returns(_ => new List<HttpRouteData> { new("{tenantPrefix}/workflows") }.GetEnumerator());
-        var serviceProvider = new ServiceCollection().AddSingleton(routeMatcher).AddSingleton(routeTable).AddSingleton<ITenantsProvider>(provider).BuildServiceProvider();
-        var accessor = new HttpContextAccessor { HttpContext = httpContext };
-
-        // The resolver is scoped, so each request gets a new instance.
-        DefaultTenantResolverPipelineInvoker NewRequest() => fixture.CreateInvoker(new RoutePrefixTenantResolver(accessor, serviceProvider));
-        await NewRequest().InvokePipelineAsync(); // The first call loads the registry.
+        var newRequest = () => fixture.CreateInvoker(CreatePrefixResolver(fixture, "acme", new CapturingLogger()));
+        await newRequest().InvokePipelineAsync(); // The first call loads the registry.
         var providerListCallsAfterWarmUp = provider.ListCalls;
 
         // Act
-        var tenant = await NewRequest().InvokePipelineAsync();
+        var tenant = await newRequest().InvokePipelineAsync();
 
         // Assert
         Assert.Equal("tenant-a", tenant?.Id);
         Assert.Equal(providerListCallsAfterWarmUp, provider.ListCalls);
+    }
+
+    [Fact]
+    public async Task RoutePrefixTenantResolver_WithNoMatchingPrefix_DoesNotResolve()
+    {
+        // Arrange
+        await using var fixture = new Fixture(new CountingTenantsProvider([new Tenant { Id = "", Name = "Default" }, CreateTenant("tenant-a", ("Http:Prefix", "acme"))]));
+
+        // Act
+        var tenant = await fixture.CreateInvoker(CreatePrefixResolver(fixture, "other", new CapturingLogger())).InvokePipelineAsync();
+
+        // Assert
+        Assert.Null(tenant);
+    }
+
+    [Fact]
+    public async Task RoutePrefixTenantResolver_WithDuplicatePrefixes_DoesNotResolveAndLogsAWarning()
+    {
+        // Arrange
+        var logger = new CapturingLogger();
+        await using var fixture = new Fixture(new CountingTenantsProvider([CreateTenant("tenant-a", ("Http:Prefix", "acme")), CreateTenant("tenant-b", ("Http:Prefix", "acme"))]));
+
+        // Act
+        var tenant = await fixture.CreateInvoker(CreatePrefixResolver(fixture, "acme", logger)).InvokePipelineAsync();
+
+        // Assert
+        Assert.Null(tenant);
+        var warning = Assert.Single(logger.Warnings);
+        Assert.Contains("acme", warning);
+        Assert.Contains("tenant-a", warning);
+        Assert.Contains("tenant-b", warning);
+    }
+
+    [Fact]
+    public async Task InvokePipelineAsync_AfterTenantHostAndPrefixChangeUnderTheSameId_ResolvesTheNewValuesOnly()
+    {
+        // Arrange: the provider returns new instances on every call, like an EF-backed store.
+        var provider = new CountingTenantsProvider([CreateTenant("tenant-a", ("Http:Host", "old.example.com"), ("Http:Prefix", "old"))]);
+        await using var fixture = new Fixture(provider);
+        Task<Tenant?> ResolveByHost(string host) => fixture.CreateInvoker(CreateHostResolver(host)).InvokePipelineAsync();
+        Task<Tenant?> ResolveByPrefix(string prefix) => fixture.CreateInvoker(CreatePrefixResolver(fixture, prefix, new CapturingLogger())).InvokePipelineAsync();
+        Assert.Equal("tenant-a", (await ResolveByHost("old.example.com"))?.Id);
+        provider.Tenants[0] = CreateTenant("tenant-a", ("Http:Host", "new.example.com"), ("Http:Prefix", "new"));
+
+        // Act
+        await fixture.TenantService.RefreshAsync();
+
+        // Assert
+        Assert.Equal("tenant-a", (await ResolveByHost("new.example.com"))?.Id);
+        Assert.Equal("tenant-a", (await ResolveByPrefix("new"))?.Id);
+        Assert.Null(await ResolveByHost("old.example.com"));
+        Assert.Null(await ResolveByPrefix("old"));
+    }
+
+    private static HostTenantResolver CreateHostResolver(string host)
+    {
+        var httpContext = new DefaultHttpContext();
+        httpContext.Request.Host = new HostString(host);
+        return new HostTenantResolver(new HttpContextAccessor { HttpContext = httpContext });
+    }
+
+    private static RoutePrefixTenantResolver CreatePrefixResolver(Fixture fixture, string prefix, CapturingLogger logger)
+    {
+        var httpContext = new DefaultHttpContext();
+        httpContext.Request.Path = $"/{prefix}/workflows";
+        var routeMatcher = Substitute.For<IRouteMatcher>();
+        routeMatcher.Match(Arg.Any<string>(), Arg.Any<string>()).Returns(new RouteValueDictionary { ["tenantPrefix"] = prefix });
+        var routeTable = Substitute.For<IRouteTable>();
+        routeTable.GetEnumerator().Returns(_ => new List<HttpRouteData> { new("{tenantPrefix}/workflows") }.GetEnumerator());
+        var serviceProvider = new ServiceCollection()
+            .AddSingleton(routeMatcher)
+            .AddSingleton(routeTable)
+            .AddSingleton(fixture.TenantService)
+            .AddSingleton<ILogger<RoutePrefixTenantResolver>>(logger)
+            .BuildServiceProvider();
+
+        // The resolver is scoped, so each request gets a new instance.
+        return new RoutePrefixTenantResolver(new HttpContextAccessor { HttpContext = httpContext }, serviceProvider);
+    }
+
+    private sealed class CapturingLogger : ILogger<RoutePrefixTenantResolver>
+    {
+        public List<string> Warnings { get; } = [];
+
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+        {
+            if (logLevel == LogLevel.Warning)
+                Warnings.Add(formatter(state, exception));
+        }
     }
 
     private static ITenantResolver Resolved(string tenantId)

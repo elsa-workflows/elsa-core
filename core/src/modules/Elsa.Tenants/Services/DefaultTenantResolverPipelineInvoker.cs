@@ -29,7 +29,9 @@ public class DefaultTenantResolverPipelineInvoker(
                 var tenant = await tenantService.FindAsync(resolvedTenantId, cancellationToken);
 
                 if (tenant != null)
+                {
                     return tenant;
+                }
 
                 logger.LogWarning("Tenant with ID {TenantId} was resolved but could not be found in the tenant store.", resolvedTenantId);
                 return null;

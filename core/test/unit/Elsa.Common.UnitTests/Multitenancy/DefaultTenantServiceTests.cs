@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using Elsa.Common.Multitenancy;
 using Elsa.Common.Multitenancy.EventHandlers;
 using Elsa.Common.RecurringTasks;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
@@ -237,6 +238,64 @@ public class DefaultTenantServiceTests
             await DisposeAsync(tenantService, serviceProvider);
         }
     }
+
+    [Fact]
+    public async Task RefreshAsync_WhenTenantChangesUnderTheSameId_ReplacesItAndReactivatesOnlyThatTenant()
+    {
+        // Arrange: the provider returns new instances on every call, like an EF-backed store.
+        var providerReturns = new List<Tenant> { CreateTenant("a", "A", "old.example.com"), CreateTenant("b", "B", "b.example.com") };
+        var activatedEvent = Substitute.For<ITenantActivatedEvent>();
+        var deactivatedHandler = new RecordingDeactivatedHandler();
+        var (tenantService, serviceProvider) = await CreateTenantServiceAsync([], () => providerReturns.Select(x => CreateTenant(x.Id!, x.Name, x.Configuration["Http:Host"]!)).ToList(), activatedEvent, deactivatedHandler);
+
+        try
+        {
+            await tenantService.ActivateTenantsAsync();
+            activatedEvent.ClearReceivedCalls();
+            providerReturns[0] = CreateTenant("a", "A", "new.example.com");
+
+            // Act
+            await tenantService.RefreshAsync();
+
+            // Assert
+            Assert.Equal("new.example.com", (await tenantService.FindAsync("a"))!.Configuration["Http:Host"]);
+            Assert.Equal(["a"], deactivatedHandler.Deactivated);
+            await activatedEvent.Received(1).TenantActivatedAsync(Arg.Is<TenantActivatedEventArgs>(x => x.Tenant.Id == "a"));
+            await activatedEvent.DidNotReceive().TenantActivatedAsync(Arg.Is<TenantActivatedEventArgs>(x => x.Tenant.Id == "b"));
+        }
+        finally
+        {
+            await DisposeAsync(tenantService, serviceProvider);
+        }
+    }
+
+    [Fact]
+    public async Task RefreshAsync_WhenTenantNameChangesUnderTheSameId_ReplacesIt()
+    {
+        var providerReturns = new List<Tenant> { CreateTenant("a", "Old name", "a.example.com") };
+        var (tenantService, serviceProvider) = await CreateTenantServiceAsync([], () => providerReturns.Select(x => CreateTenant(x.Id!, x.Name, x.Configuration["Http:Host"]!)).ToList());
+
+        try
+        {
+            await tenantService.ActivateTenantsAsync();
+            providerReturns[0] = CreateTenant("a", "New name", "a.example.com");
+
+            await tenantService.RefreshAsync();
+
+            Assert.Equal("New name", (await tenantService.FindAsync("a"))!.Name);
+        }
+        finally
+        {
+            await DisposeAsync(tenantService, serviceProvider);
+        }
+    }
+
+    private static Tenant CreateTenant(string id, string name, string host) => new()
+    {
+        Id = id,
+        Name = name,
+        Configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["Http:Host"] = host }).Build()
+    };
 
     [Fact]
     public async Task ActivateTenantsAsync_ActivatesAtMostMaxDegreeOfParallelismTenantsAtOnce()

@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using Elsa.Extensions;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
@@ -111,6 +112,7 @@ public class DefaultTenantService(
             var newTenantIds = newTenants.Keys.ToArray();
             var removedTenantIds = currentTenantIds.Except(newTenantIds).ToArray();
             var addedTenantIds = newTenantIds.Except(currentTenantIds).ToArray();
+            var changedTenantIds = newTenantIds.Intersect(currentTenantIds).Where(x => HasChanged(currentTenants[x], newTenants[x])).ToArray();
 
             foreach (var removedTenantId in removedTenantIds)
             {
@@ -118,7 +120,12 @@ public class DefaultTenantService(
                     await UnregisterTenantAsync(removedTenant, true, cancellationToken);
             }
 
-            var pendingTenants = addedTenantIds.Select(x => RegisterTenant(newTenants[x])).ToList();
+            // A tenant that changed under the same ID is deactivated and activated again, so the registry, its scope and the
+            // tenant's background tasks all see the new name and configuration. It is not reported as deleted.
+            foreach (var changedTenantId in changedTenantIds)
+                await UnregisterTenantAsync(currentTenants[changedTenantId], false, cancellationToken);
+
+            var pendingTenants = addedTenantIds.Concat(changedTenantIds).Select(x => RegisterTenant(newTenants[x])).ToList();
             await ActivatePendingTenantsAsync(pendingTenants, cancellationToken);
         }
         finally
@@ -189,6 +196,18 @@ public class DefaultTenantService(
             _initializationLock.Release();
         }
     }
+
+    // The provider may return new instances on every call, so only a different name or configuration counts as a change.
+    private static bool HasChanged(Tenant current, Tenant updated)
+    {
+        if (ReferenceEquals(current, updated))
+            return false;
+
+        return current.Name != updated.Name || !GetConfigurationValues(current).SequenceEqual(GetConfigurationValues(updated));
+    }
+
+    private static IEnumerable<KeyValuePair<string, string?>> GetConfigurationValues(Tenant tenant) =>
+        tenant.Configuration.AsEnumerable().OrderBy(x => x.Key, StringComparer.Ordinal);
 
     private PendingTenant RegisterTenant(Tenant tenant) => new(tenant, tenantScopeFactory.CreateScope(tenant));
 

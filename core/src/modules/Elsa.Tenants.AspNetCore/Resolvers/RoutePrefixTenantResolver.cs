@@ -3,6 +3,7 @@ using Elsa.Extensions;
 using Elsa.Http;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Tenants.AspNetCore;
 
@@ -31,9 +32,19 @@ public class RoutePrefixTenantResolver(IHttpContextAccessor httpContextAccessor,
         if (string.IsNullOrWhiteSpace(tenantPrefix))
             return Unresolved();
         
-        var tenant = await context.FindTenantAsync(x => x.GetRoutePrefix() == tenantPrefix);
-        var tenantId = tenant?.Id;
-        return AutoResolve(tenantId);
+        var tenants = (await serviceProvider.GetRequiredService<ITenantService>().ListAsync(context.CancellationToken))
+            .Where(x => x.GetRoutePrefix() == tenantPrefix)
+            .Take(2)
+            .ToList();
+
+        if (tenants.Count > 1)
+        {
+            var logger = serviceProvider.GetRequiredService<ILogger<RoutePrefixTenantResolver>>();
+            logger.LogWarning("Route prefix {TenantPrefix} is used by more than one tenant ({TenantIds}). No tenant is resolved.", tenantPrefix, string.Join(", ", tenants.Select(x => x.Id)));
+            return Unresolved();
+        }
+
+        return AutoResolve(tenants.SingleOrDefault()?.Id);
     }
     
     private string GetPath(HttpContext httpContext) => httpContext.Request.Path.Value!.NormalizeRoute();

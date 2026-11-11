@@ -39,6 +39,10 @@ public class TenantResolverContext
     /// <summary>
     /// Finds a tenant based on the provided tenant ID.
     /// </summary>
+    /// <remarks>
+    /// When the context is backed by an <see cref="ITenantService"/>, this blocks until the tenant service has started. Under a single-threaded
+    /// <see cref="SynchronizationContext"/> that can deadlock if it has not started yet. Prefer an async resolver.
+    /// </remarks>
     /// <param name="tenantId">The tenant ID.</param>
     /// <returns>The found tenant or null if no tenant with the provided ID exists.</returns>
     public Tenant? FindTenant(string? tenantId)
@@ -46,7 +50,9 @@ public class TenantResolverContext
         var normalizedId = tenantId.NormalizeTenantId();
 
         if (_tenantsDictionary != null)
+        {
             return _tenantsDictionary.TryGetValue(normalizedId, out var tenant) ? tenant : null;
+        }
 
         // The tenant service answers from memory once started, so blocking here does not wait on I/O.
         return _tenantService!.FindAsync(normalizedId, CancellationToken).GetAwaiter().GetResult();
@@ -55,6 +61,10 @@ public class TenantResolverContext
     /// <summary>
     /// Finds a tenant based on the provided predicate.
     /// </summary>
+    /// <remarks>
+    /// When the context is backed by an <see cref="ITenantService"/>, this blocks until the tenant service has started. Under a single-threaded
+    /// <see cref="SynchronizationContext"/> that can deadlock if it has not started yet. Use <see cref="FindTenantAsync"/> instead.
+    /// </remarks>
     /// <param name="predicate">The predicate used to filter the tenants.</param>
     /// <returns>The found tenant or null if no tenant satisfies the predicate.</returns>
     public Tenant? FindTenant(Func<Tenant, bool> predicate)
@@ -70,7 +80,9 @@ public class TenantResolverContext
     public async Task<Tenant?> FindTenantAsync(Func<Tenant, bool> predicate)
     {
         if (_tenantsDictionary != null)
+        {
             return _tenantsDictionary.Values.FirstOrDefault(predicate);
+        }
 
         var tenants = await _tenantService!.ListAsync(CancellationToken);
         return tenants.FirstOrDefault(predicate);
