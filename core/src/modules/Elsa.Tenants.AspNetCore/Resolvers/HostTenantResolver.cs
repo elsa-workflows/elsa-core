@@ -8,7 +8,7 @@ namespace Elsa.Tenants.AspNetCore;
 /// </summary>
 public class HostTenantResolver(IHttpContextAccessor httpContextAccessor) : TenantResolverBase
 {
-    protected override TenantResolverResult Resolve(TenantResolverContext context)
+    protected override async Task<TenantResolverResult> ResolveAsync(TenantResolverContext context)
     {
         var httpContext = httpContextAccessor.HttpContext;
 
@@ -17,7 +17,7 @@ public class HostTenantResolver(IHttpContextAccessor httpContextAccessor) : Tena
 
         var host = httpContext.Request.Host;
         var inboundHostAndPort = host.Host + (host.Port.HasValue ? ":" + host.Port : null);
-        var tenant = context.FindTenant(x =>
+        var tenant = await context.FindTenantAsync(x =>
         {
             var tenantHost = x.GetHost();
             return tenantHost == inboundHostAndPort;

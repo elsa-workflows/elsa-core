@@ -1,4 +1,4 @@
-﻿using Elsa.Common.Multitenancy;
+using Elsa.Common.Multitenancy;
 using Elsa.Tenants.Options;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -10,16 +10,14 @@ namespace Elsa.Tenants;
 /// </summary>
 public class DefaultTenantResolverPipelineInvoker(
     IOptions<MultitenancyOptions> options,
-    ITenantsProvider tenantsProvider,
+    ITenantService tenantService,
     IServiceProvider serviceProvider,
     ILogger<DefaultTenantResolverPipelineInvoker> logger) : ITenantResolverPipelineInvoker
 {
     public async Task<Tenant?> InvokePipelineAsync(CancellationToken cancellationToken = default)
     {
         var resolutionPipeline = options.Value.TenantResolverPipelineBuilder.Build(serviceProvider);
-        var tenants = await tenantsProvider.ListAsync(cancellationToken);
-        var tenantsDictionary = tenants.ToDictionary(x => x.Id.NormalizeTenantId());
-        var context = new TenantResolverContext(tenantsDictionary, cancellationToken);
+        var context = new TenantResolverContext(tenantService, cancellationToken);
 
         foreach (var resolver in resolutionPipeline)
         {
@@ -28,8 +26,9 @@ public class DefaultTenantResolverPipelineInvoker(
             if (result.IsResolved)
             {
                 var resolvedTenantId = result.ResolveTenantId();
+                var tenant = await tenantService.FindAsync(resolvedTenantId, cancellationToken);
 
-                if (tenantsDictionary.TryGetValue(resolvedTenantId, out var tenant))
+                if (tenant != null)
                     return tenant;
 
                 logger.LogWarning("Tenant with ID {TenantId} was resolved but could not be found in the tenant store.", resolvedTenantId);
