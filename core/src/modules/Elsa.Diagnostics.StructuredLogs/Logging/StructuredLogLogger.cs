@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Diagnostics;
+using Elsa.Common.Multitenancy;
 using Elsa.Diagnostics.StructuredLogs.Contracts;
 using Elsa.Diagnostics.StructuredLogs.Models;
 using Elsa.Diagnostics.StructuredLogs.Options;
@@ -13,7 +14,8 @@ public class StructuredLogLogger(
     IStructuredLogRedactor redactor,
     IStructuredLogSourceRegistry sourceRegistry,
     StructuredLogsOptions options,
-    Func<IExternalScopeProvider> getScopeProvider) : ILogger
+    Func<IExternalScopeProvider> getScopeProvider,
+    ITenantAccessor? tenantAccessor = null) : ILogger
 {
     private long _sequence;
     
@@ -48,7 +50,7 @@ public class StructuredLogLogger(
             TraceId = currentActivity?.TraceId.ToString(),
             SpanId = currentActivity?.SpanId.ToString(),
             CorrelationId = currentActivity?.RootId ?? GetContextValue(properties, scopes, nameof(StructuredLogEvent.CorrelationId)),
-            TenantId = GetContextValue(properties, scopes, nameof(StructuredLogEvent.TenantId)),
+            TenantId = GetContextValue(properties, scopes, nameof(StructuredLogEvent.TenantId)) ?? GetAmbientTenantId(),
             WorkflowDefinitionId = GetContextValue(properties, scopes, nameof(StructuredLogEvent.WorkflowDefinitionId)),
             WorkflowInstanceId = GetContextValue(properties, scopes, nameof(StructuredLogEvent.WorkflowInstanceId)),
             SourceId = sourceRegistry.Current.Id,
@@ -60,6 +62,8 @@ public class StructuredLogLogger(
         _ = logProvider.PublishAsync(redacted);
     }
     
+    private string? GetAmbientTenantId() => tenantAccessor?.TenantId is { Length: > 0 } tenantId ? tenantId : null;
+
     private static StructuredLogLevel ToStructuredLogLevel(LogLevel logLevel)
     {
         return logLevel switch
