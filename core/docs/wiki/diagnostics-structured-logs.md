@@ -92,7 +92,7 @@ The README states the hub is mapped at `/elsa/hubs/diagnostics/structured-logs`.
 
 ## Authorization
 
-The endpoints require `read:diagnostics:structured-logs`, defined in [StructuredLogsResourcePermissions](../../src/modules/Elsa.Diagnostics.StructuredLogs/Permissions/StructuredLogsResourcePermissions.cs). The SignalR hub requires an authenticated user.
+The endpoints and the SignalR hub require `diagnostics/structured-logs:view`, defined in [StructuredLogsResourcePermissions](../../src/modules/Elsa.Diagnostics.StructuredLogs/Permissions/StructuredLogsResourcePermissions.cs). The hub and the recent-log endpoint return only the caller's tenant (and tenant-agnostic events on the hub). New events are stamped with the tenant that was active when they were written; events without a tenant, including those written before this behaviour, are visible to the default tenant only.
 
 ## Redaction
 

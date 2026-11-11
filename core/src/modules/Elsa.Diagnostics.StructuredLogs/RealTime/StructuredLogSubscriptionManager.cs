@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using Elsa.Diagnostics.StructuredLogs.Contracts;
 using Elsa.Diagnostics.StructuredLogs.Models;
+using Elsa.Diagnostics.StructuredLogs.Services;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 
@@ -27,20 +28,25 @@ public class StructuredLogSubscriptionManager : IDisposable
         _sourceRegistry.SourceChanged += OnSourceChanged;
     }
 
-    public Task SubscribeAsync(string connectionId, StructuredLogFilter filter, CancellationToken cancellationToken)
+    public Task SubscribeAsync(string connectionId, StructuredLogFilter filter, CancellationToken cancellationToken) => SubscribeAsync(connectionId, filter, null, cancellationToken);
+
+    // When tenantId is set, only events visible to that tenant are streamed, whatever the filter says.
+    public Task SubscribeAsync(string connectionId, StructuredLogFilter filter, string? tenantId, CancellationToken cancellationToken)
     {
         Unsubscribe(connectionId);
         var subscriptionCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         var subscription = new StructuredLogSubscription(subscriptionCancellation);
         _subscriptions[connectionId] = subscription;
 
-        _ = StreamAsync(connectionId, filter, subscription, subscriptionCancellation.Token);
+        _ = StreamAsync(connectionId, filter, tenantId, subscription, subscriptionCancellation.Token);
         return Task.CompletedTask;
     }
 
-    public Task UpdateFilterAsync(string connectionId, StructuredLogFilter filter, CancellationToken cancellationToken)
+    public Task UpdateFilterAsync(string connectionId, StructuredLogFilter filter, CancellationToken cancellationToken) => UpdateFilterAsync(connectionId, filter, null, cancellationToken);
+
+    public Task UpdateFilterAsync(string connectionId, StructuredLogFilter filter, string? tenantId, CancellationToken cancellationToken)
     {
-        return SubscribeAsync(connectionId, filter, cancellationToken);
+        return SubscribeAsync(connectionId, filter, tenantId, cancellationToken);
     }
 
     public Task UnsubscribeAsync(string connectionId)
@@ -62,14 +68,14 @@ public class StructuredLogSubscriptionManager : IDisposable
         _subscriptions.Clear();
     }
 
-    private async Task StreamAsync(string connectionId, StructuredLogFilter filter, StructuredLogSubscription subscription, CancellationToken cancellationToken)
+    private async Task StreamAsync(string connectionId, StructuredLogFilter filter, string? tenantId, StructuredLogSubscription subscription, CancellationToken cancellationToken)
     {
         try
         {
             if (_logProvider is IStructuredLogStreamProvider streamProvider)
-                await StreamWithDroppedEventsAsync(connectionId, filter, streamProvider, cancellationToken);
+                await StreamWithDroppedEventsAsync(connectionId, filter, tenantId, streamProvider, cancellationToken);
             else
-                await StreamLogEventsAsync(connectionId, filter, cancellationToken);
+                await StreamLogEventsAsync(connectionId, filter, tenantId, cancellationToken);
         }
         catch (OperationCanceledException e)
         {
@@ -109,17 +115,22 @@ public class StructuredLogSubscriptionManager : IDisposable
         _ = BroadcastSourceChangedAsync(source);
     }
 
-    private async Task StreamLogEventsAsync(string connectionId, StructuredLogFilter filter, CancellationToken cancellationToken)
+    private async Task StreamLogEventsAsync(string connectionId, StructuredLogFilter filter, string? tenantId, CancellationToken cancellationToken)
     {
         await foreach (var logEvent in _logProvider.SubscribeAsync(filter, cancellationToken))
+        {
+            if (!StructuredLogFilterEvaluator.IsVisibleToTenant(logEvent, tenantId))
+                continue;
+
             await _hubContext.Clients.Client(connectionId).ReceiveLogEventAsync(logEvent, cancellationToken);
+        }
     }
 
-    private async Task StreamWithDroppedEventsAsync(string connectionId, StructuredLogFilter filter, IStructuredLogStreamProvider streamProvider, CancellationToken cancellationToken)
+    private async Task StreamWithDroppedEventsAsync(string connectionId, StructuredLogFilter filter, string? tenantId, IStructuredLogStreamProvider streamProvider, CancellationToken cancellationToken)
     {
         await foreach (var item in streamProvider.SubscribeWithDroppedEventsAsync(filter, cancellationToken))
         {
-            if (item.LogEvent != null)
+            if (item.LogEvent != null && StructuredLogFilterEvaluator.IsVisibleToTenant(item.LogEvent, tenantId))
                 await _hubContext.Clients.Client(connectionId).ReceiveLogEventAsync(item.LogEvent, cancellationToken);
 
             if (item.DroppedEvents != null)
@@ -131,7 +142,7 @@ public class StructuredLogSubscriptionManager : IDisposable
     {
         try
         {
-            await _hubContext.Clients.All.ReceiveSourceChangedAsync(source);
+            await _hubContext.Clients.Group(StructuredLogsHub.SourceChangesGroup).ReceiveSourceChangedAsync(source);
         }
         catch (OperationCanceledException e)
         {
