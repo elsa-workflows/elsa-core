@@ -2,6 +2,7 @@ using System.Reflection;
 using CShells.Features;
 using Elsa.Common.Entities;
 using Elsa.Extensions;
+using Elsa.Persistence.EFCore.EntityHandlers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
@@ -98,6 +99,10 @@ public abstract class PersistenceShellFeatureBase<TDbContext> : IShellFeature
         {
             options.RunMigrations[typeof(TDbContext)] = runMigrations;
         });
+
+        // Tenant filtering and stamping, matching PersistenceFeatureBase. TryAddEnumerable because every persistence feature in the shell runs this.
+        services.TryAddEnumerable(ServiceDescriptor.Scoped<IEntitySavingHandler, ApplyTenantId>());
+        services.TryAddEnumerable(ServiceDescriptor.Scoped<IEntityModelCreatingHandler, SetTenantIdFilter>());
 
         services.TryAddSingleton<MigratedDatabaseRegistry>();
         services.AddStartupTask<RunMigrationsStartupTask<TDbContext>>();
