@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using Elsa.Extensions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.Common.Multitenancy;
@@ -273,25 +274,43 @@ public class DefaultTenantService(
     /// </param>
     private async Task UnregisterTenantAsync(Tenant tenant, bool isDeleted, bool isReplaced, CancellationToken cancellationToken)
     {
-        if (_tenantScopesDictionary!.TryRemove(tenant, out var scope))
+        _tenantScopesDictionary!.TryRemove(tenant, out var scope);
+
+        if (!isReplaced)
         {
-            if (!isReplaced)
-            {
-                _tenantsDictionary!.TryRemove(tenant.Id.EmptyIfNull(), out _);
-            }
+            // Remove this exact instance only, so a replacement registered under the same ID is never removed, and do not depend on finding the scope.
+            _tenantsDictionary!.TryRemove(new KeyValuePair<string, Tenant>(tenant.Id.EmptyIfNull(), tenant));
+        }
 
-            using (tenantAccessor.PushContext(tenant))
-            {
-                await tenantEvents.TenantDeactivatedAsync(new(tenant, scope, cancellationToken));
+        if (scope == null)
+        {
+            return;
+        }
 
-                if (isDeleted)
-                    await tenantEvents.TenantDeletedAsync(new(tenant, scope, cancellationToken));
-            }
+        using (tenantAccessor.PushContext(tenant))
+        {
+            await tenantEvents.TenantDeactivatedAsync(new(tenant, scope, cancellationToken));
 
-            if (isReplaced)
-            {
-                await scope.DisposeAsync();
-            }
+            if (isDeleted)
+                await tenantEvents.TenantDeletedAsync(new(tenant, scope, cancellationToken));
+        }
+
+        if (isReplaced)
+        {
+            await DisposeReplacedScopeAsync(tenant, scope);
+        }
+    }
+
+    // A scope that fails to dispose must not stop the refresh: the replacement still has to be registered.
+    private async Task DisposeReplacedScopeAsync(Tenant tenant, TenantScope scope)
+    {
+        try
+        {
+            await scope.DisposeAsync();
+        }
+        catch (Exception e)
+        {
+            _serviceScope.ServiceProvider.GetService<ILogger<DefaultTenantService>>()?.LogError(e, "Failed to dispose the scope of replaced tenant {TenantId}.", tenant.Id);
         }
     }
 

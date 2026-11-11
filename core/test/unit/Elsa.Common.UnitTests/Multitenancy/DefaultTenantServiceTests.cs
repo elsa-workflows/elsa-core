@@ -240,6 +240,47 @@ public class DefaultTenantServiceTests
     }
 
     [Fact]
+    public async Task RefreshAsync_WhenAReplacedTenantsScopeFailsToDispose_StillAppliesAllChangesAndLaterDeletes()
+    {
+        // Arrange: tenant "a" has a scope that throws when it is disposed.
+        var providerReturns = new List<Tenant> { CreateTenant("a", "A", "a-old.example.com"), CreateTenant("b", "B", "b-old.example.com") };
+        var deletedEvent = Substitute.For<ITenantDeletedEvent>();
+        var (tenantService, serviceProvider) = await CreateTenantServiceAsync(
+            [],
+            () => providerReturns.Select(x => CreateTenant(x.Id!, x.Name, x.Configuration["Http:Host"]!)).ToList(),
+            deletedEvent: deletedEvent,
+            scopeFactoryFactory: (tenantAccessor, serviceScopeFactory) => new ThrowingOnDisposeTenantScopeFactory("a", tenantAccessor, serviceScopeFactory));
+
+        try
+        {
+            await tenantService.ActivateTenantsAsync();
+            providerReturns[0] = CreateTenant("a", "A", "a-new.example.com");
+            providerReturns[1] = CreateTenant("b", "B", "b-new.example.com");
+
+            // Act: the same-ID edit of both tenants
+            await tenantService.RefreshAsync();
+
+            // Assert: the edit of "a" and the other change in the same refresh are applied, and nothing was reported as deleted.
+            Assert.Equal("a-new.example.com", (await tenantService.FindAsync("a"))!.Configuration["Http:Host"]);
+            Assert.Equal("b-new.example.com", (await tenantService.FindAsync("b"))!.Configuration["Http:Host"]);
+            await deletedEvent.DidNotReceive().TenantDeletedAsync(Arg.Any<TenantDeletedEventArgs>());
+
+            // Act: "a" is deleted
+            providerReturns.RemoveAt(0);
+            await tenantService.RefreshAsync();
+
+            // Assert
+            Assert.Null(await tenantService.FindAsync("a"));
+            Assert.NotNull(await tenantService.FindAsync("b"));
+            await deletedEvent.Received(1).TenantDeletedAsync(Arg.Is<TenantDeletedEventArgs>(x => x.Tenant.Id == "a"));
+        }
+        finally
+        {
+            await DisposeAsync(tenantService, serviceProvider);
+        }
+    }
+
+    [Fact]
     public async Task RefreshAsync_WhenTenantChangesUnderTheSameId_ReplacesItAndReactivatesOnlyThatTenant()
     {
         // Arrange: the provider returns new instances on every call, like an EF-backed store.
@@ -1026,7 +1067,9 @@ public class DefaultTenantServiceTests
         ITenantActivatedEvent? activatedEvent = null,
         ITenantDeactivatedEvent? deactivatedEvent = null,
         IAllTenantsActivatedEvent? allTenantsActivatedEvent = null,
-        int? maxDegreeOfParallelism = null)
+        int? maxDegreeOfParallelism = null,
+        ITenantDeletedEvent? deletedEvent = null,
+        Func<ITenantAccessor, IServiceScopeFactory, ITenantScopeFactory>? scopeFactoryFactory = null)
     {
         var tenantList = tenants.ToList();
         var getTenants = tenantsFactory ?? (() => tenantList);
@@ -1037,11 +1080,11 @@ public class DefaultTenantServiceTests
         var services = new ServiceCollection();
         services.AddSingleton(_ => tenantsProvider);
         services.AddSingleton<RecordingTenantScopeFactory>();
-        services.AddSingleton<ITenantScopeFactory>(sp => sp.GetRequiredService<RecordingTenantScopeFactory>());
+        services.AddSingleton<ITenantScopeFactory>(sp => scopeFactoryFactory?.Invoke(sp.GetRequiredService<ITenantAccessor>(), sp.GetRequiredService<IServiceScopeFactory>()) ?? sp.GetRequiredService<RecordingTenantScopeFactory>());
         services.AddSingleton<ITenantAccessor, DefaultTenantAccessor>();
         services.AddSingleton(activatedEvent ?? Substitute.For<ITenantActivatedEvent>());
         services.AddSingleton(deactivatedEvent ?? Substitute.For<ITenantDeactivatedEvent>());
-        services.AddSingleton<ITenantDeletedEvent>(Substitute.For<ITenantDeletedEvent>());
+        services.AddSingleton(deletedEvent ?? Substitute.For<ITenantDeletedEvent>());
         services.AddSingleton(allTenantsActivatedEvent ?? Substitute.For<IAllTenantsActivatedEvent>());
         services.AddSingleton<TenantEventsManager>();
         services.AddSingleton<RecurringTaskScheduleManager>();
@@ -1122,6 +1165,28 @@ public class DefaultTenantServiceTests
                 WaitingCompleted.TrySetResult();
             }
         }
+    }
+
+    private sealed class ThrowingOnDisposeTenantScopeFactory(string tenantId, ITenantAccessor tenantAccessor, IServiceScopeFactory serviceScopeFactory) : ITenantScopeFactory
+    {
+        public TenantScope CreateScope(Tenant? tenant)
+        {
+            var serviceScope = serviceScopeFactory.CreateAsyncScope();
+            return new(tenant?.Id == tenantId ? new ThrowingOnDisposeServiceScope(serviceScope) : serviceScope, tenantAccessor, tenant);
+        }
+    }
+
+    private sealed class ThrowingOnDisposeServiceScope(AsyncServiceScope inner) : IServiceScope, IAsyncDisposable
+    {
+        public IServiceProvider ServiceProvider => inner.ServiceProvider;
+
+        public async ValueTask DisposeAsync()
+        {
+            await inner.DisposeAsync();
+            throw new InvalidOperationException("The scope failed to dispose.");
+        }
+
+        public void Dispose() => throw new InvalidOperationException("The scope failed to dispose.");
     }
 
     private sealed class RecordingTenantScopeFactory(ITenantAccessor tenantAccessor, IServiceScopeFactory serviceScopeFactory) : ITenantScopeFactory
