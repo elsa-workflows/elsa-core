@@ -47,7 +47,7 @@ public static class TenantScopeMiddleware
             var tenant = sp.GetService<ITenantAccessor>()?.Tenant;
             if (tenant != null)
             {
-                envelope.WithHeader(HeaderNames.TenantId, tenant.Id);
+                envelope = envelope.WithHeader(HeaderNames.TenantId, tenant.Id);
             }
             await next(context, target, envelope);
         }
