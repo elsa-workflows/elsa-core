@@ -216,15 +216,18 @@ public abstract class LabelStoreConformanceTests
             Assert.Contains(stillB, x => x.Id == "assoc-b-order");
         }
 
+        using (scenario.UseTenant("tenant-a"))
+        {
+            var namedLabel = Label("label-named", "Named", "tenant-a");
+            await scenario.Labels.SaveAsync(namedLabel);
+            Assert.Equal("tenant-a", namedLabel.TenantId);
+        }
+
         using (scenario.UseTenant(Tenant.DefaultTenantId))
         {
             var stampedLabel = Label("label-null", "Null", tenantId: null);
             await scenario.Labels.SaveAsync(stampedLabel);
             Assert.Equal(Tenant.DefaultTenantId, stampedLabel.TenantId);
-
-            var namedLabel = Label("label-named", "Named", "tenant-a");
-            await scenario.Labels.SaveAsync(namedLabel);
-            Assert.Equal("tenant-a", namedLabel.TenantId);
 
             var defaultLabels = (await scenario.Labels.ListAsync()).Items.ToList();
             Assert.Contains(defaultLabels, x => x.Id == "label-null");
@@ -322,14 +325,16 @@ public abstract class LabelStoreConformanceTests
     private static async Task SeedMixedLabelsAsync(LabelStoreScenario scenario)
     {
         await scenario.Labels.SaveAsync(Label("label-a", "A", "tenant-a"));
-        await scenario.Labels.SaveAsync(Label("label-b", "B", "tenant-b"));
+        using (scenario.UseTenant("tenant-b"))
+            await scenario.Labels.SaveAsync(Label("label-b", "B", "tenant-b"));
         await scenario.Labels.SaveAsync(Label("label-star", "Star", Tenant.AgnosticTenantId));
     }
 
     private static async Task SeedMixedAssociationsAsync(LabelStoreScenario scenario)
     {
         await scenario.Associations.SaveAsync(Association("assoc-a", "red", "order", "order:1", "tenant-a"));
-        await scenario.Associations.SaveAsync(Association("assoc-b", "red", "order", "order:1", "tenant-b"));
+        using (scenario.UseTenant("tenant-b"))
+            await scenario.Associations.SaveAsync(Association("assoc-b", "red", "order", "order:1", "tenant-b"));
         await scenario.Associations.SaveAsync(Association("assoc-star", "red", "order", "order:1", Tenant.AgnosticTenantId));
     }
 
