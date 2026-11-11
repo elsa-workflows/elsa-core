@@ -351,6 +351,27 @@ public class DefaultTenantServiceTests
         }
     }
 
+    [Fact]
+    public async Task RefreshAsync_WhenOnlyTheTenantOwnerChangesUnderTheSameId_ReplacesIt()
+    {
+        var owner = "owner-1";
+        var (tenantService, serviceProvider) = await CreateTenantServiceAsync([], () => [new Tenant { Id = "a", Name = "A", TenantId = owner }]);
+
+        try
+        {
+            await tenantService.ActivateTenantsAsync();
+            owner = "owner-2";
+
+            await tenantService.RefreshAsync();
+
+            Assert.Equal("owner-2", (await tenantService.FindAsync("a"))!.TenantId);
+        }
+        finally
+        {
+            await DisposeAsync(tenantService, serviceProvider);
+        }
+    }
+
     private static Tenant CreateTenant(string id, string name, string host) => new()
     {
         Id = id,

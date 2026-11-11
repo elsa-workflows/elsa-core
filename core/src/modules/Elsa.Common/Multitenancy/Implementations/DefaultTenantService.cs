@@ -199,7 +199,7 @@ public class DefaultTenantService(
         }
     }
 
-    // The provider may return new instances on every call, so only a different name or configuration counts as a change.
+    // The provider may return new instances on every call, so only a different tenant ID, name or configuration counts as a change.
     private static bool HasChanged(Tenant current, Tenant updated)
     {
         if (ReferenceEquals(current, updated))
@@ -207,7 +207,7 @@ public class DefaultTenantService(
             return false;
         }
 
-        return current.Name != updated.Name || !GetConfigurationValues(current).SequenceEqual(GetConfigurationValues(updated));
+        return current.TenantId != updated.TenantId || current.Name != updated.Name || !GetConfigurationValues(current).SequenceEqual(GetConfigurationValues(updated));
     }
 
     private static IEnumerable<KeyValuePair<string, string?>> GetConfigurationValues(Tenant tenant) =>
