@@ -116,6 +116,10 @@ DOTNET_SDK = "10.0.300"
 NPM_ARTIFACT = "studio-npm-pair"
 WASM_TGZ = "elsa-workflows-elsa-studio-wasm-${GITHUB_REF_NAME}.tgz"
 REACT_TGZ = "elsa-workflows-elsa-studio-wasm-react-${GITHUB_REF_NAME}.tgz"
+NPM_PUBLISH_SCRIPT = "scripts/publish_npm_tarball.py"
+WASM_PACKAGE = "@elsa-workflows/elsa-studio-wasm"
+REACT_PACKAGE = "@elsa-workflows/elsa-studio-wasm-react"
+FEEDZ_NPM_REGISTRY = "https://f.feedz.io/elsa-workflows/elsa-3/npm/"
 ID_SET = ROOT / "scripts/validate_packages_id_set.txt"
 EXPECTED_PACKAGE_COUNT = 231
 # Exact non-empty run: lines after horizontal-whitespace collapse. A joined
@@ -137,6 +141,7 @@ PUBLICATION_REFERENCES = {
     "dotnet nuget push": re.compile(r"\bdotnet[\s\\]+nuget[\s\\]+push\b", re.IGNORECASE),
     "the push-nuget-packages action": re.compile(r"push-nuget-packages", re.IGNORECASE),
     "npm publish": re.compile(r"\bnpm[\s\\]+publish\b", re.IGNORECASE),
+    "the npm tarball publisher script": re.compile(r"publish_npm_tarball\.py"),
 }
 EXPRESSION = re.compile(r"\$\{\{(.*?)\}\}", re.DOTALL)
 # Inside ${{ }}: the secrets context as a whole, e.g. toJSON(secrets), which carries every feed key.
@@ -377,6 +382,17 @@ def pages_upload_violations(jobs: dict) -> list[str]:
 
 def _step_run(step: dict) -> str:
     return " ".join(str(step.get("run") or "").split())
+
+
+def _npm_registry_arg(run: str) -> str | None:
+    """Value of the single --registry argument in a whitespace-normalised run, or None."""
+    # Shell line-continuation backslashes are literal in the YAML run block.
+    cleaned = run.replace(" \\ ", " ").replace("\\ ", " ")
+    quoted = re.findall(r'--registry\s+"([^"]+)"', cleaned)
+    if len(quoted) == 1:
+        return quoted[0]
+    unquoted = re.findall(r"--registry\s+(\S+)", cleaned)
+    return unquoted[0] if len(unquoted) == 1 else None
 
 
 def _run_lines(step: dict) -> list[str]:
@@ -656,28 +672,59 @@ def npm_job_violations(jobs: dict) -> list[str]:
         duplicate="publish_npm must contain exactly one Studio npm pair verify step",
     )
     violations += extra
-    feedz_publish, extra = _unique_step(
+    wasm_publish, extra = _unique_step(
         steps,
-        lambda step: step.get("name") == "npm publish to Feedz",
-        missing="publish_npm must contain npm publish to Feedz",
-        duplicate="publish_npm must contain exactly one Feedz npm publish step",
+        lambda step: NPM_PUBLISH_SCRIPT in _step_run(step) and f'{WASM_PACKAGE}"' in _step_run(step),
+        missing="publish_npm must publish @elsa-workflows/elsa-studio-wasm",
+        duplicate="publish_npm must contain exactly one @elsa-workflows/elsa-studio-wasm publish step",
     )
     violations += extra
-    if feedz_publish is not None:
-        run = _step_run(steps[feedz_publish])
-        if not re.search(r"\bnpm[\s\\]+publish\b.*--tag", run):
-            violations.append("publish_npm Feedz publish must pass a dist-tag")
-        if "EPUBLISHCONFLICT" not in run or "cannot publish over" not in run:
-            violations.append("publish_npm Feedz publish must skip a version that already exists")
-        if "::error::" not in run:
-            violations.append("publish_npm Feedz publish must fail closed when the Feedz key is empty")
-    publishes = [index for index, step in enumerate(steps) if re.search(r"\bnpm[\s\\]+publish\b", _step_run(step), re.IGNORECASE)]
-    if len(publishes) != 1:
-        violations.append("publish_npm must contain exactly one npm publish step")
+    react_publish, extra = _unique_step(
+        steps,
+        lambda step: NPM_PUBLISH_SCRIPT in _step_run(step) and f'{REACT_PACKAGE}"' in _step_run(step),
+        missing="publish_npm must publish @elsa-workflows/elsa-studio-wasm-react",
+        duplicate="publish_npm must contain exactly one @elsa-workflows/elsa-studio-wasm-react publish step",
+    )
+    violations += extra
+    if wasm_publish is not None:
+        run = _step_run(steps[wasm_publish])
+        if "--tag" not in run:
+            violations.append("publish_npm WASM publish must pass a dist-tag")
+        wasm_registry = _npm_registry_arg(run)
+        if wasm_registry is None:
+            violations.append("publish_npm WASM publish must pass exactly one --registry argument")
+        elif wasm_registry != FEEDZ_NPM_REGISTRY:
+            violations.append("publish_npm WASM publish must use the Feedz npm registry")
+        if "--verify-published" not in run:
+            violations.append("publish_npm WASM publish must confirm availability in the registry")
+        if "::error::Feedz npm key resolved empty" not in run:
+            violations.append("publish_npm WASM publish must fail closed when the Feedz key is empty")
+        if steps[wasm_publish].get("id") != "publish_wasm":
+            violations.append("publish_npm WASM publish step must have id 'publish_wasm'")
+        if 'echo "wasm-published=true" >> "$GITHUB_OUTPUT"' not in str(steps[wasm_publish].get("run") or ""):
+            violations.append("publish_npm WASM publish step must set output 'wasm-published=true'")
+    if react_publish is not None:
+        run = _step_run(steps[react_publish])
+        if "--tag" not in run:
+            violations.append("publish_npm React publish must pass a dist-tag")
+        react_registry = _npm_registry_arg(run)
+        if react_registry is None:
+            violations.append("publish_npm React publish must pass exactly one --registry argument")
+        elif react_registry != FEEDZ_NPM_REGISTRY:
+            violations.append("publish_npm React publish must use the Feedz npm registry")
+        if "--verify-published" not in run:
+            violations.append("publish_npm React publish must confirm availability in the registry")
+        if "::error::Feedz npm key resolved empty" not in run:
+            violations.append("publish_npm React publish must fail closed when the Feedz key is empty")
+        if if_expression(steps[react_publish].get("if")) != "steps.publish_wasm.outputs.wasm-published == 'true'":
+            violations.append("publish_npm React publish must run only when WASM is confirmed")
+    publishes = [index for index, step in enumerate(steps) if NPM_PUBLISH_SCRIPT in _step_run(step)]
+    if len(publishes) != 2:
+        violations.append("publish_npm must contain exactly two tarball publish steps")
     if any(step.get("name") == "npm publish to npmjs.com" or re.search(r"registry\.npmjs\.(org|com)", _step_run(step)) for step in steps):
         violations.append("publish_npm must not publish to npmjs.com until trusted publishing is confirmed")
-    if None not in (closed, download, verify, feedz_publish) and not closed < download < verify < feedz_publish:
-        violations.append("publish_npm must fail closed on stable 3.10.x, download and verify the pair, then publish to Feedz")
+    if None not in (closed, download, verify, wasm_publish, react_publish) and not closed < download < verify < wasm_publish < react_publish:
+        violations.append("publish_npm must fail closed, download and verify the pair, publish WASM, then publish React")
     return violations
 
 
