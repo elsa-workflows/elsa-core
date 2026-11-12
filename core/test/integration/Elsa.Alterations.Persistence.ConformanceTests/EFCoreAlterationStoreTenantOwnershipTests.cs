@@ -66,7 +66,8 @@ public sealed class EFCoreAlterationStoreTenantOwnershipTests
         {
             var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
                 owner.Plans.SaveAsync(Plan("shared", "tenant-a", AlterationPlanStatus.Completed, "stolen")));
-            Assert.Contains("shared", ex.Message);
+            Assert.Contains("tenant-a", ex.Message);
+            Assert.Contains("tenant-b", ex.Message);
         }
 
         var remaining = await owner.Plans.FindAsync(new AlterationPlanFilter { Id = "shared" });
@@ -136,7 +137,8 @@ public sealed class EFCoreAlterationStoreTenantOwnershipTests
         {
             var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
                 owner.Jobs.SaveAsync(Job("shared", "tenant-a", AlterationJobStatus.Completed, "stolen")));
-            Assert.Contains("shared", ex.Message);
+            Assert.Contains("tenant-a", ex.Message);
+            Assert.Contains("tenant-b", ex.Message);
         }
 
         var remaining = await owner.Jobs.FindAsync(new AlterationJobFilter { Id = "shared" });
@@ -169,7 +171,8 @@ public sealed class EFCoreAlterationStoreTenantOwnershipTests
         {
             var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
                 owner.Jobs.SaveManyAsync([Job("shared", "tenant-a", AlterationJobStatus.Completed, "stolen")]));
-            Assert.Contains("shared", ex.Message);
+            Assert.Contains("tenant-a", ex.Message);
+            Assert.Contains("tenant-b", ex.Message);
         }
 
         var remaining = await owner.Jobs.FindAsync(new AlterationJobFilter { Id = "shared" });
