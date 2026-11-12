@@ -86,6 +86,19 @@ class RunAndArtifactTests(unittest.TestCase):
             with self.subTest(path=path):
                 verify.check_run(PIN, {**good_run(), "path": path})
 
+    def test_a_run_from_main_may_pack_a_different_source_commit(self):
+        main_head = "d" * 40
+        verify.check_run(PIN, {**good_run(), "head_sha": main_head, "head_branch": "main",
+                               "path": ".github/workflows/prepare-consolidated-release-candidate.yml"})
+        verify.check_artifact(PIN, {**good_artifact(), "workflow_run": {"id": PIN.run_id, "head_sha": main_head, "head_branch": "main"}})
+        for change in ({"head_branch": "feature/x"}, {"head_branch": None}, {"head_branch": "release/3.10.0"},
+                       {"head_sha": "5cff67228e550b353b3483eb3b37dfdb73a41c74", "head_branch": "main"},
+                       {"head_sha": "xyz", "head_branch": "main"}):
+            with self.subTest(change=change), self.assertRaises(SystemExit):
+                verify.check_run(PIN, {**good_run(), "head_sha": main_head, **change})
+            with self.subTest(artifact=change), self.assertRaises(SystemExit):
+                verify.check_artifact(PIN, {**good_artifact(), "workflow_run": {"id": PIN.run_id, "head_sha": main_head, **change}})
+
     def test_artifact_must_match_digest_name_expiry_and_run(self):
         for change in ({"digest": "sha256:" + "0" * 64}, {"name": "other"}, {"expired": True},
                        {"workflow_run": {"id": 40347931480, "head_sha": PIN.source_sha}},
@@ -309,6 +322,9 @@ def run_text(job) -> str:
     return "\n".join(step.get("run", "") for step in job["steps"])
 
 
+SOURCE_CHECKOUT_INDEX = 1
+
+
 class WorkflowShapeTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -439,6 +455,27 @@ class WorkflowShapeTests(unittest.TestCase):
         self.assertNotRegex(code, r"--version [0-9]|version:\"[0-9]")
         self.assertNotIn("prepare-consolidated-3.10.1", source)
         self.assertIn(".path == \".github/workflows/prepare-consolidated-release-candidate.yml\"", source)
+
+    def test_the_folded_prepare_workflow_runs_scripts_from_its_own_ref_and_packs_source_commit(self):
+        import yaml
+        source = (WORKFLOWS / "prepare-consolidated-release-candidate.yml").read_text(encoding="utf-8")
+        steps = yaml.safe_load(source)["jobs"]["prepare"]["steps"]
+        checkouts = [step for step in steps if str(step.get("uses", "")).startswith("actions/checkout@")]
+        self.assertEqual([("tooling", "${{ github.sha }}"), ("source", "${{ inputs.source_commit }}")],
+                         [(step["with"]["path"], step["with"]["ref"]) for step in checkouts])
+        self.assertEqual(0, checkouts[SOURCE_CHECKOUT_INDEX]["with"].get("fetch-depth"))
+        guard = steps[0]["run"]
+        self.assertIn("refs/heads/main", guard)
+        for step in steps:
+            run = step.get("run", "")
+            self.assertNotIn("python3 scripts/", run, step.get("name"))
+            if "--source-root" in run:
+                self.assertIn("--source-root source", run)
+        self.assertNotIn("release/3.10.0", source)
+        self.assertNotIn("git checkout", source)
+        retrieve = yaml.safe_load(source)["jobs"]["retrieve"]
+        self.assertFalse([step for step in retrieve["steps"] if "uses" in step and "checkout" in step["uses"]])
+        self.assertIn('.head_branch == "main"', source)
 
 
 if __name__ == "__main__":

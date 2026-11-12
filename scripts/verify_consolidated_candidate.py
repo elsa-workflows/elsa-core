@@ -153,10 +153,22 @@ def check_source(pin: Pin, commit: str, where: str) -> None:
     require(commit == pin.source_sha, f"{where} {commit!r} is not the pinned source {pin.source_sha}.")
 
 
+def check_run_head(pin: Pin, head_sha: object, head_branch: object, where: str) -> None:
+    """The commit a producer run executed.
+
+    Dispatched from the release branch (3.10.1), that commit is the source itself. Dispatched from main (every later
+    version), it is main's tooling commit, and the source is attested by the artifact name, the sealed manifest and the
+    ancestry check instead.
+    """
+    require(head_sha not in FORBIDDEN_SOURCES, f"{where} names the 3.10.0 source commit {head_sha}.")
+    require(head_sha == pin.source_sha or (head_branch == "main" and isinstance(head_sha, str) and HEX40.fullmatch(head_sha)),
+            f"{where} {head_sha!r} is neither the pinned source {pin.source_sha} nor a commit run from main.")
+
+
 def check_run(pin: Pin, run: dict) -> None:
     check_run_id(pin, run.get("id"))
     require(run.get("run_attempt") == 1, "Candidate run attempt is not attempt 1.")
-    check_source(pin, run.get("head_sha"), "Candidate run head_sha")
+    check_run_head(pin, run.get("head_sha"), run.get("head_branch"), "Candidate run head_sha")
     require(run.get("conclusion") == "success" and run.get("status") == "completed", "Candidate run did not succeed.")
     require(run.get("event") == "workflow_dispatch" and run.get("path") in PRODUCER_WORKFLOWS,
             "Candidate run was not produced by a consolidated candidate workflow.")
@@ -169,7 +181,7 @@ def check_artifact(pin: Pin, artifact: dict) -> None:
     require(artifact.get("digest") == f"sha256:{pin.archive_sha256}", "Candidate artifact digest does not match the pin.")
     workflow_run = artifact.get("workflow_run") or {}
     check_run_id(pin, workflow_run.get("id"))
-    check_source(pin, workflow_run.get("head_sha"), "Candidate artifact workflow_run.head_sha")
+    check_run_head(pin, workflow_run.get("head_sha"), workflow_run.get("head_branch"), "Candidate artifact workflow_run.head_sha")
 
 
 def check_ancestry(pin: Pin, compare: dict) -> None:
@@ -242,8 +254,12 @@ def verify_transport(pin: Pin, transport: Path, stage: Path | None = None) -> li
     require(transport.is_dir(), "Transport directory missing.")
     for name in TRANSPORT_FILES:
         require((transport / name).is_file() and not (transport / name).is_symlink(), f"Transport file {name} missing.")
-    check_run(pin, json.loads((transport / "run.json").read_text()))
-    check_artifact(pin, json.loads((transport / "artifact.json").read_text()))
+    run = json.loads((transport / "run.json").read_text())
+    artifact = json.loads((transport / "artifact.json").read_text())
+    check_run(pin, run)
+    check_artifact(pin, artifact)
+    require((artifact.get("workflow_run") or {}).get("head_sha") == run.get("head_sha"),
+            "Candidate artifact and run were not produced from the same commit.")
     check_ancestry(pin, json.loads((transport / "compare.json").read_text()))
     archive = transport / "candidate.zip"
     check_archive(pin, archive)

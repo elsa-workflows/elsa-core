@@ -101,12 +101,22 @@ def solution_projects(root: Path) -> list[Path]:
     return projects
 
 
+# Any stable 3.10.x patch; the build's ValidateConsolidatedReleaseCandidate target enforces the same pattern.
+CANDIDATE_VERSION = re.compile(r"3\.10\.(0|[1-9][0-9]*)\Z")
+
+
+def assembly_identity(version: str) -> str:
+    """Four-part assembly version for a stable 3.10.x candidate (3.10.1 -> 3.10.1.0)."""
+    require(bool(CANDIDATE_VERSION.fullmatch(version)) or bool(PROOF_VERSION.fullmatch(version)), "Unsupported release identity")
+    return f"{version.split('-', 1)[0]}.0"
+
+
 def validate_mode(version: str, mode: str) -> None:
     require(mode in ("proof", "candidate"), "Unknown consolidated package mode")
     if mode == "proof":
         require(bool(PROOF_VERSION.fullmatch(version)), "Version must be 3.10.0-proof.<positive run>.<positive attempt>")
     else:
-        require(version == "3.10.0", "Candidate requires exactly stable 3.10.0")
+        require(bool(CANDIDATE_VERSION.fullmatch(version)), "Candidate requires a stable 3.10.x version")
 
 
 def mode_properties(mode: str, enabled: bool = True) -> list[str]:
@@ -378,17 +388,24 @@ CLIENTLIB_ASSETS = {
 }
 
 
+def clientlib_assets(root: Path) -> dict:
+    """The browser assets of the ClientLib projects the source tree has (a patch line may carry fewer than main)."""
+    return {identifier: (project, files) for identifier, (project, files) in CLIENTLIB_ASSETS.items()
+            if (root / project).is_dir()}
+
+
 def build_clientlibs(root: Path, output: Path) -> dict:
     script = root / "scripts/integration-program/build_studio_clientlibs.sh"
     inputs = {script.relative_to(root).as_posix(), "Directory.Packages.props", 'studio/src/Directory.Packages.props'}
-    for project, _ in CLIENTLIB_ASSETS.values():
+    libs = clientlib_assets(root)
+    for project, _ in libs.values():
         tracked = run(["git", "ls-files", "--", f"{project}/ClientLib"], root).splitlines()
         inputs.update(tracked)
     inputs.update(run(["git", "ls-files", "--", "scripts/integration-program/consolidated-build/studio-clientlib-lockfiles"], root).splitlines())
     input_hashes = {path: hashlib.sha256((root / path).read_bytes()).hexdigest() for path in sorted(inputs)}
     run(["bash", str(script), str(root)], root, timeout=1200, log=output / "studio-clientlibs.log")
     assets = []
-    for identifier, (project, files) in CLIENTLIB_ASSETS.items():
+    for identifier, (project, files) in libs.items():
         for name in files:
             path = root / project / "wwwroot" / name
             require(path.is_file() and not path.is_symlink() and path.stat().st_size > 0, f"Missing built browser asset: {path}")
@@ -1070,7 +1087,7 @@ def provenance(root: Path, artifacts: Path, manifest: dict, output: Path, *, rem
                     pdb.write_bytes(symbols.read(assembly["pdb"]))
                     inspection = json.loads(run(["dotnet", str(executable), str(dll), str(pdb), "--inspect-documents"], root))
                     require(inspection["assembly_name"] == row["framework_properties"][assembly["framework"]]["assembly_name"], f"Packaged assembly identity mismatch: {row['id']}")
-                    require(inspection["assembly_version"] == "3.10.0.0", f"Packaged assembly was not compiled with common release identity: {row['id']}")
+                    require(inspection["assembly_version"] == assembly_identity(manifest["version"]), f"Packaged assembly was not compiled with common release identity: {row['id']}")
                     require(inspection["informational_version"] == f"{manifest['version']}+{manifest['source_commit']}", f"Assembly informational version does not identify exact source head: {row['id']}")
                     frame = verify_documents(root, row, assembly["framework"], inspection, manifest["source_commit"], remote, cache)
                     frame.update({key: inspection[key] for key in ("assembly_name", "assembly_version", "informational_version")})
@@ -1116,24 +1133,34 @@ def main(*, mode: str = "proof") -> None:
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--inventory-only", action="store_true")
     parser.add_argument("--remote-sources", action="store_true", help="Fetch every tracked document from the exact pushed Core commit")
+    parser.add_argument("--source-root", type=Path, default=Path(__file__).resolve().parents[2],
+                        help="Checkout to evaluate and pack. The tooling is this script's own checkout; the product source, "
+                             "its build scripts and its inventory baseline come from here.")
     if mode == "candidate":
-        parser.add_argument("--baseline", type=Path, default=Path(__file__).with_name("consolidated-candidate-inventory-baseline.json"))
+        parser.add_argument("--baseline", type=Path, default=None,
+                            help="Defaults to the inventory baseline of the source checkout")
     args = parser.parse_args()
     validate_mode(args.version, mode)
-    root = Path(__file__).resolve().parents[2]
+    root = args.source_root.resolve(strict=True)
+    baseline = getattr(args, "baseline", None) or root / "scripts/integration-program/consolidated-candidate-inventory-baseline.json"
     for name in ("IsPackable", "PackageVersion", "GeneratePackageOnBuild", "TargetFramework", "TargetFrameworks", "Version", "Configuration", "ConsolidatedPackageProof", "ConsolidatedReleaseCandidate"):
         require(name not in os.environ, f"Proof refuses an inherited MSBuild override: {name}")
     output = args.output.resolve()
     require(not output.exists() and not output.is_relative_to(root), "Output must be a new directory outside the worktree")
     output.mkdir(parents=True)
     commit = clean_head(root)
+    if mode == "candidate":
+        from prepare_consolidated_release_candidate import require_candidate_source, require_release_line
+        require_candidate_source(root, commit, args.version)
+        if args.version != "3.10.0":
+            require_release_line(root, commit, args.version)
     initial_sources = source_input_hashes(root)
     write_json(output / "source-inputs.json", initial_sources)
     manifest = inventory(root, args.version, commit, mode=mode)
     write_json(output / "inventory.json", manifest)
     if mode == "candidate":
         from prepare_consolidated_release_candidate import compare_inventory
-        compare_inventory(manifest, json.loads(args.baseline.read_text()), output / "inventory-diff.json")
+        compare_inventory(manifest, json.loads(baseline.read_text()), output / "inventory-diff.json")
     print(f"Evaluated {len(manifest['packages'])} packages and {len(manifest['exclusions'])} exclusions", flush=True)
     if args.inventory_only:
         require(clean_head(root) == commit and source_input_hashes(root) == initial_sources, "Source changed during inventory evaluation")
@@ -1178,7 +1205,7 @@ def main(*, mode: str = "proof") -> None:
     write_json(output / "receipt.json", receipt)
     if mode == "candidate":
         from prepare_consolidated_release_candidate import seal
-        seal(output, commit)
+        seal(output, commit, args.version)
     print(f"Package {mode} passed: {output / 'receipt.json'}", flush=True)
 
 
