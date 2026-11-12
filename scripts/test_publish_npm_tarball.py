@@ -33,6 +33,7 @@ def _make_tarball() -> Path:
 class PublishNpmTarballTests(unittest.TestCase):
     def setUp(self):
         self.tarball = _make_tarball()
+        self.local_integrity = publisher._local_integrity(self.tarball)
         self.env_patcher = unittest.mock.patch.dict(
             os.environ, {"NODE_AUTH_TOKEN": "feedz-token"}, clear=False
         )
@@ -88,10 +89,10 @@ class PublishNpmTarballTests(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertEqual(self.mock_run.call_count, 2)
 
-    def test_already_published_and_confirmed(self):
+    def test_already_published_integrity_matches(self):
         self._sequence(
             (1, "npm ERR! code EPUBLISHCONFLICT\nnpm ERR! publish fail"),
-            (0, "{\"version\":\"3.10.0-rc1\"}"),
+            (0, f'"{self.local_integrity}"'),
         )
         code = self._run([
             "--tarball", str(self.tarball),
@@ -101,6 +102,36 @@ class PublishNpmTarballTests(unittest.TestCase):
             "--registry", "https://f.feedz.io/elsa-workflows/elsa-3/npm/",
         ])
         self.assertEqual(code, 0)
+        # Second npm call must request dist.integrity.
+        self.assertIn("dist.integrity", self.mock_run.call_args_list[1][0][0])
+
+    def test_already_published_integrity_missing(self):
+        self._sequence(
+            (1, "npm ERR! code EPUBLISHCONFLICT"),
+            (0, "null"),
+        )
+        code = self._run([
+            "--tarball", str(self.tarball),
+            "--package", "@elsa-workflows/elsa-studio-wasm",
+            "--version", "3.10.0-rc1",
+            "--tag", "next",
+            "--registry", "https://f.feedz.io/elsa-workflows/elsa-3/npm/",
+        ])
+        self.assertEqual(code, 1)
+
+    def test_already_published_integrity_mismatch(self):
+        self._sequence(
+            (1, "npm ERR! code EPUBLISHCONFLICT"),
+            (0, '"sha512-differentvalue"'),
+        )
+        code = self._run([
+            "--tarball", str(self.tarball),
+            "--package", "@elsa-workflows/elsa-studio-wasm",
+            "--version", "3.10.0-rc1",
+            "--tag", "next",
+            "--registry", "https://f.feedz.io/elsa-workflows/elsa-3/npm/",
+        ])
+        self.assertEqual(code, 1)
 
     def test_already_published_but_not_confirmed(self):
         self._sequence(

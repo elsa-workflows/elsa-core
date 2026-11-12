@@ -838,6 +838,28 @@ class WorkflowGateTests(unittest.TestCase):
             "publish_npm WASM publish must use the Feedz npm registry",
         )
 
+    def test_wasm_publish_accepts_unquoted_registry(self):
+        source = self.source.replace(
+            '--package "@elsa-workflows/elsa-studio-wasm"',
+            '--package "@elsa-workflows/elsa-studio-wasm"',
+        ).replace(
+            '--registry "https://f.feedz.io/elsa-workflows/elsa-3/npm/"',
+            '--registry https://f.feedz.io/elsa-workflows/elsa-3/npm/',
+            1,
+        )
+        self.assertEqual([], gates.source_violations(source))
+
+    def test_wasm_publish_rejects_duplicate_registry_mixed(self):
+        source = self.source.replace(
+            '--registry "https://f.feedz.io/elsa-workflows/elsa-3/npm/"',
+            '--registry "https://f.feedz.io/elsa-workflows/elsa-3/npm/" --registry https://f.feedz.io/elsa-workflows/elsa-3/npm/',
+            1,
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm WASM publish must pass exactly one --registry argument",
+        )
+
     def test_wasm_publish_must_pass_registry_argument(self):
         self.assert_rejected(
             self.mutated(
@@ -845,6 +867,15 @@ class WorkflowGateTests(unittest.TestCase):
                 '            --verify-published\n          echo "wasm-published=true" >> "$GITHUB_OUTPUT"',
             ),
             "publish_npm WASM publish must pass exactly one --registry argument",
+        )
+
+    def test_wasm_publish_must_not_count_verify_in_comment(self):
+        self.assert_rejected(
+            self.mutated(
+                '            --verify-published\n          echo "wasm-published=true" >> "$GITHUB_OUTPUT"',
+                '            # --verify-published\n          echo "wasm-published=true" >> "$GITHUB_OUTPUT"',
+            ),
+            "publish_npm WASM publish must confirm availability in the registry",
         )
 
     def test_react_publish_must_use_feedz_registry(self):
@@ -856,6 +887,23 @@ class WorkflowGateTests(unittest.TestCase):
             "publish_npm React publish must use the Feedz npm registry",
         )
 
+    def test_react_publish_accepts_unquoted_registry(self):
+        source = self.source.replace(
+            '--registry "https://f.feedz.io/elsa-workflows/elsa-3/npm/"',
+            '--registry https://f.feedz.io/elsa-workflows/elsa-3/npm/',
+        )
+        self.assertEqual([], gates.source_violations(source))
+
+    def test_react_publish_rejects_duplicate_registry_mixed(self):
+        source = self.source.replace(
+            '--registry "https://f.feedz.io/elsa-workflows/elsa-3/npm/"',
+            '--registry "https://f.feedz.io/elsa-workflows/elsa-3/npm/" --registry https://f.feedz.io/elsa-workflows/elsa-3/npm/',
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm React publish must pass exactly one --registry argument",
+        )
+
     def test_react_publish_must_pass_registry_argument(self):
         self.assert_rejected(
             self.mutated(
@@ -863,6 +911,15 @@ class WorkflowGateTests(unittest.TestCase):
                 '            --verify-published\n\n  deploy_coverage:',
             ),
             "publish_npm React publish must pass exactly one --registry argument",
+        )
+
+    def test_react_publish_must_not_count_verify_in_comment(self):
+        self.assert_rejected(
+            self.mutated(
+                '            --verify-published\n\n  deploy_coverage:',
+                '            # --verify-published\n\n  deploy_coverage:',
+            ),
+            "publish_npm React publish must confirm availability in the registry",
         )
 
     def test_react_publish_must_wait_for_wasm(self):

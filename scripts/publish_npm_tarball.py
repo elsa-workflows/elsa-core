@@ -8,6 +8,9 @@ available in the registry after a successful publish.
 from __future__ import annotations
 
 import argparse
+import base64
+import hashlib
+import json
 import os
 import subprocess
 import sys
@@ -70,6 +73,27 @@ def _network_error(output: str) -> bool:
     ))
 
 
+def _local_integrity(tarball: Path) -> str:
+    """npm-compatible sha512 subresource integrity string for a local tarball."""
+    data = tarball.read_bytes()
+    digest = hashlib.sha512(data).digest()
+    return f"sha512-{base64.b64encode(digest).decode('ascii')}"
+
+
+def _registry_integrity(package: str, version: str, registry: str) -> str | None:
+    """Return dist.integrity from the registry, or None if it cannot be read."""
+    result = _npm(
+        ["view", f"{package}@{version}", "dist.integrity", "--json", "--registry", registry],
+        check=False,
+    )
+    if result.returncode != 0:
+        return None
+    try:
+        return json.loads(result.stdout)
+    except json.JSONDecodeError:
+        return None
+
+
 def publish(tarball: Path, package: str, version: str, tag: str, registry: str) -> None:
     """Publish the tarball, treating an already-published conflict as success only
     when the registry confirms the version exists.
@@ -87,17 +111,25 @@ def publish(tarball: Path, package: str, version: str, tag: str, registry: str) 
         return
 
     if _already_published_output(output):
-        view = _npm(["view", f"{package}@{version}", "--registry", registry], check=False)
-        if view.returncode == 0:
-            print(
-                f"::notice::{package}@{version} is already published in the registry; skipping.",
-                file=sys.stderr,
+        registry_integrity = _registry_integrity(package, version, registry)
+        if registry_integrity is None:
+            raise PublishError(
+                f"{package}@{version} reported a publish conflict, but dist.integrity is not "
+                f"available in the registry."
             )
-            return
-        raise PublishError(
-            f"{package}@{version} reported a publish conflict, but the version is not available "
-            f"in the registry."
+        local_integrity = _local_integrity(tarball)
+        if registry_integrity != local_integrity:
+            raise PublishError(
+                f"{package}@{version} is already published with a different integrity "
+                f"(registry: {registry_integrity}, local: {local_integrity}). "
+                f"Refusing to continue."
+            )
+        print(
+            f"::notice::{package}@{version} is already published in the registry with matching "
+            f"integrity; skipping.",
+            file=sys.stderr,
         )
+        return
 
     if _auth_error(output):
         raise PublishError(f"Authentication failed while publishing {package}@{version}.")

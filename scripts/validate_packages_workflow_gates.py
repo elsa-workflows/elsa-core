@@ -389,15 +389,29 @@ def _npm_registry_arg(run: str) -> str | None:
     # Shell line-continuation backslashes are literal in the YAML run block.
     cleaned = run.replace(" \\ ", " ").replace("\\ ", " ")
     quoted = re.findall(r'--registry\s+"([^"]+)"', cleaned)
-    if len(quoted) == 1:
-        return quoted[0]
-    unquoted = re.findall(r"--registry\s+(\S+)", cleaned)
-    return unquoted[0] if len(unquoted) == 1 else None
+    unquoted = [
+        value for value in re.findall(r"--registry\s+(\S+)", cleaned)
+        if not (value.startswith('"') and value.endswith('"'))
+    ]
+    values = quoted + unquoted
+    return values[0] if len(values) == 1 else None
 
 
 def _run_lines(step: dict) -> list[str]:
     """Whitespace-normalized non-empty lines of a step's run: body."""
     return [" ".join(line.split()) for line in str(step.get("run") or "").splitlines() if line.strip()]
+
+
+def _run_command_lines(step: dict) -> list[str]:
+    """Lines of a step's run with shell comments removed."""
+    result = []
+    for line in _run_lines(step):
+        comment = line.find("#")
+        if comment >= 0:
+            line = line[:comment].rstrip()
+        if line:
+            result.append(line)
+    return result
 
 
 def _has_defaults_run_shell(node: Any) -> bool:
@@ -688,6 +702,7 @@ def npm_job_violations(jobs: dict) -> list[str]:
     violations += extra
     if wasm_publish is not None:
         run = _step_run(steps[wasm_publish])
+        wasm_command_lines = _run_command_lines(steps[wasm_publish])
         if "--tag" not in run:
             violations.append("publish_npm WASM publish must pass a dist-tag")
         wasm_registry = _npm_registry_arg(run)
@@ -695,7 +710,7 @@ def npm_job_violations(jobs: dict) -> list[str]:
             violations.append("publish_npm WASM publish must pass exactly one --registry argument")
         elif wasm_registry != FEEDZ_NPM_REGISTRY:
             violations.append("publish_npm WASM publish must use the Feedz npm registry")
-        if "--verify-published" not in run:
+        if not any("--verify-published" in line for line in wasm_command_lines):
             violations.append("publish_npm WASM publish must confirm availability in the registry")
         if "::error::Feedz npm key resolved empty" not in run:
             violations.append("publish_npm WASM publish must fail closed when the Feedz key is empty")
@@ -705,6 +720,7 @@ def npm_job_violations(jobs: dict) -> list[str]:
             violations.append("publish_npm WASM publish step must set output 'wasm-published=true'")
     if react_publish is not None:
         run = _step_run(steps[react_publish])
+        react_command_lines = _run_command_lines(steps[react_publish])
         if "--tag" not in run:
             violations.append("publish_npm React publish must pass a dist-tag")
         react_registry = _npm_registry_arg(run)
@@ -712,7 +728,7 @@ def npm_job_violations(jobs: dict) -> list[str]:
             violations.append("publish_npm React publish must pass exactly one --registry argument")
         elif react_registry != FEEDZ_NPM_REGISTRY:
             violations.append("publish_npm React publish must use the Feedz npm registry")
-        if "--verify-published" not in run:
+        if not any("--verify-published" in line for line in react_command_lines):
             violations.append("publish_npm React publish must confirm availability in the registry")
         if "::error::Feedz npm key resolved empty" not in run:
             violations.append("publish_npm React publish must fail closed when the Feedz key is empty")
