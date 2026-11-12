@@ -36,7 +36,7 @@ This design is the only one that works correctly with the default in-memory sche
 
 - **Tenant activation.** `PopulateRegistriesStartupTask` runs in the tenant scope. `DefaultWorkflowDefinitionStorePopulator` imports `"*"` definitions (via `TenantAgnosticWorkflowsCache`) and calls `TriggerIndexer.IndexTriggersAsync`, which creates trigger rows stamped with the activating tenant.
 - **Publish / republish.** When a `"*"` definition is published, `ScheduleWorkflows` handles `WorkflowTriggersIndexed` and schedules the new triggers in the current tenant context. Re-publishing a `"*"` definition while tenant A is active updates A's trigger rows; other tenants are unaffected until they next index the definition.
-- **Tenant deactivation / deletion.** `UpdateTenantSchedules` handles `ITenantDeletedEvent` and unschedules the timer/cron triggers and bookmarks that belong to the deleted tenant. The removal of persistent trigger rows for a deleted tenant is the responsibility of the host's tenant-cleanup strategy; Elsa does not currently provide a built-in trigger-row purge on tenant deletion.
+- **Tenant deactivation / deletion.** `UpdateTenantSchedules` handles `ITenantDeletedEvent` and unschedules (stops) the timer/cron schedules and bookmark schedules that belong to the deleted tenant. It does not delete persistent `StoredTrigger` rows; the host's tenant-cleanup strategy is responsible for removing those rows.
 
 ### 3. Instance ownership
 
@@ -58,7 +58,7 @@ An HTTP request handled by `HttpWorkflowsMiddleware` resolves the tenant first (
 
 ### 5. Bookmarks
 
-Bookmarks are created during workflow execution and inherit the instance's tenant. A `"*"` workflow running under tenant A creates bookmarks stamped with tenant A. The store's tenant visibility rules ensure that a stimulus in tenant B cannot find or resume tenant-A bookmarks. A `"*"` bookmark (if ever created explicitly) is visible to all tenants, but it can only resume an instance that is also visible to the caller; the `WorkflowInstanceStore` query filter prevents tenant A from loading an instance owned by tenant B. Because such bookmarks are visible to every tenant, they can be resumed by any tenant; the resumed workflow executes under the caller's tenant context.
+Bookmarks are created during workflow execution and inherit the instance's tenant. A `"*"` workflow running under tenant A creates bookmarks stamped with tenant A. The store's tenant visibility rules ensure that a stimulus in tenant B cannot find or resume tenant-A bookmarks. A `"*"` bookmark (if ever created explicitly) is visible to all tenants. It can resume an instance only when that instance is also visible to the caller; the `WorkflowInstanceStore` query filter prevents tenant A from loading an instance owned by tenant B. If both the bookmark and the instance are visible to the caller, resumption proceeds under the caller's tenant context.
 
 ### 6. Timers and cron
 
@@ -67,7 +67,7 @@ Timers and cron are **per tenant**.
 - Each tenant has its own trigger rows for timer/cron activities inside `"*"` workflows.
 - When a tenant activates, `CreateSchedulesStartupTask` schedules that tenant's timer/cron triggers through the configured `ITriggerScheduler`.
 - `UpdateTenantSchedules` unschedules a tenant's timer/cron triggers when the tenant is deleted.
-- The instance created when a timer fires belongs to the tenant whose trigger fired.
+- The instance created when a timer fires belongs to the tenant whose trigger fired (see [Known limitations](#known-limitations) for the current default-scheduler exception).
 
 Global scheduling (a single cron that fires once for all tenants) is **not** part of this design. It is noted only as future work under [Alternatives considered](#alternatives-considered).
 
@@ -109,7 +109,7 @@ Recovery of `"*"` workflow instances follows the rules introduced by PR #9171 an
 
 ## Known limitations
 
-The default `LocalScheduler` does not capture and restore the ambient tenant context when a scheduled task fires. `ScheduledCronTask` creates a new DI scope from the root `IServiceScopeFactory`, and `RunWorkflowTask` executes `CreateAndRunInstanceAsync` without pushing the tenant that scheduled the task. This means timer/cron triggers scheduled for a named tenant may execute under the default tenant context.
+The default `LocalScheduler` does not capture and restore the ambient tenant context when a scheduled task fires. `ScheduledCronTask` creates a new DI scope from the root `IServiceScopeFactory`, and `RunWorkflowTask` executes `CreateAndRunInstanceAsync` without pushing the tenant that scheduled the task. This means timer/cron triggers scheduled for a named tenant may execute under the default tenant context; the resulting workflow instance is therefore stamped with the default tenant rather than the tenant that owned the trigger.
 
 This is an independent bug in the default scheduler, not a desired semantic of `"*"` workflows. It is tracked separately and should be fixed so that scheduled tasks run under the tenant context that scheduled them.
 
