@@ -180,9 +180,8 @@ public class HttpEndpoint : Trigger<HttpRequest>
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
-        var path = Path.Get(context);
-        var methods = SupportedMethods.GetOrDefault(context) ?? new List<string> { HttpMethods.Get };
-        await context.WaitForHttpRequestAsync(path, methods, OnResumeAsync, Elsa.Http.HttpStimulusNames.HttpEndpoint);
+        var options = GetEndpointOptions(context.ExpressionExecutionContext);
+        await context.WaitForHttpRequestAsync(options, OnResumeAsync, Elsa.Http.HttpStimulusNames.HttpEndpoint);
     }
 
     private async ValueTask OnResumeAsync(ActivityExecutionContext context)
@@ -195,6 +194,16 @@ public class HttpEndpoint : Trigger<HttpRequest>
             // We're executing in a non-HTTP context (e.g. in a virtual actor).
             // Create a bookmark to allow the invoker to export the state and resume execution from there.
             context.CreateCrossBoundaryBookmark();
+            return;
+        }
+
+        // Bookmarks created by earlier versions may carry default options, so enforce the activity's current options on resume.
+        if (!context.IsTriggerOfWorkflow() && !await AuthorizeAsync(context, httpContext))
+        {
+            httpContext.Response.StatusCode = StatusCodes.Status401Unauthorized;
+
+            // Keep waiting for a valid request.
+            await context.WaitForHttpRequestAsync(GetEndpointOptions(context.ExpressionExecutionContext), OnResumeAsync, Elsa.Http.HttpStimulusNames.HttpEndpoint);
             return;
         }
 
@@ -500,20 +509,27 @@ public class HttpEndpoint : Trigger<HttpRequest>
         return httpRequest.ContentLength == null && !string.IsNullOrWhiteSpace(httpRequest.ContentType);
     }
 
-    private IEnumerable<object> GetBookmarkPayloads(ExpressionExecutionContext context)
-    {
-        // Generate bookmark data for path and selected methods.
-        var normalizedRoute = context.Get(Path)!.NormalizeRoute();
-        var methods = SupportedMethods.GetOrDefault(context) ?? new List<string> { HttpMethods.Get };
-        var authorize = Authorize.GetOrDefault(context);
-        var policy = Policy.GetOrDefault(context);
-        var requestTimeout = RequestTimeout.GetOrDefault(context);
-        var requestSizeLimit = RequestSizeLimit.GetOrDefault(context);
+    private IEnumerable<object> GetBookmarkPayloads(ExpressionExecutionContext context) => context.GetHttpEndpointStimuli(GetEndpointOptions(context));
 
-        return methods
-            .Select(x => new HttpEndpointBookmarkPayload(normalizedRoute, x.ToLowerInvariant(), authorize, policy, requestTimeout, requestSizeLimit))
-            .Cast<object>()
-            .ToArray();
+    private HttpEndpointOptions GetEndpointOptions(ExpressionExecutionContext context) => new()
+    {
+        Path = context.Get(Path)!,
+        Methods = SupportedMethods.GetOrDefault(context) ?? new List<string> { HttpMethods.Get },
+        Authorize = Authorize.GetOrDefault(context),
+        Policy = Policy.GetOrDefault(context),
+        RequestTimeout = RequestTimeout.GetOrDefault(context),
+        RequestSizeLimit = RequestSizeLimit.GetOrDefault(context)
+    };
+
+    private async Task<bool> AuthorizeAsync(ActivityExecutionContext context, HttpContext httpContext)
+    {
+        var options = GetEndpointOptions(context.ExpressionExecutionContext);
+
+        if (!options.Authorize)
+            return true;
+
+        var authorizationHandler = context.GetRequiredService<IHttpEndpointAuthorizationHandler>();
+        return await authorizationHandler.AuthorizeAsync(new(httpContext, context.WorkflowExecutionContext.Workflow, options.Policy));
     }
 
     private static RouteData GetRouteData(HttpContext httpContext, string path)
