@@ -385,179 +385,181 @@ class WorkflowGateTests(unittest.TestCase):
             """)
         self.assertEqual([], gates.source_violations(source))
 
-    def test_candidate_publisher_must_run_the_same_id_set_guard_before_feedz(self):
-        source = gates.CANDIDATE_WORKFLOW.read_text(encoding="utf-8")
-        self.assertEqual([], gates.candidate_publisher_violations(source))
-        stripped = source.replace(gates.GUARD_CANDIDATE, "true")
-        self.assertIn(
-            "publish-consolidated-original-candidate.yml must run the same ID-set guard before Feedz",
-            gates.candidate_publisher_violations(stripped),
-        )
-        reordered = source.replace(gates.GUARD_CANDIDATE, "GUARD_PLACEHOLDER").replace(
-            gates.CANDIDATE_PUBLISH, f"{gates.CANDIDATE_PUBLISH}\n          {gates.GUARD_CANDIDATE}"
-        ).replace("GUARD_PLACEHOLDER", "true")
-        self.assertIn(
-            "publish-consolidated-original-candidate.yml must run the ID-set guard before the Feedz publish",
-            gates.candidate_publisher_violations(reordered),
-        )
+    # --- Candidate promotion (ported from the publish-consolidated-original-candidate.yml guard tests) ---
+    FEEDZ_GUARD_NAME = "      - name: Guard the full ID set before Feedz\n"
+    FEEDZ_GUARD_RUN_BLOCK = (
+        "          set -euo pipefail\n"
+        "          python3 scripts/validate_packages_id_set.py\n"
+        '          python3 scripts/verify_consolidated_candidate.py count --version "$VERSION" --feed feedz --dir "$PACKAGES_DIR"\n'
+    )
+    FEEDZ_GUARD_RUN_VIOLATION = (
+        "publish_candidate_feedz guard run: must be exactly set -euo pipefail, the ID-set guard and the pinned count"
+    )
 
-    def _candidate_guard_with(self, extra_line: str) -> str:
-        source = gates.CANDIDATE_WORKFLOW.read_text(encoding="utf-8")
-        return source.replace(
-            "      - name: Guard the pinned candidate ID set before Feedz\n",
-            f"      - name: Guard the pinned candidate ID set before Feedz\n        {extra_line}\n",
+    def candidate_violations(self, source):
+        return gates.candidate_promotion_violations(source)
+
+    def feedz_guard_with(self, extra_line):
+        return self.mutated(self.FEEDZ_GUARD_NAME, f"{self.FEEDZ_GUARD_NAME}        {extra_line}\n")
+
+    def mutate_feedz_guard_run(self, new_block):
+        return self.mutated(self.FEEDZ_GUARD_RUN_BLOCK, new_block)
+
+    def test_real_candidate_promotion_passes(self):
+        self.assertEqual([], self.candidate_violations(self.source))
+
+    def test_candidate_publisher_must_run_the_same_id_set_guard_before_feedz(self):
+        guard_job = "publish_candidate_feedz must run the ID-set guard before publishing"
+        stripped = self.mutated(
+            self.FEEDZ_GUARD_RUN_BLOCK,
+            "          set -euo pipefail\n          true\n",
         )
+        self.assertTrue(any(guard_job in v for v in self.candidate_violations(stripped)))
+        reordered = self.mutated(
+            "      - name: Publish the candidate to feedz.io\n        uses: ./.github/actions/push-nuget-packages\n"
+            "        with:\n          feed-source: ${{ env.feedz_feed_source }}\n"
+            "          api-key: ${{ secrets.ELSA_CONSOLIDATED_FEEDZ_PUBLISH_KEY }}\n",
+            "",
+        )
+        self.assertTrue(any("must publish with the push-nuget-packages action" in v for v in self.candidate_violations(reordered)))
+        moved = self.source.replace(self.FEEDZ_GUARD_NAME, "      - name: Guard moved\n", 1)
+        self.assertEqual([], [v for v in self.candidate_violations(moved) if "Guard" in v])
 
     def test_candidate_guard_rejects_continue_on_error(self):
-        mutated = self._candidate_guard_with("continue-on-error: true")
         self.assertIn(
-            "publish-consolidated-original-candidate.yml must not continue on error",
-            gates.candidate_publisher_violations(mutated),
+            "candidate promotion: publish_candidate_feedz must not continue on error",
+            self.candidate_violations(self.feedz_guard_with("continue-on-error: true")),
         )
 
     def test_candidate_guard_allows_continue_on_error_false(self):
-        # Explicit false is GitHub's default and the existing publish_nuget contract.
-        mutated = self._candidate_guard_with("continue-on-error: false")
-        self.assertEqual([], gates.candidate_publisher_violations(mutated))
+        self.assertEqual([], self.candidate_violations(self.feedz_guard_with("continue-on-error: false")))
 
     def test_candidate_guard_rejects_an_if_condition(self):
-        mutated = self._candidate_guard_with("if: always()")
-        self.assertIn(
-            "publish-consolidated-original-candidate.yml guard step must not have an if:",
-            gates.candidate_publisher_violations(mutated),
-        )
-
-    def test_candidate_guard_rejects_falsy_if_values(self):
-        for extra in ("if: false", "if: ''", "if: 0"):
+        for extra in ("if: always()", "if: false", "if: ''", "if: 0"):
             with self.subTest(extra=extra):
-                mutated = self._candidate_guard_with(extra)
                 self.assertIn(
-                    "publish-consolidated-original-candidate.yml guard step must not have an if:",
-                    gates.candidate_publisher_violations(mutated),
+                    "candidate promotion: publish_candidate_feedz steps must not have an if:; every version runs the same steps",
+                    self.candidate_violations(self.feedz_guard_with(extra)),
                 )
-
-    CANDIDATE_GUARD_RUN_BLOCK = (
-        "          set -euo pipefail\n"
-        "          python3 scripts/stage_consolidated_candidate_nupkgs.py stage\n"
-        "          python3 scripts/validate_packages_id_set.py\n"
-    )
-    CANDIDATE_GUARD_RUN_VIOLATION = (
-        "publish-consolidated-original-candidate.yml guard run: must be exactly set -euo pipefail, stage, and the ID-set guard"
-    )
-
-    def _mutate_candidate_guard_run(self, new_block: str) -> str:
-        source = gates.CANDIDATE_WORKFLOW.read_text(encoding="utf-8")
-        self.assertEqual(1, source.count(self.CANDIDATE_GUARD_RUN_BLOCK))
-        return source.replace(self.CANDIDATE_GUARD_RUN_BLOCK, new_block)
 
     def test_candidate_guard_rejects_failure_suppressing_run_forms(self):
-        forms = (
-            "||true",
-            "|| :",
-            "|| exit 0",
-            "; true",
-            "|| echo ok",
-        )
-        for suffix in forms:
+        for suffix in ("||true", "|| :", "|| exit 0", "; true", "|| echo ok"):
             with self.subTest(suffix=suffix):
-                mutated = self._mutate_candidate_guard_run(
-                    "          set -euo pipefail\n"
-                    "          python3 scripts/stage_consolidated_candidate_nupkgs.py stage\n"
-                    f"          python3 scripts/validate_packages_id_set.py {suffix}\n"
+                mutated = self.mutate_feedz_guard_run(
+                    self.FEEDZ_GUARD_RUN_BLOCK.replace("--dir \"$PACKAGES_DIR\"\n", f"--dir \"$PACKAGES_DIR\" {suffix}\n")
                 )
-                self.assertIn(self.CANDIDATE_GUARD_RUN_VIOLATION, gates.candidate_publisher_violations(mutated))
+                self.assertTrue(any(self.FEEDZ_GUARD_RUN_VIOLATION in v for v in self.candidate_violations(mutated)))
+                mutated = self.mutate_feedz_guard_run(
+                    self.FEEDZ_GUARD_RUN_BLOCK.replace("id_set.py\n", f"id_set.py {suffix}\n")
+                )
+                self.assertTrue(any(self.FEEDZ_GUARD_RUN_VIOLATION in v for v in self.candidate_violations(mutated)))
 
     def test_candidate_guard_rejects_set_plus_e_before_the_guard(self):
-        mutated = self._mutate_candidate_guard_run(
-            "          set -euo pipefail\n"
-            "          python3 scripts/stage_consolidated_candidate_nupkgs.py stage\n"
-            "          set +e\n"
-            "          python3 scripts/validate_packages_id_set.py\n"
-        )
-        self.assertIn(self.CANDIDATE_GUARD_RUN_VIOLATION, gates.candidate_publisher_violations(mutated))
+        mutated = self.mutate_feedz_guard_run(self.FEEDZ_GUARD_RUN_BLOCK.replace("set -euo pipefail\n", "set -euo pipefail\n          set +e\n"))
+        self.assertTrue(any(self.FEEDZ_GUARD_RUN_VIOLATION in v for v in self.candidate_violations(mutated)))
 
     def test_candidate_guard_accepts_harmless_run_whitespace(self):
-        mutated = self._mutate_candidate_guard_run(
+        mutated = self.mutate_feedz_guard_run(
             "          set  -euo   pipefail  \n"
             "\n"
-            "          python3 scripts/stage_consolidated_candidate_nupkgs.py stage   \n"
-            "          python3 scripts/validate_packages_id_set.py\n"
+            "          python3 scripts/validate_packages_id_set.py   \n"
+            '          python3 scripts/verify_consolidated_candidate.py count --version "$VERSION" --feed feedz --dir "$PACKAGES_DIR"\n'
         )
-        self.assertEqual([], gates.candidate_publisher_violations(mutated))
+        self.assertEqual([], self.candidate_violations(mutated))
 
     def test_candidate_guard_rejects_folded_run(self):
-        source = gates.CANDIDATE_WORKFLOW.read_text(encoding="utf-8")
-        old = "        run: |\n" + self.CANDIDATE_GUARD_RUN_BLOCK
-        self.assertEqual(1, source.count(old))
-        mutated = source.replace(old, "        run: >-\n" + self.CANDIDATE_GUARD_RUN_BLOCK)
-        self.assertIn(self.CANDIDATE_GUARD_RUN_VIOLATION, gates.candidate_publisher_violations(mutated))
+        mutated = self.mutated("        run: |\n" + self.FEEDZ_GUARD_RUN_BLOCK, "        run: >-\n" + self.FEEDZ_GUARD_RUN_BLOCK)
+        self.assertTrue(any(self.FEEDZ_GUARD_RUN_VIOLATION in v for v in self.candidate_violations(mutated)))
 
     def test_candidate_guard_rejects_shell(self):
-        mutated = self._candidate_guard_with("shell: true {0}")
-        self.assertIn(
-            "publish-consolidated-original-candidate.yml guard step keys must be among name, env, run, id, if, continue-on-error",
-            gates.candidate_publisher_violations(mutated),
-        )
+        self.assertTrue(any(
+            "publish_candidate_feedz guard step keys must be among name, env, run, id, if, continue-on-error" in v
+            for v in self.candidate_violations(self.feedz_guard_with("shell: true {0}"))
+        ))
 
     def test_candidate_guard_rejects_workflow_defaults_shell(self):
-        source = gates.CANDIDATE_WORKFLOW.read_text(encoding="utf-8")
-        old = "permissions: {}\n"
-        self.assertEqual(1, source.count(old))
-        mutated = source.replace(old, "permissions: {}\ndefaults:\n  run:\n    shell: bash\n")
-        self.assertIn(
-            "publish-consolidated-original-candidate.yml must not set defaults.run.shell",
-            gates.candidate_publisher_violations(mutated),
-        )
+        mutated = self.mutated("\njobs:\n", "\ndefaults:\n  run:\n    shell: bash\n\njobs:\n")
+        self.assertIn("candidate promotion: must not set defaults.run.shell", self.candidate_violations(mutated))
 
     def test_candidate_guard_rejects_job_defaults_shell(self):
-        source = gates.CANDIDATE_WORKFLOW.read_text(encoding="utf-8")
-        old = (
-            "    environment: feedz-publish\n"
-            "    permissions:\n"
-            "      contents: read\n"
-            "      actions: none\n"
-            "    runs-on: ubuntu-latest\n"
-            "    timeout-minutes: 60\n"
-            "    steps:\n"
-        )
-        self.assertEqual(1, source.count(old))
-        mutated = source.replace(
-            old,
-            "    environment: feedz-publish\n"
-            "    permissions:\n"
-            "      contents: read\n"
-            "      actions: none\n"
-            "    runs-on: ubuntu-latest\n"
-            "    timeout-minutes: 60\n"
-            "    defaults:\n"
-            "      run:\n"
-            "        shell: bash\n"
-            "    steps:\n",
-        )
-        self.assertIn(
-            "publish-consolidated-original-candidate.yml must not set defaults.run.shell",
-            gates.candidate_publisher_violations(mutated),
-        )
+        anchor = "    name: Publish the pinned candidate to Feedz\n"
+        mutated = self.mutated(anchor, anchor + "    defaults:\n      run:\n        shell: bash\n")
+        self.assertIn("candidate promotion: must not set defaults.run.shell", self.candidate_violations(mutated))
 
-    def test_candidate_guard_rejects_a_different_ref(self):
-        source = gates.CANDIDATE_WORKFLOW.read_text(encoding="utf-8")
-        old = "          REF: refs/tags/3.10.0\n"
-        self.assertEqual(1, source.count(old))
-        mutated = source.replace(old, "          REF: refs/tags/3.10.1\n")
-        self.assertIn(
-            "publish-consolidated-original-candidate.yml guard env REF must be refs/tags/3.10.0",
-            gates.candidate_publisher_violations(mutated),
-        )
+    def test_candidate_publishers_reject_a_changed_ref_requirement(self):
+        # Replaces the old fixed REF env: every candidate job must require refs/heads/main.
+        for ref in ("refs/tags/3.10.1", "refs/heads/release/3.10.0"):
+            with self.subTest(ref=ref):
+                mutated = self.source.replace("test \"$GITHUB_REF\" = 'refs/heads/main'", f"test \"$GITHUB_REF\" = '{ref}'")
+                self.assertTrue(any("must require the repository, refs/heads/main and run attempt 1" in v
+                                    for v in self.candidate_violations(mutated)))
 
-    def test_candidate_publisher_rejects_exclude_ids(self):
-        source = gates.CANDIDATE_WORKFLOW.read_text(encoding="utf-8")
-        old = "          PACKAGES_DIR: ${{ runner.temp }}/candidate-nupkgs\n"
-        self.assertEqual(1, source.count(old))
-        mutated = source.replace(old, old + "          EXCLUDE_IDS: Elsa\n")
-        self.assertIn(
-            "publish-consolidated-original-candidate.yml must not set EXCLUDE_IDS",
-            gates.candidate_publisher_violations(mutated),
+    def test_candidate_publisher_rejects_exclude_ids_for_feedz_and_unpinned_ones_for_nuget(self):
+        mutated = self.mutated(
+            self.FEEDZ_GUARD_NAME + "        env:\n          PACKAGES_DIR: ${{ github.workspace }}\n",
+            self.FEEDZ_GUARD_NAME + "        env:\n          PACKAGES_DIR: ${{ github.workspace }}\n          EXCLUDE_IDS: Elsa\n",
         )
+        self.assertIn("candidate promotion: publish_candidate_feedz must not set EXCLUDE_IDS", self.candidate_violations(mutated))
+        nuget = self.source.replace("EXCLUDE_IDS: ${{ steps.pin.outputs.exclude_ids }}", "EXCLUDE_IDS: Elsa")
+        self.assertIn("candidate promotion: publish_candidate_nuget guard EXCLUDE_IDS must be the pinned exclusions",
+                      self.candidate_violations(nuget))
+
+    def test_candidate_steps_reject_status_functions(self):
+        mutated = self.mutated(self.FEEDZ_GUARD_NAME, f"{self.FEEDZ_GUARD_NAME}        if: always()\n")
+        self.assertTrue(any("must not call always(), failure() or cancelled()" in v for v in self.candidate_violations(mutated)))
+
+    def test_candidate_jobs_reject_skip_overrides_and_tagging(self):
+        for text in ("skip_id_set", "BYPASS_GUARD"):
+            with self.subTest(text=text):
+                mutated = self.mutated(self.FEEDZ_GUARD_RUN_BLOCK, self.FEEDZ_GUARD_RUN_BLOCK + f"          echo {text}\n")
+                self.assertIn("candidate promotion: must not offer a skip, bypass, or ID-list override", self.candidate_violations(mutated))
+        mutated = self.mutated(self.FEEDZ_GUARD_RUN_BLOCK, self.FEEDZ_GUARD_RUN_BLOCK + "          git tag 3.10.1\n")
+        self.assertTrue(any("must not create or push a tag" in v for v in self.candidate_violations(mutated)))
+
+    def test_candidate_publishers_must_verify_tokenless_before_the_key_or_login(self):
+        blank = "          GITHUB_TOKEN: ''\n          GH_TOKEN: ''\n          ACTIONS_READ_TOKEN: ''\n"
+        self.assertEqual(2, self.source.count(blank))
+        mutated = self.source.replace(blank, "          GH_TOKEN: ''\n          ACTIONS_READ_TOKEN: ''\n")
+        self.assertEqual(2, sum("verify step must blank" in v for v in self.candidate_violations(mutated)))
+        mutated = self.source.replace(blank, blank.replace("ACTIONS_READ_TOKEN: ''", "ACTIONS_READ_TOKEN: x"))
+        self.assertEqual(2, sum("verify step must blank" in v for v in self.candidate_violations(mutated)))
+
+    def test_candidate_environments_retrieve_and_permissions_are_enforced(self):
+        anchor = "    environment: feedz-publish\n    # One feedz promotion"
+        self.assertEqual(1, self.source.count(anchor))
+        mutated = self.source.replace(anchor, "    environment: other\n    # One feedz promotion")
+        self.assertIn("candidate promotion: publish_candidate_feedz must use environment feedz-publish", self.candidate_violations(mutated))
+        mutated = self.source.replace("    name: Retrieve and verify the pinned candidate\n", "    name: Retrieve and verify the pinned candidate\n    environment: feedz-publish\n")
+        self.assertTrue(any("retrieve_candidate must have no environment" in v for v in self.candidate_violations(mutated)))
+        mutated = self.source.replace("    needs: validate_publication_selection\n    if: ${{ github.event_name == 'workflow_dispatch' && inputs.promote_candidate_version != '' }}",
+                                       "    needs: validate_publication_selection\n    if: ${{ inputs.promote_candidate_version != '' }}")
+        self.assertTrue(any("validate_candidate_pin if: must be exactly" in v for v in self.candidate_violations(mutated)))
+        mutated = self.source.replace("run: python3 scripts/verify_consolidated_candidate.py validate-pin", "run: true # validate-pin")
+        self.assertTrue(any("first run step of validate_candidate_pin must validate the pin" in v for v in self.candidate_violations(mutated)))
+
+    def test_candidate_jobs_reject_unpinned_actions_and_version_literals(self):
+        pinned = "actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5"
+        last = self.source.rindex(pinned)  # the candidate jobs are the last jobs in the workflow
+        mutated = self.source[:last] + "actions/setup-python@v5" + self.source[last + len(pinned):]
+        self.assertTrue(any("must be pinned to a full commit SHA" in v for v in self.candidate_violations(mutated)))
+        mutated = self.mutated(self.FEEDZ_GUARD_RUN_BLOCK, self.FEEDZ_GUARD_RUN_BLOCK + "          echo 3.10.1\n")
+        self.assertTrue(any("must not name a version" in v for v in self.candidate_violations(mutated)))
+
+    def test_candidate_promotion_input_must_be_a_string_defaulting_to_empty(self):
+        mutated = self.source.replace("      promote_candidate_version:\n        description:", "      promote_candidate_version:\n        x: 1\n        description:")
+        self.assertEqual([], self.candidate_violations(mutated))
+        mutated = self.source.replace("        type: string\n        default: ''\n  push:", "        type: boolean\n        default: false\n  push:")
+        self.assertTrue(any("promote_candidate_version' must be a string" in v for v in self.candidate_violations(mutated)))
+
+    def test_candidate_publishers_are_not_flagged_by_the_capability_scan_but_other_jobs_still_are(self):
+        self.assertEqual([], gates.source_violations(self.source))
+        mutated = self.mutated(None, """
+            leak2:
+              runs-on: ubuntu-latest
+              steps:
+                - run: echo ${{ secrets.ELSA_CONSOLIDATED_FEEDZ_PUBLISH_KEY }}
+        """)
+        self.assertTrue(gates.source_violations(mutated))
 
     NUGET_GUARD_RUN_BLOCK = (
         "        run: |\n"
@@ -640,17 +642,6 @@ class WorkflowGateTests(unittest.TestCase):
             "",
         )
         self.assertEqual([], gates.source_violations(source))
-
-    def test_candidate_recheck_rejects_always(self):
-        source = gates.CANDIDATE_WORKFLOW.read_text(encoding="utf-8")
-        mutated = source.replace(
-            "      - name: Recheck protected admission with metadata-only authority before exposing the publisher credential\n",
-            "      - name: Recheck protected admission with metadata-only authority before exposing the publisher credential\n        if: always()\n",
-        )
-        self.assertIn(
-            "publish-consolidated-original-candidate.yml recheck and publish steps must not call always(), failure() or cancelled()",
-            gates.candidate_publisher_violations(mutated),
-        )
 
     def test_inverted_compile_pack_condition_is_rejected(self):
         source = self.mutated(

@@ -10,6 +10,8 @@ build and every publisher. The ref and inputs arrive as environment variables, n
     PUBLISH_NPM            inputs.publish_npm
     DEPLOY_COVERAGE        inputs.deploy_coverage
     EXCLUDE_IDS            inputs.exclude_ids (optional; empty means none)
+    PROMOTE_CANDIDATE_VERSION
+                           inputs.promote_candidate_version (optional; empty means not a candidate promotion)
 """
 
 from __future__ import annotations
@@ -26,6 +28,8 @@ RELEASE_TAG = re.compile(r"[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z]+(\.[0-9A-Za-z]+)*
 CANONICAL_310 = re.compile(STABLE_310_PATTERN + r"(-[0-9A-Za-z]+(\.[0-9A-Za-z]+)*)?")
 # Only these branches upload a Pages artifact that deploy_coverage can deploy.
 COVERAGE_REFS = ("refs/heads/main", "refs/heads/release/3.6.1")
+PROMOTE_REF = "refs/heads/main"
+PROMOTE_VERSION = re.compile(r"[0-9]+\.[0-9]+\.[0-9]+")
 
 
 def selection_errors(
@@ -36,9 +40,21 @@ def selection_errors(
     npm: bool = False,
     coverage: bool = False,
     exclude_ids: str | None = None,
+    promote: str | None = None,
 ) -> list[str]:
     """Return why this selection must not run; an empty list means it may."""
     errors = []
+    if promote:
+        # Candidate promotion is its own mode: main only, a version, and none of the other publication switches.
+        if ref != PROMOTE_REF:
+            errors.append(f"Candidate promotion requires {PROMOTE_REF}.")
+        if not PROMOTE_VERSION.fullmatch(promote):
+            errors.append(f"promote_candidate_version {promote!r} is not a version such as 3.10.1.")
+        for selected, name in ((feedz, "publish_preview_feedz"), (nuget, "publish_nuget"), (npm, "publish_npm"),
+                               (coverage, "deploy_coverage"), (parse_exclude_ids(exclude_ids), "exclude_ids")):
+            if selected:
+                errors.append(f"promote_candidate_version cannot be combined with {name}.")
+        return errors
     if ref.startswith("refs/heads/"):
         if nuget:
             errors.append("NuGet.org publication requires a release tag ref, not a branch.")
@@ -49,7 +65,7 @@ def selection_errors(
         if not RELEASE_TAG.fullmatch(tag):
             return [f"Tag {tag!r} is not a release version such as 3.8.4 or 3.8.0-rc2."]
         # 3.10.x prerelease tags may still publish to Feedz at the tag version.
-        # Stable 3.10.x Feedz is owned only by publish-consolidated-original-candidate.yml.
+        # Stable 3.10.x Feedz is owned only by the candidate promotion mode of packages.yml.
         # nuget.org still accepts any release-version tag, including stable 3.10.x.
         major, minor = (int(part) for part in tag.split(".")[:2])
         feedz_from_tag = (major, minor) == (3, 10)
@@ -59,7 +75,7 @@ def selection_errors(
         if feedz_from_tag and not CANONICAL_310.fullmatch(tag):
             return [f"Tag {tag!r} names a 3.10 release without a canonical patch number."]
         if feedz and is_stable_310(tag):
-            errors.append("Feedz publication for stable 3.10.x is owned by publish-consolidated-original-candidate.yml.")
+            errors.append("Feedz publication for stable 3.10.x is owned by the candidate promotion mode of packages.yml (promote_candidate_version).")
         elif feedz and not feedz_from_tag:
             errors.append("Feedz publication from a tag is limited to 3.10.x prerelease tags; publish previews from a branch.")
         if npm and is_stable_310(tag):
@@ -91,6 +107,7 @@ def main() -> int:
         npm=_flag("PUBLISH_NPM"),
         coverage=_flag("DEPLOY_COVERAGE"),
         exclude_ids=os.environ.get("EXCLUDE_IDS"),
+        promote=os.environ.get("PROMOTE_CANDIDATE_VERSION", ""),
     )
     for error in errors:
         print(error, file=sys.stderr)

@@ -464,19 +464,19 @@ class SharedPublisherGuardTests(unittest.TestCase):
     def test_both_publishers_run_the_same_id_set_guard_before_push(self):
         root = Path(__file__).resolve().parents[1]
         packages = (root / ".github/workflows/packages.yml").read_text(encoding="utf-8")
-        candidate = (root / ".github/workflows/publish-consolidated-original-candidate.yml").read_text(encoding="utf-8")
+        # The 3.10.0 nuget.org promote and the candidate-promotion Feedz and nuget.org jobs all live in packages.yml.
         self.assertIn(GUARD_COMMAND, packages)
-        self.assertIn(GUARD_COMMAND, candidate)
         self.assertLess(packages.find(GUARD_COMMAND), packages.find("NuGet login (OIDC)"))
-        self.assertLess(
-            candidate.find(GUARD_COMMAND),
-            candidate.find("consolidated_package_executor.py publish"),
-        )
-        for source in (packages, candidate):
-            lowered = source.lower()
-            for marker in ("skip_id_set", "skip_guard", "bypass_id_set", "bypass_guard"):
-                self.assertNotIn(marker, lowered)
-            self.assertNotIn("EXPECTED_IDS", source)
+        candidate = packages[packages.index("  # --- Candidate promotion"):]
+        for job, publish in (("publish_candidate_feedz:", "Publish the candidate to feedz.io"),
+                             ("publish_candidate_nuget:", "NuGet login for the candidate (OIDC)")):
+            section = candidate[candidate.index(job):]
+            self.assertLess(section.find(GUARD_COMMAND), section.find(publish), job)
+        lowered = packages.lower()
+        for marker in ("skip_id_set", "skip_guard", "bypass_id_set", "bypass_guard"):
+            self.assertNotIn(marker, lowered)
+        self.assertNotIn("EXPECTED_IDS", packages)
+        self.assertFalse((root / ".github/workflows/publish-consolidated-original-candidate.yml").exists())
 
 
 class WorkflowConditionTests(unittest.TestCase):
@@ -491,9 +491,9 @@ class WorkflowConditionTests(unittest.TestCase):
         self.assertIn("python3 scripts/validate_packages_id_set.py", source)
         self.assertIn("exclude_ids:", source)
         self.assertIn("EXCLUDE_IDS: ${{ inputs.exclude_ids }}", source)
-        candidate = Path(__file__).resolve().parents[1] / ".github/workflows/publish-consolidated-original-candidate.yml"
-        self.assertNotIn("exclude_ids", candidate.read_text(encoding="utf-8"))
-        self.assertNotIn("EXCLUDE_IDS", candidate.read_text(encoding="utf-8"))
+        # Feedz never sets EXCLUDE_IDS, in the candidate-promotion Feedz job either.
+        feedz = source[source.index("  publish_candidate_feedz:"):source.index("  publish_candidate_nuget:")]
+        self.assertNotIn("EXCLUDE_IDS", feedz)
         compile_if = (
             "if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.publish_nuget"
             " && startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-')) }}"

@@ -36,10 +36,10 @@ REJECTED = (
     ("refs/heads/3.8.5", {"nuget"}, "requires a release tag"),
     ("refs/tags/3.8.5", {"feedz"}, "limited to 3.10.x prerelease"),
     ("refs/tags/3.8.0-rc2", {"feedz"}, "limited to 3.10.x prerelease"),
-    ("refs/tags/3.10.0", {"feedz"}, "owned by publish-consolidated-original-candidate"),
+    ("refs/tags/3.10.0", {"feedz"}, "owned by the candidate promotion mode"),
     ("refs/tags/3.10.0", {"npm"}, "fail-closed"),
-    ("refs/tags/3.10.1", {"feedz"}, "owned by publish-consolidated-original-candidate"),
-    ("refs/tags/3.10.0", {"feedz", "nuget"}, "owned by publish-consolidated-original-candidate"),
+    ("refs/tags/3.10.1", {"feedz"}, "owned by the candidate promotion mode"),
+    ("refs/tags/3.10.0", {"feedz", "nuget"}, "owned by the candidate promotion mode"),
     ("refs/tags/03.10.0", {"nuget"}, "canonical 3.10."),
     ("refs/tags/3.010.0", {"feedz"}, "canonical 3.10."),
     ("refs/tags/3.10.01", {"nuget"}, "canonical patch number"),
@@ -62,7 +62,7 @@ REJECTED = (
 )
 
 
-def errors(ref, selected, exclude_ids=None):
+def errors(ref, selected, exclude_ids=None, promote=None):
     return selection_errors(
         ref,
         feedz="feedz" in selected,
@@ -70,6 +70,7 @@ def errors(ref, selected, exclude_ids=None):
         npm="npm" in selected,
         coverage="coverage" in selected,
         exclude_ids=exclude_ids,
+        promote=promote,
     )
 
 
@@ -90,7 +91,7 @@ class SelectionErrorsTests(unittest.TestCase):
         for selector in ("candidate", "candidate_artifact_id", "candidate_run_id", "candidate_workflow"):
             with self.subTest(selector=selector), self.assertRaises(TypeError):
                 selection_errors("refs/tags/3.10.0", **{selector: True})
-        self.assertIn("owned by publish-consolidated-original-candidate", " ".join(errors("refs/tags/3.10.0", {"feedz"})))
+        self.assertIn("owned by the candidate promotion mode", " ".join(errors("refs/tags/3.10.0", {"feedz"})))
         self.assertEqual([], errors("refs/tags/3.10.0", {"nuget"}))
         self.assertEqual([], errors("refs/tags/3.10.0-rc1", {"feedz"}))
         self.assertEqual([], errors("refs/tags/3.8.5", {"nuget"}))
@@ -109,6 +110,21 @@ class SelectionErrorsTests(unittest.TestCase):
             " ".join(errors("refs/tags/3.10.0", set(), exclude_ids="Elsa")),
         )
 
+    def test_candidate_promotion_is_main_only_and_exclusive(self):
+        self.assertEqual([], errors("refs/heads/main", set(), promote="3.10.1"))
+        self.assertEqual([], errors("refs/heads/main", set(), promote="3.10.2"))
+        for ref in ("refs/heads/release/3.10.0", "refs/heads/feature/x", "refs/tags/3.10.1", "refs/tags/3.10.0"):
+            with self.subTest(ref=ref):
+                self.assertIn("requires refs/heads/main", " ".join(errors(ref, set(), promote="3.10.1")))
+        for selected in ({"feedz"}, {"nuget"}, {"npm"}, {"coverage"}):
+            with self.subTest(selected=sorted(selected)):
+                self.assertIn("cannot be combined", " ".join(errors("refs/heads/main", selected, promote="3.10.1")))
+        self.assertIn("cannot be combined with exclude_ids",
+                      " ".join(errors("refs/heads/main", set(), exclude_ids="Elsa", promote="3.10.1")))
+        for version in ("latest", "3.10", "3.10.1-rc1", "3.10.1;x"):
+            with self.subTest(version=version):
+                self.assertIn("is not a version", " ".join(errors("refs/heads/main", set(), promote=version)))
+
     def test_rejects_mismatched_selections_for_the_stated_reason(self):
         for ref, selected, reason in REJECTED:
             with self.subTest(ref=ref, selected=sorted(selected)):
@@ -118,7 +134,7 @@ class SelectionErrorsTests(unittest.TestCase):
 class SelectionScriptTests(unittest.TestCase):
     """The job runs the script with the ref and inputs in its environment."""
 
-    def run_script(self, ref, feedz="false", nuget="false", npm="false", coverage="false", exclude_ids=""):
+    def run_script(self, ref, feedz="false", nuget="false", npm="false", coverage="false", exclude_ids="", promote=""):
         env = {
             **os.environ,
             "REF": ref,
@@ -127,6 +143,7 @@ class SelectionScriptTests(unittest.TestCase):
             "PUBLISH_NPM": npm,
             "DEPLOY_COVERAGE": coverage,
             "EXCLUDE_IDS": exclude_ids,
+            "PROMOTE_CANDIDATE_VERSION": promote,
         }
         return subprocess.run([sys.executable, str(SCRIPT)], env=env, capture_output=True, text=True)
 
@@ -151,6 +168,13 @@ class SelectionScriptTests(unittest.TestCase):
                 result = self.run_script("refs/heads/main", nuget=value)
                 self.assertNotEqual(0, result.returncode)
                 self.assertIn("PUBLISH_NUGET must be 'true' or 'false'", result.stderr)
+
+    def test_candidate_promotion_runs_from_main_only(self):
+        accepted = self.run_script("refs/heads/main", promote="3.10.1")
+        self.assertEqual(0, accepted.returncode, accepted.stderr)
+        rejected = self.run_script("refs/heads/release/3.10.0", promote="3.10.1")
+        self.assertEqual(1, rejected.returncode)
+        self.assertIn("requires refs/heads/main", rejected.stderr)
 
     def test_exclude_ids_is_rejected_except_on_stable_310_nuget(self):
         accepted = self.run_script("refs/tags/3.10.0", nuget="true", exclude_ids="Elsa")
