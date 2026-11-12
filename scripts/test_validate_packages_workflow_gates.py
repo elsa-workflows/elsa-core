@@ -826,7 +826,7 @@ class WorkflowGateTests(unittest.TestCase):
                 '            --tag "$tag" \\\n            --registry "https://f.feedz.io/elsa-workflows/elsa-3/npm/" \\\n            --verify-published\n          echo "wasm-published=true" >> "$GITHUB_OUTPUT"',
                 '            --registry "https://f.feedz.io/elsa-workflows/elsa-3/npm/" \\\n            --verify-published\n          echo "wasm-published=true" >> "$GITHUB_OUTPUT"',
             ),
-            "publish_npm WASM publish must pass a dist-tag",
+            "publish_npm WASM publish must pass --tag $tag",
         )
 
     def test_wasm_publish_must_use_feedz_registry(self):
@@ -875,7 +875,7 @@ class WorkflowGateTests(unittest.TestCase):
                 '            --verify-published\n          echo "wasm-published=true" >> "$GITHUB_OUTPUT"',
                 '            # --verify-published\n          echo "wasm-published=true" >> "$GITHUB_OUTPUT"',
             ),
-            "publish_npm WASM publish must pass --verify-published to the publisher",
+            "publish_npm WASM publish must pass --verify-published",
         )
 
     def test_wasm_publish_rejects_fake_publisher_invocation(self):
@@ -983,7 +983,7 @@ class WorkflowGateTests(unittest.TestCase):
         )
         self.assert_rejected(
             source,
-            "publish_npm WASM publish must pass the WASM tarball to the publisher",
+            "publish_npm WASM publish must pass the correct tarball",
         )
 
     def test_wasm_publish_rejects_react_package(self):
@@ -1005,6 +1005,127 @@ class WorkflowGateTests(unittest.TestCase):
         self.assert_rejected(
             source,
             "references npm publish",
+        )
+
+    def test_publish_npm_rejects_direct_npm_publish_no_space(self):
+        source = self.source.replace(
+            '  deploy_coverage:\n    name: Deploy coverage to GitHub Pages',
+            '  direct_npm_publish:\n    name: Direct npm publish\n    needs: [build_npm, validate_publication_selection]\n    runs-on: ubuntu-latest\n    if: ${{ github.event_name == \'workflow_dispatch\' && inputs.publish_npm && startsWith(github.ref, \'refs/tags/\') }}\n    permissions:\n      contents: read\n    steps:\n      - name: Publish directly\n        run: echo preparing;npm publish package.tgz\n\n  deploy_coverage:\n    name: Deploy coverage to GitHub Pages',
+        )
+        self.assert_rejected(
+            source,
+            "references npm publish",
+        )
+
+    def test_publish_npm_accepts_quoted_operators(self):
+        source = self.source.replace(
+            '  deploy_coverage:\n    name: Deploy coverage to GitHub Pages',
+            '  quoted:\n    name: Quoted operators\n    needs: [build_npm, validate_publication_selection]\n    runs-on: ubuntu-latest\n    if: ${{ github.event_name == \'workflow_dispatch\' && inputs.publish_npm && startsWith(github.ref, \'refs/tags/\') }}\n    permissions:\n      contents: read\n    steps:\n      - name: Echo quoted\n        run: echo "preparing;npm publish package.tgz"\n\n  deploy_coverage:\n    name: Deploy coverage to GitHub Pages',
+        )
+        self.assertEqual([], gates.source_violations(source))
+
+    def test_wasm_publish_rejects_printf_invocation(self):
+        source = self.source.replace(
+            'python3 scripts/publish_npm_tarball.py \\',
+            'printf "python3 scripts/publish_npm_tarball.py" \\',
+            1,
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm WASM publish must invoke scripts/publish_npm_tarball.py",
+        )
+
+    def test_wasm_publish_rejects_set_plus_o_errexit(self):
+        source = self.source.replace(
+            'wasm="elsa-workflows-elsa-studio-wasm-${version}.tgz"\n          python3 scripts/publish_npm_tarball.py \\',
+            'wasm="elsa-workflows-elsa-studio-wasm-${version}.tgz"\n          set +o errexit\n          python3 scripts/publish_npm_tarball.py \\',
+            1,
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm WASM publish must not disable errexit before publishing",
+        )
+
+    def test_wasm_publish_rejects_set_plus_o_e(self):
+        source = self.source.replace(
+            'wasm="elsa-workflows-elsa-studio-wasm-${version}.tgz"\n          python3 scripts/publish_npm_tarball.py \\',
+            'wasm="elsa-workflows-elsa-studio-wasm-${version}.tgz"\n          set +o e\n          python3 scripts/publish_npm_tarball.py \\',
+            1,
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm WASM publish must not disable errexit before publishing",
+        )
+
+    def test_wasm_publish_rejects_if_false(self):
+        source = self.source.replace(
+            '      - name: Publish @elsa-workflows/elsa-studio-wasm to Feedz\n        id: publish_wasm\n',
+            '      - name: Publish @elsa-workflows/elsa-studio-wasm to Feedz\n        id: publish_wasm\n        if: false\n',
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm WASM publish step must not be conditionally skipped",
+        )
+
+    def test_wasm_publish_accepts_success_if(self):
+        for condition in ("success()", "${{ success() }}", "  success(  )  ", "${{   success()   }}"):
+            with self.subTest(condition=condition):
+                source = self.source.replace(
+                    '      - name: Publish @elsa-workflows/elsa-studio-wasm to Feedz\n        id: publish_wasm\n',
+                    f'      - name: Publish @elsa-workflows/elsa-studio-wasm to Feedz\n        id: publish_wasm\n        if: {condition}\n',
+                )
+                self.assertEqual([], gates.source_violations(source))
+
+    def test_wasm_publish_rejects_success_and_false(self):
+        source = self.source.replace(
+            '      - name: Publish @elsa-workflows/elsa-studio-wasm to Feedz\n        id: publish_wasm\n',
+            '      - name: Publish @elsa-workflows/elsa-studio-wasm to Feedz\n        id: publish_wasm\n        if: success() && false\n',
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm WASM publish step must not be conditionally skipped",
+        )
+
+    def test_wasm_publish_rejects_unrecognized_if(self):
+        source = self.source.replace(
+            '      - name: Publish @elsa-workflows/elsa-studio-wasm to Feedz\n        id: publish_wasm\n',
+            '      - name: Publish @elsa-workflows/elsa-studio-wasm to Feedz\n        id: publish_wasm\n        if: github.event_name == \'workflow_dispatch\'\n',
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm WASM publish step must not be conditionally skipped",
+        )
+
+    def test_wasm_publish_rejects_custom_shell(self):
+        source = self.source.replace(
+            '      - name: Publish @elsa-workflows/elsa-studio-wasm to Feedz\n        id: publish_wasm\n',
+            '      - name: Publish @elsa-workflows/elsa-studio-wasm to Feedz\n        id: publish_wasm\n        shell: true {0}\n',
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm WASM publish step must use a standard shell",
+        )
+
+    def test_wasm_publish_rejects_output_without_github_output(self):
+        source = self.source.replace(
+            'echo "wasm-published=true" >> "$GITHUB_OUTPUT"',
+            'echo "wasm-published=true" > /dev/null',
+            1,
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm WASM publish must execute wasm-published output command",
+        )
+
+    def test_wasm_publish_rejects_output_wrong_value(self):
+        source = self.source.replace(
+            'echo "wasm-published=true" >> "$GITHUB_OUTPUT"',
+            'echo "wasm-published=false" >> "$GITHUB_OUTPUT"',
+            1,
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm WASM publish must execute wasm-published output command",
         )
 
     def test_react_publish_must_use_feedz_registry(self):
@@ -1048,7 +1169,7 @@ class WorkflowGateTests(unittest.TestCase):
                 '            --verify-published\n\n  deploy_coverage:',
                 '            # --verify-published\n\n  deploy_coverage:',
             ),
-            "publish_npm React publish must pass --verify-published to the publisher",
+            "publish_npm React publish must pass --verify-published",
         )
 
     def test_react_publish_must_wait_for_wasm(self):
