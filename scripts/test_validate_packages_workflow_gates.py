@@ -875,7 +875,39 @@ class WorkflowGateTests(unittest.TestCase):
                 '            --verify-published\n          echo "wasm-published=true" >> "$GITHUB_OUTPUT"',
                 '            # --verify-published\n          echo "wasm-published=true" >> "$GITHUB_OUTPUT"',
             ),
-            "publish_npm WASM publish must confirm availability in the registry",
+            "publish_npm WASM publish must pass --verify-published to the publisher",
+        )
+
+    def test_wasm_publish_rejects_fake_publisher_invocation(self):
+        source = self.source.replace(
+            'python3 scripts/publish_npm_tarball.py \\',
+            'echo "scripts/publish_npm_tarball.py" \\',
+            1,
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm WASM publish must invoke scripts/publish_npm_tarball.py",
+        )
+
+    def test_wasm_publish_requires_set_euo_pipefail(self):
+        source = self.source.replace(
+            "          set -euo pipefail\n          if [ -z \"${NODE_AUTH_TOKEN:-}\" ]; then",
+            "          if [ -z \"${NODE_AUTH_TOKEN:-}\" ]; then",
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm WASM publish must set -euo pipefail before publishing",
+        )
+
+    def test_wasm_publish_rejects_set_plus_e(self):
+        source = self.source.replace(
+            'wasm="elsa-workflows-elsa-studio-wasm-${version}.tgz"\n          python3 scripts/publish_npm_tarball.py \\',
+            'wasm="elsa-workflows-elsa-studio-wasm-${version}.tgz"\n          set +e\n          python3 scripts/publish_npm_tarball.py \\',
+            1,
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm WASM publish must not disable errexit before publishing",
         )
 
     def test_react_publish_must_use_feedz_registry(self):
@@ -919,7 +951,7 @@ class WorkflowGateTests(unittest.TestCase):
                 '            --verify-published\n\n  deploy_coverage:',
                 '            # --verify-published\n\n  deploy_coverage:',
             ),
-            "publish_npm React publish must confirm availability in the registry",
+            "publish_npm React publish must pass --verify-published to the publisher",
         )
 
     def test_react_publish_must_wait_for_wasm(self):

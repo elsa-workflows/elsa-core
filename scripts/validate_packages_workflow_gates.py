@@ -403,15 +403,33 @@ def _run_lines(step: dict) -> list[str]:
 
 
 def _run_command_lines(step: dict) -> list[str]:
-    """Lines of a step's run with shell comments removed."""
+    """Lines of a step's run with shell line continuations joined and comments removed."""
+    raw = _run_lines(step)
+    merged = []
+    for line in raw:
+        if merged and merged[-1].endswith("\\"):
+            merged[-1] = merged[-1][:-1].rstrip() + " " + line
+        else:
+            merged.append(line)
     result = []
-    for line in _run_lines(step):
+    for line in merged:
         comment = line.find("#")
         if comment >= 0:
             line = line[:comment].rstrip()
         if line:
             result.append(line)
     return result
+
+
+PUBLISHER_INVOCATION = re.compile(r"\bpython3?\s+scripts/publish_npm_tarball\.py\b")
+
+
+def _publisher_command_line(command_lines: list[str]) -> str | None:
+    """The line that actually invokes the npm tarball publisher, if any."""
+    for line in command_lines:
+        if PUBLISHER_INVOCATION.search(line):
+            return line
+    return None
 
 
 def _has_defaults_run_shell(node: Any) -> bool:
@@ -688,14 +706,14 @@ def npm_job_violations(jobs: dict) -> list[str]:
     violations += extra
     wasm_publish, extra = _unique_step(
         steps,
-        lambda step: NPM_PUBLISH_SCRIPT in _step_run(step) and f'{WASM_PACKAGE}"' in _step_run(step),
+        lambda step: NPM_PUBLISH_SCRIPT in _step_run(step) and f'--package "{WASM_PACKAGE}"' in _step_run(step),
         missing="publish_npm must publish @elsa-workflows/elsa-studio-wasm",
         duplicate="publish_npm must contain exactly one @elsa-workflows/elsa-studio-wasm publish step",
     )
     violations += extra
     react_publish, extra = _unique_step(
         steps,
-        lambda step: NPM_PUBLISH_SCRIPT in _step_run(step) and f'{REACT_PACKAGE}"' in _step_run(step),
+        lambda step: NPM_PUBLISH_SCRIPT in _step_run(step) and f'--package "{REACT_PACKAGE}"' in _step_run(step),
         missing="publish_npm must publish @elsa-workflows/elsa-studio-wasm-react",
         duplicate="publish_npm must contain exactly one @elsa-workflows/elsa-studio-wasm-react publish step",
     )
@@ -703,37 +721,73 @@ def npm_job_violations(jobs: dict) -> list[str]:
     if wasm_publish is not None:
         run = _step_run(steps[wasm_publish])
         wasm_command_lines = _run_command_lines(steps[wasm_publish])
-        if "--tag" not in run:
-            violations.append("publish_npm WASM publish must pass a dist-tag")
-        wasm_registry = _npm_registry_arg(run)
-        if wasm_registry is None:
-            violations.append("publish_npm WASM publish must pass exactly one --registry argument")
-        elif wasm_registry != FEEDZ_NPM_REGISTRY:
-            violations.append("publish_npm WASM publish must use the Feedz npm registry")
-        if not any("--verify-published" in line for line in wasm_command_lines):
-            violations.append("publish_npm WASM publish must confirm availability in the registry")
+        publisher_line = _publisher_command_line(wasm_command_lines)
+        if publisher_line is None:
+            violations.append("publish_npm WASM publish must invoke scripts/publish_npm_tarball.py")
+        else:
+            if "--tarball" not in publisher_line:
+                violations.append("publish_npm WASM publish must pass --tarball to the publisher")
+            if "--tag" not in publisher_line:
+                violations.append("publish_npm WASM publish must pass a dist-tag to the publisher")
+            wasm_registry = _npm_registry_arg(publisher_line)
+            if wasm_registry is None:
+                violations.append("publish_npm WASM publish must pass exactly one --registry argument to the publisher")
+            elif wasm_registry != FEEDZ_NPM_REGISTRY:
+                violations.append("publish_npm WASM publish must use the Feedz npm registry in the publisher")
+            if "--verify-published" not in publisher_line:
+                violations.append("publish_npm WASM publish must pass --verify-published to the publisher")
         if "::error::Feedz npm key resolved empty" not in run:
             violations.append("publish_npm WASM publish must fail closed when the Feedz key is empty")
         if steps[wasm_publish].get("id") != "publish_wasm":
             violations.append("publish_npm WASM publish step must have id 'publish_wasm'")
         if 'echo "wasm-published=true" >> "$GITHUB_OUTPUT"' not in str(steps[wasm_publish].get("run") or ""):
             violations.append("publish_npm WASM publish step must set output 'wasm-published=true'")
+        publisher_index = next((i for i, line in enumerate(wasm_command_lines) if line == publisher_line), None)
+        output_index = next((i for i, line in enumerate(wasm_command_lines) if 'echo "wasm-published=true" >> "$GITHUB_OUTPUT"' in line), None)
+        set_e_index = next((i for i, line in enumerate(wasm_command_lines) if 'set -euo pipefail' in line), None)
+        set_plus_e_index = next((i for i, line in enumerate(wasm_command_lines) if re.search(r'\bset\s+\+e\b', line)), None)
+        if set_e_index is None:
+            violations.append("publish_npm WASM publish must set -euo pipefail before publishing")
+        elif publisher_index is not None and set_e_index > publisher_index:
+            violations.append("publish_npm WASM publish must set -euo pipefail before publishing")
+        if set_plus_e_index is not None:
+            if publisher_index is None or set_plus_e_index < publisher_index:
+                violations.append("publish_npm WASM publish must not disable errexit before publishing")
+            if output_index is None or set_plus_e_index < output_index:
+                violations.append("publish_npm WASM publish must not disable errexit before writing wasm-published output")
+        if publisher_index is not None and output_index is not None and output_index <= publisher_index:
+            violations.append("publish_npm WASM publish must write wasm-published output after publishing")
     if react_publish is not None:
         run = _step_run(steps[react_publish])
         react_command_lines = _run_command_lines(steps[react_publish])
-        if "--tag" not in run:
-            violations.append("publish_npm React publish must pass a dist-tag")
-        react_registry = _npm_registry_arg(run)
-        if react_registry is None:
-            violations.append("publish_npm React publish must pass exactly one --registry argument")
-        elif react_registry != FEEDZ_NPM_REGISTRY:
-            violations.append("publish_npm React publish must use the Feedz npm registry")
-        if not any("--verify-published" in line for line in react_command_lines):
-            violations.append("publish_npm React publish must confirm availability in the registry")
+        publisher_line = _publisher_command_line(react_command_lines)
+        if publisher_line is None:
+            violations.append("publish_npm React publish must invoke scripts/publish_npm_tarball.py")
+        else:
+            if "--tarball" not in publisher_line:
+                violations.append("publish_npm React publish must pass --tarball to the publisher")
+            if "--tag" not in publisher_line:
+                violations.append("publish_npm React publish must pass a dist-tag to the publisher")
+            react_registry = _npm_registry_arg(publisher_line)
+            if react_registry is None:
+                violations.append("publish_npm React publish must pass exactly one --registry argument to the publisher")
+            elif react_registry != FEEDZ_NPM_REGISTRY:
+                violations.append("publish_npm React publish must use the Feedz npm registry in the publisher")
+            if "--verify-published" not in publisher_line:
+                violations.append("publish_npm React publish must pass --verify-published to the publisher")
         if "::error::Feedz npm key resolved empty" not in run:
             violations.append("publish_npm React publish must fail closed when the Feedz key is empty")
         if if_expression(steps[react_publish].get("if")) != "steps.publish_wasm.outputs.wasm-published == 'true'":
             violations.append("publish_npm React publish must run only when WASM is confirmed")
+        publisher_index = next((i for i, line in enumerate(react_command_lines) if line == publisher_line), None)
+        set_e_index = next((i for i, line in enumerate(react_command_lines) if 'set -euo pipefail' in line), None)
+        set_plus_e_index = next((i for i, line in enumerate(react_command_lines) if re.search(r'\bset\s+\+e\b', line)), None)
+        if set_e_index is None:
+            violations.append("publish_npm React publish must set -euo pipefail before publishing")
+        elif publisher_index is not None and set_e_index > publisher_index:
+            violations.append("publish_npm React publish must set -euo pipefail before publishing")
+        if set_plus_e_index is not None and (publisher_index is None or set_plus_e_index < publisher_index):
+            violations.append("publish_npm React publish must not disable errexit before publishing")
     publishes = [index for index, step in enumerate(steps) if NPM_PUBLISH_SCRIPT in _step_run(step)]
     if len(publishes) != 2:
         violations.append("publish_npm must contain exactly two tarball publish steps")
