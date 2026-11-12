@@ -30,12 +30,12 @@ A `WorkflowDefinition` whose `TenantId == "*"` is a shared definition. It is sto
 
 When a tenant activates, or when a `"*"` definition is published or republished, triggers are indexed **inside the ambient tenant context**. The `TriggerIndexer` creates `StoredTrigger` rows without an explicit `TenantId`; the trigger store then stamps each row with the current ambient tenant. The result is a fan-out: tenant A has its own trigger rows, tenant B has its own, and so on. The unique index `(WorkflowDefinitionId, Hash, ActivityId, TenantId)` prevents duplicate trigger rows within a single tenant.
 
-This design is the only one that works correctly with the default in-memory scheduler, because that scheduler keys scheduled tasks by `trigger.Id`/`bookmark.Id` and does not capture or restore the ambient tenant context (see [Known limitations](#known-limitations) below).
+Fan-out of trigger rows gives every tenant its own independent triggers and schedules. That is a separate concern from the tenant context used when a scheduled task eventually executes: the task must explicitly transport the `TenantId` of the scheduling context and restore it, otherwise the new workflow instance may be stamped with the wrong tenant. See [Known limitations and open work](#known-limitations-and-open-work) below.
 
 ### 2. Trigger lifecycle
 
 - **Tenant activation.** `PopulateRegistriesStartupTask` runs in the tenant scope. `DefaultWorkflowDefinitionStorePopulator` imports `"*"` definitions (via `TenantAgnosticWorkflowsCache`) and calls `TriggerIndexer.IndexTriggersAsync`, which creates trigger rows stamped with the activating tenant.
-- **Publish / republish.** When a `"*"` definition is published, `ScheduleWorkflows` handles `WorkflowTriggersIndexed` and schedules the new triggers in the current tenant context. Re-publishing a `"*"` definition while tenant A is active updates A's trigger rows; other tenants are unaffected until they next index the definition.
+- **Publish / republish.** When a `"*"` definition is published or republished, the host must reindex its triggers for **every active tenant**. The tenant registry (`ITenantService` / `DefaultTenantService`) enumerates active tenants; for each tenant, the system pushes that tenant context and invokes `TriggerIndexer.IndexTriggersAsync`. This ensures that added, removed or reconfigured start activities are reflected in every tenant's trigger rows and schedules. `ScheduleWorkflows` then unschedules removed triggers and schedules added ones in each tenant context. Without this fan-out, obsolete triggers and their schedules would remain after activities are deleted or reconfigured.
 - **Tenant deactivation / deletion.** `UpdateTenantSchedules` handles `ITenantDeletedEvent` and unschedules (stops) the timer/cron schedules and bookmark schedules that belong to the deleted tenant. It does not delete persistent `StoredTrigger` rows; the host's tenant-cleanup strategy is responsible for removing those rows.
 
 ### 3. Instance ownership
@@ -79,7 +79,7 @@ When a bookmark resumes an instance, the instance must also be visible to the ca
 - With EF Core, `ApplyTenantId` stamps a null `TenantId` with the ambient tenant, so bookmarks inherit the caller's tenant instead of the instance's owner.
 - With the in-memory store, the bookmark remains with a null `TenantId`; only the default tenant can see it (`WhereVisibleToTenant` treats `null` as visible only to the default tenant).
 
-**Required change.** `MapBookmark` must be supplied with the persistent instance's `TenantId` (from `WorkflowInstance.TenantId`) and copy it into `StoredBookmark.TenantId`. This ensures that bookmarks of a tenant-A instance stay owned by A, even when the workflow definition is `"*"`.
+**Required change.** The persistent instance's `TenantId` (from `WorkflowInstance.TenantId`) must be preserved in the execution context when the instance is loaded or restored, so that `MapBookmark` can stamp `StoredBookmark.TenantId` with the owner tenant. This is preferable to adding an extra parameter to `MapBookmark` because it keeps bookmark creation aligned with the context's view of the instance. Once the execution context carries the owner tenant, `MapBookmark` can set `StoredBookmark.TenantId` from that value. This ensures that bookmarks of a tenant-A instance stay owned by A, even when the workflow definition is `"*"`.
 
 ### 6. Timers and cron
 
@@ -88,7 +88,7 @@ Timers and cron are **per tenant**.
 - Each tenant has its own trigger rows for timer/cron activities inside `"*"` workflows.
 - When a tenant activates, `CreateSchedulesStartupTask` schedules that tenant's timer/cron triggers through the configured `ITriggerScheduler`.
 - `UpdateTenantSchedules` unschedules a tenant's timer/cron triggers when the tenant is deleted.
-- The instance created when a timer fires belongs to the tenant whose trigger fired (see [Known limitations](#known-limitations) for the current default-scheduler exception).
+- The instance created when a timer fires belongs to the tenant whose trigger fired (see [Known limitations and open work](#known-limitations-and-open-work) for the current default-scheduler behavior).
 
 Global scheduling (a single cron that fires once for all tenants) is **not** part of this design. It is noted only as future work under [Alternatives considered](#alternatives-considered).
 
@@ -96,7 +96,7 @@ Global scheduling (a single cron that fires once for all tenants) is **not** par
 
 | Scheduler | Role for `"*"` triggers |
 |---|---|
-| **Default (`LocalScheduler`)** | Tenant-scoped trigger rows are scheduled under the tenant's startup context. Because the scheduler is a singleton and `RunWorkflowTask` does not capture the ambient tenant, timer/cron tasks currently execute under the default tenant context. This is a known bug; see [Known limitations](#known-limitations). |
+| **Default (`LocalScheduler`)** | Tenant-scoped trigger rows are scheduled under the tenant's startup context. The scheduler stores `ITask` instances in memory and fires them from a new root DI scope. Whether the ambient tenant at schedule time is preserved depends on whether the scheduling request carries it and the task restores it. The approved design is to transport the tenant explicitly (see [Known limitations and open work](#known-limitations-and-open-work)). |
 | **Quartz** | Captures the ambient tenant at scheduling time (`tenantAccessor.Tenant?.Id`) and restores it in `TenantAwareJobFactory`. Tenant-scoped trigger rows are grouped by tenant, so each fires in the correct tenant. |
 | **Hangfire** | Captures the ambient tenant and passes it as a job argument; `RunWorkflowJob` restores it with `tenantAccessor.PushContext`. Tenant-scoped trigger rows are scheduled per tenant. |
 
@@ -120,19 +120,42 @@ Recovery of `"*"` workflow instances follows the rules introduced by PR #9171 an
 
 ### Negative
 
-- **Multiple trigger rows.** A `"*"` workflow with N tenants produces N trigger rows per startable activity. This is the cost of keeping the default scheduler correct.
-- **Re-indexing on tenant add.** A new tenant does not get triggers for existing `"*"` workflows until it activates (or a republish occurs while that tenant is active).
+- **Multiple trigger rows.** A `"*"` workflow with N tenants produces N trigger rows per startable activity. This is the cost of maintaining independent trigger and schedule ownership for each tenant.
+- **Re-indexing on tenant add.** A new tenant does not get triggers for existing `"*"` workflows until it activates (or a republish fans out to all active tenants).
+- **Republish fan-out.** Publishing or republishing a `"*"` definition requires reindexing triggers for every active tenant. This is more work than a single-tenant definition but is necessary to keep each tenant's trigger rows and schedules consistent with the current definition.
 - **No global cron.** Operators cannot yet declare a single cron that fires once for all tenants. This must be revisited in a later ADR if needed.
 
 ### Neutral
 
 - `"*"` remains the only sentinel for tenant-agnostic entities. No second sentinel is introduced.
 
-## Known limitations
+## Known limitations and open work
 
-The default `LocalScheduler` does not capture and restore the ambient tenant context when a scheduled task fires. `ScheduledCronTask` creates a new DI scope from the root `IServiceScopeFactory`, and `RunWorkflowTask` executes `CreateAndRunInstanceAsync` without pushing the tenant that scheduled the task. This means timer/cron triggers scheduled for a named tenant may execute under the default tenant context; the resulting workflow instance is therefore stamped with the default tenant rather than the tenant that owned the trigger.
+### Default scheduler tenant transport
 
-This is an independent bug in the default scheduler, not a desired semantic of `"*"` workflows. It is tracked separately and should be fixed so that scheduled tasks run under the tenant context that scheduled them.
+The default scheduler relies on `System.Timers.Timer` callbacks that create a new DI scope via `IServiceScopeFactory` (`ScheduledCronTask`, `ScheduledRecurringTask`, `ScheduledSpecificInstantTask`). The scheduled task (`RunWorkflowTask` or `ResumeWorkflowTask`) is created at schedule time and stored as a field; it is executed in the new scope without any explicit tenant restoration today.
+
+Whether the tenant context is lost in practice depends on whether `DefaultTenantAccessor`'s `AsyncLocal` happens to flow across the timer callback. Because the callback runs on a thread-pool thread after the scheduling scope has ended, production code should not rely on ambient flow. The approved design for Elsa 3.12 is:
+
+1. Add a `TenantId` property to `ScheduleNewWorkflowInstanceRequest` and `ScheduleExistingWorkflowInstanceRequest`.
+2. Capture the ambient tenant **from the scheduling context** in `DefaultTriggerScheduler` and `DefaultBookmarkScheduler`. The captured value must be the actual tenant under which the schedule is created:
+   - A `"*"` workflow definition indexed and scheduled within tenant A must transport `"A"`.
+   - An execution explicitly scheduled under the `"*"` ambient tenant context must transport `"*"`.
+
+   The value must not be inferred from `WorkflowDefinition.TenantId` and must not be replaced by the default tenant.
+3. Restore the captured tenant in `RunWorkflowTask` and `ResumeWorkflowTask` with `tenantAccessor.PushContext(tenantId)` before invoking the workflow runtime, so the tenant is preserved through the deferred execution.
+
+This makes the default scheduler deterministic and aligned with Quartz/Hangfire.
+
+**Tests needed before claiming the behavior is fixed:**
+
+- A timer/cron trigger scheduled for tenant A (or under `"*"`) fires and creates an instance whose `WorkflowInstance.TenantId` is that same scheduling tenant, not the default tenant.
+- A bookmark scheduled for tenant A (or under `"*"`) resumes the instance under that same scheduling tenant.
+- The same trigger definitions under different tenants produce independent schedules that do not collide.
+
+### Bookmark instance-tenancy propagation
+
+Bookmarks created during execution do not yet inherit `WorkflowInstance.TenantId`. The approved fix is to preserve the persistent instance's tenant in the execution context when the instance is loaded/restored, so that `MapBookmark` can stamp `StoredBookmark.TenantId` correctly. See [Bookmarks](#5-bookmarks).
 
 ## Alternatives considered
 
