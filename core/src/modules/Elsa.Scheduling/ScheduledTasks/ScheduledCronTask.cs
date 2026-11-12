@@ -20,6 +20,7 @@ public class ScheduledCronTask : IScheduledTask, IDisposable
     private readonly ICronParser _cronParser;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly CancellationTokenSource _cancellationTokenSource;
+    private readonly CancellationToken _cancellationToken;
     private readonly SemaphoreSlim _executionSemaphore = new(1, 1);
     private DateTimeOffset _nextOccurrence;
     private bool _executing;
@@ -38,6 +39,8 @@ public class ScheduledCronTask : IScheduledTask, IDisposable
         _systemClock = systemClock;
         _logger = logger;
         _cancellationTokenSource = new();
+        // Captured once so the timer callback never reads Token from a disposed source.
+        _cancellationToken = _cancellationTokenSource.Token;
 
         Schedule();
     }
@@ -107,99 +110,113 @@ public class ScheduledCronTask : IScheduledTask, IDisposable
 
         _timer.Elapsed += async (_, _) =>
         {
-            _timer?.Dispose();
-            _timer = null;
-
-            // Early exit if disposed to prevent accessing disposed resources
-            if (_disposed)
-                return;
-
-            // System.Timers.Timer cannot handle intervals greater than int.MaxValue milliseconds.
-            // For later cron occurrences, keep scheduling capped intervals until the next occurrence arrives.
-            if (_nextOccurrence > _systemClock.UtcNow)
-            {
-                if (_disposed || _cancellationTokenSource.IsCancellationRequested)
-                    return;
-
-                TrySetupTimer(_nextOccurrence - _systemClock.UtcNow);
-                return;
-            }
-
-            IServiceScope? scope = null;
+            // An async Elapsed handler is effectively async void: any exception that escapes it crashes the process.
             try
             {
-                scope = _scopeFactory.CreateScope();
+                await OnTimerElapsedAsync();
             }
-            catch (ObjectDisposedException)
+            catch (Exception e)
             {
-                // Service provider was disposed, exit gracefully
+                if (!_disposed)
+                    _logger.LogError(e, "Unhandled error in scheduled task timer callback");
+            }
+        };
+    }
+
+    private async Task OnTimerElapsedAsync()
+    {
+        _timer?.Dispose();
+        _timer = null;
+
+        // Early exit if disposed to prevent accessing disposed resources
+        if (_disposed)
+            return;
+
+        // System.Timers.Timer cannot handle intervals greater than int.MaxValue milliseconds.
+        // For later cron occurrences, keep scheduling capped intervals until the next occurrence arrives.
+        if (_nextOccurrence > _systemClock.UtcNow)
+        {
+            if (_disposed || _cancellationToken.IsCancellationRequested)
                 return;
-            }
 
-            using (scope)
+            TrySetupTimer(_nextOccurrence - _systemClock.UtcNow);
+            return;
+        }
+
+        IServiceScope? scope = null;
+        try
+        {
+            scope = _scopeFactory.CreateScope();
+        }
+        catch (ObjectDisposedException)
+        {
+            // Service provider was disposed, exit gracefully
+            return;
+        }
+
+        using (scope)
+        {
+            var commandSender = scope.ServiceProvider.GetRequiredService<ICommandSender>();
+            var cancellationToken = _cancellationToken;
+
+            if (!cancellationToken.IsCancellationRequested)
             {
-                var commandSender = scope.ServiceProvider.GetRequiredService<ICommandSender>();
-                var cancellationToken = _cancellationTokenSource.Token;
-
-                if (!cancellationToken.IsCancellationRequested)
+                var acquired = false;
+                try
                 {
-                    var acquired = false;
-                    try
-                    {
-                        acquired = await _executionSemaphore.WaitAsync(0, cancellationToken);
-                        if (!acquired) return;
+                    acquired = await _executionSemaphore.WaitAsync(0, cancellationToken);
+                    if (!acquired) return;
 
-                        _executing = true;
-                        await commandSender.SendAsync(new RunScheduledTask(_task), cancellationToken);
+                    _executing = true;
+                    await commandSender.SendAsync(new RunScheduledTask(_task), cancellationToken);
 
-                        if (_cancellationRequested)
+                    if (_cancellationRequested)
+                    {
+                        _cancellationRequested = false;
+                        _cancellationTokenSource.Cancel();
+                    }
+                }
+                catch (ObjectDisposedException)
+                {
+                    // Semaphore was disposed during execution, exit gracefully
+                    return;
+                }
+                catch (Exception e)
+                {
+                    // Only log if not disposed to avoid logging after test context is disposed
+                    if (!_disposed)
+                    {
+                        try
                         {
-                            _cancellationRequested = false;
-                            _cancellationTokenSource.Cancel();
+                            _logger.LogError(e, "Error executing scheduled task");
                         }
-                    }
-                    catch (ObjectDisposedException)
-                    {
-                        // Semaphore was disposed during execution, exit gracefully
-                        return;
-                    }
-                    catch (Exception e)
-                    {
-                        // Only log if not disposed to avoid logging after test context is disposed
-                        if (!_disposed)
+                        catch
                         {
-                            try
-                            {
-                                _logger.LogError(e, "Error executing scheduled task");
-                            }
-                            catch
-                            {
-                                // Ignore logging errors (e.g., when test output is no longer available)
-                            }
-                        }
-                    }
-                    finally
-                    {
-                        _executing = false;
-                        if (acquired)
-                        {
-                            try
-                            {
-                                _executionSemaphore.Release();
-                            }
-                            catch (ObjectDisposedException)
-                            {
-                                // Semaphore was disposed, ignore
-                            }
+                            // Ignore logging errors (e.g., when test output is no longer available)
                         }
                     }
                 }
-
-                // Check again if disposed before scheduling next execution
-                if (!cancellationToken.IsCancellationRequested && !_disposed)
-                    Schedule();
+                finally
+                {
+                    _executing = false;
+                    if (acquired)
+                    {
+                        try
+                        {
+                            _executionSemaphore.Release();
+                        }
+                        catch (ObjectDisposedException)
+                        {
+                            // Semaphore was disposed, ignore
+                        }
+                    }
+                }
             }
-        };
+
+            // Check again if disposed before scheduling next execution
+            if (!cancellationToken.IsCancellationRequested && !_disposed)
+                Schedule();
+        }
     }
 
     void IDisposable.Dispose()
