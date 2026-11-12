@@ -704,7 +704,16 @@ CONTEXT_LINES = (
 # Each publisher runs for its own target (or all) and never depends on a version.
 CANDIDATE_PUBLISH_IF = {
     CANDIDATE_FEEDZ_JOB: "inputs.promote_target == 'all' || inputs.promote_target == 'feedz'",
-    CANDIDATE_NUGET_JOB: "inputs.promote_target == 'all' || inputs.promote_target == 'nuget'",
+    # nuget.org follows Feedz on 'all' (a Feedz failure blocks it) and runs alone on 'nuget'.
+    CANDIDATE_NUGET_JOB: ("!cancelled() && needs.validate_candidate_pin.result == 'success'"
+                          " && needs.retrieve_candidate.result == 'success'"
+                          " && (inputs.promote_target == 'all' || inputs.promote_target == 'nuget')"
+                          " && (needs.publish_candidate_feedz.result == 'success'"
+                          " || (inputs.promote_target == 'nuget' && needs.publish_candidate_feedz.result == 'skipped'))"),
+}
+CANDIDATE_PUBLISH_NEEDS = {
+    CANDIDATE_FEEDZ_JOB: {CANDIDATE_RETRIEVE_JOB},
+    CANDIDATE_NUGET_JOB: {CANDIDATE_VALIDATE_JOB, CANDIDATE_RETRIEVE_JOB, CANDIDATE_FEEDZ_JOB},
 }
 CANDIDATE_TARGETS = ["all", "feedz", "nuget"]
 CANDIDATE_ENVIRONMENTS = {CANDIDATE_FEEDZ_JOB: "feedz-publish", CANDIDATE_NUGET_JOB: "nuget-org"}
@@ -770,6 +779,11 @@ def candidate_promotion_violations(source: str) -> list[str]:
                 violations.append(f"{prefix}: {name} action {uses!r} must be pinned to a full commit SHA")
         conditions = [if_expression(node["if"]) or "" for node in (job, *steps) if "if" in node]
         expressions = [e for t in strings(job) for e in EXPRESSION.findall(t)]
+        if name == CANDIDATE_NUGET_JOB:
+            # Its pinned if: (checked exactly below) is the one place cancelled() is allowed.
+            pinned = CANDIDATE_PUBLISH_IF[name]
+            conditions = [c for c in conditions if c != pinned]
+            expressions = [e for e in expressions if e.strip() != pinned]
         if any(STATUS_FUNCTION.search(e) for e in (*expressions, *conditions)):
             violations.append(f"{prefix}: {name} must not call always(), failure() or cancelled()")
     validate = section[CANDIDATE_VALIDATE_JOB]
@@ -784,7 +798,7 @@ def candidate_promotion_violations(source: str) -> list[str]:
         violations.append(f"{prefix}: {CANDIDATE_RETRIEVE_JOB} must not have its own if:; it follows {CANDIDATE_VALIDATE_JOB} through needs")
     for name in CANDIDATE_PUBLISH_JOBS:
         if if_expression(section[name].get("if")) != CANDIDATE_PUBLISH_IF[name]:
-            violations.append(f"{prefix}: {name} if: must be exactly {CANDIDATE_PUBLISH_IF[name]} (the promote target only, never a version)")
+            violations.append(f"{prefix}: {name} if: must be exactly {CANDIDATE_PUBLISH_IF[name]} (keyed on the promote target and job results, never a version)")
     retrieve = section[CANDIDATE_RETRIEVE_JOB]
     if needs(retrieve) != {CANDIDATE_VALIDATE_JOB}:
         violations.append(f"{prefix}: {CANDIDATE_RETRIEVE_JOB} must need only {CANDIDATE_VALIDATE_JOB}")
@@ -804,8 +818,8 @@ def candidate_promotion_violations(source: str) -> list[str]:
         job = section[name]
         steps = [step for step in job.get("steps") or [] if isinstance(step, dict)]
         feed = CANDIDATE_FEED[name]
-        if needs(job) != {CANDIDATE_RETRIEVE_JOB}:
-            violations.append(f"{prefix}: {name} must need only {CANDIDATE_RETRIEVE_JOB}")
+        if needs(job) != CANDIDATE_PUBLISH_NEEDS[name]:
+            violations.append(f"{prefix}: {name} must need exactly {sorted(CANDIDATE_PUBLISH_NEEDS[name])}")
         if job.get("environment") != CANDIDATE_ENVIRONMENTS[name]:
             violations.append(f"{prefix}: {name} must use environment {CANDIDATE_ENVIRONMENTS[name]}")
         if grants_id_token(job.get("permissions")) != (name == CANDIDATE_NUGET_JOB):

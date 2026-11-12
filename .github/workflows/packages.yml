@@ -816,9 +816,10 @@ jobs:
 
   publish_candidate_nuget:
     name: Publish the pinned candidate to nuget.org
-    needs: retrieve_candidate
-    # Keys on the target only, never on a version. Retrieval and every verification above it always run.
-    if: ${{ inputs.promote_target == 'all' || inputs.promote_target == 'nuget' }}
+    # On 'all', nuget.org waits for Feedz and runs only if Feedz succeeded. On 'nuget', Feedz is skipped
+    # and !cancelled() stops that skip from also skipping this job; the pin and retrieval must still succeed.
+    needs: [validate_candidate_pin, retrieve_candidate, publish_candidate_feedz]
+    if: ${{ !cancelled() && needs.validate_candidate_pin.result == 'success' && needs.retrieve_candidate.result == 'success' && (inputs.promote_target == 'all' || inputs.promote_target == 'nuget') && (needs.publish_candidate_feedz.result == 'success' || (inputs.promote_target == 'nuget' && needs.publish_candidate_feedz.result == 'skipped')) }}
     environment: nuget-org
     # One nuget promotion per version at a time; a second dispatch waits instead of racing.
     concurrency:

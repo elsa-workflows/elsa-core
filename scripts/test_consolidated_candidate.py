@@ -411,8 +411,8 @@ class WorkflowShapeTests(unittest.TestCase):
         first_run = next(step for step in validate["steps"] if "run" in step)
         self.assertIn("verify_consolidated_candidate.py validate-pin", first_run["run"])
         self.assertEqual("validate_candidate_pin", self.jobs["retrieve_candidate"]["needs"])
-        for name in ("publish_candidate_feedz", "publish_candidate_nuget"):
-            self.assertEqual("retrieve_candidate", self.jobs[name]["needs"])
+        self.assertEqual("retrieve_candidate", self.jobs["publish_candidate_feedz"]["needs"])
+        self.assertIn("retrieve_candidate", self.jobs["publish_candidate_nuget"]["needs"])
 
     def test_verification_precedes_any_secret_or_push(self):
         for name, secret_marker in (("publish_candidate_feedz", "secrets.ELSA_CONSOLIDATED_FEEDZ_PUBLISH_KEY"),
@@ -461,26 +461,66 @@ class WorkflowShapeTests(unittest.TestCase):
 
     PUBLISH_TARGETS = {"publish_candidate_feedz": "feedz", "publish_candidate_nuget": "nuget"}
 
-    def publisher_runs(self, job, target):
-        """Evaluate a publisher's job condition for a promote_target value (the condition is a pure function of it)."""
-        condition = self.jobs[job]["if"]
-        expression = condition.strip()[3:-2].strip() if condition.strip().startswith("${{") else condition
-        self.assertRegex(expression, r"^(inputs\.promote_target == '(all|feedz|nuget)'( \|\| )?)+$", job)
-        return eval(expression.replace("inputs.promote_target", "target").replace("||", "or"), {"__builtins__": {}}, {"target": target})
+    def publisher_runs(self, job, target, results=None, cancelled=False):
+        """Evaluate a publisher's job condition the way GitHub does, for a promote_target and the results of its needs.
 
-    def test_each_publisher_condition_references_only_the_promote_target(self):
+        Without a status function GitHub adds an implicit success(): every need must have succeeded. With
+        !cancelled() the skip of a need no longer skips the job, so the expression alone decides.
+        """
+        results = results or {}
+        condition = self.jobs[job]["if"].strip()
+        expression = condition[3:-2].strip() if condition.startswith("${{") else condition
+        # Only these tokens may appear, so the translation below is the whole meaning of the expression.
+        self.assertRegex(expression, r"^(\s|!cancelled\(\)|&&|\|\||\(|\)|==|'[a-z]+'|inputs\.promote_target|needs\.[a-z_]+\.result)+$", job)
+        needs = self.jobs[job]["needs"]
+        needs = [needs] if isinstance(needs, str) else needs
+        if "cancelled()" not in expression and any(results.get(n, "success") != "success" for n in needs):
+            return False
+        python = re.sub(r"needs\.([a-z_]+)\.result", r"results.get('\1', 'success')", expression)
+        python = python.replace("!cancelled()", "(not cancelled)").replace("&&", " and ").replace("||", " or ")
+        python = python.replace("inputs.promote_target", "target")
+        return eval(python, {"__builtins__": {}}, {"target": target, "results": results, "cancelled": cancelled})
+
+    def promote(self, target, pin="success", retrieve="success", feedz_outcome="success", cancelled=False):
+        """Which publishers run for one dispatch, following the needs chain pin -> retrieve -> feedz -> nuget."""
+        results = {"validate_candidate_pin": pin, "retrieve_candidate": retrieve if pin == "success" else "skipped"}
+        feedz_runs = self.publisher_runs("publish_candidate_feedz", target, results, cancelled)
+        results["publish_candidate_feedz"] = feedz_outcome if feedz_runs else "skipped"
+        nuget_runs = self.publisher_runs("publish_candidate_nuget", target, results, cancelled)
+        return {feed for feed, ran in (("feedz", feedz_runs), ("nuget", nuget_runs)) if ran}
+
+    def test_each_publisher_condition_names_no_version_and_no_other_input(self):
         for job in self.PUBLISH_TARGETS:
             condition = self.jobs[job]["if"]
             self.assertEqual({"inputs.promote_target"}, set(re.findall(r"inputs\.[a-z_]+", condition)), job)
-            self.assertNotRegex(condition, r"[0-9]+\.[0-9]+|version|github\.|always|failure|cancelled", job)
-            self.assertEqual("retrieve_candidate", self.jobs[job]["needs"])
+            self.assertNotRegex(condition, r"[0-9]+\.[0-9]+|version|github\.|always|failure", job)
+        self.assertNotIn("cancelled", self.jobs["publish_candidate_feedz"]["if"])
+        self.assertEqual("retrieve_candidate", self.jobs["publish_candidate_feedz"]["needs"])
+        self.assertEqual(["validate_candidate_pin", "retrieve_candidate", "publish_candidate_feedz"],
+                         self.jobs["publish_candidate_nuget"]["needs"])
 
     def test_promote_target_all_runs_both_publishers_and_one_target_runs_only_its_own(self):
         for target, expected in (("all", {"feedz", "nuget"}), ("feedz", {"feedz"}), ("nuget", {"nuget"})):
-            ran = {feed for job, feed in self.PUBLISH_TARGETS.items() if self.publisher_runs(job, target)}
-            self.assertEqual(expected, ran, target)
+            self.assertEqual(expected, self.promote(target), target)
         for bogus in ("", "both", "NUGET", "nuget,feedz"):
-            self.assertFalse(any(self.publisher_runs(job, bogus) for job in self.PUBLISH_TARGETS), bogus)
+            self.assertEqual(set(), self.promote(bogus), bogus)
+
+    def test_nuget_only_run_still_runs_nuget_when_feedz_is_skipped(self):
+        # The 3.10.1 recovery: Feedz is skipped by its own if:, and that skip must not skip nuget.org.
+        self.assertEqual({"nuget"}, self.promote("nuget"))
+
+    def test_feedz_failure_on_all_blocks_nuget(self):
+        for outcome in ("failure", "cancelled"):
+            with self.subTest(feedz=outcome):
+                self.assertEqual({"feedz"}, self.promote("all", feedz_outcome=outcome))
+
+    def test_nuget_never_runs_without_a_validated_pin_and_retrieval(self):
+        for target in ("all", "nuget"):
+            for pin, retrieve in (("skipped", "skipped"), ("failure", "skipped"), ("success", "failure"), ("success", "skipped")):
+                with self.subTest(target=target, pin=pin, retrieve=retrieve):
+                    self.assertNotIn("nuget", self.promote(target, pin=pin, retrieve=retrieve))
+            with self.subTest(target=target, cancelled=True):
+                self.assertNotIn("nuget", self.promote(target, cancelled=True))
 
     def test_promote_target_is_a_choice_defaulting_to_all_and_validation_cannot_be_skipped(self):
         import yaml

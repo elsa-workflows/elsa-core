@@ -486,22 +486,56 @@ class WorkflowGateTests(unittest.TestCase):
         mutated = self.mutated(anchor, anchor + "    defaults:\n      run:\n        shell: bash\n")
         self.assertIn("candidate promotion: must not set defaults.run.shell", self.candidate_violations(mutated))
 
+    FEEDZ_IF = "    if: ${{ inputs.promote_target == 'all' || inputs.promote_target == 'feedz' }}\n"
+    NUGET_IF = ("    if: ${{ !cancelled() && needs.validate_candidate_pin.result == 'success'"
+                " && needs.retrieve_candidate.result == 'success'"
+                " && (inputs.promote_target == 'all' || inputs.promote_target == 'nuget')"
+                " && (needs.publish_candidate_feedz.result == 'success'"
+                " || (inputs.promote_target == 'nuget' && needs.publish_candidate_feedz.result == 'skipped')) }}\n")
+    NUGET_NEEDS = "    needs: [validate_candidate_pin, retrieve_candidate, publish_candidate_feedz]\n"
+
     def test_candidate_publishers_must_key_on_the_promote_target_only(self):
-        feedz_if = "    if: ${{ inputs.promote_target == 'all' || inputs.promote_target == 'feedz' }}\n"
-        nuget_if = "    if: ${{ inputs.promote_target == 'all' || inputs.promote_target == 'nuget' }}\n"
-        for line, job in ((feedz_if, "publish_candidate_feedz"), (nuget_if, "publish_candidate_nuget")):
+        for line, job in ((self.FEEDZ_IF, "publish_candidate_feedz"), (self.NUGET_IF, "publish_candidate_nuget")):
             self.assertEqual(1, self.source.count(line))
             expected = f"candidate promotion: {job} if: must be exactly"
             # Dropping the condition (the mutation the shape tests exist to catch).
             self.assertTrue(any(expected in v for v in self.candidate_violations(self.source.replace(line, ""))), job)
             for replacement in ("    if: ${{ always() }}\n", "    if: ${{ inputs.promote_target != '' }}\n",
                                 "    if: ${{ inputs.promote_candidate_version == '3.10.1' }}\n",
-                                line.replace("'all' || ", ""), line.replace("promote_target ==", "promote_target !=", 1)):
+                                line.replace("'all' || ", "", 1), line.replace("promote_target ==", "promote_target !=", 1)):
                 with self.subTest(job=job, replacement=replacement):
                     self.assertTrue(any(expected in v for v in self.candidate_violations(self.source.replace(line, replacement))))
         # The feedz condition must not be swapped onto the nuget job (or the reverse).
-        swapped = self.source.replace(feedz_if, "@@").replace(nuget_if, feedz_if).replace("@@", nuget_if)
+        swapped = self.source.replace(self.FEEDZ_IF, "@@").replace(self.NUGET_IF, self.FEEDZ_IF).replace("@@", self.NUGET_IF)
         self.assertTrue(any("must be exactly" in v for v in self.candidate_violations(swapped)))
+
+    def test_nuget_condition_must_follow_feedz_on_all(self):
+        expected = "candidate promotion: publish_candidate_nuget if: must be exactly"
+        for mutation in (
+                ("!cancelled() && ", ""),  # a skipped feedz would then skip nuget on a nuget-only run
+                ("!cancelled()", "always()"),  # would run after a cancelled run
+                ("inputs.promote_target == 'nuget' && needs.publish_candidate_feedz", "needs.publish_candidate_feedz"),  # skipped feedz on 'all'
+                ("needs.publish_candidate_feedz.result == 'success' || ", "needs.publish_candidate_feedz.result != 'success' || "),
+                ("needs.retrieve_candidate.result == 'success' && ", ""),
+                ("needs.validate_candidate_pin.result == 'success' && ", "")):
+            with self.subTest(mutation=mutation):
+                mutated = self.source.replace(self.NUGET_IF, self.NUGET_IF.replace(*mutation))
+                self.assertNotEqual(self.source, mutated)
+                self.assertTrue(any(expected in v for v in self.candidate_violations(mutated)))
+
+    def test_cancelled_is_only_allowed_in_the_pinned_nuget_condition(self):
+        self.assertEqual([], self.candidate_violations(self.source))
+        mutated = self.source.replace(self.FEEDZ_IF, "    if: ${{ !cancelled() && (inputs.promote_target == 'all' || inputs.promote_target == 'feedz') }}\n")
+        self.assertIn("candidate promotion: publish_candidate_feedz must not call always(), failure() or cancelled()",
+                      self.candidate_violations(mutated))
+
+    def test_publisher_needs_are_pinned(self):
+        self.assertEqual(1, self.source.count(self.NUGET_NEEDS))
+        for replacement in ("    needs: retrieve_candidate\n", "    needs: [retrieve_candidate, publish_candidate_feedz]\n"):
+            with self.subTest(replacement=replacement):
+                self.assertIn("candidate promotion: publish_candidate_nuget must need exactly "
+                              "['publish_candidate_feedz', 'retrieve_candidate', 'validate_candidate_pin']",
+                              self.candidate_violations(self.source.replace(self.NUGET_NEEDS, replacement)))
 
     def test_promote_target_input_and_selection_env_are_enforced(self):
         options = "        options:\n          - all\n          - feedz\n          - nuget\n"
