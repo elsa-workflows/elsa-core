@@ -1,4 +1,4 @@
-﻿using Elsa.Common;
+using Elsa.Common;
 using Elsa.Testing.Shared;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Models;

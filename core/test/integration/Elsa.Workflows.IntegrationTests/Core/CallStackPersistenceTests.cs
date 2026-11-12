@@ -1,26 +1,34 @@
-﻿using Elsa.Testing.Shared;
+﻿using Elsa.Extensions;
+using Elsa.Testing.Shared;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Activities.Flowchart.Activities;
 using Elsa.Workflows.Activities.Flowchart.Models;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Activities;
+using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.Runtime.Filters;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Core;
 
 /// <summary>
-/// Verifies that the scheduling chain of active activity execution contexts survives a suspend/resume cycle.
+/// Verifies that the scheduling chain of active activity execution contexts survives a suspend/resume cycle, both on the
+/// restored contexts and on the activity execution records stored after the resume.
 /// </summary>
 public class CallStackPersistenceTests(ITestOutputHelper testOutputHelper)
 {
-    private readonly IServiceProvider _services = new TestApplicationBuilder(testOutputHelper).Build();
+    // The workflow runtime stores activity execution records when the workflow runner commits.
+    private readonly IServiceProvider _services = new TestApplicationBuilder(testOutputHelper)
+        .ConfigureElsa(elsa => elsa.UseWorkflowRuntime())
+        .Build();
 
     [Fact(DisplayName = "Restored activity execution contexts keep their scheduling chain")]
     public async Task PreservesSchedulingChainAcrossResume()
     {
-        var (suspended, resumed) = await RunAndResumeAsync(new());
+        var (suspended, resumed, records) = await RunAndResumeAsync(new());
 
         var suspendedA = GetContext(suspended, "A");
         var suspendedB = GetContext(suspended, "B");
@@ -32,7 +40,14 @@ public class CallStackPersistenceTests(ITestOutputHelper testOutputHelper)
         Assert.Equal(suspendedA.Id, resumedB.SchedulingActivityExecutionId);
         Assert.Equal("A", resumedB.SchedulingActivityId);
 
+        var recordB = Assert.Single(records, x => x.Id == suspendedB.Id);
+        Assert.Equal(ActivityStatus.Completed, recordB.Status);
+        Assert.Equal(suspendedA.CallStackDepth + 1, recordB.CallStackDepth);
+        Assert.Equal(suspendedA.Id, recordB.SchedulingActivityExecutionId);
+        Assert.Equal("A", recordB.SchedulingActivityId);
+
         AssertRestoredContextsMatch(suspended, resumed);
+        AssertRestoredRecordsMatch(suspended, records);
     }
 
     [Fact(DisplayName = "Restored root context keeps its cross-workflow scheduling chain")]
@@ -48,7 +63,7 @@ public class CallStackPersistenceTests(ITestOutputHelper testOutputHelper)
             SchedulingCallStackDepth = parentDepth
         };
 
-        var (suspended, resumed) = await RunAndResumeAsync(options);
+        var (suspended, resumed, records) = await RunAndResumeAsync(options);
 
         var suspendedRoot = GetRootContext(suspended);
         Assert.Equal(parentContextId, suspendedRoot.SchedulingActivityExecutionId);
@@ -60,10 +75,17 @@ public class CallStackPersistenceTests(ITestOutputHelper testOutputHelper)
         Assert.Equal(parentContextId, resumedRoot.SchedulingActivityExecutionId);
         Assert.Equal(parentInstanceId, resumedRoot.SchedulingWorkflowInstanceId);
 
+        var rootRecord = Assert.Single(records, x => x.Id == suspendedRoot.Id);
+        Assert.Equal(ActivityStatus.Completed, rootRecord.Status);
+        Assert.Equal(parentDepth + 1, rootRecord.CallStackDepth);
+        Assert.Equal(parentContextId, rootRecord.SchedulingActivityExecutionId);
+        Assert.Equal(parentInstanceId, rootRecord.SchedulingWorkflowInstanceId);
+
         AssertRestoredContextsMatch(suspended, resumed);
+        AssertRestoredRecordsMatch(suspended, records);
     }
 
-    private async Task<(RunWorkflowResult Suspended, RunWorkflowResult Resumed)> RunAndResumeAsync(RunWorkflowOptions options)
+    private async Task<(RunWorkflowResult Suspended, RunWorkflowResult Resumed, IReadOnlyCollection<ActivityExecutionRecord> Records)> RunAndResumeAsync(RunWorkflowOptions options)
     {
         await _services.PopulateRegistriesAsync();
         var runner = _services.GetRequiredService<IWorkflowRunner>();
@@ -75,7 +97,9 @@ public class CallStackPersistenceTests(ITestOutputHelper testOutputHelper)
 
         var resumed = await runner.RunAsync(workflow, suspended.WorkflowState, new RunWorkflowOptions { BookmarkId = bookmark.Id });
         Assert.Equal(WorkflowSubStatus.Finished, resumed.WorkflowState.SubStatus);
-        return (suspended, resumed);
+
+        var records = await _services.GetRequiredService<IActivityExecutionStore>().FindManyAsync(new ActivityExecutionRecordFilter { WorkflowInstanceId = resumed.WorkflowState.Id });
+        return (suspended, resumed, records.ToList());
     }
 
     private static Workflow CreateWorkflow()
@@ -112,6 +136,27 @@ public class CallStackPersistenceTests(ITestOutputHelper testOutputHelper)
             Assert.Equal(before.SchedulingActivityExecutionId, after.SchedulingActivityExecutionId);
             Assert.Equal(before.SchedulingActivityId, after.SchedulingActivityId);
             Assert.Equal(before.SchedulingWorkflowInstanceId, after.SchedulingWorkflowInstanceId);
+        }
+    }
+
+    /// <summary>
+    /// The records of the restored contexts are written when those contexts complete, after the resume, so they must carry
+    /// the scheduling chain the contexts had before the suspend.
+    /// </summary>
+    private static void AssertRestoredRecordsMatch(RunWorkflowResult suspended, IReadOnlyCollection<ActivityExecutionRecord> records)
+    {
+        var restoredIds = suspended.WorkflowState.ActivityExecutionContexts.Select(x => x.Id).ToList();
+        Assert.NotEmpty(restoredIds);
+
+        foreach (var id in restoredIds)
+        {
+            var before = Assert.Single(suspended.Journal.ActivityExecutionContexts, x => x.Id == id);
+            var record = Assert.Single(records, x => x.Id == id);
+            Assert.Equal(ActivityStatus.Completed, record.Status);
+            Assert.Equal(before.CallStackDepth, record.CallStackDepth);
+            Assert.Equal(before.SchedulingActivityExecutionId, record.SchedulingActivityExecutionId);
+            Assert.Equal(before.SchedulingActivityId, record.SchedulingActivityId);
+            Assert.Equal(before.SchedulingWorkflowInstanceId, record.SchedulingWorkflowInstanceId);
         }
     }
 

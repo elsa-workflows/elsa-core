@@ -1,4 +1,4 @@
-﻿using Elsa.Workflows.Memory;
+using Elsa.Workflows.Memory;
 
 namespace Elsa.Workflows.State;
 
