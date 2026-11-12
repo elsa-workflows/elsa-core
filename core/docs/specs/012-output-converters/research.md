@@ -56,6 +56,8 @@
 
 **Alternatives considered**: NJsonSchema centers Newtonsoft.Json and asynchronous schema parsing. Custom-only validation would make descriptors misleading to Studio.
 
+**Superseded:** Server-side schema evaluation was removed and is superseded by #9141. `ValidateSettings` is the authoritative server-side check; `SettingsSchema` remains descriptor metadata.
+
 ## Structured conversion faults
 
 **Decision**: Add `OutputConversionException`, a failure-stage enum, and a narrow safe-exception-metadata interface. Copy only that safe metadata into persisted `ExceptionState` and its API-client mirror; preserve converter exceptions as inner exceptions.

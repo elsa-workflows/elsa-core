@@ -49,7 +49,7 @@ public class OutputConverterInvokerTests
     }
 
     [Fact]
-    public async Task Invoke_WhenSettingsViolateJsonSchema_FailsBeforeConversion()
+    public async Task Invoke_WhenSettingsOmitSchemaRequiredProperty_DoesNotFailWhenValidateSettingsAcceptsThem()
     {
         var converter = new RecordingConverter(_ => "converted");
         var context = await CreateContextAsync(ConverterId, converter);
@@ -66,16 +66,16 @@ public class OutputConverterInvokerTests
         var invoker = CreateInvoker(new(ConverterId, typeof(int), typeof(string), "Test", settingsSchema: schema));
         var output = CreateOutput(ParseJson("{}"));
 
-        var exception = Assert.Throws<OutputConversionException>(() => invoker.Invoke(
+        var result = invoker.Invoke(
             context,
             output,
             "Result",
             typeof(int),
             42,
-            Destination(typeof(string))));
+            Destination(typeof(string)));
 
-        Assert.Equal(OutputConversionFailureStage.SettingsValidation, exception.Stage);
-        Assert.Equal(0, converter.ConvertCalls);
+        Assert.Equal("converted", result);
+        Assert.Equal(1, converter.ConvertCalls);
     }
 
     [Fact]

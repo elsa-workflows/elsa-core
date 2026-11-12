@@ -41,6 +41,9 @@ public sealed record OutputConverterDescriptor
     /// <summary>The optional description exposed through discovery.</summary>
     public string? Description { get; }
 
-    /// <summary>An immutable optional JSON Schema for per-binding settings.</summary>
+    /// <summary>
+    /// An immutable optional JSON Schema for per-binding settings.
+    /// Descriptive metadata for Studio and other tools only; the server does not evaluate it.
+    /// </summary>
     public JsonElement? SettingsSchema { get; }
 }
