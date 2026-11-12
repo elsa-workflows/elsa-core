@@ -1,0 +1,159 @@
+name: Publish consolidated 3.10.1 candidate
+
+# Promotes the already-built, unpublished 3.10.1 candidate (scripts/consolidated_3101_pin.py) to Feedz and
+# nuget.org. Nothing is rebuilt: both jobs install exactly the sealed bytes of the pinned artifact.
+#
+# Dispatch from main only. The 3.10.1 tag is NOT required and NOT created here: Release pushes it manually,
+# after the uploads have succeeded (a tag push also publishes Docker images and moves `latest`).
+# Do not use the 3.10.0 executor (publish-consolidated-original-candidate.yml) or packages.yml for 3.10.1.
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: publish-consolidated-3.10.1
+  cancel-in-progress: false
+
+env:
+  PYTHONDONTWRITEBYTECODE: '1'
+  feedz_feed_source: 'https://f.feedz.io/elsa-workflows/elsa-3/nuget/index.json'
+  nuget_feed_source: 'https://api.nuget.org/v3/index.json'
+
+jobs:
+  retrieve:
+    name: Retrieve and verify the pinned candidate
+    # No publisher secret or environment here; only the read-only token used to fetch the artifact.
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - name: Require the reviewed repository and ref
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REPOSITORY" = 'elsa-workflows/elsa-core'
+          test "$GITHUB_REF" = 'refs/heads/main'
+          test "$GITHUB_REF_TYPE" = 'branch'
+          test "$GITHUB_RUN_ATTEMPT" = '1'
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          sparse-checkout: scripts
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Check the verifier before trusting it
+        run: python3 -B -m unittest scripts.test_consolidated_3101_candidate
+      - name: Fetch run, artifact and ancestry metadata and the artifact; verify run, artifact, source, ancestry and hashes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/verify_consolidated_3101_candidate.py retrieve --output "$RUNNER_TEMP/transport"
+      - name: Transfer the verified bytes to the publish jobs
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: consolidated-3101-transport
+          path: ${{ runner.temp }}/transport
+          if-no-files-found: error
+          overwrite: false
+          retention-days: 7
+
+  feedz:
+    name: Publish 3.10.1 (231 packages) to Feedz
+    needs: retrieve
+    environment: feedz-publish
+    runs-on: ubuntu-latest
+    # Keep the job timeout above the push action's deadline (see push-nuget-packages).
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - name: Require the reviewed repository and ref
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REPOSITORY" = 'elsa-workflows/elsa-core'
+          test "$GITHUB_REF" = 'refs/heads/main'
+          test "$GITHUB_REF_TYPE" = 'branch'
+          test "$GITHUB_RUN_ATTEMPT" = '1'
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          sparse-checkout: |
+            .github/actions
+            scripts
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: consolidated-3101-transport
+          path: ${{ runner.temp }}/transport
+      - name: Re-verify the pin (run, artifact, source, ancestry, archive and manifest hashes) and stage the sealed packages
+        # No GitHub token is present here; the verifier refuses to run with one.
+        run: python3 scripts/verify_consolidated_3101_candidate.py verify --transport "$RUNNER_TEMP/transport" --stage "$GITHUB_WORKSPACE"
+      - name: Guard the full 231-ID set before Feedz
+        env:
+          PACKAGES_DIR: ${{ github.workspace }}
+        run: |
+          set -euo pipefail
+          python3 scripts/validate_packages_id_set.py
+          python3 scripts/verify_consolidated_3101_candidate.py count --dir "$PACKAGES_DIR" --expect 231
+      - name: Publish to feedz.io
+        uses: ./.github/actions/push-nuget-packages
+        with:
+          feed-source: ${{ env.feedz_feed_source }}
+          api-key: ${{ secrets.ELSA_CONSOLIDATED_FEEDZ_PUBLISH_KEY }}
+
+  nuget:
+    name: Publish 3.10.1 (230 packages) to nuget.org
+    needs: retrieve
+    environment: nuget-org
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write # Lets this job request the OIDC token that nuget.org exchanges for a temporary API key.
+    steps:
+      - name: Require the reviewed repository and ref
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REPOSITORY" = 'elsa-workflows/elsa-core'
+          test "$GITHUB_REF" = 'refs/heads/main'
+          test "$GITHUB_REF_TYPE" = 'branch'
+          test "$GITHUB_RUN_ATTEMPT" = '1'
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          sparse-checkout: |
+            .github/actions
+            scripts
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: consolidated-3101-transport
+          path: ${{ runner.temp }}/transport
+      - name: Re-verify the pin (run, artifact, source, ancestry, archive and manifest hashes) and stage the sealed packages
+        run: python3 scripts/verify_consolidated_3101_candidate.py verify --transport "$RUNNER_TEMP/transport" --stage "$GITHUB_WORKSPACE"
+      - name: Guard the 230-ID set (Elsa.Platform.Integration excluded) before nuget.org
+        env:
+          PACKAGES_DIR: ${{ github.workspace }}
+          EXCLUDE_IDS: Elsa.Platform.Integration
+        run: |
+          set -euo pipefail
+          python3 scripts/validate_packages_id_set.py
+          python3 scripts/verify_consolidated_3101_candidate.py count --dir "$PACKAGES_DIR" --expect 230
+      # Exchanges a GitHub OIDC token for a temporary nuget.org API key. The Trusted Publishing policy on
+      # nuget.org must name this workflow file (publish-consolidated-3.10.1-candidate.yml).
+      - name: NuGet login (OIDC)
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1
+        id: nuget_login
+        with:
+          user: ${{ secrets.NUGET_USER }} # nuget.org username (profile name), not an email address.
+      - name: Publish to nuget.org
+        uses: ./.github/actions/push-nuget-packages
+        with:
+          feed-source: ${{ env.nuget_feed_source }}
+          api-key: ${{ steps.nuget_login.outputs.NUGET_API_KEY }}
