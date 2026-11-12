@@ -1,4 +1,4 @@
-using Elsa.Common;
+﻿using Elsa.Common;
 using Elsa.Testing.Shared;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Models;
@@ -86,6 +86,40 @@ public class WorkflowStateExtractorTests
         var restoredContextA = newWorkflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x.Id == contextA.Id);
         Assert.NotNull(restoredContextA);
         Assert.Equal(10, restoredContextA.CallStackDepth);
+    }
+
+    [Fact]
+    public async Task Extract_And_Apply_PreservesSchedulingProperties()
+    {
+        // Arrange
+        var root = new WriteLine("root");
+        var fixture = new ActivityTestFixture(root);
+        var contextRoot = await fixture.BuildAsync();
+        var workflowExecutionContext = contextRoot.WorkflowExecutionContext;
+
+        var context = await workflowExecutionContext.CreateActivityExecutionContextAsync(root);
+        context.SchedulingActivityExecutionId = "scheduling-context";
+        context.SchedulingActivityId = "scheduling-activity";
+        context.SchedulingWorkflowInstanceId = "scheduling-workflow";
+        workflowExecutionContext.AddActivityExecutionContext(context);
+
+        var extractor = workflowExecutionContext.GetRequiredService<IWorkflowStateExtractor>();
+
+        // Act
+        var state = extractor.Extract(workflowExecutionContext);
+        var newWorkflowExecutionContext = await WorkflowExecutionContext.CreateAsync(
+            workflowExecutionContext.ServiceProvider,
+            workflowExecutionContext.WorkflowGraph,
+            state.Id,
+            CancellationToken.None);
+
+        await extractor.ApplyAsync(newWorkflowExecutionContext, state);
+
+        // Assert
+        var restoredContext = Assert.Single(newWorkflowExecutionContext.ActivityExecutionContexts, x => x.Id == context.Id);
+        Assert.Equal("scheduling-context", restoredContext.SchedulingActivityExecutionId);
+        Assert.Equal("scheduling-activity", restoredContext.SchedulingActivityId);
+        Assert.Equal("scheduling-workflow", restoredContext.SchedulingWorkflowInstanceId);
     }
 
     [Fact]

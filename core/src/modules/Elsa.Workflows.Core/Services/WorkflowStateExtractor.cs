@@ -1,4 +1,4 @@
-using Elsa.Extensions;
+﻿using Elsa.Extensions;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Services;
 using Elsa.Workflows.State;
@@ -157,6 +157,9 @@ public class WorkflowStateExtractor(ILogger<WorkflowStateExtractor> logger) : IW
             var activityExecutionContext = await workflowExecutionContext.CreateActivityExecutionContextAsync(activity);
             activityExecutionContext.Id = activityExecutionContextState.Id;
             activityExecutionContext.CallStackDepth = activityExecutionContextState.CallStackDepth;
+            activityExecutionContext.SchedulingActivityExecutionId = activityExecutionContextState.SchedulingActivityExecutionId;
+            activityExecutionContext.SchedulingActivityId = activityExecutionContextState.SchedulingActivityId;
+            activityExecutionContext.SchedulingWorkflowInstanceId = activityExecutionContextState.SchedulingWorkflowInstanceId;
             activityExecutionContext.Properties.Merge(properties);
             activityExecutionContext.Metadata.Merge(metadata);
             
@@ -305,6 +308,9 @@ public class WorkflowStateExtractor(ILogger<WorkflowStateExtractor> logger) : IW
             {
                 Id = activityExecutionContext.Id,
                 CallStackDepth = activityExecutionContext.CallStackDepth,
+                SchedulingActivityExecutionId = activityExecutionContext.SchedulingActivityExecutionId,
+                SchedulingActivityId = activityExecutionContext.SchedulingActivityId,
+                SchedulingWorkflowInstanceId = activityExecutionContext.SchedulingWorkflowInstanceId,
                 ParentContextId = activityExecutionContext.ParentActivityExecutionContext?.Id,
                 ScheduledActivityNodeId = activityExecutionContext.NodeId,
                 OwnerActivityNodeId = activityExecutionContext.ParentActivityExecutionContext?.NodeId,
