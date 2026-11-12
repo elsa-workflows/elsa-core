@@ -504,7 +504,28 @@ class CandidateContractsTests(unittest.TestCase):
             bad = subprocess.run([sys.executable, "-B", str(script), "check-source", "--version", "3.10.2", "--source", "c" * 40,
                                   "--source-root", str(root)], cwd=tooling_cwd, capture_output=True, text=True)
             self.assertNotEqual(0, bad.returncode)
-            self.assertIn("not on the release/3.10.0 line", bad.stderr)
+            self.assertIn("not the HEAD of the source checkout", bad.stderr)
+
+    def test_check_source_requires_the_checkout_head_to_be_the_source_commit(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_pinned_tree(root, postfix=True)
+            sha = init_release_line(root)
+            candidate.run_check_source(root, sha, "3.10.1")
+            subprocess.run(["git", "-C", str(root), "-c", "user.name=Candidate contract",
+                            "-c", "user.email=candidate@example.invalid", "commit", "--allow-empty",
+                            "--quiet", "-m", "later"], check=True, capture_output=True)
+            tip = subprocess.run(["git", "-C", str(root), "rev-parse", "HEAD"], check=True,
+                                 capture_output=True, text=True).stdout.strip()
+            subprocess.run(["git", "-C", str(root), "update-ref", "refs/remotes/origin/release/3.10.0", tip], check=True)
+            # sha is still on the release line and still has the reviewed pins, but it is no longer what is checked out.
+            candidate.require_release_line(root, sha, "3.10.1")
+            candidate.require_candidate_source(root, sha, "3.10.1")
+            with self.assertRaisesRegex(ValueError, "not the HEAD of the source checkout"):
+                candidate.run_check_source(root, sha, "3.10.1")
+            candidate.run_check_source(root, tip, "3.10.1")
+            with self.assertRaisesRegex(ValueError, "not the HEAD"):
+                candidate.require_checkout_head(root / "missing", sha)
 
     def test_reviewed_pins_are_minimums_so_a_later_patch_may_move_them_up(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -535,7 +556,6 @@ class CandidateContractsTests(unittest.TestCase):
 
     def test_later_patch_seal_and_envelope_reject_reused_3100_identity(self):
         with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
             output = Path(temporary) / "candidate"
             output.mkdir()
             (output / "receipt.json").write_text('{"published":false}\n')
@@ -578,7 +598,7 @@ class CandidateContractsTests(unittest.TestCase):
         self.assertIn("path: tooling", prepare)
         self.assertIn("ref: ${{ github.sha }}", prepare)
         self.assertIn("path: source", prepare)
-        self.assertIn("ref: ${{ inputs.source_commit }}", prepare)
+        self.assertIn("ref: ${{ needs.verify_source.outputs.verified-revision }}", prepare)
         self.assertEqual(2, prepare.count("actions/checkout@"))
         self.assertNotIn("git checkout", prepare)
         self.assertNotIn("release/3.10.0", workflow)

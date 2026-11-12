@@ -256,8 +256,16 @@ def parse_check_nupkgs_args(argv: list[str]) -> argparse.Namespace:
     return parser.parse_args(tokens)
 
 
+def require_checkout_head(root: Path, source: str) -> None:
+    """The checkout under --source-root must be exactly the commit being prepared."""
+    head = git_run(root, "rev-parse", "HEAD")
+    packages.require(head.returncode == 0 and head.stdout.strip() == source,
+                     "Candidate source is not the HEAD of the source checkout")
+
+
 def run_check_source(root: Path, source: str, version: str) -> None:
     require_candidate_source(root, source, version)
+    require_checkout_head(root, source)
     if version != "3.10.0":
         require_release_line(root, source, version)
 

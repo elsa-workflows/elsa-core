@@ -99,6 +99,29 @@ class RunAndArtifactTests(unittest.TestCase):
             with self.subTest(artifact=change), self.assertRaises(SystemExit):
                 verify.check_artifact(PIN, {**good_artifact(), "workflow_run": {"id": PIN.run_id, "head_sha": main_head, **change}})
 
+    def test_transport_run_and_artifact_must_come_from_the_same_commit(self):
+        main_head, other_main_head = "d" * 40, "e" * 40
+        run = {**good_run(), "head_sha": main_head, "head_branch": "main"}
+
+        def attempt(artifact_head):
+            with tempfile.TemporaryDirectory() as temporary:
+                transport = Path(temporary)
+                artifact = {**good_artifact(), "workflow_run": {"id": PIN.run_id, "head_sha": artifact_head, "head_branch": "main"}}
+                for name, document in (("run.json", run), ("artifact.json", artifact), ("compare.json", good_compare("behind"))):
+                    (transport / name).write_text(json.dumps(document))
+                (transport / "candidate.zip").write_bytes(b"zip")
+                with unittest.mock.patch.object(verify, "check_archive"), \
+                        unittest.mock.patch.object(verify, "read_manifest"), \
+                        unittest.mock.patch.object(verify, "sealed_packages", return_value=[]):
+                    return verify.verify_transport(PIN, transport)
+
+        self.assertEqual([], attempt(main_head))
+        # Each head is acceptable alone (a commit run from main); only the mismatch between them is rejected.
+        verify.check_run(PIN, run)
+        verify.check_artifact(PIN, {**good_artifact(), "workflow_run": {"id": PIN.run_id, "head_sha": other_main_head, "head_branch": "main"}})
+        with self.assertRaisesRegex(SystemExit, "not produced from the same commit"):
+            attempt(other_main_head)
+
     def test_artifact_must_match_digest_name_expiry_and_run(self):
         for change in ({"digest": "sha256:" + "0" * 64}, {"name": "other"}, {"expired": True},
                        {"workflow_run": {"id": 40347931480, "head_sha": PIN.source_sha}},
@@ -199,6 +222,14 @@ class ArchiveTests(unittest.TestCase):
         verify.count_nupkgs(out, 3)
         with self.assertRaisesRegex(SystemExit, "expected 230"):
             verify.count_nupkgs(out, 230)
+        # The count is exact in both directions: one extra package is as wrong as a missing one.
+        (out / "Extra.3.10.1.nupkg").write_bytes(b"x")
+        with self.assertRaisesRegex(SystemExit, "Found 4 .nupkg files .* expected 3"):
+            verify.count_nupkgs(out, 3)
+        for expected in (2, 5):
+            with self.subTest(expected=expected), self.assertRaises(SystemExit):
+                verify.count_nupkgs(out, expected)
+        verify.count_nupkgs(out, 4)
 
     def test_verify_refuses_a_github_token(self):
         for name in verify.TOKEN_NAMES:
@@ -239,7 +270,7 @@ class PinEntryTests(unittest.TestCase):
         document = json.loads(verify.PIN_FILE.read_text(encoding="utf-8"))
         self.assertEqual({"3.10.1"}, set(document))
         self.assertEqual(GOOD_ENTRY, document["3.10.1"])
-        self.assertTrue(set(document["3.10.1"]) == set(verify.PIN_FIELDS))
+        self.assertEqual(set(document["3.10.1"]), set(verify.PIN_FIELDS))
         text = verify.PIN_FILE.read_text(encoding="utf-8")
         for rejected in ("40347931480", "12664519771", "5cff67228"):
             self.assertNotIn(rejected, text)
@@ -461,7 +492,7 @@ class WorkflowShapeTests(unittest.TestCase):
         source = (WORKFLOWS / "prepare-consolidated-release-candidate.yml").read_text(encoding="utf-8")
         steps = yaml.safe_load(source)["jobs"]["prepare"]["steps"]
         checkouts = [step for step in steps if str(step.get("uses", "")).startswith("actions/checkout@")]
-        self.assertEqual([("tooling", "${{ github.sha }}"), ("source", "${{ inputs.source_commit }}")],
+        self.assertEqual([("tooling", "${{ github.sha }}"), ("source", "${{ needs.verify_source.outputs.verified-revision }}")],
                          [(step["with"]["path"], step["with"]["ref"]) for step in checkouts])
         self.assertEqual(0, checkouts[SOURCE_CHECKOUT_INDEX]["with"].get("fetch-depth"))
         guard = steps[0]["run"]
@@ -473,9 +504,57 @@ class WorkflowShapeTests(unittest.TestCase):
                 self.assertIn("--source-root source", run)
         self.assertNotIn("release/3.10.0", source)
         self.assertNotIn("git checkout", source)
-        retrieve = yaml.safe_load(source)["jobs"]["retrieve"]
+        jobs = yaml.safe_load(source)["jobs"]
+        prepare_run = "\n".join(step.get("run", "") for step in steps)
+        self.assertEqual(2, prepare_run.count('test "$(git -C source rev-parse HEAD)" = "$CANDIDATE_SOURCE"'))
+        retrieve = jobs["retrieve"]
         self.assertFalse([step for step in retrieve["steps"] if "uses" in step and "checkout" in step["uses"]])
         self.assertIn('.head_branch == "main"', source)
+
+    def test_the_release_line_is_proven_by_a_checkout_free_job_that_runs_before_prepare(self):
+        import yaml
+        source = (WORKFLOWS / "prepare-consolidated-release-candidate.yml").read_text(encoding="utf-8")
+        jobs = yaml.safe_load(source)["jobs"]
+        self.assertEqual(["verify_source", "prepare", "retrieve", "consumers"], list(jobs))
+        verify_job = jobs["verify_source"]
+        self.assertEqual("verify_source", jobs["prepare"]["needs"])
+        self.assertEqual({"contents": "read", "actions": "none"}, verify_job["permissions"])
+        self.assertFalse([step for step in verify_job["steps"] if "uses" in step], "the proof job must not run any action")
+        script = "\n".join(step.get("run", "") for step in verify_job["steps"])
+        self.assertNotRegex(script, r"git (checkout|fetch|clone)|python3|dotnet|npm")
+        self.assertIn("refs/heads/main", script)
+        self.assertIn('branch="release/$major.$minor.0"', script)
+        self.assertIn('compare/$branch...$CANDIDATE_SOURCE', script)
+        self.assertIn('(.status == "behind" or .status == "identical")', script)
+        self.assertIn(".merge_base_commit.sha == $source", script)
+        self.assertIn('test "$proven" = "$CANDIDATE_SOURCE"', script)
+        env = next(step for step in verify_job["steps"] if step.get("id") == "line")["env"]
+        self.assertEqual("${{ github.token }}", env["GH_TOKEN"])
+        # The source is checked out at the value the proof job produced, never at the raw input.
+        checkout = next(step for step in jobs["prepare"]["steps"] if step.get("with", {}).get("path") == "source")
+        self.assertEqual("${{ needs.verify_source.outputs.verified-revision }}", checkout["with"]["ref"])
+        self.assertNotIn("inputs.source_commit", source.split("  prepare:")[1].split("  retrieve:")[0].split("path: source")[0].split("path: tooling")[1])
+        # The in-job ancestry check stays as defence in depth.
+        self.assertIn('git -C source merge-base --is-ancestor "$CANDIDATE_SOURCE" "origin/$branch"', source)
+
+    def test_no_cache_capable_setup_step_follows_the_source_checkout(self):
+        import yaml
+        source = (WORKFLOWS / "prepare-consolidated-release-candidate.yml").read_text(encoding="utf-8")
+        for name, job in yaml.safe_load(source)["jobs"].items():
+            steps = job["steps"]
+            positions = [index for index, step in enumerate(steps) if step.get("with", {}).get("path") == "source"]
+            for step in steps:
+                action = str(step.get("uses", ""))
+                if action.startswith(("actions/setup-", "actions/cache")):
+                    arguments = step.get("with", {})
+                    self.assertFalse(any(key.startswith("cache") for key in arguments), f"{name}: caching enabled on {action}")
+                    self.assertFalse(action.startswith("actions/cache"), name)
+            for position in positions:
+                after = steps[position + 1:]
+                self.assertFalse([step for step in after if str(step.get("uses", "")).startswith(("actions/setup-", "actions/cache"))],
+                                 f"{name}: a setup or cache action follows the source checkout")
+                # After the source checkout only the build and its packaging guards run: no second checkout.
+                self.assertFalse([step for step in after if str(step.get("uses", "")).startswith("actions/checkout@")])
 
 
 if __name__ == "__main__":

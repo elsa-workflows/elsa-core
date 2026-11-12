@@ -24,7 +24,49 @@ env:
   PYTHONDONTWRITEBYTECODE: '1'
 
 jobs:
+  # No checkout here: source_commit is proven to be on the version's release line through the compare API before any job
+  # checks it out. Fails closed on a malformed input, a missing release branch, an API error or a commit off the line.
+  verify_source:
+    permissions:
+      contents: read
+      actions: none
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      # The commit GitHub itself reports as the merge base on the release line (equal to the input once the check passes).
+      verified-revision: ${{ steps.line.outputs.verified-revision }}
+    steps:
+      - name: Require the reviewed repository and main as the tooling ref
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REPOSITORY" = 'elsa-workflows/elsa-core'
+          test "$GITHUB_REF" = 'refs/heads/main'
+          test "$GITHUB_REF_TYPE" = 'branch'
+      - name: Require source_commit to be on the version's release line
+        id: line
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ inputs.version }}
+          CANDIDATE_SOURCE: ${{ inputs.source_commit }}
+        run: |
+          set -euo pipefail
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          IFS=. read -r major minor _ <<< "$VERSION"
+          branch="release/$major.$minor.0"
+          [[ "$CANDIDATE_SOURCE" =~ ^[a-f0-9]{40}$ ]]
+          test "$CANDIDATE_SOURCE" != "5cff67228e550b353b3483eb3b37dfdb73a41c74"
+          gh api "repos/$GITHUB_REPOSITORY/compare/$branch...$CANDIDATE_SOURCE" > "$RUNNER_TEMP/compare.json"
+          jq -e --arg source "$CANDIDATE_SOURCE" '
+            (.status == "behind" or .status == "identical") and
+            .merge_base_commit.sha == $source
+          ' "$RUNNER_TEMP/compare.json" > /dev/null
+          proven="$(jq -r .merge_base_commit.sha "$RUNNER_TEMP/compare.json")"
+          [[ "$proven" =~ ^[a-f0-9]{40}$ ]]
+          test "$proven" = "$CANDIDATE_SOURCE"
+          echo "verified-revision=$proven" >> "$GITHUB_OUTPUT"
+
   prepare:
+    needs: verify_source
     permissions:
       contents: read
       actions: none
@@ -47,16 +89,32 @@ jobs:
           ref: ${{ github.sha }}
           path: tooling
           persist-credentials: false
-      # Product source: exactly source_commit, full history so its release branch is available for the ancestry check.
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-        with:
-          ref: ${{ inputs.source_commit }}
-          path: source
-          fetch-depth: 0
-          persist-credentials: false
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.12'
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.300
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+      - name: Check candidate contracts before package preparation
+        working-directory: tooling
+        run: |
+          python3 -m unittest discover -s scripts/integration-program -p 'test_prove_consolidated*.py'
+          python3 -m unittest discover -s scripts/integration-program -p 'test_prepare_consolidated_release_candidate.py'
+          python3 -m unittest discover -s scripts -p 'test_validate_packages_publication_selection.py'
+      # Product source: exactly source_commit, already proven by verify_source. Every cache-capable setup step runs
+      # before this checkout; nothing after it executes from source/ except the package build itself.
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ needs.verify_source.outputs.verified-revision }}
+          path: source
+          fetch-depth: 0
+          persist-credentials: false
       - name: Reject a malformed version, the staged 3.10.0 source and a source off the release branch
         env:
           VERSION: ${{ inputs.version }}
@@ -73,21 +131,6 @@ jobs:
           git -C source merge-base --is-ancestor "$CANDIDATE_SOURCE" "origin/$branch"
           python3 tooling/scripts/integration-program/prepare_consolidated_release_candidate.py \
             check-source --version "$VERSION" --source "$CANDIDATE_SOURCE" --source-root source
-      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
-        with:
-          dotnet-version: |
-            8.0.x
-            9.0.x
-            10.0.300
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version: '22'
-      - name: Check candidate contracts before package preparation
-        working-directory: tooling
-        run: |
-          python3 -m unittest discover -s scripts/integration-program -p 'test_prove_consolidated*.py'
-          python3 -m unittest discover -s scripts/integration-program -p 'test_prepare_consolidated_release_candidate.py'
-          python3 -m unittest discover -s scripts -p 'test_validate_packages_publication_selection.py'
       - name: Prepare and verify the whole candidate without publication
         env:
           VERSION: ${{ inputs.version }}
