@@ -51,6 +51,7 @@ SELECTION_ENV = {
     "DEPLOY_COVERAGE": "${{ inputs.deploy_coverage }}",
     "EXCLUDE_IDS": "${{ inputs.exclude_ids }}",
     "PROMOTE_CANDIDATE_VERSION": "${{ inputs.promote_candidate_version }}",
+    "PROMOTE_TARGET": "${{ inputs.promote_target }}",
 }
 GUARD_EXCLUDE_IDS = SELECTION_ENV["EXCLUDE_IDS"]
 # Probed against the script the selection job runs, not a copy of its rules.
@@ -700,6 +701,12 @@ CONTEXT_LINES = (
     "test \"$GITHUB_REF_TYPE\" = 'branch'",
     "test \"$GITHUB_RUN_ATTEMPT\" = '1'",
 )
+# Each publisher runs for its own target (or all) and never depends on a version.
+CANDIDATE_PUBLISH_IF = {
+    CANDIDATE_FEEDZ_JOB: "inputs.promote_target == 'all' || inputs.promote_target == 'feedz'",
+    CANDIDATE_NUGET_JOB: "inputs.promote_target == 'all' || inputs.promote_target == 'nuget'",
+}
+CANDIDATE_TARGETS = ["all", "feedz", "nuget"]
 CANDIDATE_ENVIRONMENTS = {CANDIDATE_FEEDZ_JOB: "feedz-publish", CANDIDATE_NUGET_JOB: "nuget-org"}
 CANDIDATE_FEED = {CANDIDATE_FEEDZ_JOB: "feedz", CANDIDATE_NUGET_JOB: "nuget"}
 CANDIDATE_GUARD_LINES = {
@@ -745,6 +752,10 @@ def candidate_promotion_violations(source: str) -> list[str]:
     spec = inputs.get("promote_candidate_version")
     if not isinstance(spec, dict) or spec.get("type") != "string" or spec.get("default") != "":
         violations.append(f"{prefix}: workflow_dispatch input 'promote_candidate_version' must be a string defaulting to ''")
+    target = inputs.get("promote_target")
+    if (not isinstance(target, dict) or target.get("type") != "choice" or target.get("default") != "all"
+            or target.get("options") != CANDIDATE_TARGETS):
+        violations.append(f"{prefix}: workflow_dispatch input 'promote_target' must be a choice of {CANDIDATE_TARGETS} defaulting to 'all'")
     for name, job in section.items():
         steps = [step for step in job.get("steps") or [] if isinstance(step, dict)]
         if any(node.get("continue-on-error") not in (None, False) for node in (job, *steps)):
@@ -769,9 +780,11 @@ def candidate_promotion_violations(source: str) -> list[str]:
     first_run = next((step for step in validate.get("steps") or [] if isinstance(step, dict) and "run" in step), None)
     if first_run is None or f"{VERIFIER} validate-pin" not in _step_run(first_run):
         violations.append(f"{prefix}: the first run step of {CANDIDATE_VALIDATE_JOB} must validate the pin entry")
-    for name in CANDIDATE_JOBS[1:]:
-        if "if" in section[name]:
-            violations.append(f"{prefix}: {name} must not have its own if:; it follows {CANDIDATE_VALIDATE_JOB} through needs")
+    if "if" in section[CANDIDATE_RETRIEVE_JOB]:
+        violations.append(f"{prefix}: {CANDIDATE_RETRIEVE_JOB} must not have its own if:; it follows {CANDIDATE_VALIDATE_JOB} through needs")
+    for name in CANDIDATE_PUBLISH_JOBS:
+        if if_expression(section[name].get("if")) != CANDIDATE_PUBLISH_IF[name]:
+            violations.append(f"{prefix}: {name} if: must be exactly {CANDIDATE_PUBLISH_IF[name]} (the promote target only, never a version)")
     retrieve = section[CANDIDATE_RETRIEVE_JOB]
     if needs(retrieve) != {CANDIDATE_VALIDATE_JOB}:
         violations.append(f"{prefix}: {CANDIDATE_RETRIEVE_JOB} must need only {CANDIDATE_VALIDATE_JOB}")

@@ -486,6 +486,34 @@ class WorkflowGateTests(unittest.TestCase):
         mutated = self.mutated(anchor, anchor + "    defaults:\n      run:\n        shell: bash\n")
         self.assertIn("candidate promotion: must not set defaults.run.shell", self.candidate_violations(mutated))
 
+    def test_candidate_publishers_must_key_on_the_promote_target_only(self):
+        feedz_if = "    if: ${{ inputs.promote_target == 'all' || inputs.promote_target == 'feedz' }}\n"
+        nuget_if = "    if: ${{ inputs.promote_target == 'all' || inputs.promote_target == 'nuget' }}\n"
+        for line, job in ((feedz_if, "publish_candidate_feedz"), (nuget_if, "publish_candidate_nuget")):
+            self.assertEqual(1, self.source.count(line))
+            expected = f"candidate promotion: {job} if: must be exactly"
+            # Dropping the condition (the mutation the shape tests exist to catch).
+            self.assertTrue(any(expected in v for v in self.candidate_violations(self.source.replace(line, ""))), job)
+            for replacement in ("    if: ${{ always() }}\n", "    if: ${{ inputs.promote_target != '' }}\n",
+                                "    if: ${{ inputs.promote_candidate_version == '3.10.1' }}\n",
+                                line.replace("'all' || ", ""), line.replace("promote_target ==", "promote_target !=", 1)):
+                with self.subTest(job=job, replacement=replacement):
+                    self.assertTrue(any(expected in v for v in self.candidate_violations(self.source.replace(line, replacement))))
+        # The feedz condition must not be swapped onto the nuget job (or the reverse).
+        swapped = self.source.replace(feedz_if, "@@").replace(nuget_if, feedz_if).replace("@@", nuget_if)
+        self.assertTrue(any("must be exactly" in v for v in self.candidate_violations(swapped)))
+
+    def test_promote_target_input_and_selection_env_are_enforced(self):
+        options = "        options:\n          - all\n          - feedz\n          - nuget\n"
+        self.assertEqual(1, self.source.count(options))
+        for mutated in (self.source.replace(options, options + "          - both\n"),
+                        self.source.replace("        type: choice\n" + options, "        type: string\n"),
+                        self.source.replace("        default: all\n  push:", "        default: nuget\n  push:")):
+            self.assertTrue(any("'promote_target' must be a choice" in v for v in self.candidate_violations(mutated)))
+        env = "          PROMOTE_TARGET: ${{ inputs.promote_target }}\n"
+        self.assertEqual(1, self.source.count(env))
+        self.assertNotEqual([], gates.source_violations(self.source.replace(env, "")))
+
     def test_candidate_publishers_reject_a_changed_ref_requirement(self):
         # Replaces the old fixed REF env: every candidate job must require refs/heads/main.
         for ref in ("refs/tags/3.10.1", "refs/heads/release/3.10.0"):
@@ -548,7 +576,7 @@ class WorkflowGateTests(unittest.TestCase):
     def test_candidate_promotion_input_must_be_a_string_defaulting_to_empty(self):
         mutated = self.source.replace("      promote_candidate_version:\n        description:", "      promote_candidate_version:\n        x: 1\n        description:")
         self.assertEqual([], self.candidate_violations(mutated))
-        mutated = self.source.replace("        type: string\n        default: ''\n  push:", "        type: boolean\n        default: false\n  push:")
+        mutated = self.source.replace("        type: string\n        default: ''\n      promote_target:", "        type: boolean\n        default: false\n      promote_target:")
         self.assertTrue(any("promote_candidate_version' must be a string" in v for v in self.candidate_violations(mutated)))
 
     def test_candidate_publishers_are_not_flagged_by_the_capability_scan_but_other_jobs_still_are(self):

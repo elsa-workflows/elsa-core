@@ -2,6 +2,7 @@ import dataclasses
 import hashlib
 import json
 import os
+import re
 import sys
 import tempfile
 import unittest
@@ -455,9 +456,47 @@ class WorkflowShapeTests(unittest.TestCase):
             for step in job["steps"]:
                 self.assertNotIn("if", step, f"{name}: {step.get('name')}")
             self.assertNotRegex(job_text(job), r"[0-9]+\.[0-9]+\.[0-9]+")
-        for name in CANDIDATE_JOBS[1:]:
-            self.assertNotIn("if", self.jobs[name])
+        self.assertNotIn("if", self.jobs["retrieve_candidate"])
         self.assertNotIn("3.10.1", self.source.split("  # --- Candidate promotion")[1])
+
+    PUBLISH_TARGETS = {"publish_candidate_feedz": "feedz", "publish_candidate_nuget": "nuget"}
+
+    def publisher_runs(self, job, target):
+        """Evaluate a publisher's job condition for a promote_target value (the condition is a pure function of it)."""
+        condition = self.jobs[job]["if"]
+        expression = condition.strip()[3:-2].strip() if condition.strip().startswith("${{") else condition
+        self.assertRegex(expression, r"^(inputs\.promote_target == '(all|feedz|nuget)'( \|\| )?)+$", job)
+        return eval(expression.replace("inputs.promote_target", "target").replace("||", "or"), {"__builtins__": {}}, {"target": target})
+
+    def test_each_publisher_condition_references_only_the_promote_target(self):
+        for job in self.PUBLISH_TARGETS:
+            condition = self.jobs[job]["if"]
+            self.assertEqual({"inputs.promote_target"}, set(re.findall(r"inputs\.[a-z_]+", condition)), job)
+            self.assertNotRegex(condition, r"[0-9]+\.[0-9]+|version|github\.|always|failure|cancelled", job)
+            self.assertEqual("retrieve_candidate", self.jobs[job]["needs"])
+
+    def test_promote_target_all_runs_both_publishers_and_one_target_runs_only_its_own(self):
+        for target, expected in (("all", {"feedz", "nuget"}), ("feedz", {"feedz"}), ("nuget", {"nuget"})):
+            ran = {feed for job, feed in self.PUBLISH_TARGETS.items() if self.publisher_runs(job, target)}
+            self.assertEqual(expected, ran, target)
+        for bogus in ("", "both", "NUGET", "nuget,feedz"):
+            self.assertFalse(any(self.publisher_runs(job, bogus) for job in self.PUBLISH_TARGETS), bogus)
+
+    def test_promote_target_is_a_choice_defaulting_to_all_and_validation_cannot_be_skipped(self):
+        import yaml
+        spec = yaml.safe_load(self.source)[True]["workflow_dispatch"]["inputs"]["promote_target"]
+        self.assertEqual("choice", spec["type"])
+        self.assertEqual(["all", "feedz", "nuget"], spec["options"])
+        self.assertEqual("all", spec["default"])
+        selection = self.jobs["validate_publication_selection"]
+        self.assertIn("${{ inputs.promote_target }}", job_text(selection))
+        self.assertNotIn("if", selection["steps"][-1])
+        # Retrieval and every verification step run whatever the target is.
+        for name in ("validate_candidate_pin", "retrieve_candidate"):
+            self.assertNotIn("promote_target", job_text(self.jobs[name]), name)
+        for job in self.PUBLISH_TARGETS:
+            for step in self.jobs[job]["steps"]:
+                self.assertNotIn("if", step)
 
     def test_no_tag_is_created_or_required_and_docker_is_untouched(self):
         promotion = self.source.split("  # --- Candidate promotion")[1]

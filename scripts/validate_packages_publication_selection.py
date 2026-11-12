@@ -12,6 +12,8 @@ build and every publisher. The ref and inputs arrive as environment variables, n
     EXCLUDE_IDS            inputs.exclude_ids (optional; empty means none)
     PROMOTE_CANDIDATE_VERSION
                            inputs.promote_candidate_version (optional; empty means not a candidate promotion)
+    PROMOTE_TARGET         inputs.promote_target (all, feedz or nuget; anything else fails closed; only
+                           all is accepted without a promote_candidate_version)
 """
 
 from __future__ import annotations
@@ -30,6 +32,7 @@ CANONICAL_310 = re.compile(STABLE_310_PATTERN + r"(-[0-9A-Za-z]+(\.[0-9A-Za-z]+)
 COVERAGE_REFS = ("refs/heads/main", "refs/heads/release/3.6.1")
 PROMOTE_REF = "refs/heads/main"
 PROMOTE_VERSION = re.compile(r"[0-9]+\.[0-9]+\.[0-9]+")
+PROMOTE_TARGETS = ("all", "feedz", "nuget")
 
 
 def selection_errors(
@@ -41,9 +44,15 @@ def selection_errors(
     coverage: bool = False,
     exclude_ids: str | None = None,
     promote: str | None = None,
+    target: str = "all",
 ) -> list[str]:
     """Return why this selection must not run; an empty list means it may."""
     errors = []
+    if target not in PROMOTE_TARGETS:
+        # Fails closed on any unknown value, before any promotion or other publication is considered.
+        return [f"promote_target {target!r} must be one of {', '.join(PROMOTE_TARGETS)}."]
+    if target != "all" and not promote:
+        return [f"promote_target {target!r} is only accepted together with promote_candidate_version."]
     if promote:
         # Candidate promotion is its own mode: main only, a version, and none of the other publication switches.
         if ref != PROMOTE_REF:
@@ -108,6 +117,7 @@ def main() -> int:
         coverage=_flag("DEPLOY_COVERAGE"),
         exclude_ids=os.environ.get("EXCLUDE_IDS"),
         promote=os.environ.get("PROMOTE_CANDIDATE_VERSION", ""),
+        target=os.environ.get("PROMOTE_TARGET", "all"),
     )
     for error in errors:
         print(error, file=sys.stderr)

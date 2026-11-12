@@ -62,7 +62,7 @@ REJECTED = (
 )
 
 
-def errors(ref, selected, exclude_ids=None, promote=None):
+def errors(ref, selected, exclude_ids=None, promote=None, target="all"):
     return selection_errors(
         ref,
         feedz="feedz" in selected,
@@ -71,6 +71,7 @@ def errors(ref, selected, exclude_ids=None, promote=None):
         coverage="coverage" in selected,
         exclude_ids=exclude_ids,
         promote=promote,
+        target=target,
     )
 
 
@@ -125,6 +126,27 @@ class SelectionErrorsTests(unittest.TestCase):
             with self.subTest(version=version):
                 self.assertIn("is not a version", " ".join(errors("refs/heads/main", set(), promote=version)))
 
+    def test_promote_target_accepts_all_feedz_nuget_with_a_version(self):
+        for target in ("all", "feedz", "nuget"):
+            with self.subTest(target=target):
+                self.assertEqual([], errors("refs/heads/main", set(), promote="3.10.1", target=target))
+        self.assertEqual([], errors("refs/heads/main", set()))
+
+    def test_promote_target_fails_closed_on_an_unknown_value(self):
+        for target in ("", "both", "NUGET", "nuget,feedz", "npm", " feedz"):
+            for promote in ("3.10.1", None):
+                with self.subTest(target=target, promote=promote):
+                    self.assertIn("must be one of all, feedz, nuget",
+                                  " ".join(errors("refs/heads/main", set(), promote=promote, target=target)))
+
+    def test_a_single_target_needs_a_promotion(self):
+        for target in ("feedz", "nuget"):
+            with self.subTest(target=target):
+                self.assertIn("only accepted together with promote_candidate_version",
+                              " ".join(errors("refs/heads/main", set(), target=target)))
+                self.assertIn("only accepted together",
+                              " ".join(errors("refs/tags/3.10.0", {"nuget"}, target=target)))
+
     def test_rejects_mismatched_selections_for_the_stated_reason(self):
         for ref, selected, reason in REJECTED:
             with self.subTest(ref=ref, selected=sorted(selected)):
@@ -134,7 +156,7 @@ class SelectionErrorsTests(unittest.TestCase):
 class SelectionScriptTests(unittest.TestCase):
     """The job runs the script with the ref and inputs in its environment."""
 
-    def run_script(self, ref, feedz="false", nuget="false", npm="false", coverage="false", exclude_ids="", promote=""):
+    def run_script(self, ref, feedz="false", nuget="false", npm="false", coverage="false", exclude_ids="", promote="", target="all"):
         env = {
             **os.environ,
             "REF": ref,
@@ -144,6 +166,7 @@ class SelectionScriptTests(unittest.TestCase):
             "DEPLOY_COVERAGE": coverage,
             "EXCLUDE_IDS": exclude_ids,
             "PROMOTE_CANDIDATE_VERSION": promote,
+            "PROMOTE_TARGET": target,
         }
         return subprocess.run([sys.executable, str(SCRIPT)], env=env, capture_output=True, text=True)
 
@@ -168,6 +191,16 @@ class SelectionScriptTests(unittest.TestCase):
                 result = self.run_script("refs/heads/main", nuget=value)
                 self.assertNotEqual(0, result.returncode)
                 self.assertIn("PUBLISH_NUGET must be 'true' or 'false'", result.stderr)
+
+    def test_promote_target_in_the_environment(self):
+        for target in ("all", "feedz", "nuget"):
+            result = self.run_script("refs/heads/main", promote="3.10.1", target=target)
+            self.assertEqual(0, result.returncode, result.stderr)
+        for target in ("", "both"):
+            result = self.run_script("refs/heads/main", promote="3.10.1", target=target)
+            self.assertEqual(1, result.returncode)
+            self.assertIn("promote_target", result.stderr)
+        self.assertEqual(1, self.run_script("refs/heads/main", target="nuget").returncode)
 
     def test_candidate_promotion_runs_from_main_only(self):
         accepted = self.run_script("refs/heads/main", promote="3.10.1")

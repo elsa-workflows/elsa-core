@@ -33,6 +33,15 @@ on:
         required: false
         type: string
         default: ''
+      promote_target:
+        description: Which publisher a candidate promotion runs, only with promote_candidate_version. all runs Feedz and nuget.org; feedz or nuget runs just that one. Every verification step runs either way. Leave as all for every other run.
+        required: true
+        type: choice
+        options:
+          - all
+          - feedz
+          - nuget
+        default: all
   push:
     branches:
       - 'main'
@@ -75,6 +84,7 @@ jobs:
           DEPLOY_COVERAGE: ${{ inputs.deploy_coverage }}
           EXCLUDE_IDS: ${{ inputs.exclude_ids }}
           PROMOTE_CANDIDATE_VERSION: ${{ inputs.promote_candidate_version }}
+          PROMOTE_TARGET: ${{ inputs.promote_target }}
         run: python3 scripts/validate_packages_publication_selection.py
 
   test_unit_integration:
@@ -748,6 +758,8 @@ jobs:
   publish_candidate_feedz:
     name: Publish the pinned candidate to Feedz
     needs: retrieve_candidate
+    # Keys on the target only, never on a version. Retrieval and every verification above it always run.
+    if: ${{ inputs.promote_target == 'all' || inputs.promote_target == 'feedz' }}
     environment: feedz-publish
     # One feedz promotion per version at a time; a second dispatch waits instead of racing.
     concurrency:
@@ -805,6 +817,8 @@ jobs:
   publish_candidate_nuget:
     name: Publish the pinned candidate to nuget.org
     needs: retrieve_candidate
+    # Keys on the target only, never on a version. Retrieval and every verification above it always run.
+    if: ${{ inputs.promote_target == 'all' || inputs.promote_target == 'nuget' }}
     environment: nuget-org
     # One nuget promotion per version at a time; a second dispatch waits instead of racing.
     concurrency:
