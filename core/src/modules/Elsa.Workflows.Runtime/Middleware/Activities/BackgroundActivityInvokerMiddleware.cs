@@ -1,14 +1,16 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.CommitStates;
+using Elsa.Workflows.Exceptions;
 using Elsa.Workflows.Middleware.Activities;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Pipelines.ActivityExecution;
 using Elsa.Workflows.Runtime.Notifications;
 using Elsa.Workflows.Runtime.Stimuli;
+using Elsa.Workflows.State;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -36,6 +38,7 @@ public class BackgroundActivityInvokerMiddleware(
     internal static string GetBackgroundActivityScheduledActivitiesKey(string activityNodeId) => $"__BackgroundActivityScheduledActivities:{activityNodeId}";
     internal static string GetBackgroundActivityBookmarksKey(string activityNodeId) => $"__BackgroundActivityBookmarks:{activityNodeId}";
     internal static string GetBackgroundActivityPropertiesKey(string activityNodeId) => $"__BackgroundActivityProperties:{activityNodeId}";
+    internal static string GetBackgroundActivityFaultKey(string activityNodeId) => $"__BackgroundActivityFault:{activityNodeId}";
     internal const string BackgroundActivityBookmarkName = "BackgroundActivity";
 
     /// <inheritdoc />
@@ -47,10 +50,15 @@ public class BackgroundActivityInvokerMiddleware(
             await ScheduleBackgroundActivityAsync(context);
         else
         {
-            await base.ExecuteActivityAsync(context);
-
             // This part is either executed from the background or in the foreground when the activity is resumed.
             var isResuming = !GetIsBackgroundExecution(context) && context.ActivityDescriptor.Kind is ActivityKind.Task or ActivityKind.Job;
+
+            // Check before executing, so the activity never runs again in the foreground after it faulted in the background.
+            if (isResuming)
+                RethrowBackgroundFaultIfAny(context);
+
+            await base.ExecuteActivityAsync(context);
+
             if (isResuming)
             {
                 CaptureOutputIfAny(context);
@@ -123,6 +131,29 @@ public class BackgroundActivityInvokerMiddleware(
     }
 
     private static bool GetIsBackgroundExecution(ActivityExecutionContext context) => context.TransientProperties.ContainsKey(BackgroundActivityExecutionContextExtensions.IsBackgroundExecution);
+
+    /// <summary>
+    /// If the activity threw while it ran in the background, rethrows the exception in the workflow so that the exception
+    /// handling middleware faults the activity, offers the fault to its ancestors and applies the incident strategy.
+    /// </summary>
+    private void RethrowBackgroundFaultIfAny(ActivityExecutionContext context)
+    {
+        var workflowExecutionContext = context.WorkflowExecutionContext;
+        var faultKey = GetBackgroundActivityFaultKey(context.NodeId);
+
+        if (!workflowExecutionContext.Properties.Remove(faultKey, out var storedFault) || storedFault is not string faultJson)
+            return;
+
+        var faultState = context.GetRequiredService<IPayloadSerializer>().Deserialize<ExceptionState>(faultJson);
+
+        // The exception skips the bookkeeping that DefaultActivityInvokerMiddleware does after a successful execution, so do it here.
+        workflowExecutionContext.ExecuteDelegate = null;
+
+        if (workflowExecutionContext.ResumedBookmarkContext?.Bookmark is { AutoBurn: true } resumedBookmark)
+            workflowExecutionContext.Bookmarks.Remove(resumedBookmark);
+
+        throw new BackgroundActivityException(faultState);
+    }
 
     /// <summary>
     /// If the input contains captured output from the background activity invoker, apply that to the execution context.
