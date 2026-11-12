@@ -533,6 +533,32 @@ class PackageProofTests(unittest.TestCase):
             proof.main()
         self.assertFalse((output / "receipt.json").exists())
 
+    def test_source_root_selects_the_checkout_and_its_baseline_not_the_scripts_checkout(self):
+        source = self.directory / "source"
+        (source / "scripts/integration-program").mkdir(parents=True)
+        (source / "scripts/integration-program/consolidated-candidate-inventory-baseline.json").write_text('{"from": "source"}')
+        output = self.directory / "evidence"
+        seen = {}
+
+        def record(key, result=None):
+            def inner(*args, **kwargs):
+                seen[key] = args[0]
+                return result
+            return inner
+
+        with patch("sys.argv", ["prove", "--version", "3.10.2", "--output", str(output), "--inventory-only",
+                                "--source-root", str(source)]), \
+                patch.object(proof, "clean_head", side_effect=lambda root: seen.setdefault("head", root) and COMMIT), \
+                patch("prepare_consolidated_release_candidate.require_candidate_source", side_effect=record("source")), \
+                patch("prepare_consolidated_release_candidate.require_release_line", side_effect=record("line")), \
+                patch("prepare_consolidated_release_candidate.compare_inventory", side_effect=lambda m, baseline, path: seen.update(baseline=baseline)), \
+                patch.object(proof, "source_input_hashes", return_value={}), \
+                patch.object(proof, "inventory", return_value=self.manifest):
+            proof.main(mode="candidate")
+        for key in ("head", "source", "line"):
+            self.assertEqual(source.resolve(), seen.get(key), key)
+        self.assertEqual({"from": "source"}, seen["baseline"])
+
     def test_staging_failure_keeps_package_bytes_without_acceptance_receipt(self):
         root = self.directory / "checkout"
         packages = root / "packages"

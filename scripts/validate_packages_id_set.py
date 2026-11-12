@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Compare packed NuGet IDs with the expected consolidated 3.10 set.
 
-Both publishers run this same script before any 3.10.0 push: packages.yml
-(nuget.org promote) and publish-consolidated-original-candidate.yml (Feedz).
+Every publisher runs this same script before any push, all in packages.yml: the 3.10.0 nuget.org promote and
+the candidate-promotion Feedz and nuget.org jobs (promote_candidate_version).
 The package directory arrives as:
 
     PACKAGES_DIR   directory containing the produced .nupkg files
