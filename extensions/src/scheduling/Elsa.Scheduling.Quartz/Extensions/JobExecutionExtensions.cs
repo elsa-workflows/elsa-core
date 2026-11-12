@@ -2,6 +2,7 @@ using System.Globalization;
 using Elsa.Common.Multitenancy;
 using Elsa.Scheduling.Quartz.Contracts;
 using Elsa.Scheduling.Quartz.Jobs;
+using Microsoft.Extensions.Logging;
 using Quartz;
 
 namespace Elsa.Scheduling.Quartz;
@@ -124,18 +125,63 @@ internal static class JobExecutionExtensions
         };
     }
 
-    public static async Task<Tenant?> GetTenantAsync(this IJobExecutionContext context, ITenantFinder tenantFinder)
+    /// <summary>
+    /// Fails the job when trigger or job data has a <c>TenantId</c> but the tenant in context
+    /// is missing or different. The job must never fall through to default-tenant stores.
+    /// </summary>
+    public static void EnsureScheduledTenant(this IJobExecutionContext context, ITenantAccessor tenantAccessor, ILogger logger)
     {
-        if(!context.MergedJobDataMap.ContainsKey("TenantId"))
-            return null;
-        
-        if(!context.MergedJobDataMap.TryGetString("TenantId", out var tenantId))
-            return null;
-        
-        if (string.IsNullOrWhiteSpace(tenantId))
-            return null;
-        
-        return await tenantFinder.FindByIdAsync(tenantId, context.CancellationToken);
+        var tenantId = ReadTenantId(context);
+        if (tenantId is null)
+            return;
+
+        var currentTenantId = tenantAccessor.Tenant?.Id;
+        if (string.Equals(currentTenantId, tenantId, StringComparison.Ordinal))
+            return;
+
+        logger.LogError(
+            "Quartz job {JobKey} is scheduled for tenant {TenantId} but the tenant in context is {CurrentTenant}. TenantAwareJobFactory is not installed, or a custom IJobFactory did not resolve the job inside the trigger's tenant. The job will not fall through to the default tenant.",
+            context.JobDetail.Key,
+            tenantId,
+            currentTenantId ?? "null");
+
+        throw new InvalidOperationException(
+            $"Quartz job '{context.JobDetail.Key}' is scheduled for tenant '{tenantId}' but the tenant in context is '{currentTenantId ?? "null"}'. TenantAwareJobFactory is not installed, or a custom IJobFactory did not resolve the job inside the trigger's tenant.");
+    }
+
+    private static string? ReadTenantId(IJobExecutionContext context)
+    {
+        if (TryGetTenantId(context.Trigger.JobDataMap, out var tenantId))
+            return tenantId;
+
+        if (TryGetTenantId(context.JobDetail.JobDataMap, out tenantId))
+            return tenantId;
+
+        if (TryGetTenantId(context.MergedJobDataMap, out tenantId))
+            return tenantId;
+
+        return null;
+    }
+
+    private static bool TryGetTenantId(JobDataMap? map, out string tenantId)
+    {
+        tenantId = "";
+        if (map is null)
+            return false;
+
+        if (map.TryGetString("TenantId", out var value) && !string.IsNullOrWhiteSpace(value))
+        {
+            tenantId = value;
+            return true;
+        }
+
+        if (map.TryGetValue("TenantId", out var obj) && obj is string stringValue && !string.IsNullOrWhiteSpace(stringValue))
+        {
+            tenantId = stringValue;
+            return true;
+        }
+
+        return false;
     }
 
     /// <summary>

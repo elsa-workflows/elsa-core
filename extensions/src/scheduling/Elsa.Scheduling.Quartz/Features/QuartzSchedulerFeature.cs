@@ -62,6 +62,7 @@ public class QuartzSchedulerFeature(IModule module) : FeatureBase(module)
             .AddStartupTask<RegisterJobsTask>()
             .AddQuartz();
 
+        JobFactoryRegistration.TryUseTenantAwareJobFactory(Services);
         Services.Configure(_configureQuartzJobOptions);
     }
 }

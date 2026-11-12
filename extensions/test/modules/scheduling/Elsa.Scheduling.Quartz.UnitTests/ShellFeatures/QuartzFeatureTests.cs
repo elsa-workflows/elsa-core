@@ -4,14 +4,28 @@ using Elsa.Scheduling.Quartz.EFCore.MySql.ShellFeatures;
 using Elsa.Scheduling.Quartz.EFCore.PostgreSql.ShellFeatures;
 using Elsa.Scheduling.Quartz.EFCore.SqlServer.ShellFeatures;
 using Elsa.Scheduling.Quartz.EFCore.Sqlite.ShellFeatures;
+using Elsa.Scheduling.Quartz.Services;
 using Elsa.Scheduling.Quartz.ShellFeatures;
 using Microsoft.Extensions.DependencyInjection;
+using Quartz.Spi;
 using System.Reflection;
 
 namespace Elsa.Scheduling.Quartz.UnitTests.ShellFeatures;
 
 public class QuartzFeatureTests
 {
+    [Fact]
+    public void ConfigureServices_RegistersTenantAwareJobFactory()
+    {
+        var services = new ServiceCollection();
+
+        new QuartzFeature().ConfigureServices(services);
+
+        Assert.Contains(services, descriptor =>
+            descriptor.ServiceType == typeof(IJobFactory) &&
+            descriptor.ImplementationType == typeof(TenantAwareJobFactory));
+    }
+
     [Fact]
     public void SchedulerInitializer_IsRegisteredDuringPostConfigure()
     {

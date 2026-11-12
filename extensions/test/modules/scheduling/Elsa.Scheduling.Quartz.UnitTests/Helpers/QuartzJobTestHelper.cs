@@ -83,16 +83,6 @@ public static class QuartzJobTestHelper
     /// </summary>
     public static IOptions<QuartzJobOptions> AsOptions(this QuartzJobOptions options) => Microsoft.Extensions.Options.Options.Create(options);
 
-    /// <summary>
-    /// Creates a mock tenant accessor that allows context pushing.
-    /// </summary>
-    public static Mock<ITenantAccessor> CreateTenantAccessor()
-    {
-        var tenantAccessor = new Mock<ITenantAccessor>();
-        tenantAccessor.Setup(t => t.PushContext(It.IsAny<Tenant>())).Returns((IDisposable)null!);
-        return tenantAccessor;
-    }
-
     extension(Mock<IWorkflowStarter> workflowStarter)
     {
         /// <summary>
@@ -219,4 +209,13 @@ public static class QuartzJobTestHelper
         public void VerifyRetryScheduled(IJobExecutionContext context) =>
             retryScheduler.Verify(x => x.ScheduleRetryAsync(context, It.IsAny<Exception>(), It.IsAny<CancellationToken>()), Times.Once);
     }
+}
+
+/// <summary>
+/// Returns a tenant whose id matches the requested id.
+/// </summary>
+public sealed class AnyIdTenantFinder : ITenantFinder
+{
+    public Task<Tenant?> FindByIdAsync(string tenantId, CancellationToken cancellationToken = default) =>
+        Task.FromResult<Tenant?>(new Tenant { Id = tenantId, Name = tenantId });
 }
