@@ -37,7 +37,9 @@ public record ExceptionState(
             return null;
 
         if (ex is BackgroundActivityException backgroundActivityException)
+        {
             return backgroundActivityException.ExceptionState;
+        }
 
         var metadataProvider = ex as ISafeExceptionMetadataProvider;
         var metadata = metadataProvider?.GetSafeMetadata();

@@ -1,16 +1,19 @@
 ﻿using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Testing.Shared;
+using Elsa.Testing.Shared.Activities;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Notifications;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Notifications;
 using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.Runtime.Stimuli;
+using Elsa.Workflows.Signals;
 using Elsa.Workflows.State;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -31,7 +34,7 @@ public class BackgroundActivityFaultTests
     [Fact(DisplayName = "A foreground activity that throws faults the workflow and records an incident")]
     public async Task ForegroundFaultIsPropagated()
     {
-        var settled = await RunUntilSettledAsync(runAsynchronously: false);
+        var settled = await RunUntilSettledAsync(FailThenNext(new FailingActivity { Id = FailingActivity.ActivityId }));
 
         AssertFaultPropagated(settled);
     }
@@ -39,10 +42,69 @@ public class BackgroundActivityFaultTests
     [Fact(DisplayName = "A background activity that throws faults the workflow and records an incident")]
     public async Task BackgroundFaultIsPropagated()
     {
-        var settled = await RunUntilSettledAsync(runAsynchronously: true);
+        var settled = await RunUntilSettledAsync(FailThenNext(new FailingActivity { Id = FailingActivity.ActivityId, RunAsynchronously = true }));
 
         AssertFaultPropagated(settled);
     }
+
+    [Fact(DisplayName = "A job activity that throws faults the workflow and records an incident")]
+    public async Task JobFaultIsPropagated()
+    {
+        var settled = await RunUntilSettledAsync(FailThenNext(new FailingJobActivity { Id = FailingActivity.ActivityId }));
+
+        AssertFaultPropagated(settled);
+    }
+
+    [Fact(DisplayName = "A background activity that throws a cancellation exception while its job is not cancelled faults the workflow")]
+    public async Task BackgroundCancellationExceptionIsPropagated()
+    {
+        var settled = await RunUntilSettledAsync(FailThenNext(new CancellingActivity { Id = FailingActivity.ActivityId, RunAsynchronously = true }));
+
+        AssertFaultPropagated(settled);
+    }
+
+    [Theory(DisplayName = "A fault that an ancestor claims does not fault the workflow, and the workflow continues")]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ClaimedFaultLetsTheWorkflowContinue(bool runAsynchronously)
+    {
+        var root = new Sequence
+        {
+            Activities =
+            {
+                new ClaimingContainer
+                {
+                    Activities =
+                    {
+                        new FailingActivity { Id = FailingActivity.ActivityId, RunAsynchronously = runAsynchronously }
+                    }
+                },
+                new WriteLine("Runs after the claimed fault") { Id = NextActivityId }
+            }
+        };
+
+        var settled = await RunUntilSettledAsync(root);
+
+        var state = settled.State;
+        Assert.Equal(WorkflowStatus.Finished, state.Status);
+        Assert.Equal(WorkflowSubStatus.Finished, state.SubStatus);
+        Assert.Empty(state.Incidents);
+        Assert.NotNull(settled.Instance);
+        Assert.Equal(WorkflowSubStatus.Finished, settled.Instance.SubStatus);
+        Assert.Empty(settled.Instance.WorkflowState.Incidents);
+        var nextRecord = Assert.Single(settled.ActivityExecutionRecords, x => x.ActivityId == NextActivityId);
+        Assert.Equal(ActivityStatus.Completed, nextRecord.Status);
+        Assert.DoesNotContain(settled.StoredBookmarks, x => x.Name == BackgroundActivityStimulusBookmarkName);
+    }
+
+    private static Sequence FailThenNext(IActivity failingActivity) => new()
+    {
+        Activities =
+        {
+            failingActivity,
+            new WriteLine("Should not run") { Id = NextActivityId }
+        }
+    };
 
     private static void AssertFaultPropagated(SettledWorkflow settled)
     {
@@ -76,29 +138,40 @@ public class BackgroundActivityFaultTests
 
         // The bookmark store.
         Assert.DoesNotContain(settled.StoredBookmarks, x => x.Name == BackgroundActivityStimulusBookmarkName);
+
+        // The workflow itself is told about the fault once. A background run also publishes ActivityFaulted on its own copy
+        // of the workflow, where GetIsBackgroundExecution() is true, just as it publishes ActivityExecuted there.
+        Assert.Single(settled.ActivityNotifications, x => x == nameof(ActivityFaulted));
     }
 
     private record SettledWorkflow(
         WorkflowState State,
         WorkflowInstance? Instance,
         IReadOnlyCollection<ActivityExecutionRecord> ActivityExecutionRecords,
-        IReadOnlyCollection<StoredBookmark> StoredBookmarks);
+        IReadOnlyCollection<StoredBookmark> StoredBookmarks,
+        IReadOnlyCollection<string> ActivityNotifications);
 
     /// <summary>
     /// Dispatches the workflow and returns the first committed state that has settled: the workflow faulted, finished,
     /// or the background activity's resume bookmark was consumed. Also reads what the commit stored for the workflow.
     /// </summary>
-    private static async Task<SettledWorkflow> RunUntilSettledAsync(bool runAsynchronously)
+    private static async Task<SettledWorkflow> RunUntilSettledAsync(IActivity root)
     {
         var signal = new TaskCompletionSource<WorkflowState>(TaskCreationOptions.RunContinuationsAsynchronously);
         var stimulusBookmarkSeen = new StrongFlag(); // Shared: the handler is created per notification.
+        var notifications = new System.Collections.Concurrent.ConcurrentQueue<string>();
 
         var host = Host.CreateDefaultBuilder()
             .ConfigureServices(services =>
             {
                 services.AddNotificationHandler<CommitSignal, WorkflowStateCommitted>(_ => new(signal, stimulusBookmarkSeen));
+                services.AddNotificationHandler<NotificationRecorder, ActivityExecuted>(_ => new(notifications));
+                services.AddNotificationHandler<NotificationRecorder, ActivityFaulted>(_ => new(notifications));
                 services.AddElsa(elsa => elsa
                     .AddActivity<FailingActivity>()
+                    .AddActivity<FailingJobActivity>()
+                    .AddActivity<CancellingActivity>()
+                    .AddActivity<ClaimingContainer>()
                     .UseWorkflowRuntime());
             })
             .Build();
@@ -110,14 +183,7 @@ public class BackgroundActivityFaultTests
             var serviceProvider = scope.ServiceProvider;
             await serviceProvider.PopulateRegistriesAsync();
             var workflow = await serviceProvider.GetRequiredService<IWorkflowBuilderFactory>().CreateBuilder()
-                .BuildWorkflowAsync(new TestWorkflow(builder => builder.Root = new Sequence
-                {
-                    Activities =
-                    {
-                        new FailingActivity { Id = FailingActivity.ActivityId, RunAsynchronously = runAsynchronously },
-                        new WriteLine("Should not run") { Id = NextActivityId }
-                    }
-                }));
+                .BuildWorkflowAsync(new TestWorkflow(builder => builder.Root = root));
             await serviceProvider.GetRequiredService<IWorkflowRegistry>().RegisterAsync(workflow);
             var response = await serviceProvider.GetRequiredService<IWorkflowDispatcher>().DispatchAsync(new DispatchWorkflowDefinitionRequest
             {
@@ -134,7 +200,7 @@ public class BackgroundActivityFaultTests
             var instance = await serviceProvider.GetRequiredService<IWorkflowInstanceManager>().FindByIdAsync(state.Id);
             var records = await serviceProvider.GetRequiredService<IActivityExecutionStore>().FindManyAsync(new ActivityExecutionRecordFilter { WorkflowInstanceId = state.Id });
             var bookmarks = await serviceProvider.GetRequiredService<IBookmarkStore>().FindManyAsync(new BookmarkFilter { WorkflowInstanceId = state.Id });
-            return new(state, instance, records.ToList(), bookmarks.ToList());
+            return new(state, instance, records.ToList(), bookmarks.ToList(), notifications.ToList());
         }
         finally
         {
@@ -152,9 +218,57 @@ public class BackgroundActivityFaultTests
         protected override void Execute(ActivityExecutionContext context) => throw new InvalidOperationException(FailureMessage);
     }
 
+    /// <summary>Always runs in the background, because it is a job, and throws there.</summary>
+    [Activity("Elsa.Test", Kind = ActivityKind.Job)]
+    private class FailingJobActivity : CodeActivity
+    {
+        protected override void Execute(ActivityExecutionContext context) => throw new InvalidOperationException(FailureMessage);
+    }
+
+    /// <summary>Throws a cancellation exception that is not caused by cancelling the job, like an HttpClient timeout.</summary>
+    [Activity("Elsa.Test", Kind = ActivityKind.Task)]
+    private class CancellingActivity : CodeActivity
+    {
+        protected override void Execute(ActivityExecutionContext context) => throw new TaskCanceledException(FailureMessage);
+    }
+
+    /// <summary>Claims every fault of its children: cancels the faulted child and completes, so the workflow continues.</summary>
+    private class ClaimingContainer : TestContainer
+    {
+        public ClaimingContainer()
+        {
+            OnSignalReceived<FaultSignal>(ClaimAndCancelChildAsync);
+        }
+
+        private static async ValueTask ClaimAndCancelChildAsync(FaultSignal signal, SignalContext context)
+        {
+            context.StopPropagation();
+            await signal.FaultedContext.CancelActivityAsync();
+            await context.ReceiverActivityExecutionContext.CompleteActivityAsync();
+        }
+    }
+
     private class StrongFlag
     {
         public bool Value { get; set; }
+    }
+
+    /// <summary>Records the activity notifications published for the failing activity.</summary>
+    private class NotificationRecorder(System.Collections.Concurrent.ConcurrentQueue<string> notifications) : INotificationHandler<ActivityExecuted>, INotificationHandler<ActivityFaulted>
+    {
+        public Task HandleAsync(ActivityExecuted notification, CancellationToken cancellationToken) => Record(nameof(ActivityExecuted), notification.ActivityExecutionContext);
+
+        public Task HandleAsync(ActivityFaulted notification, CancellationToken cancellationToken) => Record(nameof(ActivityFaulted), notification.ActivityExecutionContext);
+
+        private Task Record(string name, ActivityExecutionContext context)
+        {
+            if (context.Activity.Id == FailingActivity.ActivityId)
+            {
+                notifications.Enqueue(context.GetIsBackgroundExecution() ? $"{name} (background)" : name);
+            }
+
+            return Task.CompletedTask;
+        }
     }
 
     private class CommitSignal(TaskCompletionSource<WorkflowState> signal, StrongFlag stimulusBookmarkSeen) : INotificationHandler<WorkflowStateCommitted>
@@ -170,7 +284,9 @@ public class BackgroundActivityFaultTests
                           || (stimulusBookmarkSeen.Value && !hasStimulusBookmark);
 
             if (settled)
+            {
                 signal.TrySetResult(state);
+            }
 
             return Task.CompletedTask;
         }

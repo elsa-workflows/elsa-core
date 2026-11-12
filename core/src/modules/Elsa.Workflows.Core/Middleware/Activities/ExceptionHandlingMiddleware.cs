@@ -1,4 +1,4 @@
-﻿using Elsa.Common;
+using Elsa.Common;
 using Elsa.Extensions;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Pipelines.ActivityExecution;

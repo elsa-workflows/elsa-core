@@ -107,7 +107,9 @@ public class BackgroundActivityPrePipelineFailureTests : IAsyncLifetime
         Assert.Equal(WorkflowSubStatus.Suspended, state.SubStatus);
 
         if (definitionVersionId != null)
+        {
             state.DefinitionVersionId = definitionVersionId;
+        }
 
         await _services.GetRequiredService<IWorkflowInstanceManager>().SaveAsync(state, CancellationToken.None);
         var nodeId = state.ActivityExecutionContexts.Single(x => x.ScheduledActivityNodeId.EndsWith(WaitActivityId)).ScheduledActivityNodeId;

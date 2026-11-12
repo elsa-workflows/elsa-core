@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime.Middleware.Activities;
 using Elsa.Workflows.Runtime.Options;
@@ -46,24 +46,32 @@ public class BackgroundActivityInvoker(
 
         using (workflowHeartbeatGeneratorFactory.CreateHeartbeatGenerator(workflowExecutionContext))
         {
+            await variablePersistenceManager.LoadVariablesAsync(workflowExecutionContext);
+            activityExecutionContext.SetIsBackgroundExecution();
+
             try
             {
-                await variablePersistenceManager.LoadVariablesAsync(workflowExecutionContext);
-                activityExecutionContext.SetIsBackgroundExecution();
                 await activityInvoker.InvokeAsync(activityExecutionContext);
-                await variablePersistenceManager.SaveVariablesAsync(workflowExecutionContext);
             }
-            catch (Exception e) when (e is not OperationCanceledException)
+            // Only a cancellation of this job skips the resume. Other cancellation exceptions, such as an HttpClient timeout,
+            // are activity faults like any other exception.
+            catch (Exception e) when (!(e is OperationCanceledException && cancellationToken.IsCancellationRequested))
             {
                 _logger.LogWarning(e, "Background execution for activity {ActivityNodeId} faulted", activityNodeId);
                 faultState = ExceptionState.FromException(e);
             }
+
+            await variablePersistenceManager.SaveVariablesAsync(workflowExecutionContext);
         }
 
         if (faultState != null)
+        {
             await ResumeWorkflowWithFaultAsync(activityExecutionContext, scheduledBackgroundActivity, faultState);
+        }
         else
+        {
             await ResumeWorkflowAsync(activityExecutionContext, scheduledBackgroundActivity);
+        }
     }
 
     private async Task ResumeWorkflowWithFaultAsync(ActivityExecutionContext activityExecutionContext, ScheduledBackgroundActivity scheduledBackgroundActivity, ExceptionState faultState)

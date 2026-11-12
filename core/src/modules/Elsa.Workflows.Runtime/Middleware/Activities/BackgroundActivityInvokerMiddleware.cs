@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Attributes;
@@ -55,7 +55,9 @@ public class BackgroundActivityInvokerMiddleware(
 
             // Check before executing, so the activity never runs again in the foreground after it faulted in the background.
             if (isResuming)
+            {
                 RethrowBackgroundFaultIfAny(context);
+            }
 
             await base.ExecuteActivityAsync(context);
 
@@ -142,7 +144,9 @@ public class BackgroundActivityInvokerMiddleware(
         var faultKey = GetBackgroundActivityFaultKey(context.NodeId);
 
         if (!workflowExecutionContext.Properties.Remove(faultKey, out var storedFault) || storedFault is not string faultJson)
+        {
             return;
+        }
 
         var faultState = context.GetRequiredService<IPayloadSerializer>().Deserialize<ExceptionState>(faultJson);
 
@@ -150,7 +154,9 @@ public class BackgroundActivityInvokerMiddleware(
         workflowExecutionContext.ExecuteDelegate = null;
 
         if (workflowExecutionContext.ResumedBookmarkContext?.Bookmark is { AutoBurn: true } resumedBookmark)
+        {
             workflowExecutionContext.Bookmarks.Remove(resumedBookmark);
+        }
 
         throw new BackgroundActivityException(faultState);
     }
