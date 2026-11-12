@@ -27,8 +27,8 @@ public class WorkflowDashboardContributor(
 
     public async ValueTask<DashboardOverviewContribution?> GetOverviewAsync(DashboardContext context)
     {
-        // Runtime status does not depend on the instance store, so an instance store outage leaves it intact.
-        var runtime = GetRuntimeStatus();
+        // Retrieve runtime status independently so either source can remain available when the other fails.
+        var runtime = TryGetRuntimeStatus();
 
         if (!CanReadInstances(context))
         {
@@ -56,17 +56,20 @@ public class WorkflowDashboardContributor(
 
     public async ValueTask<IReadOnlyCollection<DashboardFinding>> GetFindingsAsync(DashboardContext context)
     {
-        var runtime = GetRuntimeStatus();
+        var runtime = TryGetRuntimeStatus();
         var workflowMetrics = await TryGetWorkflowMetricsAsync(context);
         var findings = new List<DashboardFinding>();
 
-        if (runtime.Status == DashboardRuntimeStatusKeys.Paused)
-            findings.Add(Finding("runtime-paused", DashboardFindingSeverity.Warning, "Runtime is paused", "Runtime", "runtime", 10, RuntimeView));
-        else if (runtime.Status == DashboardRuntimeStatusKeys.Draining)
-            findings.Add(Finding("runtime-draining", DashboardFindingSeverity.Warning, "Runtime is draining", "Runtime", "runtime", 20, RuntimeView));
+        if (runtime.Capability.Status == DashboardCapabilityStatus.Available.Status)
+        {
+            if (runtime.Status == DashboardRuntimeStatusKeys.Paused)
+                findings.Add(Finding("runtime-paused", DashboardFindingSeverity.Warning, "Runtime is paused", "Runtime", "runtime", 10, RuntimeView));
+            else if (runtime.Status == DashboardRuntimeStatusKeys.Draining)
+                findings.Add(Finding("runtime-draining", DashboardFindingSeverity.Warning, "Runtime is draining", "Runtime", "runtime", 20, RuntimeView));
 
-        if (runtime.FailedIngressSourceCount > 0)
-            findings.Add(Finding("ingress-source-failures", DashboardFindingSeverity.Warning, $"{runtime.FailedIngressSourceCount} ingress sources need attention", "Runtime", "runtime", 30, RuntimeView));
+            if (runtime.FailedIngressSourceCount > 0)
+                findings.Add(Finding("ingress-source-failures", DashboardFindingSeverity.Warning, $"{runtime.FailedIngressSourceCount} ingress sources need attention", "Runtime", "runtime", 30, RuntimeView));
+        }
 
         if (workflowMetrics == null)
         {
@@ -200,28 +203,39 @@ public class WorkflowDashboardContributor(
         };
     }
 
-    private DashboardRuntimeStatus GetRuntimeStatus()
+    private DashboardRuntimeStatus TryGetRuntimeStatus()
     {
-        var status = runtimeAdminService.GetStatus();
-        var state = status.State;
-        var runtimeStatus = state.IsAcceptingNewWork
-            ? DashboardRuntimeStatusKeys.AcceptingWork
-            : state.DrainStartedAt != null
-                ? DashboardRuntimeStatusKeys.Draining
-                : DashboardRuntimeStatusKeys.Paused;
-        var failedSourceCount = status.Sources.Count(x => x.LastError != null);
-
-        return new()
+        try
         {
-            Status = runtimeStatus,
-            IsAcceptingWork = state.IsAcceptingNewWork,
-            ActiveExecutionCycleCount = status.ActiveExecutionCycleCount,
-            IngressSourceCount = status.Sources.Count,
-            FailedIngressSourceCount = failedSourceCount,
-            PausedAt = state.PausedAt,
-            DrainStartedAt = state.DrainStartedAt,
-            Reason = state.Reason.ToString()
-        };
+            var status = runtimeAdminService.GetStatus();
+            var state = status.State;
+            var runtimeStatus = state.IsAcceptingNewWork
+                ? DashboardRuntimeStatusKeys.AcceptingWork
+                : state.DrainStartedAt != null
+                    ? DashboardRuntimeStatusKeys.Draining
+                    : DashboardRuntimeStatusKeys.Paused;
+            var failedSourceCount = status.Sources.Count(x => x.LastError != null);
+
+            return new()
+            {
+                Status = runtimeStatus,
+                IsAcceptingWork = state.IsAcceptingNewWork,
+                ActiveExecutionCycleCount = status.ActiveExecutionCycleCount,
+                IngressSourceCount = status.Sources.Count,
+                FailedIngressSourceCount = failedSourceCount,
+                PausedAt = state.PausedAt,
+                DrainStartedAt = state.DrainStartedAt,
+                Reason = state.Reason.ToString()
+            };
+        }
+        catch (Exception e) when (e is not OperationCanceledException)
+        {
+            return new()
+            {
+                Status = DashboardRuntimeStatusKeys.Unavailable,
+                Capability = DashboardCapabilityStatus.Unavailable
+            };
+        }
     }
 
     private async Task<long> CountAsync(

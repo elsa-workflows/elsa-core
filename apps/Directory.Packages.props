@@ -65,6 +65,7 @@
 
     <ItemGroup>
         <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="$(MicrosoftVersion)"/>
+        <PackageVersion Include="Microsoft.AspNetCore.WebUtilities" Version="10.0.15" />
         <PackageVersion Include="Microsoft.OpenApi" Version="2.7.5"/>
         <PackageVersion Include="Microsoft.Extensions.Configuration" Version="$(WebAssemblyServerPatchedVersion)"/>
         <PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="$(WebAssemblyServerPatchedVersion)"/>

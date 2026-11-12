@@ -125,6 +125,48 @@ public class DashboardContributorPermissionTests
         Assert.DoesNotContain("secret", overview.WorkflowInstances.Capability.Reason);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task WorkflowContributor_WithRuntimeFailure_ReportsRuntimeUnavailable(bool mappingThrows)
+    {
+        var runtime = Substitute.For<IWorkflowRuntimeAdminService>();
+        if (mappingThrows)
+        {
+            runtime.GetStatus().Returns(new RuntimeAdminStatus(null!, [], 0));
+        }
+        else
+        {
+            runtime.GetStatus().Returns<RuntimeAdminStatus>(_ => throw new InvalidOperationException("secret runtime error"));
+        }
+
+        var overview = await new WorkflowDashboardContributor(CreateStore(), runtime).GetOverviewAsync(_context);
+
+        Assert.NotNull(overview!.Runtime);
+        Assert.Equal(DashboardRuntimeStatusKeys.Unavailable, overview.Runtime.Status);
+        Assert.Equal(DashboardCapabilityStatus.Unavailable, overview.Runtime.Capability);
+        Assert.Null(overview.Runtime.Reason);
+        Assert.Equal(DashboardCapabilityStatus.Available.Status, overview.WorkflowInstances!.Capability.Status);
+        Assert.Equal(1, overview.WorkflowInstances.Running);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task WorkflowContributor_WithRuntimeCancellation_PropagatesCancellation(bool findings)
+    {
+        var runtime = Substitute.For<IWorkflowRuntimeAdminService>();
+        var exception = new OperationCanceledException();
+        runtime.GetStatus().Returns<RuntimeAdminStatus>(_ => throw exception);
+        var contributor = new WorkflowDashboardContributor(CreateStore(), runtime);
+
+        var thrown = findings
+            ? await Assert.ThrowsAsync<OperationCanceledException>(() => contributor.GetFindingsAsync(_context).AsTask())
+            : await Assert.ThrowsAsync<OperationCanceledException>(() => contributor.GetOverviewAsync(_context).AsTask());
+
+        Assert.Same(exception, thrown);
+    }
+
     private static IWorkflowInstanceStore CreateStore()
     {
         var store = Substitute.For<IWorkflowInstanceStore>();
