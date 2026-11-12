@@ -11,6 +11,7 @@ Candidate promotion (promote_candidate_version) has its own rules: see candidate
 from __future__ import annotations
 
 import re
+import shlex
 import sys
 from pathlib import Path
 from typing import Any, Iterator
@@ -384,19 +385,6 @@ def _step_run(step: dict) -> str:
     return " ".join(str(step.get("run") or "").split())
 
 
-def _npm_registry_arg(run: str) -> str | None:
-    """Value of the single --registry argument in a whitespace-normalised run, or None."""
-    # Shell line-continuation backslashes are literal in the YAML run block.
-    cleaned = run.replace(" \\ ", " ").replace("\\ ", " ")
-    quoted = re.findall(r'--registry\s+"([^"]+)"', cleaned)
-    unquoted = [
-        value for value in re.findall(r"--registry\s+(\S+)", cleaned)
-        if not (value.startswith('"') and value.endswith('"'))
-    ]
-    values = quoted + unquoted
-    return values[0] if len(values) == 1 else None
-
-
 def _run_lines(step: dict) -> list[str]:
     """Whitespace-normalized non-empty lines of a step's run: body."""
     return [" ".join(line.split()) for line in str(step.get("run") or "").splitlines() if line.strip()]
@@ -421,15 +409,146 @@ def _run_command_lines(step: dict) -> list[str]:
     return result
 
 
-PUBLISHER_INVOCATION = re.compile(r"\bpython3?\s+scripts/publish_npm_tarball\.py\b")
+def _split_shell_commands(line: str) -> list[tuple[str, str | None]]:
+    """Split a shell line into commands separated by top-level ; && ||."""
+    try:
+        tokens = shlex.split(line)
+    except ValueError:
+        return []
+    commands = []
+    current: list[str] = []
+    for token in tokens:
+        if token in (";", "&&", "||"):
+            if current:
+                commands.append((" ".join(current), token))
+                current = []
+        else:
+            current.append(token)
+    if current:
+        commands.append((" ".join(current), None))
+    return commands
+
+
+def _command_tokens(command: str) -> list[str] | None:
+    try:
+        return shlex.split(command)
+    except ValueError:
+        return None
+
+
+def _is_publisher_command(command: str) -> bool:
+    tokens = _command_tokens(command)
+    if tokens is None or len(tokens) < 2:
+        return False
+    return Path(tokens[0]).name in {"python", "python3"} and tokens[1] == NPM_PUBLISH_SCRIPT
+
+
+def _is_npm_publish_command(command: str) -> bool:
+    tokens = _command_tokens(command)
+    if tokens is None or len(tokens) < 2:
+        return False
+    return tokens[0] == "npm" and tokens[1] == "publish"
 
 
 def _publisher_command_line(command_lines: list[str]) -> str | None:
-    """The line that actually invokes the npm tarball publisher, if any."""
+    """The first command line that actually invokes the npm tarball publisher, if any."""
     for line in command_lines:
-        if PUBLISHER_INVOCATION.search(line):
-            return line
+        for command, _ in _split_shell_commands(line):
+            if _is_publisher_command(command):
+                return line
     return None
+
+
+def _publisher_command(line: str) -> str | None:
+    """The publisher command within a command line, if any."""
+    for command, _ in _split_shell_commands(line):
+        if _is_publisher_command(command):
+            return command
+    return None
+
+
+def _parse_publisher_args(command: str) -> dict[str, list[str | None]]:
+    """Map argument names to their values for a publisher invocation."""
+    tokens = _command_tokens(command)
+    if tokens is None:
+        return {}
+    args: dict[str, list[str | None]] = {}
+    i = 2
+    while i < len(tokens):
+        token = tokens[i]
+        if token.startswith("-"):
+            if i + 1 < len(tokens) and not tokens[i + 1].startswith("-"):
+                args.setdefault(token, []).append(tokens[i + 1])
+                i += 2
+            else:
+                args.setdefault(token, []).append(None)
+                i += 1
+        else:
+            i += 1
+    return args
+
+
+def _single_arg_value(args: dict[str, list[str | None]], name: str) -> str | None:
+    """Single value for an option, or None if missing or duplicated."""
+    values = args.get(name)
+    if not values or len(values) != 1:
+        return None
+    return values[0]
+
+
+def _has_flag(args: dict[str, list[str | None]], name: str) -> bool:
+    """Whether an option appears exactly once as a boolean flag."""
+    values = args.get(name)
+    return values is not None and len(values) == 1 and values[0] is None
+
+
+def _step_publisher(step: dict) -> tuple[str, dict[str, list[str | None]]] | None:
+    """The publisher command and its parsed arguments for a step, if any."""
+    for line in _run_command_lines(step):
+        command = _publisher_command(line)
+        if command is not None:
+            return command, _parse_publisher_args(command)
+    return None
+
+
+def _step_package(step: dict) -> str | None:
+    """The --package value of the publisher invocation in a step, if any."""
+    publisher = _step_publisher(step)
+    if publisher is None:
+        return None
+    return _single_arg_value(publisher[1], "--package")
+
+
+def _publisher_line_index(command_lines: list[str]) -> int | None:
+    for i, line in enumerate(command_lines):
+        if _publisher_command(line) is not None:
+            return i
+    return None
+
+
+def _output_command_index(command_lines: list[str]) -> int | None:
+    """Index of the command line that writes wasm-published=true, if any."""
+    for i, line in enumerate(command_lines):
+        for command, _ in _split_shell_commands(line):
+            tokens = _command_tokens(command)
+            if tokens and tokens[0] == "echo" and any("wasm-published=true" in token for token in tokens):
+                return i
+    return None
+
+
+def _publisher_error_suppressions(command_lines: list[str]) -> list[str]:
+    """Detect constructs that let a failed publisher continue."""
+    errors = []
+    for line in command_lines:
+        commands = _split_shell_commands(line)
+        for j, (command, sep) in enumerate(commands):
+            if not _is_publisher_command(command):
+                continue
+            if sep == "||" and j + 1 < len(commands) and commands[j + 1][0] in ("true", ":"):
+                errors.append("publisher is followed by error-suppressing || true/:")
+            if sep == ";" and j + 1 < len(commands):
+                errors.append("publisher is chained with ; before the output command")
+    return errors
 
 
 def _has_defaults_run_shell(node: Any) -> bool:
@@ -718,34 +837,55 @@ def npm_job_violations(jobs: dict) -> list[str]:
         duplicate="publish_npm must contain exactly one @elsa-workflows/elsa-studio-wasm-react publish step",
     )
     violations += extra
+
+    # Reject any real npm publish invocation anywhere in the job.
+    for step in steps:
+        for line in _run_command_lines(step):
+            for command, _ in _split_shell_commands(line):
+                if _is_npm_publish_command(command):
+                    violations.append("publish_npm must not invoke npm publish directly")
+
     if wasm_publish is not None:
         run = _step_run(steps[wasm_publish])
         wasm_command_lines = _run_command_lines(steps[wasm_publish])
-        publisher_line = _publisher_command_line(wasm_command_lines)
-        if publisher_line is None:
+        publisher = _step_publisher(steps[wasm_publish])
+        publisher_index = _publisher_line_index(wasm_command_lines)
+        output_index = _output_command_index(wasm_command_lines)
+        set_e_index = next((i for i, line in enumerate(wasm_command_lines) if 'set -euo pipefail' in line), None)
+        set_plus_e_index = next((i for i, line in enumerate(wasm_command_lines) if re.search(r'\bset\s+\+e\b', line)), None)
+
+        if publisher is None:
             violations.append("publish_npm WASM publish must invoke scripts/publish_npm_tarball.py")
         else:
-            if "--tarball" not in publisher_line:
-                violations.append("publish_npm WASM publish must pass --tarball to the publisher")
-            if "--tag" not in publisher_line:
+            command, args = publisher
+            if _single_arg_value(args, "--package") != WASM_PACKAGE:
+                violations.append("publish_npm WASM publish must target @elsa-workflows/elsa-studio-wasm")
+            tarball = _single_arg_value(args, "--tarball")
+            if tarball is None or tarball != '$RUNNER_TEMP/studio-npm-pair/$wasm':
+                violations.append("publish_npm WASM publish must pass the WASM tarball to the publisher")
+            tag = _single_arg_value(args, "--tag")
+            if tag is None:
                 violations.append("publish_npm WASM publish must pass a dist-tag to the publisher")
-            wasm_registry = _npm_registry_arg(publisher_line)
-            if wasm_registry is None:
+            registry = _single_arg_value(args, "--registry")
+            if registry is None:
                 violations.append("publish_npm WASM publish must pass exactly one --registry argument to the publisher")
-            elif wasm_registry != FEEDZ_NPM_REGISTRY:
+            elif registry != FEEDZ_NPM_REGISTRY:
                 violations.append("publish_npm WASM publish must use the Feedz npm registry in the publisher")
-            if "--verify-published" not in publisher_line:
+            if not _has_flag(args, "--verify-published"):
                 violations.append("publish_npm WASM publish must pass --verify-published to the publisher")
+            for error in _publisher_error_suppressions(wasm_command_lines):
+                violations.append(f"publish_npm WASM publish must not suppress errors ({error})")
+
         if "::error::Feedz npm key resolved empty" not in run:
             violations.append("publish_npm WASM publish must fail closed when the Feedz key is empty")
         if steps[wasm_publish].get("id") != "publish_wasm":
             violations.append("publish_npm WASM publish step must have id 'publish_wasm'")
         if 'echo "wasm-published=true" >> "$GITHUB_OUTPUT"' not in str(steps[wasm_publish].get("run") or ""):
             violations.append("publish_npm WASM publish step must set output 'wasm-published=true'")
-        publisher_index = next((i for i, line in enumerate(wasm_command_lines) if line == publisher_line), None)
-        output_index = next((i for i, line in enumerate(wasm_command_lines) if 'echo "wasm-published=true" >> "$GITHUB_OUTPUT"' in line), None)
-        set_e_index = next((i for i, line in enumerate(wasm_command_lines) if 'set -euo pipefail' in line), None)
-        set_plus_e_index = next((i for i, line in enumerate(wasm_command_lines) if re.search(r'\bset\s+\+e\b', line)), None)
+        if output_index is None:
+            violations.append("publish_npm WASM publish must execute wasm-published output command")
+        elif publisher_index is not None and output_index <= publisher_index:
+            violations.append("publish_npm WASM output must occur after successful publication")
         if set_e_index is None:
             violations.append("publish_npm WASM publish must set -euo pipefail before publishing")
         elif publisher_index is not None and set_e_index > publisher_index:
@@ -755,41 +895,48 @@ def npm_job_violations(jobs: dict) -> list[str]:
                 violations.append("publish_npm WASM publish must not disable errexit before publishing")
             if output_index is None or set_plus_e_index < output_index:
                 violations.append("publish_npm WASM publish must not disable errexit before writing wasm-published output")
-        if publisher_index is not None and output_index is not None and output_index <= publisher_index:
-            violations.append("publish_npm WASM publish must write wasm-published output after publishing")
+
     if react_publish is not None:
         run = _step_run(steps[react_publish])
         react_command_lines = _run_command_lines(steps[react_publish])
-        publisher_line = _publisher_command_line(react_command_lines)
-        if publisher_line is None:
+        publisher = _step_publisher(steps[react_publish])
+        publisher_index = _publisher_line_index(react_command_lines)
+        set_e_index = next((i for i, line in enumerate(react_command_lines) if 'set -euo pipefail' in line), None)
+        set_plus_e_index = next((i for i, line in enumerate(react_command_lines) if re.search(r'\bset\s+\+e\b', line)), None)
+
+        if publisher is None:
             violations.append("publish_npm React publish must invoke scripts/publish_npm_tarball.py")
         else:
-            if "--tarball" not in publisher_line:
-                violations.append("publish_npm React publish must pass --tarball to the publisher")
-            if "--tag" not in publisher_line:
+            command, args = publisher
+            if _single_arg_value(args, "--package") != REACT_PACKAGE:
+                violations.append("publish_npm React publish must target @elsa-workflows/elsa-studio-wasm-react")
+            tarball = _single_arg_value(args, "--tarball")
+            if tarball is None or tarball != '$RUNNER_TEMP/studio-npm-pair/$react':
+                violations.append("publish_npm React publish must pass the React tarball to the publisher")
+            tag = _single_arg_value(args, "--tag")
+            if tag is None:
                 violations.append("publish_npm React publish must pass a dist-tag to the publisher")
-            react_registry = _npm_registry_arg(publisher_line)
-            if react_registry is None:
+            registry = _single_arg_value(args, "--registry")
+            if registry is None:
                 violations.append("publish_npm React publish must pass exactly one --registry argument to the publisher")
-            elif react_registry != FEEDZ_NPM_REGISTRY:
+            elif registry != FEEDZ_NPM_REGISTRY:
                 violations.append("publish_npm React publish must use the Feedz npm registry in the publisher")
-            if "--verify-published" not in publisher_line:
+            if not _has_flag(args, "--verify-published"):
                 violations.append("publish_npm React publish must pass --verify-published to the publisher")
+
         if "::error::Feedz npm key resolved empty" not in run:
             violations.append("publish_npm React publish must fail closed when the Feedz key is empty")
         if if_expression(steps[react_publish].get("if")) != "steps.publish_wasm.outputs.wasm-published == 'true'":
             violations.append("publish_npm React publish must run only when WASM is confirmed")
-        publisher_index = next((i for i, line in enumerate(react_command_lines) if line == publisher_line), None)
-        set_e_index = next((i for i, line in enumerate(react_command_lines) if 'set -euo pipefail' in line), None)
-        set_plus_e_index = next((i for i, line in enumerate(react_command_lines) if re.search(r'\bset\s+\+e\b', line)), None)
         if set_e_index is None:
             violations.append("publish_npm React publish must set -euo pipefail before publishing")
         elif publisher_index is not None and set_e_index > publisher_index:
             violations.append("publish_npm React publish must set -euo pipefail before publishing")
         if set_plus_e_index is not None and (publisher_index is None or set_plus_e_index < publisher_index):
             violations.append("publish_npm React publish must not disable errexit before publishing")
-    publishes = [index for index, step in enumerate(steps) if NPM_PUBLISH_SCRIPT in _step_run(step)]
-    if len(publishes) != 2:
+
+    publisher_step_count = sum(1 for step in steps if _step_publisher(step) is not None)
+    if publisher_step_count != 2:
         violations.append("publish_npm must contain exactly two tarball publish steps")
     if any(step.get("name") == "npm publish to npmjs.com" or re.search(r"registry\.npmjs\.(org|com)", _step_run(step)) for step in steps):
         violations.append("publish_npm must not publish to npmjs.com until trusted publishing is confirmed")

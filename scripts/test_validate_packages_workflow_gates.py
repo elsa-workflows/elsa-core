@@ -910,6 +910,103 @@ class WorkflowGateTests(unittest.TestCase):
             "publish_npm WASM publish must not disable errexit before publishing",
         )
 
+    def test_wasm_publish_rejects_or_true(self):
+        source = self.source.replace(
+            '--verify-published\n          echo "wasm-published=true" >> "$GITHUB_OUTPUT"',
+            '--verify-published || true\n          echo "wasm-published=true" >> "$GITHUB_OUTPUT"',
+            1,
+        )
+        self.assert_rejected(
+            source,
+            "publisher is followed by error-suppressing || true/:",
+        )
+
+    def test_wasm_publish_rejects_or_colon(self):
+        source = self.source.replace(
+            '--verify-published\n          echo "wasm-published=true" >> "$GITHUB_OUTPUT"',
+            '--verify-published || :\n          echo "wasm-published=true" >> "$GITHUB_OUTPUT"',
+            1,
+        )
+        self.assert_rejected(
+            source,
+            "publisher is followed by error-suppressing || true/:",
+        )
+
+    def test_wasm_publish_rejects_semicolon_continuation(self):
+        source = self.source.replace(
+            '--verify-published\n          echo "wasm-published=true" >> "$GITHUB_OUTPUT"',
+            '--verify-published ; echo continuing\n          echo "wasm-published=true" >> "$GITHUB_OUTPUT"',
+            1,
+        )
+        self.assert_rejected(
+            source,
+            "publisher is chained with ; before the output command",
+        )
+
+    def test_wasm_publish_rejects_echo_invocation(self):
+        source = self.source.replace(
+            'python3 scripts/publish_npm_tarball.py \\\n',
+            'echo "python3 scripts/publish_npm_tarball.py" \\\n',
+            1,
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm WASM publish must invoke scripts/publish_npm_tarball.py",
+        )
+
+    def test_wasm_publish_rejects_commented_output(self):
+        source = self.source.replace(
+            'echo "wasm-published=true" >> "$GITHUB_OUTPUT"',
+            '# echo "wasm-published=true" >> "$GITHUB_OUTPUT"',
+            1,
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm WASM publish must execute wasm-published output command",
+        )
+
+    def test_wasm_publish_rejects_missing_output(self):
+        source = self.source.replace(
+            '          echo "wasm-published=true" >> "$GITHUB_OUTPUT"\n\n      - name: Publish @elsa-workflows/elsa-studio-wasm-react to Feedz',
+            '          true\n\n      - name: Publish @elsa-workflows/elsa-studio-wasm-react to Feedz',
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm WASM publish must execute wasm-published output command",
+        )
+
+    def test_wasm_publish_rejects_react_tarball(self):
+        source = self.source.replace(
+            '--tarball "$RUNNER_TEMP/studio-npm-pair/$wasm"',
+            '--tarball "$RUNNER_TEMP/studio-npm-pair/$react"',
+            1,
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm WASM publish must pass the WASM tarball to the publisher",
+        )
+
+    def test_wasm_publish_rejects_react_package(self):
+        source = self.source.replace(
+            '--package "@elsa-workflows/elsa-studio-wasm"',
+            '--package "@elsa-workflows/elsa-studio-wasm-react"',
+            1,
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm must publish @elsa-workflows/elsa-studio-wasm",
+        )
+
+    def test_publish_npm_rejects_direct_npm_publish(self):
+        source = self.source.replace(
+            '  deploy_coverage:\n    name: Deploy coverage to GitHub Pages',
+            '  direct_npm_publish:\n    name: Direct npm publish\n    needs: [build_npm, validate_publication_selection]\n    runs-on: ubuntu-latest\n    if: ${{ github.event_name == \'workflow_dispatch\' && inputs.publish_npm && startsWith(github.ref, \'refs/tags/\') }}\n    permissions:\n      contents: read\n    steps:\n      - name: Publish directly\n        run: npm publish package.tgz\n\n  deploy_coverage:\n    name: Deploy coverage to GitHub Pages',
+        )
+        self.assert_rejected(
+            source,
+            "references npm publish",
+        )
+
     def test_react_publish_must_use_feedz_registry(self):
         self.assert_rejected(
             self.mutated(
