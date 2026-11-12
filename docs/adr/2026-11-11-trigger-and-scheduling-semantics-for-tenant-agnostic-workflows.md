@@ -58,7 +58,13 @@ An HTTP request handled by `HttpWorkflowsMiddleware` resolves the tenant first (
 
 ### 5. Bookmarks
 
-Bookmarks are created during workflow execution and should inherit the workflow instance's `TenantId`. For a tenant-specific instance, the bookmark is stamped with that tenant; for a `"*"` instance, the bookmark must remain `"*"` so that any tenant can find it and resume the shared instance.
+Bookmarks are created during workflow execution and must inherit the `TenantId` of the **persistent workflow instance** that owns them. The authoritative value is `WorkflowInstance.TenantId` (`Elsa.Workflows.Management.Entities.WorkflowInstance : Entity`); it is **not** `Workflow.Identity.TenantId`, because the definition may be `"*"` while the instance belongs to a concrete tenant.
+
+Consequences of this rule:
+
+- An instance created from a `"*"` trigger by tenant A has `WorkflowInstance.TenantId == "A"`; its bookmarks must also have `TenantId == "A"`. Tenant B cannot find or resume them.
+- An instance explicitly created under the `"*"` ambient tenant has `WorkflowInstance.TenantId == "*"`; its bookmarks are also `"*"` and visible to every tenant.
+- A tenant-specific instance has tenant-specific bookmarks.
 
 The visibility rules are:
 
@@ -66,14 +72,14 @@ The visibility rules are:
 - A bookmark whose `TenantId` is `"*"` is visible to every tenant.
 - A bookmark with a specific tenant is not visible to other tenants.
 
-When a `"*"` bookmark resumes an instance, the instance must also be visible to the caller. The `WorkflowInstanceStore` query filter prevents tenant A from loading an instance owned by tenant B. If both the bookmark and the instance are visible, resumption proceeds under the caller's tenant context.
+When a bookmark resumes an instance, the instance must also be visible to the caller. The `WorkflowInstanceStore` query filter prevents tenant A from loading an instance owned by tenant B. If both the bookmark and the instance are visible, resumption proceeds under the caller's tenant context.
 
-**Current implementation gap.** `MapBookmark` (`BookmarkExtensions`) does not copy the workflow instance's `TenantId` into the `StoredBookmark`. As a result:
+**Current implementation gap.** `MapBookmark` (`BookmarkExtensions`) does not set `StoredBookmark.TenantId`. `WorkflowExecutionContext` is reconstructed from `WorkflowState`, which does not carry the persistent instance's `TenantId` (`LocalWorkflowClient.RunInstanceAsync` loads the `WorkflowInstance` and passes `workflowInstance.WorkflowState` to `WorkflowRunner`). As a result:
 
-- With EF Core, `ApplyTenantId` stamps a null `TenantId` with the ambient tenant, so a `"*"` instance resumed under tenant A produces tenant-A bookmarks. Tenant B cannot find those bookmarks and therefore cannot resume the shared instance.
+- With EF Core, `ApplyTenantId` stamps a null `TenantId` with the ambient tenant, so bookmarks inherit the caller's tenant instead of the instance's owner.
 - With the in-memory store, the bookmark remains with a null `TenantId`; only the default tenant can see it (`WhereVisibleToTenant` treats `null` as visible only to the default tenant).
 
-**Required change.** `MapBookmark` must propagate `workflowExecutionContext.Workflow.Identity.TenantId` into `StoredBookmark.TenantId`. Once that is done, `ApplyTenantId` will leave `"*"` bookmarks unchanged, and the memory visibility rules will correctly expose `"*"` bookmarks to all tenants.
+**Required change.** `MapBookmark` must be supplied with the persistent instance's `TenantId` (from `WorkflowInstance.TenantId`) and copy it into `StoredBookmark.TenantId`. This ensures that bookmarks of a tenant-A instance stay owned by A, even when the workflow definition is `"*"`.
 
 ### 6. Timers and cron
 
