@@ -56,3 +56,4 @@
 * [2026-10-21. Use native owned children for compensation scopes](2026-10-21-native-compensation-owned-children.md)
 * [2026-10-21. Protect and authorize native compensation recovery data](2026-10-21-protect-native-compensation-recovery-data.md)
 * [2026-10-22. Use an Elsa fault's code as its BPMN error code](2026-10-22-elsa-fault-codes-are-bpmn-error-codes.md)
+* [2026-11-11. Trigger and scheduling semantics for tenant-agnostic workflows](2026-11-11-trigger-and-scheduling-semantics-for-tenant-agnostic-workflows.md)
