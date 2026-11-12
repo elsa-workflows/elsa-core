@@ -90,7 +90,11 @@ jobs:
           name: consolidated-3101-transport
           path: ${{ runner.temp }}/transport
       - name: Re-verify the pin (run, artifact, source, ancestry, archive and manifest hashes) and stage the sealed packages
-        # No GitHub token is present here; the verifier refuses to run with one.
+        # Blank every GitHub token name, as the 3.10.0 publisher does on its staging step; the verifier refuses to run with one set.
+        env:
+          GITHUB_TOKEN: ''
+          GH_TOKEN: ''
+          ACTIONS_READ_TOKEN: ''
         run: python3 scripts/verify_consolidated_3101_candidate.py verify --transport "$RUNNER_TEMP/transport" --stage "$GITHUB_WORKSPACE"
       - name: Guard the full 231-ID set before Feedz
         env:
@@ -136,6 +140,11 @@ jobs:
           name: consolidated-3101-transport
           path: ${{ runner.temp }}/transport
       - name: Re-verify the pin (run, artifact, source, ancestry, archive and manifest hashes) and stage the sealed packages
+        # Blank every GitHub token name, as above.
+        env:
+          GITHUB_TOKEN: ''
+          GH_TOKEN: ''
+          ACTIONS_READ_TOKEN: ''
         run: python3 scripts/verify_consolidated_3101_candidate.py verify --transport "$RUNNER_TEMP/transport" --stage "$GITHUB_WORKSPACE"
       - name: Guard the 230-ID set (Elsa.Platform.Integration excluded) before nuget.org
         env:

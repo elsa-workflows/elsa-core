@@ -184,6 +184,12 @@ class ArchiveTests(unittest.TestCase):
                 verify.main(["verify", "--transport", self.temp.name])
 
 
+    def test_verify_allows_blank_token_variables(self):
+        blank = {name: "" for name in verify.TOKEN_NAMES}
+        with unittest.mock.patch.dict(os.environ, blank), self.assertRaisesRegex(SystemExit, "Transport directory missing"):
+            verify.main(["verify", "--transport", str(self.dir / "missing")])
+
+
 class PinTests(unittest.TestCase):
     def test_pin_values(self):
         self.assertEqual((43236516383, 13955429317), (pin.RUN_ID, pin.ARTIFACT_ID))
@@ -234,6 +240,12 @@ class WorkflowShapeTests(unittest.TestCase):
         self.assertIn("--expect 231", feedz)
         self.assertIn('"EXCLUDE_IDS": "Elsa.Platform.Integration"', nuget)
         self.assertIn("--expect 230", nuget)
+
+    def test_both_verify_steps_blank_every_token_name(self):
+        for name in ("feedz", "nuget"):
+            steps = [step for step in self.jobs[name]["steps"] if "verify_consolidated_3101_candidate.py verify" in step.get("run", "")]
+            self.assertEqual(1, len(steps), name)
+            self.assertEqual({"GITHUB_TOKEN": "", "GH_TOKEN": "", "ACTIONS_READ_TOKEN": ""}, steps[0].get("env"), name)
 
     def test_runs_from_main_and_does_not_require_or_create_a_tag(self):
         for name in ("retrieve", "feedz", "nuget"):
