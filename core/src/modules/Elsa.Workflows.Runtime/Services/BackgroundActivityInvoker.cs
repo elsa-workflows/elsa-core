@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime.Middleware.Activities;
 using Elsa.Workflows.Runtime.Options;
@@ -61,7 +61,15 @@ public class BackgroundActivityInvoker(
                 faultState = ExceptionState.FromException(e);
             }
 
-            await variablePersistenceManager.SaveVariablesAsync(workflowExecutionContext);
+            try
+            {
+                await variablePersistenceManager.SaveVariablesAsync(workflowExecutionContext);
+            }
+            // A save failure must not lose the activity fault, or the workflow would stay suspended without an incident.
+            catch (Exception saveException) when (faultState != null)
+            {
+                _logger.LogError(saveException, "Saving variables for faulted background activity {ActivityNodeId} failed", activityNodeId);
+            }
         }
 
         if (faultState != null)
@@ -84,11 +92,10 @@ public class BackgroundActivityInvoker(
             return;
         }
 
+        // Send what the activity wrote before it threw, so the workflow sees the same values as after a foreground fault.
+        var bookmarkProps = await GetCapturedActivityStateAsync(activityExecutionContext, activityNodeId);
         var faultKey = BackgroundActivityInvokerMiddleware.GetBackgroundActivityFaultKey(activityNodeId);
-        var bookmarkProps = new Dictionary<string, object>
-        {
-            [faultKey] = serviceProvider.GetRequiredService<IPayloadSerializer>().Serialize(faultState)
-        };
+        bookmarkProps[faultKey] = serviceProvider.GetRequiredService<IPayloadSerializer>().Serialize(faultState);
 
         await EnqueueResumeAsync(scheduledBackgroundActivity, bookmarkProps, cancellationToken);
     }
@@ -103,30 +110,39 @@ public class BackgroundActivityInvoker(
             return;
         }
 
-        var inputKey = BackgroundActivityInvokerMiddleware.GetBackgroundActivityOutputKey(activityNodeId);
         var outcomesKey = BackgroundActivityInvokerMiddleware.GetBackgroundActivityOutcomesKey(activityNodeId);
         var completedKey = BackgroundActivityInvokerMiddleware.GetBackgroundActivityCompletedKey(activityNodeId);
-        var journalDataKey = BackgroundActivityInvokerMiddleware.GetBackgroundActivityJournalDataKey(activityNodeId);
         var bookmarksKey = BackgroundActivityInvokerMiddleware.GetBackgroundActivityBookmarksKey(activityNodeId);
         var scheduledActivitiesKey = BackgroundActivityInvokerMiddleware.GetBackgroundActivityScheduledActivitiesKey(activityNodeId);
-        var propsKey = BackgroundActivityInvokerMiddleware.GetBackgroundActivityPropertiesKey(activityNodeId);
         var outcomes = activityExecutionContext.GetBackgroundOutcomes()?.ToList();
         var completed = activityExecutionContext.GetBackgroundCompleted();
         var scheduledActivities = activityExecutionContext.GetBackgroundScheduledActivities().ToList();
-        var outputValues = await activityPropertyLogPersistenceEvaluator.GetPersistableOutputAsync(activityExecutionContext);
-        var bookmarkProps = new Dictionary<string, object>
-        {
-            [scheduledActivitiesKey] = JsonSerializer.Serialize(scheduledActivities),
-            [inputKey] = outputValues,
-            [journalDataKey] = activityExecutionContext.JournalData,
-            [bookmarksKey] = serviceProvider.GetRequiredService<IPayloadSerializer>().Serialize(activityExecutionContext.Bookmarks.ToList()), // JSON text keeps each bookmark payload's type (#8804).
-            [propsKey] = activityExecutionContext.Properties.ToDictionary() // ChangeTrackingDictionary is not persistable, so we need to create a copy of the dictionary.
-        };
+        var bookmarkProps = await GetCapturedActivityStateAsync(activityExecutionContext, activityNodeId);
+        bookmarkProps[scheduledActivitiesKey] = JsonSerializer.Serialize(scheduledActivities);
+        bookmarkProps[bookmarksKey] = serviceProvider.GetRequiredService<IPayloadSerializer>().Serialize(activityExecutionContext.Bookmarks.ToList()); // JSON text keeps each bookmark payload's type (#8804).
 
         if (outcomes != null) bookmarkProps[outcomesKey] = outcomes;
         if (completed != null) bookmarkProps[completedKey] = completed;
 
         await EnqueueResumeAsync(scheduledBackgroundActivity, bookmarkProps, cancellationToken);
+    }
+
+    /// <summary>
+    /// Captures the output, journal data and properties that the activity wrote during the background run.
+    /// </summary>
+    private async Task<Dictionary<string, object>> GetCapturedActivityStateAsync(ActivityExecutionContext activityExecutionContext, string activityNodeId)
+    {
+        var outputKey = BackgroundActivityInvokerMiddleware.GetBackgroundActivityOutputKey(activityNodeId);
+        var journalDataKey = BackgroundActivityInvokerMiddleware.GetBackgroundActivityJournalDataKey(activityNodeId);
+        var propsKey = BackgroundActivityInvokerMiddleware.GetBackgroundActivityPropertiesKey(activityNodeId);
+        var outputValues = await activityPropertyLogPersistenceEvaluator.GetPersistableOutputAsync(activityExecutionContext);
+
+        return new Dictionary<string, object>
+        {
+            [outputKey] = outputValues,
+            [journalDataKey] = activityExecutionContext.JournalData,
+            [propsKey] = activityExecutionContext.Properties.ToDictionary() // ChangeTrackingDictionary is not persistable, so we need to create a copy of the dictionary.
+        };
     }
 
     private async Task EnqueueResumeAsync(ScheduledBackgroundActivity scheduledBackgroundActivity, IDictionary<string, object> bookmarkProps, CancellationToken cancellationToken)

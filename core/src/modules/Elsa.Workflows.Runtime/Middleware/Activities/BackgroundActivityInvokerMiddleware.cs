@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Attributes;
@@ -149,6 +149,11 @@ public class BackgroundActivityInvokerMiddleware(
         }
 
         var faultState = context.GetRequiredService<IPayloadSerializer>().Deserialize<ExceptionState>(faultJson);
+
+        // Apply what the activity wrote before it threw, as a foreground fault would leave it.
+        CaptureOutputIfAny(context);
+        CaptureJournalData(context);
+        CapturePropertiesIfAny(context);
 
         // The exception skips the bookkeeping that DefaultActivityInvokerMiddleware does after a successful execution, so do it here.
         workflowExecutionContext.ExecuteDelegate = null;

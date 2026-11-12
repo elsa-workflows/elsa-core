@@ -6,6 +6,8 @@ using Elsa.Workflows.Activities;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Memory;
+using Elsa.Workflows.Models;
 using Elsa.Workflows.Notifications;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
@@ -97,6 +99,53 @@ public class BackgroundActivityFaultTests
         Assert.DoesNotContain(settled.StoredBookmarks, x => x.Name == BackgroundActivityStimulusBookmarkName);
     }
 
+    [Theory(DisplayName = "What an activity writes before it throws is kept when an ancestor claims the fault")]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ClaimedFaultKeepsWhatTheActivityWroteBeforeItThrew(bool runAsynchronously)
+    {
+        var captured = new Variable<string>("Captured", "");
+        var root = new Sequence
+        {
+            Variables = { captured },
+            Activities =
+            {
+                new ClaimingContainer
+                {
+                    Activities =
+                    {
+                        new WriteThenFailActivity { Id = FailingActivity.ActivityId, RunAsynchronously = runAsynchronously, Result = new(captured) }
+                    }
+                },
+                new RecordValueActivity { Id = NextActivityId, Value = new(captured) }
+            }
+        };
+
+        var settled = await RunUntilSettledAsync(root);
+
+        Assert.Equal(WorkflowSubStatus.Finished, settled.State.SubStatus);
+        var failingRecord = Assert.Single(settled.ActivityExecutionRecords, x => x.ActivityId == FailingActivity.ActivityId);
+        Assert.Equal(WriteThenFailActivity.WrittenValue, failingRecord.Outputs?["Result"]?.ToString());
+        Assert.Equal(WriteThenFailActivity.WrittenValue, failingRecord.Payload?[WriteThenFailActivity.JournalKey]?.ToString());
+        Assert.Equal(WriteThenFailActivity.WrittenValue, failingRecord.Properties?[WriteThenFailActivity.PropertyKey]?.ToString());
+        var nextRecord = Assert.Single(settled.ActivityExecutionRecords, x => x.ActivityId == NextActivityId);
+        Assert.Equal(WriteThenFailActivity.WrittenValue, nextRecord.Payload?[RecordValueActivity.JournalKey]?.ToString());
+    }
+
+    [Fact(DisplayName = "A background activity fault is still propagated when saving the background run's variables fails")]
+    public async Task BackgroundFaultIsPropagatedWhenSavingVariablesFails()
+    {
+        var settled = await RunUntilSettledAsync(
+            FailThenNext(new FailingActivity { Id = FailingActivity.ActivityId, RunAsynchronously = true }),
+            services =>
+            {
+                services.AddScoped<VariablePersistenceManager>();
+                services.AddScoped<IVariablePersistenceManager, BackgroundSaveFailingVariablePersistenceManager>();
+            });
+
+        AssertFaultPropagated(settled);
+    }
+
     private static Sequence FailThenNext(IActivity failingActivity) => new()
     {
         Activities =
@@ -155,7 +204,7 @@ public class BackgroundActivityFaultTests
     /// Dispatches the workflow and returns the first committed state that has settled: the workflow faulted, finished,
     /// or the background activity's resume bookmark was consumed. Also reads what the commit stored for the workflow.
     /// </summary>
-    private static async Task<SettledWorkflow> RunUntilSettledAsync(IActivity root)
+    private static async Task<SettledWorkflow> RunUntilSettledAsync(IActivity root, Action<IServiceCollection>? configureServices = null)
     {
         var signal = new TaskCompletionSource<WorkflowState>(TaskCreationOptions.RunContinuationsAsynchronously);
         var stimulusBookmarkSeen = new StrongFlag(); // Shared: the handler is created per notification.
@@ -172,7 +221,10 @@ public class BackgroundActivityFaultTests
                     .AddActivity<FailingJobActivity>()
                     .AddActivity<CancellingActivity>()
                     .AddActivity<ClaimingContainer>()
+                    .AddActivity<WriteThenFailActivity>()
+                    .AddActivity<RecordValueActivity>()
                     .UseWorkflowRuntime());
+                configureServices?.Invoke(services);
             })
             .Build();
 
@@ -230,6 +282,54 @@ public class BackgroundActivityFaultTests
     private class CancellingActivity : CodeActivity
     {
         protected override void Execute(ActivityExecutionContext context) => throw new TaskCanceledException(FailureMessage);
+    }
+
+    /// <summary>Writes its output, journal data and a property, then throws.</summary>
+    [Activity("Elsa.Test", Kind = ActivityKind.Task)]
+    private class WriteThenFailActivity : CodeActivity<string>
+    {
+        public const string WrittenValue = "Written before the fault";
+        public const string JournalKey = "WrittenJournal";
+        public const string PropertyKey = "WrittenProperty";
+
+        protected override void Execute(ActivityExecutionContext context)
+        {
+            context.Set(Result, WrittenValue);
+            context.JournalData[JournalKey] = WrittenValue;
+            context.Properties[PropertyKey] = WrittenValue;
+            throw new InvalidOperationException(FailureMessage);
+        }
+    }
+
+    /// <summary>Records the value it receives in its journal data.</summary>
+    [Activity("Elsa.Test")]
+    private class RecordValueActivity : CodeActivity
+    {
+        public const string JournalKey = "Seen";
+
+        public Input<string> Value { get; set; } = null!;
+
+        protected override void Execute(ActivityExecutionContext context) => context.JournalData[JournalKey] = Value.Get(context);
+    }
+
+    /// <summary>Fails to save variables for the background run's copy of the workflow only.</summary>
+    private class BackgroundSaveFailingVariablePersistenceManager(VariablePersistenceManager inner) : IVariablePersistenceManager
+    {
+        public Task LoadVariablesAsync(WorkflowExecutionContext context, IEnumerable<string>? excludeTags = default) => inner.LoadVariablesAsync(context, excludeTags);
+
+        public Task SaveVariablesAsync(WorkflowExecutionContext context)
+        {
+            if (context.ActivityExecutionContexts.Any(x => x.GetIsBackgroundExecution()))
+            {
+                throw new InvalidOperationException("Saving variables failed.");
+            }
+
+            return inner.SaveVariablesAsync(context);
+        }
+
+        public Task DeleteVariablesAsync(ActivityExecutionContext context, IEnumerable<string>? includeTags = default) => inner.DeleteVariablesAsync(context, includeTags);
+
+        public Task DeleteVariablesAsync(WorkflowExecutionContext context, IEnumerable<string>? includeTags = default) => inner.DeleteVariablesAsync(context, includeTags);
     }
 
     /// <summary>Claims every fault of its children: cancels the faulted child and completes, so the workflow continues.</summary>
