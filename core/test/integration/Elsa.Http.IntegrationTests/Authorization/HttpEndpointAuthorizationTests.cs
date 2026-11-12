@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Text.Encodings.Web;
 using Elsa.Extensions;
 using Elsa.Http.Bookmarks;
+using Microsoft.AspNetCore.Http;
 using Elsa.Testing.Shared;
 using Elsa.Workflows;
 using Elsa.Workflows.Runtime;
@@ -43,7 +44,12 @@ public class HttpEndpointAuthorizationTests : IAsyncLifetime
             .UseHttp()
             .AddWorkflow<AuthorizeWorkflow>()
             .AddWorkflow<PolicyWorkflow>()
-            .AddWorkflow<SecondStageProtectedWorkflow>());
+            .AddActivitiesFrom<SlowActivity>()
+            .AddWorkflow<SecondStageProtectedWorkflow>()
+            .AddWorkflow<MultiMethodWorkflow>()
+            .AddWorkflow<AnonymousWorkflow>()
+            .AddWorkflow<PolicyWithoutAuthorizeWorkflow>()
+            .AddWorkflow<TimeoutWorkflow>());
 
         _app = builder.Build();
         _app.UseAuthentication();
@@ -133,28 +139,131 @@ public class HttpEndpointAuthorizationTests : IAsyncLifetime
         Assert.Equal(SecondStageProtectedWorkflow.SizeLimit, payload.RequestSizeLimit);
     }
 
-    [Fact(DisplayName = "A bookmark persisted without the options is still enforced from the activity's current options")]
-    public async Task ResumeBookmark_PersistedWithDefaultOptions_IsEnforcedFromTheActivity()
+    [Theory(DisplayName = "A bookmark persisted without the options is still enforced from the activity's current options")]
+    [InlineData(null)]
+    [InlineData(false)]
+    public async Task ResumeBookmark_PersistedWithDefaultOptions_IsEnforcedFromTheActivity(bool? persistedAuthorize)
     {
         var workflow = new PolicyWorkflow();
         await PostAsync(workflow.StartPath, user: "admin");
-
-        // Simulate a bookmark created by an earlier version, which dropped the endpoint options.
-        var bookmark = Assert.Single(await FindBookmarksAsync(workflow.ResumePath));
-        var legacy = bookmark.GetPayload<HttpEndpointBookmarkPayload>();
-        bookmark.Payload = new HttpEndpointBookmarkPayload(legacy.Path, legacy.Method);
-        await _app.Services.GetRequiredService<IBookmarkStore>().SaveAsync(bookmark);
-        var persisted = Assert.Single(await FindBookmarksAsync(workflow.ResumePath)).GetPayload<HttpEndpointBookmarkPayload>();
-        Assert.NotEqual(true, persisted.Authorize);
+        var original = Assert.Single(await MakeLegacyAsync(workflow.ResumePath, persistedAuthorize));
 
         Assert.Equal(HttpStatusCode.Unauthorized, (await PostAsync(workflow.ResumePath, user: null)).StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, (await PostAsync(workflow.ResumePath, user: "viewer")).StatusCode);
 
-        // The rejected requests did not consume the wait: a permitted caller can still resume.
-        Assert.Single(await FindBookmarksAsync(workflow.ResumePath));
+        // The rejected requests did not consume or replace the bookmark: a permitted caller can still resume.
+        Assert.Equal(original, Assert.Single(await FindBookmarksAsync(workflow.ResumePath)).Id);
         var response = await PostAsync(workflow.ResumePath, user: "admin");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Equal("done", await response.Content.ReadAsStringAsync());
+        Assert.Empty(await FindBookmarksAsync(workflow.ResumePath));
+    }
+
+    [Fact(DisplayName = "A rejected resume on a legacy bookmark of a multi-method endpoint keeps one bookmark per method")]
+    public async Task ResumeBookmark_LegacyMultiMethod_RejectedResumeDoesNotDuplicateBookmarks()
+    {
+        var workflow = new MultiMethodWorkflow();
+        await PostAsync(workflow.StartPath, user: "admin");
+        var getBefore = Assert.Single(await MakeLegacyAsync(workflow.ResumePath, false, HttpMethods.Get));
+        var postBefore = Assert.Single(await MakeLegacyAsync(workflow.ResumePath, false, HttpMethods.Post));
+
+        Assert.Equal(HttpStatusCode.Unauthorized, (await PostAsync(workflow.ResumePath, user: null)).StatusCode);
+
+        Assert.Equal(getBefore, Assert.Single(await FindBookmarksAsync(workflow.ResumePath, HttpMethods.Get)).Id);
+        Assert.Equal(postBefore, Assert.Single(await FindBookmarksAsync(workflow.ResumePath, HttpMethods.Post)).Id);
+
+        // The other method is not ambiguous, and a permitted caller can resume.
+        var response = await SendAsync(HttpMethod.Get, workflow.ResumePath, user: "admin");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("done", await response.Content.ReadAsStringAsync());
+    }
+
+    [Fact(DisplayName = "A burst of rejected resumes on a legacy bookmark does not duplicate it or fail")]
+    public async Task ResumeBookmark_LegacyBurstOfRejectedResumes_DoesNotDuplicateBookmarks()
+    {
+        var workflow = new PolicyWorkflow();
+        await PostAsync(workflow.StartPath, user: "admin");
+        var original = Assert.Single(await MakeLegacyAsync(workflow.ResumePath, false));
+
+        var statuses = await Task.WhenAll(Enumerable.Range(0, 12).Select(i => PostAsync(workflow.ResumePath, i % 3 == 0 ? "viewer" : null)).Select(async t => (await t).StatusCode));
+
+        Assert.All(statuses, status => Assert.Equal(HttpStatusCode.Unauthorized, status));
+        Assert.Equal(original, Assert.Single(await FindBookmarksAsync(workflow.ResumePath)).Id);
+        Assert.Equal(HttpStatusCode.OK, (await PostAsync(workflow.ResumePath, user: "admin")).StatusCode);
+    }
+
+    [Fact(DisplayName = "A burst that includes a permitted caller on a legacy bookmark never fails with a server error")]
+    public async Task ResumeBookmark_LegacyBurstWithPermittedCaller_DoesNotFail()
+    {
+        var workflow = new PolicyWorkflow();
+        await PostAsync(workflow.StartPath, user: "admin");
+        await MakeLegacyAsync(workflow.ResumePath, false);
+
+        var users = Enumerable.Range(0, 12).Select(i => i == 6 ? "admin" : i % 3 == 0 ? "viewer" : null).ToList();
+        var statuses = await Task.WhenAll(users.Select(async user => (await PostAsync(workflow.ResumePath, user)).StatusCode));
+
+        Assert.All(statuses, status => Assert.True(status is HttpStatusCode.OK or HttpStatusCode.Unauthorized or HttpStatusCode.NotFound, $"Unexpected status {status}."));
+        Assert.Contains(HttpStatusCode.OK, statuses);
+        Assert.True((await FindBookmarksAsync(workflow.ResumePath)).Count <= 1);
+    }
+
+    [Fact(DisplayName = "An endpoint without Authorize accepts anonymous callers on start and resume")]
+    public async Task Anonymous_StartAndResume_AreAllowed()
+    {
+        var workflow = new AnonymousWorkflow();
+        Assert.Equal(HttpStatusCode.OK, (await PostAsync(workflow.StartPath, user: null)).StatusCode);
+
+        var response = await PostAsync(workflow.ResumePath, user: null);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("done", await response.Content.ReadAsStringAsync());
+    }
+
+    [Fact(DisplayName = "A policy without Authorize is not enforced, on start and resume")]
+    public async Task PolicyWithoutAuthorize_StartAndResume_AreNotEnforced()
+    {
+        var workflow = new PolicyWithoutAuthorizeWorkflow();
+        Assert.Equal(HttpStatusCode.OK, (await PostAsync(workflow.StartPath, user: null)).StatusCode);
+
+        var response = await PostAsync(workflow.ResumePath, user: null);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("done", await response.Content.ReadAsStringAsync());
+    }
+
+    [Fact(DisplayName = "A resume without an HTTP context is not authorized by the endpoint and keeps the workflow waiting")]
+    public async Task Resume_WithoutHttpContext_CreatesCrossBoundaryBookmarkWithoutAuthorizing()
+    {
+        var workflow = new PolicyWorkflow();
+        await PostAsync(workflow.StartPath, user: "admin");
+        var bookmark = Assert.Single(await FindBookmarksAsync(workflow.ResumePath));
+
+        using var scope = _app.Services.CreateScope();
+        var resumer = scope.ServiceProvider.GetRequiredService<IWorkflowResumer>();
+        await resumer.ResumeAsync(bookmark.Id, new Dictionary<string, object>());
+
+        var remaining = await FindBookmarksAsync(workflow.ResumePath);
+        Assert.Empty(remaining);
+        var all = await _app.Services.GetRequiredService<IBookmarkStore>().FindManyAsync(new BookmarkFilter { WorkflowInstanceId = bookmark.WorkflowInstanceId });
+        var crossBoundary = Assert.Single(all);
+        Assert.Equal("true", crossBoundary.Metadata?[BookmarkMetadata.HttpCrossBoundaryMetadataKey]);
+    }
+
+    [Fact(DisplayName = "The request timeout of the endpoint is applied when the workflow is resumed")]
+    public async Task Resume_AppliesTheRequestTimeout()
+    {
+        var workflow = new TimeoutWorkflow();
+        await PostAsync(workflow.StartPath, user: null);
+
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        try
+        {
+            await PostAsync(workflow.ResumePath, user: null);
+        }
+        catch (OperationCanceledException)
+        {
+            // The cancellation surfaces to the caller once the timeout has elapsed.
+        }
+
+        Assert.True(stopwatch.Elapsed < TimeoutWorkflow.SlowActivityDuration / 2, $"The request took {stopwatch.Elapsed}.");
     }
 
     private async Task AssertResumeAsync(TwoStageHttpWorkflow workflow, string? user, HttpStatusCode expected)
@@ -162,6 +271,7 @@ public class HttpEndpointAuthorizationTests : IAsyncLifetime
         // The start is always performed by an admin so that the resume is the only variable.
         Assert.Equal(HttpStatusCode.OK, (await PostAsync(workflow.StartPath, user: "admin")).StatusCode);
 
+        var bookmarkId = Assert.Single(await FindBookmarksAsync(workflow.ResumePath)).Id;
         var response = await PostAsync(workflow.ResumePath, user);
         Assert.Equal(expected, response.StatusCode);
 
@@ -171,27 +281,53 @@ public class HttpEndpointAuthorizationTests : IAsyncLifetime
             return;
         }
 
-        // A rejected request leaves the workflow waiting, and a permitted caller can still resume it.
-        Assert.Single(await FindBookmarksAsync(workflow.ResumePath));
+        // A rejected request leaves the workflow waiting on the same bookmark, and a permitted caller can still resume it.
+        Assert.Equal(bookmarkId, Assert.Single(await FindBookmarksAsync(workflow.ResumePath)).Id);
         var retry = await PostAsync(workflow.ResumePath, user: "admin");
         Assert.Equal(HttpStatusCode.OK, retry.StatusCode);
         Assert.Equal("done", await retry.Content.ReadAsStringAsync());
     }
 
-    private Task<HttpResponseMessage> PostAsync(string path, string? user)
+    private Task<HttpResponseMessage> PostAsync(string path, string? user) => SendAsync(HttpMethod.Post, path, user);
+
+    private Task<HttpResponseMessage> SendAsync(HttpMethod method, string path, string? user)
     {
-        var request = new HttpRequestMessage(HttpMethod.Post, $"/workflows/{path}") { Content = new StringContent("{}") };
+        var request = new HttpRequestMessage(method, $"/workflows/{path}");
+        if (method == HttpMethod.Post)
+            request.Content = new StringContent("{}");
         if (user != null)
             request.Headers.Add(UserHeader, user);
         return _client.SendAsync(request);
     }
 
-    private async Task<List<StoredBookmark>> FindBookmarksAsync(string path)
+    private async Task<List<StoredBookmark>> FindBookmarksAsync(string path, string method = "POST")
     {
         var hasher = _app.Services.GetRequiredService<IStimulusHasher>();
-        var hash = hasher.Hash(HttpStimulusNames.HttpEndpoint, new HttpEndpointBookmarkPayload("/" + path, "post"));
+        var hash = hasher.Hash(HttpStimulusNames.HttpEndpoint, new HttpEndpointBookmarkPayload("/" + path, method.ToLowerInvariant()));
         var store = _app.Services.GetRequiredService<IBookmarkStore>();
         return (await store.FindManyAsync(new BookmarkFilter { Hash = hash })).ToList();
+    }
+
+    /// <summary>
+    /// Rewrites the persisted bookmarks to look like the ones created by earlier versions, which dropped the endpoint options.
+    /// Returns the ids of the rewritten bookmarks for the method.
+    /// </summary>
+    private async Task<List<string>> MakeLegacyAsync(string path, bool? authorize, string method = "POST")
+    {
+        var store = _app.Services.GetRequiredService<IBookmarkStore>();
+        var bookmarks = await FindBookmarksAsync(path, method);
+
+        foreach (var bookmark in bookmarks)
+        {
+            var current = bookmark.GetPayload<HttpEndpointBookmarkPayload>();
+            bookmark.Payload = new HttpEndpointBookmarkPayload(current.Path, current.Method, authorize);
+            await store.SaveAsync(bookmark);
+        }
+
+        var persisted = await FindBookmarksAsync(path, method);
+        Assert.All(persisted, x => Assert.NotEqual(true, x.GetPayload<HttpEndpointBookmarkPayload>().Authorize));
+        Assert.Null(persisted.First().GetPayload<HttpEndpointBookmarkPayload>().Policy);
+        return persisted.Select(x => x.Id).ToList();
     }
 
     private class HeaderAuthenticationHandler(IOptionsMonitor<AuthenticationSchemeOptions> options, ILoggerFactory logger, UrlEncoder encoder)

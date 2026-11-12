@@ -202,8 +202,8 @@ public class HttpEndpoint : Trigger<HttpRequest>
         {
             httpContext.Response.StatusCode = StatusCodes.Status401Unauthorized;
 
-            // Keep waiting for a valid request.
-            await context.WaitForHttpRequestAsync(GetEndpointOptions(context.ExpressionExecutionContext), OnResumeAsync, Elsa.Http.HttpStimulusNames.HttpEndpoint);
+            // Keep the existing bookmark so that the workflow stays suspended without creating duplicates.
+            context.WorkflowExecutionContext.ResumedBookmarkContext = null;
             return;
         }
 
