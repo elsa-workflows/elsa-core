@@ -134,16 +134,19 @@ public abstract class AlterationStoreConformanceTests
         Assert.Equal(Tenant.AgnosticTenantId, agnosticJob.TenantId);
         Assert.Equal("tenant-a", explicitJob.TenantId);
 
+        using (scenario.UseTenant("tenant-a"))
+        {
+            var namedPlan = Plan("plan-named", "tenant-a");
+            await scenario.Plans.SaveAsync(namedPlan);
+            Assert.Equal("tenant-a", namedPlan.TenantId);
+        }
+
         using (scenario.UseTenant(Tenant.DefaultTenantId))
         {
             var defaultPlan = Plan("plan-null", tenantId: null);
             await scenario.Plans.SaveAsync(defaultPlan);
             Assert.Equal(Tenant.DefaultTenantId, defaultPlan.TenantId);
             Assert.Equal(Tenant.DefaultTenantId, (await scenario.Plans.FindAsync(new AlterationPlanFilter { Id = "plan-null" }))!.TenantId);
-
-            var namedPlan = Plan("plan-named", "tenant-a");
-            await scenario.Plans.SaveAsync(namedPlan);
-            Assert.Equal("tenant-a", namedPlan.TenantId);
             Assert.Null(await scenario.Plans.FindAsync(new AlterationPlanFilter { Id = "plan-named" }));
 
             var defaultJob = Job("job-null", tenantId: null);

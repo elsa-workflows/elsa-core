@@ -457,7 +457,7 @@ public static class ExpressionExecutionContextExtensions
             var outputRecordCandidates = outputRegister.FindMany(activity.Id, outputName);
             var containerIds = activityExecutionContext.GetAncestors().Select(x => x.Id).ToList();
             var filteredOutputRecordCandidates = outputRecordCandidates.Where(x => containerIds.Contains(x.ContainerId));
-            var outputRecord = filteredOutputRecordCandidates.FirstOrDefault();
+            var outputRecord = filteredOutputRecordCandidates.LastOrDefault(); // Records are in recording order, so the last one is the most recent.
             return outputRecord?.Value;
         }
 
