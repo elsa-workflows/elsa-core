@@ -820,13 +820,446 @@ class WorkflowGateTests(unittest.TestCase):
             "publish_npm must not build the Studio pair; build_npm owns that step",
         )
 
-    def test_feedz_publish_must_pass_a_dist_tag(self):
+    def test_wasm_publish_must_pass_a_dist_tag(self):
         self.assert_rejected(
             self.mutated(
-                '            if output=$(npm publish "$file" --access public --tag "$tag" 2>&1); then\n',
-                '            if output=$(npm publish "$file" --access public 2>&1); then\n',
+                '            --tag "$tag" \\\n            --registry "https://f.feedz.io/elsa-workflows/elsa-3/npm/" \\\n            --verify-published\n          echo "wasm-published=true" >> "$GITHUB_OUTPUT"',
+                '            --registry "https://f.feedz.io/elsa-workflows/elsa-3/npm/" \\\n            --verify-published\n          echo "wasm-published=true" >> "$GITHUB_OUTPUT"',
             ),
-            "publish_npm Feedz publish must pass a dist-tag",
+            "publish_npm WASM publish must pass --tag $tag",
+        )
+
+    def test_wasm_publish_must_use_feedz_registry(self):
+        self.assert_rejected(
+            self.mutated(
+                '            --registry "https://f.feedz.io/elsa-workflows/elsa-3/npm/" \\\n            --verify-published\n          echo "wasm-published=true" >> "$GITHUB_OUTPUT"',
+                '            --registry "https://registry.npmjs.org/" \\\n            --verify-published\n          echo "wasm-published=true" >> "$GITHUB_OUTPUT"',
+            ),
+            "publish_npm WASM publish must use the Feedz npm registry",
+        )
+
+    def test_wasm_publish_accepts_unquoted_registry(self):
+        source = self.source.replace(
+            '--package "@elsa-workflows/elsa-studio-wasm"',
+            '--package "@elsa-workflows/elsa-studio-wasm"',
+        ).replace(
+            '--registry "https://f.feedz.io/elsa-workflows/elsa-3/npm/"',
+            '--registry https://f.feedz.io/elsa-workflows/elsa-3/npm/',
+            1,
+        )
+        self.assertEqual([], gates.source_violations(source))
+
+    def test_wasm_publish_rejects_duplicate_registry_mixed(self):
+        source = self.source.replace(
+            '--registry "https://f.feedz.io/elsa-workflows/elsa-3/npm/"',
+            '--registry "https://f.feedz.io/elsa-workflows/elsa-3/npm/" --registry https://f.feedz.io/elsa-workflows/elsa-3/npm/',
+            1,
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm WASM publish must pass exactly one --registry argument",
+        )
+
+    def test_wasm_publish_must_pass_registry_argument(self):
+        self.assert_rejected(
+            self.mutated(
+                '            --registry "https://f.feedz.io/elsa-workflows/elsa-3/npm/" \\\n            --verify-published\n          echo "wasm-published=true" >> "$GITHUB_OUTPUT"',
+                '            --verify-published\n          echo "wasm-published=true" >> "$GITHUB_OUTPUT"',
+            ),
+            "publish_npm WASM publish must pass exactly one --registry argument",
+        )
+
+    def test_wasm_publish_must_not_count_verify_in_comment(self):
+        self.assert_rejected(
+            self.mutated(
+                '            --verify-published\n          echo "wasm-published=true" >> "$GITHUB_OUTPUT"',
+                '            # --verify-published\n          echo "wasm-published=true" >> "$GITHUB_OUTPUT"',
+            ),
+            "publish_npm WASM publish must pass --verify-published",
+        )
+
+    def test_wasm_publish_rejects_fake_publisher_invocation(self):
+        source = self.source.replace(
+            'python3 scripts/publish_npm_tarball.py \\',
+            'echo "scripts/publish_npm_tarball.py" \\',
+            1,
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm WASM publish must invoke scripts/publish_npm_tarball.py",
+        )
+
+    def test_wasm_publish_requires_set_euo_pipefail(self):
+        source = self.source.replace(
+            "          set -euo pipefail\n          if [ -z \"${NODE_AUTH_TOKEN:-}\" ]; then",
+            "          if [ -z \"${NODE_AUTH_TOKEN:-}\" ]; then",
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm WASM publish must set -euo pipefail before publishing",
+        )
+
+    def test_wasm_publish_rejects_set_plus_e(self):
+        source = self.source.replace(
+            'wasm="elsa-workflows-elsa-studio-wasm-${version}.tgz"\n          python3 scripts/publish_npm_tarball.py \\',
+            'wasm="elsa-workflows-elsa-studio-wasm-${version}.tgz"\n          set +e\n          python3 scripts/publish_npm_tarball.py \\',
+            1,
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm WASM publish must not disable errexit before publishing",
+        )
+
+    def test_wasm_publish_rejects_or_true(self):
+        source = self.source.replace(
+            '--verify-published\n          echo "wasm-published=true" >> "$GITHUB_OUTPUT"',
+            '--verify-published || true\n          echo "wasm-published=true" >> "$GITHUB_OUTPUT"',
+            1,
+        )
+        self.assert_rejected(
+            source,
+            "publisher is followed by error-suppressing || true/:",
+        )
+
+    def test_wasm_publish_rejects_or_colon(self):
+        source = self.source.replace(
+            '--verify-published\n          echo "wasm-published=true" >> "$GITHUB_OUTPUT"',
+            '--verify-published || :\n          echo "wasm-published=true" >> "$GITHUB_OUTPUT"',
+            1,
+        )
+        self.assert_rejected(
+            source,
+            "publisher is followed by error-suppressing || true/:",
+        )
+
+    def test_wasm_publish_rejects_semicolon_continuation(self):
+        source = self.source.replace(
+            '--verify-published\n          echo "wasm-published=true" >> "$GITHUB_OUTPUT"',
+            '--verify-published ; echo continuing\n          echo "wasm-published=true" >> "$GITHUB_OUTPUT"',
+            1,
+        )
+        self.assert_rejected(
+            source,
+            "publisher is chained with ; before the output command",
+        )
+
+    def test_wasm_publish_rejects_echo_invocation(self):
+        source = self.source.replace(
+            'python3 scripts/publish_npm_tarball.py \\\n',
+            'echo "python3 scripts/publish_npm_tarball.py" \\\n',
+            1,
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm WASM publish must invoke scripts/publish_npm_tarball.py",
+        )
+
+    def test_wasm_publish_rejects_commented_output(self):
+        source = self.source.replace(
+            'echo "wasm-published=true" >> "$GITHUB_OUTPUT"',
+            '# echo "wasm-published=true" >> "$GITHUB_OUTPUT"',
+            1,
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm WASM publish must execute wasm-published output command",
+        )
+
+    def test_wasm_publish_rejects_missing_output(self):
+        source = self.source.replace(
+            '          echo "wasm-published=true" >> "$GITHUB_OUTPUT"\n\n      - name: Publish @elsa-workflows/elsa-studio-wasm-react to Feedz',
+            '          true\n\n      - name: Publish @elsa-workflows/elsa-studio-wasm-react to Feedz',
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm WASM publish must execute wasm-published output command",
+        )
+
+    def test_wasm_publish_rejects_react_tarball(self):
+        source = self.source.replace(
+            '--tarball "$RUNNER_TEMP/studio-npm-pair/$wasm"',
+            '--tarball "$RUNNER_TEMP/studio-npm-pair/$react"',
+            1,
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm WASM publish must pass the correct tarball",
+        )
+
+    def test_wasm_publish_rejects_react_package(self):
+        source = self.source.replace(
+            '--package "@elsa-workflows/elsa-studio-wasm"',
+            '--package "@elsa-workflows/elsa-studio-wasm-react"',
+            1,
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm must publish @elsa-workflows/elsa-studio-wasm",
+        )
+
+    def test_publish_npm_rejects_direct_npm_publish(self):
+        source = self.source.replace(
+            '  deploy_coverage:\n    name: Deploy coverage to GitHub Pages',
+            '  direct_npm_publish:\n    name: Direct npm publish\n    needs: [build_npm, validate_publication_selection]\n    runs-on: ubuntu-latest\n    if: ${{ github.event_name == \'workflow_dispatch\' && inputs.publish_npm && startsWith(github.ref, \'refs/tags/\') }}\n    permissions:\n      contents: read\n    steps:\n      - name: Publish directly\n        run: npm publish package.tgz\n\n  deploy_coverage:\n    name: Deploy coverage to GitHub Pages',
+        )
+        self.assert_rejected(
+            source,
+            "references npm publish",
+        )
+
+    def test_publish_npm_rejects_direct_npm_publish_no_space(self):
+        source = self.source.replace(
+            '  deploy_coverage:\n    name: Deploy coverage to GitHub Pages',
+            '  direct_npm_publish:\n    name: Direct npm publish\n    needs: [build_npm, validate_publication_selection]\n    runs-on: ubuntu-latest\n    if: ${{ github.event_name == \'workflow_dispatch\' && inputs.publish_npm && startsWith(github.ref, \'refs/tags/\') }}\n    permissions:\n      contents: read\n    steps:\n      - name: Publish directly\n        run: echo preparing;npm publish package.tgz\n\n  deploy_coverage:\n    name: Deploy coverage to GitHub Pages',
+        )
+        self.assert_rejected(
+            source,
+            "references npm publish",
+        )
+
+    def _assert_ungated_run_rejected(self, run: str, label: str) -> None:
+        source = self.source.replace(
+            '  deploy_coverage:\n    name: Deploy coverage to GitHub Pages',
+            (
+                '  leak:\n'
+                '    name: Leak\n'
+                '    needs: [build_npm, validate_publication_selection]\n'
+                '    runs-on: ubuntu-latest\n'
+                '    if: ${{ github.event_name == \'workflow_dispatch\' && inputs.publish_npm && startsWith(github.ref, \'refs/tags/\') }}\n'
+                '    permissions:\n'
+                '      contents: read\n'
+                '    steps:\n'
+                '      - name: Leak\n'
+                '        run: __RUN__\n'
+                '\n'
+                '  deploy_coverage:\n'
+                '    name: Deploy coverage to GitHub Pages'
+            ).replace("__RUN__", run),
+        )
+        self.assert_rejected(source, label)
+
+    def test_publish_npm_rejects_wrapped_npm_publish_commands(self):
+        cases = [
+            ("npm publish x.tgz", "plain npm publish"),
+            ('bash -c "npm publish x.tgz"', "bash -c wrapper"),
+            ("sh -c 'npm publish x.tgz'", "sh -c wrapper"),
+            ("env A=1 npm publish x.tgz", "env assignment wrapper"),
+            ("sudo npm publish x.tgz", "sudo wrapper"),
+            ('echo x.tgz | xargs npm publish', "xargs wrapper"),
+            ("npx npm publish", "npx wrapper"),
+            ("command npm publish x.tgz", "command wrapper"),
+            ("eval 'npm publish x.tgz'", "eval wrapper"),
+        ]
+        for run, description in cases:
+            with self.subTest(run=run, description=description):
+                self._assert_ungated_run_rejected(run, "references npm publish")
+
+    def test_publish_npm_rejects_publisher_script_outside_gated_jobs(self):
+        self._assert_ungated_run_rejected(
+            "python3 scripts/publish_npm_tarball.py --package @elsa-workflows/elsa-studio-wasm",
+            "the npm tarball publisher script",
+        )
+
+    def test_publish_npm_rejects_dotnet_nuget_push_outside_gated_jobs(self):
+        self._assert_ungated_run_rejected(
+            'dotnet nuget push "packages/*.nupkg" --source "$FEED"',
+            "dotnet nuget push",
+        )
+
+    def test_wasm_publish_rejects_printf_invocation(self):
+        source = self.source.replace(
+            'python3 scripts/publish_npm_tarball.py \\',
+            'printf "python3 scripts/publish_npm_tarball.py" \\',
+            1,
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm WASM publish must invoke scripts/publish_npm_tarball.py",
+        )
+
+    def test_wasm_publish_rejects_set_plus_o_errexit(self):
+        source = self.source.replace(
+            'wasm="elsa-workflows-elsa-studio-wasm-${version}.tgz"\n          python3 scripts/publish_npm_tarball.py \\',
+            'wasm="elsa-workflows-elsa-studio-wasm-${version}.tgz"\n          set +o errexit\n          python3 scripts/publish_npm_tarball.py \\',
+            1,
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm WASM publish must not disable errexit before publishing",
+        )
+
+    def test_wasm_publish_rejects_set_plus_o_e(self):
+        source = self.source.replace(
+            'wasm="elsa-workflows-elsa-studio-wasm-${version}.tgz"\n          python3 scripts/publish_npm_tarball.py \\',
+            'wasm="elsa-workflows-elsa-studio-wasm-${version}.tgz"\n          set +o e\n          python3 scripts/publish_npm_tarball.py \\',
+            1,
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm WASM publish must not disable errexit before publishing",
+        )
+
+    def test_wasm_publish_rejects_if_false(self):
+        source = self.source.replace(
+            '      - name: Publish @elsa-workflows/elsa-studio-wasm to Feedz\n        id: publish_wasm\n',
+            '      - name: Publish @elsa-workflows/elsa-studio-wasm to Feedz\n        id: publish_wasm\n        if: false\n',
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm WASM publish step must not be conditionally skipped",
+        )
+
+    def test_wasm_publish_accepts_success_if(self):
+        for condition in ("success()", "${{ success() }}", "  success(  )  ", "${{   success()   }}"):
+            with self.subTest(condition=condition):
+                source = self.source.replace(
+                    '      - name: Publish @elsa-workflows/elsa-studio-wasm to Feedz\n        id: publish_wasm\n',
+                    f'      - name: Publish @elsa-workflows/elsa-studio-wasm to Feedz\n        id: publish_wasm\n        if: {condition}\n',
+                )
+                self.assertEqual([], gates.source_violations(source))
+
+    def test_wasm_publish_rejects_success_and_false(self):
+        source = self.source.replace(
+            '      - name: Publish @elsa-workflows/elsa-studio-wasm to Feedz\n        id: publish_wasm\n',
+            '      - name: Publish @elsa-workflows/elsa-studio-wasm to Feedz\n        id: publish_wasm\n        if: success() && false\n',
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm WASM publish step must not be conditionally skipped",
+        )
+
+    def test_wasm_publish_rejects_unrecognized_if(self):
+        source = self.source.replace(
+            '      - name: Publish @elsa-workflows/elsa-studio-wasm to Feedz\n        id: publish_wasm\n',
+            '      - name: Publish @elsa-workflows/elsa-studio-wasm to Feedz\n        id: publish_wasm\n        if: github.event_name == \'workflow_dispatch\'\n',
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm WASM publish step must not be conditionally skipped",
+        )
+
+    def test_wasm_publish_rejects_custom_shell(self):
+        source = self.source.replace(
+            '      - name: Publish @elsa-workflows/elsa-studio-wasm to Feedz\n        id: publish_wasm\n',
+            '      - name: Publish @elsa-workflows/elsa-studio-wasm to Feedz\n        id: publish_wasm\n        shell: true {0}\n',
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm WASM publish step must use a standard shell",
+        )
+
+    def test_wasm_publish_rejects_output_without_github_output(self):
+        source = self.source.replace(
+            'echo "wasm-published=true" >> "$GITHUB_OUTPUT"',
+            'echo "wasm-published=true" > /dev/null',
+            1,
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm WASM publish must execute wasm-published output command",
+        )
+
+    def test_wasm_publish_rejects_output_wrong_value(self):
+        source = self.source.replace(
+            'echo "wasm-published=true" >> "$GITHUB_OUTPUT"',
+            'echo "wasm-published=false" >> "$GITHUB_OUTPUT"',
+            1,
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm WASM publish must execute wasm-published output command",
+        )
+
+    def test_react_publish_must_use_feedz_registry(self):
+        self.assert_rejected(
+            self.mutated(
+                '            --registry "https://f.feedz.io/elsa-workflows/elsa-3/npm/" \\\n            --verify-published\n\n  deploy_coverage:',
+                '            --registry "https://registry.npmjs.org/" \\\n            --verify-published\n\n  deploy_coverage:',
+            ),
+            "publish_npm React publish must use the Feedz npm registry",
+        )
+
+    def test_react_publish_accepts_unquoted_registry(self):
+        source = self.source.replace(
+            '--registry "https://f.feedz.io/elsa-workflows/elsa-3/npm/"',
+            '--registry https://f.feedz.io/elsa-workflows/elsa-3/npm/',
+        )
+        self.assertEqual([], gates.source_violations(source))
+
+    def test_react_publish_rejects_duplicate_registry_mixed(self):
+        source = self.source.replace(
+            '--registry "https://f.feedz.io/elsa-workflows/elsa-3/npm/"',
+            '--registry "https://f.feedz.io/elsa-workflows/elsa-3/npm/" --registry https://f.feedz.io/elsa-workflows/elsa-3/npm/',
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm React publish must pass exactly one --registry argument",
+        )
+
+    def test_react_publish_must_pass_registry_argument(self):
+        self.assert_rejected(
+            self.mutated(
+                '            --registry "https://f.feedz.io/elsa-workflows/elsa-3/npm/" \\\n            --verify-published\n\n  deploy_coverage:',
+                '            --verify-published\n\n  deploy_coverage:',
+            ),
+            "publish_npm React publish must pass exactly one --registry argument",
+        )
+
+    def test_react_publish_must_not_count_verify_in_comment(self):
+        self.assert_rejected(
+            self.mutated(
+                '            --verify-published\n\n  deploy_coverage:',
+                '            # --verify-published\n\n  deploy_coverage:',
+            ),
+            "publish_npm React publish must pass --verify-published",
+        )
+
+    def test_react_publish_must_wait_for_wasm(self):
+        self.assert_rejected(
+            self.mutated(
+                "      - name: Publish @elsa-workflows/elsa-studio-wasm-react to Feedz\n        if: steps.publish_wasm.outputs.wasm-published == 'true'\n",
+                "      - name: Publish @elsa-workflows/elsa-studio-wasm-react to Feedz\n",
+            ),
+            "publish_npm React publish must run only when WASM is confirmed",
+        )
+
+    def test_wasm_publish_must_set_confirmed_output(self):
+        self.assert_rejected(
+            self.mutated(
+                '          echo "wasm-published=true" >> "$GITHUB_OUTPUT"\n\n      - name: Publish @elsa-workflows/elsa-studio-wasm-react',
+                '\n      - name: Publish @elsa-workflows/elsa-studio-wasm-react',
+            ),
+            "publish_npm WASM publish step must set output 'wasm-published=true'",
+        )
+
+    def test_npm_publish_must_have_exactly_two_steps(self):
+        source = self.source.replace(
+            '--package "@elsa-workflows/elsa-studio-wasm"',
+            '--package "@elsa-workflows/elsa-studio-wasm-react"',
+            1,
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm must contain exactly one @elsa-workflows/elsa-studio-wasm-react publish step",
+        )
+
+    def test_wasm_must_be_published_before_react(self):
+        source = self.source
+        source = source.replace(
+            '--package "@elsa-workflows/elsa-studio-wasm"',
+            '--package "@elsa-workflows/elsa-studio-wasm-SWAP"',
+        )
+        source = source.replace(
+            '--package "@elsa-workflows/elsa-studio-wasm-react"',
+            '--package "@elsa-workflows/elsa-studio-wasm"',
+        )
+        source = source.replace(
+            '--package "@elsa-workflows/elsa-studio-wasm-SWAP"',
+            '--package "@elsa-workflows/elsa-studio-wasm-react"',
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm must fail closed, download and verify the pair, publish WASM, then publish React",
         )
 
     def test_id_set_count_is_pinned(self):
