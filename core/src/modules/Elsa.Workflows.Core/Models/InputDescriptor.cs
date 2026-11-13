@@ -34,8 +34,9 @@ public class InputDescriptor : PropertyDescriptor
         Type? evaluatorType = null,
         Type? storageDriverType = null,
         PropertyInfo? propertyInfo = null,
-        IDictionary<string, object>? uiSpecifications = null
-    )
+        IDictionary<string, object>? uiSpecifications = null,
+        bool isCollectionOfInput = false,
+        bool isDictionaryWithValueOfInput = false)
     {
         Name = name;
         Type = type;
@@ -58,6 +59,8 @@ public class InputDescriptor : PropertyDescriptor
         IsSerializable = isSerializable;
         PropertyInfo = propertyInfo;
         UISpecifications = uiSpecifications;
+        IsCollectionOfInput = isCollectionOfInput;
+        IsDictionaryWithValueOfInput = isDictionaryWithValueOfInput;
     }
 
     /// <summary>
@@ -117,4 +120,14 @@ public class InputDescriptor : PropertyDescriptor
     /// A dictionary of UI specifications to be used by the UI.
     /// </summary>
     public IDictionary<string, object>? UISpecifications { get; set; }
+
+    /// <summary>
+    /// True if the property is a collection of <see cref="Input{T}"/>, false otherwise.
+    /// </summary>
+    public bool IsCollectionOfInput { get; set; }
+
+    /// <summary>
+    /// True if the property is a dictionary with <see cref="Input{T}"/> values, false otherwise.
+    /// </summary>
+    public bool IsDictionaryWithValueOfInput { get; set; }
 }

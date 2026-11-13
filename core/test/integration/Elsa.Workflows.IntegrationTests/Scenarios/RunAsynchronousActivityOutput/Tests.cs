@@ -149,4 +149,56 @@ public class Tests
         Assert.Equal(9, activityExecutionRecord2.Outputs!.GetValue<int>("Sum"));
         Assert.Equal(14, activityExecutionRecord2.Outputs!.GetValue<int>("Product"));
     }
+
+    [Theory(DisplayName = "Dictionary output entries captured in activity execution record")]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task DictionaryOutputCaptureTest(bool runAsynchronously)
+    {
+        // Arrange
+        var workflow = new TestWorkflow(workflowBuilder =>
+        {
+            workflowBuilder.Root = new DynamicOutputsActivity
+            {
+                Id = "DynamicOutputs1",
+                RunAsynchronously = runAsynchronously,
+                Outputs = new()
+                {
+                    ["name"] = new(),
+                    ["age"] = new()
+                }
+            };
+        });
+
+        var activityExecutionStore = new MemoryActivityExecutionStore(new());
+
+        // Act
+        var workflowFinishedRecord = await workflow.DispatchWorkflowAndRunToCompletion(
+            configureElsa: elsa =>
+            {
+                elsa.UseWorkflowRuntime(workflowRuntime =>
+                {
+                    workflowRuntime.ActivityExecutionLogStore = _ => activityExecutionStore;
+                });
+            }
+        );
+
+        // Assert
+        Assert.NotNull(workflowFinishedRecord);
+        Assert.Equal(WorkflowStatus.Finished, workflowFinishedRecord.WorkflowState.Status);
+        Assert.Equal(WorkflowSubStatus.Finished, workflowFinishedRecord.WorkflowState.SubStatus);
+
+        var activityExecutionRecord = await activityExecutionStore.FindAsync(new()
+        {
+            ActivityId = "DynamicOutputs1"
+        });
+        Assert.NotNull(activityExecutionRecord?.Outputs);
+        var recordedOutputs = activityExecutionRecord.Outputs!.GetValue<Dictionary<string, object>>("Outputs")!;
+        Assert.Equal("Frank", recordedOutputs["name"].ToString());
+        Assert.Equal(42d, Convert.ToDouble(recordedOutputs["age"].ToString()));
+
+        var activityOutputRegister = workflowFinishedRecord.WorkflowExecutionContext.GetActivityOutputRegister();
+        Assert.Equal("Frank", activityOutputRegister.FindOutputByActivityId("DynamicOutputs1", "name")?.ToString());
+        Assert.Equal(42d, Convert.ToDouble(activityOutputRegister.FindOutputByActivityId("DynamicOutputs1", "age")));
+    }
 }

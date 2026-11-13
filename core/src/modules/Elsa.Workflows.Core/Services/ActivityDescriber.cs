@@ -111,20 +111,54 @@ public class ActivityDescriber(IPropertyDefaultValueResolver defaultValueResolve
     }
 
     /// <inheritdoc />
-    public IEnumerable<PropertyInfo> GetInputProperties([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type activityType) => activityType.GetProperties().Where(x => typeof(Input).IsAssignableFrom(x.PropertyType) || x.GetCustomAttribute<InputAttribute>() != null).DistinctBy(x => x.Name);
+    public IEnumerable<PropertyInfo> GetInputProperties([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type activityType) =>
+        activityType.GetProperties()
+            .Where(x =>
+                typeof(Input).IsAssignableFrom(x.PropertyType)
+                || x.GetCustomAttribute<InputAttribute>() != null
+                || IsCollectionOfType(x, typeof(Input))
+                || IsDictionaryWithValueOfType(x, typeof(Input)))
+            .DistinctBy(x => x.Name);
 
     /// <inheritdoc />
-    public IEnumerable<PropertyInfo> GetOutputProperties([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type activityType) => activityType.GetProperties().Where(x => typeof(Output).IsAssignableFrom(x.PropertyType)).DistinctBy(x => x.Name).ToList();
+    public IEnumerable<PropertyInfo> GetOutputProperties([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type activityType) =>
+        activityType.GetProperties()
+            .Where(x =>
+                typeof(Output).IsAssignableFrom(x.PropertyType)
+                || IsDictionaryWithValueOfType(x, typeof(Output)))
+            .DistinctBy(x => x.Name)
+            .ToList();
 
     /// <inheritdoc />
     public Task<OutputDescriptor> DescribeOutputPropertyAsync(PropertyInfo propertyInfo, CancellationToken cancellationToken = default)
     {
         var outputAttribute = propertyInfo.GetCustomAttribute<OutputAttribute>();
         var descriptionAttribute = propertyInfo.GetCustomAttribute<DescriptionAttribute>();
-        var typeArgs = propertyInfo.PropertyType.GenericTypeArguments;
-        var wrappedPropertyType = typeArgs.Any() ? typeArgs[0] : typeof(object);
 
-        return Task.FromResult(new OutputDescriptor((outputAttribute?.Name ?? propertyInfo.Name).Pascalize(), outputAttribute?.DisplayName ?? propertyInfo.Name.Humanize(LetterCasing.Title), wrappedPropertyType, propertyInfo.GetValue, propertyInfo.SetValue, propertyInfo, descriptionAttribute?.Description ?? outputAttribute?.Description, outputAttribute?.IsBrowsable ?? true, outputAttribute?.IsSerializable));
+        // Mirror the input side: only unwrap the generic argument for a genuine single Output<T>.
+        // For a dictionary of outputs (Dictionary<string, Output<T>>), report the whole property type
+        // rather than a generic argument, so the descriptor Type isn't mis-reported as the key type.
+        var isWrappedProperty = typeof(Output).IsAssignableFrom(propertyInfo.PropertyType);
+        var typeArgs = propertyInfo.PropertyType.GenericTypeArguments;
+        var wrappedPropertyType = !isWrappedProperty
+            ? propertyInfo.PropertyType
+            : (typeArgs.Length > 0 ? typeArgs[0] : typeof(object));
+
+        var isDictionaryWithValueOfOutput = IsDictionaryWithValueOfType(propertyInfo, typeof(Output));
+
+        return Task.FromResult(new OutputDescriptor
+        (
+            (outputAttribute?.Name ?? propertyInfo.Name).Pascalize(),
+            outputAttribute?.DisplayName ?? propertyInfo.Name.Humanize(LetterCasing.Title),
+            wrappedPropertyType,
+            propertyInfo.GetValue,
+            propertyInfo.SetValue,
+            propertyInfo,
+            descriptionAttribute?.Description ?? outputAttribute?.Description,
+            outputAttribute?.IsBrowsable ?? true,
+            outputAttribute?.IsSerializable,
+            isDictionaryWithValueOfOutput
+        ));
     }
 
     /// <inheritdoc />
@@ -141,6 +175,9 @@ public class ActivityDescriber(IPropertyDefaultValueResolver defaultValueResolve
             wrappedPropertyType = wrappedPropertyType.GetTypeOfNullable();
 
         var uiSpecification = await propertyUIHandlerResolver.GetUIPropertiesAsync(propertyInfo, null, cancellationToken);
+
+        var isCollectionOfInput = IsCollectionOfType(propertyInfo, typeof(Input));
+        var isDictionaryWithValueOfInput = IsDictionaryWithValueOfType(propertyInfo, typeof(Input));
 
         return new(
             inputAttribute?.Name ?? propertyInfo.Name,
@@ -163,7 +200,9 @@ public class ActivityDescriber(IPropertyDefaultValueResolver defaultValueResolve
             inputAttribute?.EvaluatorType,
             null,
             propertyInfo,
-            uiSpecification
+            uiSpecification,
+            isCollectionOfInput,
+            isDictionaryWithValueOfInput
         )
         {
             IsSensitive = inputAttribute?.CanContainSecrets ?? false
@@ -221,6 +260,42 @@ public class ActivityDescriber(IPropertyDefaultValueResolver defaultValueResolve
         var baseName = genericIndex > 0 ? t.Name.Substring(0, genericIndex) : t.Name;
         var argNames = string.Join(", ", t.GetGenericArguments().Select(a => a.Name));
         return $"{baseName}<{argNames}>";
+    }
+
+    /// <summary>
+    /// Returns true if the property type is a collection (for example <c>List&lt;Input&lt;T&gt;&gt;</c>) whose items are assignable to the specified type.
+    /// </summary>
+    private static bool IsCollectionOfType(PropertyInfo propertyInfo, Type itemType)
+    {
+        var propertyType = propertyInfo.PropertyType;
+
+        if (!propertyType.IsGenericType)
+            return false;
+
+        var genericTypes = propertyType.GenericTypeArguments;
+
+        if (genericTypes.Length != 1 || !itemType.IsAssignableFrom(genericTypes[0]))
+            return false;
+
+        return typeof(ICollection<>).MakeGenericType(genericTypes).IsAssignableFrom(propertyType);
+    }
+
+    /// <summary>
+    /// Returns true if the property type is a dictionary with string keys (for example <c>Dictionary&lt;string, Output&lt;T&gt;&gt;</c>) whose values are assignable to the specified type.
+    /// </summary>
+    private static bool IsDictionaryWithValueOfType(PropertyInfo propertyInfo, Type valueType)
+    {
+        var propertyType = propertyInfo.PropertyType;
+
+        if (!propertyType.IsGenericType)
+            return false;
+
+        var genericTypes = propertyType.GenericTypeArguments;
+
+        if (genericTypes.Length != 2 || genericTypes[0] != typeof(string) || !valueType.IsAssignableFrom(genericTypes[1]))
+            return false;
+
+        return typeof(IDictionary<,>).MakeGenericType(genericTypes).IsAssignableFrom(propertyType);
     }
 
     private async Task<IEnumerable<InputDescriptor>> DescribeInputPropertiesAsync(IEnumerable<PropertyInfo> properties, CancellationToken cancellationToken = default)
