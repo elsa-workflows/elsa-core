@@ -1017,12 +1017,54 @@ class WorkflowGateTests(unittest.TestCase):
             "references npm publish",
         )
 
-    def test_publish_npm_accepts_quoted_operators(self):
+    def _assert_ungated_run_rejected(self, run: str, label: str) -> None:
         source = self.source.replace(
             '  deploy_coverage:\n    name: Deploy coverage to GitHub Pages',
-            '  quoted:\n    name: Quoted operators\n    needs: [build_npm, validate_publication_selection]\n    runs-on: ubuntu-latest\n    if: ${{ github.event_name == \'workflow_dispatch\' && inputs.publish_npm && startsWith(github.ref, \'refs/tags/\') }}\n    permissions:\n      contents: read\n    steps:\n      - name: Echo quoted\n        run: echo "preparing;npm publish package.tgz"\n\n  deploy_coverage:\n    name: Deploy coverage to GitHub Pages',
+            (
+                '  leak:\n'
+                '    name: Leak\n'
+                '    needs: [build_npm, validate_publication_selection]\n'
+                '    runs-on: ubuntu-latest\n'
+                '    if: ${{ github.event_name == \'workflow_dispatch\' && inputs.publish_npm && startsWith(github.ref, \'refs/tags/\') }}\n'
+                '    permissions:\n'
+                '      contents: read\n'
+                '    steps:\n'
+                '      - name: Leak\n'
+                '        run: __RUN__\n'
+                '\n'
+                '  deploy_coverage:\n'
+                '    name: Deploy coverage to GitHub Pages'
+            ).replace("__RUN__", run),
         )
-        self.assertEqual([], gates.source_violations(source))
+        self.assert_rejected(source, label)
+
+    def test_publish_npm_rejects_wrapped_npm_publish_commands(self):
+        cases = [
+            ("npm publish x.tgz", "plain npm publish"),
+            ('bash -c "npm publish x.tgz"', "bash -c wrapper"),
+            ("sh -c 'npm publish x.tgz'", "sh -c wrapper"),
+            ("env A=1 npm publish x.tgz", "env assignment wrapper"),
+            ("sudo npm publish x.tgz", "sudo wrapper"),
+            ('echo x.tgz | xargs npm publish', "xargs wrapper"),
+            ("npx npm publish", "npx wrapper"),
+            ("command npm publish x.tgz", "command wrapper"),
+            ("eval 'npm publish x.tgz'", "eval wrapper"),
+        ]
+        for run, description in cases:
+            with self.subTest(run=run, description=description):
+                self._assert_ungated_run_rejected(run, "references npm publish")
+
+    def test_publish_npm_rejects_publisher_script_outside_gated_jobs(self):
+        self._assert_ungated_run_rejected(
+            "python3 scripts/publish_npm_tarball.py --package @elsa-workflows/elsa-studio-wasm",
+            "the npm tarball publisher script",
+        )
+
+    def test_publish_npm_rejects_dotnet_nuget_push_outside_gated_jobs(self):
+        self._assert_ungated_run_rejected(
+            'dotnet nuget push "packages/*.nupkg" --source "$FEED"',
+            "dotnet nuget push",
+        )
 
     def test_wasm_publish_rejects_printf_invocation(self):
         source = self.source.replace(

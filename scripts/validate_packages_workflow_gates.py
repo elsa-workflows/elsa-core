@@ -277,26 +277,26 @@ def capability_violations(workflow: dict) -> list[str]:
     )
     violations = []
     for scope, node in scopes.items():
-        run_texts = list(_run_strings(node))
-        run_text_set = set(run_texts)
-        other_texts = [text for text in strings(node) if text not in run_text_set]
-        found = {label for label, pattern in PUBLICATION_REFERENCES.items() if any(map(pattern.search, other_texts))}
-        for run in run_texts:
-            found.update(_run_references(run))
-        expressions = [expression for text in other_texts for expression in EXPRESSION.findall(text)]
+        texts = list(strings(node))
+        found = [
+            label
+            for label, pattern in PUBLICATION_REFERENCES.items()
+            if any(map(pattern.search, texts))
+        ]
+        expressions = [expression for text in texts for expression in EXPRESSION.findall(text)]
         if any(WHOLE_SECRETS.search(expression) for expression in expressions):
-            found.add("the whole secrets context")
+            found.append("the whole secrets context")
         if any(INDEXED_SECRETS.search(_blank_string_literals(expression)) for expression in expressions):
-            found.add("an indexed secrets access")
+            found.append("an indexed secrets access")
         if grants_id_token(node.get("permissions")):
-            found.add("id-token: write")
+            found.append("id-token: write")
         if "environment" in node:
-            found.add("an environment")
+            found.append("an environment")
         if "secrets" in node:
-            found.add("secrets passed to a reusable workflow")
+            found.append("secrets passed to a reusable workflow")
         violations += [
             f"{scope} references {label}; only {', '.join((*GATED_JOBS, *CANDIDATE_PUBLISH_JOBS))} may"
-            for label in sorted(found)
+            for label in found
         ]
     return violations
 
@@ -386,48 +386,6 @@ def pages_upload_violations(jobs: dict) -> list[str]:
         if not any(results):
             violations.append(f"deploy_coverage accepts {ref}, but no Pages artifact is uploaded for it")
     return violations
-
-
-def _run_strings(node: Any) -> Iterator[str]:
-    """Yield every shell run string contained in a workflow node."""
-    if isinstance(node, dict):
-        for key, value in node.items():
-            if key == "run" and isinstance(value, str):
-                yield value
-            yield from _run_strings(value)
-    elif isinstance(node, list):
-        for item in node:
-            yield from _run_strings(item)
-
-
-def _run_references(run: str) -> list[str]:
-    """Find real publication references in a shell run string, ignoring quoted text."""
-    labels = []
-    command_texts: list[str] = []
-    for line in _run_command_lines({"run": run}):
-        for command, _ in _split_shell_commands(line):
-            command_texts.append(command)
-            tokens = _command_tokens(command)
-            if not tokens:
-                continue
-            if tokens[0] == "npm" and len(tokens) > 1 and tokens[1] == "publish":
-                labels.append("npm publish")
-            if tokens[0] in ("python", "python3") and NPM_PUBLISH_SCRIPT in tokens:
-                labels.append("the npm tarball publisher script")
-            if re.search(r"\bdotnet[\s\\]+nuget[\s\\]+push\b", " ".join(tokens), re.IGNORECASE):
-                labels.append("dotnet nuget push")
-
-    expressions = EXPRESSION.findall(run)
-    if any(WHOLE_SECRETS.search(expression) for expression in expressions):
-        labels.append("the whole secrets context")
-    if any(INDEXED_SECRETS.search(_blank_string_literals(expression)) for expression in expressions):
-        labels.append("an indexed secrets access")
-    for label, pattern in PUBLICATION_REFERENCES.items():
-        if label in ("npm publish", "the npm tarball publisher script", "dotnet nuget push"):
-            continue
-        if any(pattern.search(expression) for expression in expressions):
-            labels.append(label)
-    return labels
 
 
 def _step_run(step: dict) -> str:
