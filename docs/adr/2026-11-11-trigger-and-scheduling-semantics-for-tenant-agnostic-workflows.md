@@ -8,7 +8,7 @@ Proposed
 
 ## Context
 
-ADR 0009 established `"*"` (`Tenant.AgnosticTenantId`) as the sentinel value for tenant-agnostic entities. Such entities are visible to every tenant but are owned by no specific tenant. The follow-up ADR [2026-11-02-a-host-may-register-the-asterisk-tenant](2026-11-02-a-host-may-register-the-asterisk-tenant.md) (PR #9171) clarified that a host *may* register a tenant whose ID is `"*"`, and that interrupted-workflow recovery for `"*"` instances uses that registered tenant when it exists, falling back to the default tenant otherwise.
+ADR 0009 established `"*"` (`Tenant.AgnosticTenantId`) as the sentinel value for tenant-agnostic entities. Such entities are visible to every tenant but are owned by no specific tenant. The follow-up ADR [2026-11-02-a-host-may-register-the-asterisk-tenant](https://github.com/elsa-workflows/elsa-core/pull/9171) (PR #9171) clarified that a host *may* register a tenant whose ID is `"*"`, and that interrupted-workflow recovery for `"*"` instances uses that registered tenant when it exists, falling back to the default tenant otherwise.
 
 What remained undecided was the runtime semantics of triggers, bookmarks, messages and scheduling for workflows whose `TenantId` is `"*"`. Specifically:
 
@@ -104,7 +104,7 @@ Global scheduling (a single cron that fires once for all tenants) is **not** par
 
 ### 8. Recovery
 
-Recovery of `"*"` workflow instances follows the rules introduced by PR #9171 and recorded in [2026-11-02-a-host-may-register-the-asterisk-tenant](2026-11-02-a-host-may-register-the-asterisk-tenant.md):
+Recovery of `"*"` workflow instances follows the rules introduced by PR #9171 and recorded in [2026-11-02-a-host-may-register-the-asterisk-tenant](https://github.com/elsa-workflows/elsa-core/pull/9171):
 
 - If the host registers a `"*"` tenant, recovery restarts the `"*"` instance under that tenant.
 - If no `"*"` tenant is registered, recovery falls back to the default tenant (`""`).
@@ -179,5 +179,5 @@ Tracked by [#9254](https://github.com/elsa-workflows/elsa-core/issues/9254).
 ## Related decisions
 
 - [0009-asterisk-sentinel-value-for-tenant-agnostic-entities](0009-asterisk-sentinel-value-for-tenant-agnostic-entities.md)
-- [2026-11-02-a-host-may-register-the-asterisk-tenant](2026-11-02-a-host-may-register-the-asterisk-tenant.md)
+- [2026-11-02-a-host-may-register-the-asterisk-tenant](https://github.com/elsa-workflows/elsa-core/pull/9171)
 - PR #9171 — recover `"*"` workflow instances under a registered `"*"` tenant.
