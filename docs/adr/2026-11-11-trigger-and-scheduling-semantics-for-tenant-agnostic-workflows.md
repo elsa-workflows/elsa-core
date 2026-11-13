@@ -36,6 +36,8 @@ Fan-out of trigger rows gives every tenant its own independent triggers and sche
 
 - **Tenant activation.** `PopulateRegistriesStartupTask` runs in the tenant scope. `DefaultWorkflowDefinitionStorePopulator` imports `"*"` definitions (via `TenantAgnosticWorkflowsCache`) and calls `TriggerIndexer.IndexTriggersAsync`, which creates trigger rows stamped with the activating tenant.
 - **Publish / republish.** When a `"*"` definition is published or republished, the host must reindex its triggers for **every active tenant**. The tenant registry (`ITenantService` / `DefaultTenantService`) enumerates active tenants; for each tenant, the system pushes that tenant context and invokes `TriggerIndexer.IndexTriggersAsync`. This ensures that added, removed or reconfigured start activities are reflected in every tenant's trigger rows and schedules. `ScheduleWorkflows` then unschedules removed triggers and schedules added ones in each tenant context. Without this fan-out, obsolete triggers and their schedules would remain after activities are deleted or reconfigured.
+- **Unpublish.** When a `"*"` definition is unpublished, the host must delete all `StoredTrigger` rows for that definition across **every active tenant** and unschedule (stop) all associated timer/cron and bookmark schedules. This cleanup must cover both persistent store records and active scheduler entries; no timer or cron may continue to fire for a shared definition after it is retired.
+- **Delete.** Deleting a `"*"` definition applies the same cleanup as unpublishing: all `StoredTrigger` rows for the definition are removed for every active tenant, and all active schedules for those triggers are stopped.
 - **Tenant deactivation / deletion.** `UpdateTenantSchedules` handles `ITenantDeletedEvent` and unschedules (stops) the timer/cron schedules and bookmark schedules that belong to the deleted tenant. It does not delete persistent `StoredTrigger` rows; the host's tenant-cleanup strategy is responsible for removing those rows.
 
 ### 3. Instance ownership
@@ -115,7 +117,8 @@ Recovery of `"*"` workflow instances follows the rules introduced by PR #9171 an
 - **Clear ownership.** Every workflow instance has a well-defined owning tenant, even when it was started from a shared definition.
 - **Tenant isolation.** A tenant cannot create or resume instances whose `TenantId` belongs to another tenant simply because the definition is shared. Instances explicitly created with `TenantId = "*"` remain visible and resumable by all tenants.
 - **Scheduler compatibility.** Fan-out of trigger rows allows the default scheduler, Quartz and Hangfire to coexist without inventing a second sentinel or special-casing `"*"` in every scheduler.
-- **Predictable lifecycle.** Trigger rows appear when a tenant activates or a `"*"` definition is published, and disappear when the tenant is deleted.
+- **Predictable lifecycle.** Trigger rows appear when a tenant activates or a `"*"` definition is published, and disappear when the tenant is deleted, when a `"*"` definition is unpublished, or when a `"*"` definition is deleted.
+- **Clean retirement.** Unpublishing or deleting a shared (`"*"`) workflow definition removes its triggers and schedules from every active tenant, so no timer or cron continues to fire after the definition is retired.
 - **Aligned with recovery.** Because instances created from `"*"` triggers belong to the invoking tenant, the recovery rules from PR #9171 apply only to instances that were explicitly created under `"*"`.
 
 ### Negative
@@ -147,6 +150,8 @@ Whether the tenant context is lost in practice depends on whether `DefaultTenant
 
 This makes the default scheduler deterministic and aligned with Quartz/Hangfire.
 
+Tracked by [#9252](https://github.com/elsa-workflows/elsa-core/issues/9252).
+
 **Tests needed before claiming the behavior is fixed:**
 
 - A timer/cron trigger scheduled for tenant A (or under `"*"`) fires and creates an instance whose `WorkflowInstance.TenantId` is that same scheduling tenant, not the default tenant.
@@ -156,6 +161,14 @@ This makes the default scheduler deterministic and aligned with Quartz/Hangfire.
 ### Bookmark instance-tenancy propagation
 
 Bookmarks created during execution do not yet inherit `WorkflowInstance.TenantId`. The approved fix is to preserve the persistent instance's tenant in the execution context when the instance is loaded/restored, so that `MapBookmark` can stamp `StoredBookmark.TenantId` correctly. See [Bookmarks](#5-bookmarks).
+
+Tracked by [#9253](https://github.com/elsa-workflows/elsa-core/issues/9253).
+
+### Shared-definition republish fan-out
+
+Publishing or republishing a `"*"` definition must reindex triggers for every active tenant and unschedule any triggers that have become obsolete (removed activities, changed hashes, or removed startable activities). The fan-out ensures that no tenant keeps stale trigger rows or schedules after the shared definition changes.
+
+Tracked by [#9254](https://github.com/elsa-workflows/elsa-core/issues/9254).
 
 ## Alternatives considered
 
