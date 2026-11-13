@@ -61,12 +61,35 @@ public class ActivityResultEvaluationTests(ITestOutputHelper testOutputHelper)
         ], lines);
     }
 
+    [Theory(DisplayName = "A child reading its container's output returns the value of its own container execution")]
+    [InlineData(OutputAccessor.ActivityGetResult)]
+    [InlineData(OutputAccessor.ActivityExecutionContextGetResult)]
+    public async Task ChildReadingContainerOutputReturnsItsOwnContainersValue(OutputAccessor accessor)
+    {
+        var lines = await RunAsync(new ChildReadsContainerWorkflow(accessor));
+
+        Assert.Equal(
+        [
+            "CurrentValue = 1, Container = 1",
+            "CurrentValue = 2, Container = 2",
+            "CurrentValue = 3, Container = 3"
+        ], lines);
+    }
+
     [Fact(DisplayName = "An inner activity's output read from code after its loop completed returns the most recent value")]
     public async Task OutputReadAfterLoopReturnsMostRecentValue()
     {
         var lines = await RunAsync(new ReadAfterLoopWorkflow());
 
         Assert.Equal(["After the loop, Producer = 3"], lines);
+    }
+
+    [Fact(DisplayName = "TryFindOutputInScope returns false for an inner activity's output read after its loop completed, without falling back")]
+    public async Task TryFindOutputInScopeAfterLoopReturnsFalse()
+    {
+        var lines = await RunAsync(new TryFindAfterLoopWorkflow());
+
+        Assert.Equal(["Found = False, Value = "], lines);
     }
 
     public enum OutputAccessor
@@ -136,6 +159,72 @@ public class ActivityResultEvaluationTests(ITestOutputHelper testOutputHelper)
                     new WriteLine(context => $"After the loop, Producer = {producer.GetResult(context)}")
                 }
             };
+        }
+    }
+
+    /// <summary>
+    /// ParallelForEach over [1, 2, 3] whose body is Producer, followed by a WriteLine outside the loop that calls TryFindOutputInScope for Producer.
+    /// </summary>
+    private class TryFindAfterLoopWorkflow : WorkflowBase
+    {
+        protected override void Build(IWorkflowBuilder builder)
+        {
+            var producer = new Inline<int>(context => context.GetVariable<int>("CurrentValue")) { Name = ProducerName };
+
+            builder.Root = new Sequence
+            {
+                Activities =
+                {
+                    new ParallelForEach<int>([1, 2, 3]) { Body = producer },
+                    new WriteLine(context =>
+                    {
+                        var found = producer.TryFindOutputInScope(context.GetActivityExecutionContext(), null, out var value);
+                        return $"Found = {found}, Value = {value}";
+                    })
+                }
+            };
+        }
+    }
+
+    /// <summary>
+    /// ParallelForEach over [1, 2, 3] whose body is a container that sets its result to CurrentValue and then runs a child that reads that result.
+    /// The default scheduler runs all three containers before any child, so every container has recorded its result before the first child reads it.
+    /// Only code-first accessors are used, because an expression can't find its enclosing container by name.
+    /// </summary>
+    private class ChildReadsContainerWorkflow(OutputAccessor accessor) : WorkflowBase
+    {
+        protected override void Build(IWorkflowBuilder builder)
+        {
+            var container = new ResultContainer();
+            container.Child = new WriteLine(context => $"CurrentValue = {context.GetVariable<int>("CurrentValue")}, Container = {ReadContainer(context, container)}");
+
+            builder.Root = new ParallelForEach<int>([1, 2, 3]) { Body = container };
+        }
+
+        private object? ReadContainer(ExpressionExecutionContext context, IActivity container) => accessor switch
+        {
+            OutputAccessor.ActivityGetResult => container.GetResult(context.GetActivityExecutionContext()),
+            OutputAccessor.ActivityExecutionContextGetResult => context.GetActivityExecutionContext().GetResult(container),
+            _ => throw new ArgumentOutOfRangeException(nameof(accessor))
+        };
+    }
+
+    /// <summary>
+    /// Sets its result to CurrentValue, then runs Child.
+    /// </summary>
+    private class ResultContainer : Activity<int>
+    {
+        [Port] public IActivity Child { get; set; } = null!;
+
+        protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
+        {
+            context.Set(Result, context.ExpressionExecutionContext.GetVariable<int>("CurrentValue"));
+            await context.ScheduleActivityAsync(Child, OnChildCompletedAsync);
+        }
+
+        private async ValueTask OnChildCompletedAsync(ActivityCompletedContext context)
+        {
+            await context.TargetContext.CompleteActivityAsync();
         }
     }
 

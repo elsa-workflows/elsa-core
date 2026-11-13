@@ -452,7 +452,7 @@ public static class ExpressionExecutionContextExtensions
             if (activity == null)
                 throw new InvalidOperationException("Activity not found.");
 
-            return ActivityExtensions.TryFindOutputInScope(activity, activityExecutionContext, outputName, out var value) ? value : null;
+            return activity.TryFindOutputInScope(activityExecutionContext, outputName, out var value) ? value : null;
         }
 
         /// <summary>
