@@ -27,8 +27,14 @@ public static class TenantScopeMiddleware
                 await using var tenantScope = tenantScopeFactory.CreateScope(tenant);
                 var originalServiceProvider = sp;
                 context.System.WithServiceProvider(tenantScope.ServiceProvider);
-                await next(context, envelope);
-                context.System.WithServiceProvider(originalServiceProvider);
+                try
+                {
+                    await next(context, envelope);
+                }
+                finally
+                {
+                    context.System.WithServiceProvider(originalServiceProvider);
+                }
             }
             else
             {
