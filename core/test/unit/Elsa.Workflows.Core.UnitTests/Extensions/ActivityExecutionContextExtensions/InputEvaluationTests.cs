@@ -74,6 +74,71 @@ public class InputEvaluationTests
         Assert.Equal(SensitiveExpressionValue, context.ActivityState[nameof(ActivityWithSensitiveInputs.PublicText)]);
     }
 
+    [Fact]
+    public async Task EvaluateInputPropertiesAsync_WhenCollectionEntryIsBoundToSensitiveExpression_RemovesItFromActivityState()
+    {
+        var activity = new ActivityWithInputCollections
+        {
+            Items = [new("public"), new(new Expression(SensitiveExpressionType, null))]
+        };
+        var fixture = new ActivityTestFixture(activity)
+            .ConfigureServices(services => services.AddSingleton<IExpressionDescriptorProvider, SensitiveExpressionDescriptorProvider>());
+
+        var context = await fixture.ExecuteAsync();
+
+        Assert.False(context.ActivityState.ContainsKey(nameof(ActivityWithInputCollections.Items)));
+    }
+
+    [Fact]
+    public async Task EvaluateInputPropertiesAsync_WhenDictionaryEntryIsBoundToSensitiveExpression_RemovesItFromActivityState()
+    {
+        var activity = new ActivityWithInputCollections
+        {
+            Map = new() { ["public"] = new("public"), ["secret"] = new(new Expression(SensitiveExpressionType, null)) }
+        };
+        var fixture = new ActivityTestFixture(activity)
+            .ConfigureServices(services => services.AddSingleton<IExpressionDescriptorProvider, SensitiveExpressionDescriptorProvider>());
+
+        var context = await fixture.ExecuteAsync();
+
+        Assert.False(context.ActivityState.ContainsKey(nameof(ActivityWithInputCollections.Map)));
+    }
+
+    [Fact]
+    public async Task EvaluateInputPropertiesAsync_WhenCollectionAndDictionaryEntriesAreNotSensitive_StoresEvaluatedValuesInActivityState()
+    {
+        var activity = new ActivityWithInputCollections
+        {
+            Items = [new("first"), new("second")],
+            Map = new() { ["key"] = new("value") }
+        };
+        var fixture = new ActivityTestFixture(activity);
+
+        var context = await fixture.ExecuteAsync();
+
+        Assert.Equal(["first", "second"], Assert.IsType<List<object?>>(context.ActivityState[nameof(ActivityWithInputCollections.Items)]));
+        Assert.Equal("value", Assert.IsType<Dictionary<string, object?>>(context.ActivityState[nameof(ActivityWithInputCollections.Map)])["key"]);
+    }
+
+    [Fact]
+    public async Task EvaluateInputPropertiesAsync_WhenCollectionOrDictionaryEntryHasNoExpression_EvaluatesItToNull()
+    {
+        var activity = new ActivityWithInputCollections
+        {
+            Items = [new("first"), null!, new((Expression)null!)],
+            Map = new() { ["key"] = new("value"), ["missing"] = null!, ["empty"] = new((Expression)null!) }
+        };
+        var fixture = new ActivityTestFixture(activity);
+
+        var context = await fixture.ExecuteAsync();
+
+        Assert.Equal(["first", null, null], Assert.IsType<List<object?>>(context.ActivityState[nameof(ActivityWithInputCollections.Items)]));
+        var map = Assert.IsType<Dictionary<string, object?>>(context.ActivityState[nameof(ActivityWithInputCollections.Map)]);
+        Assert.Equal("value", map["key"]);
+        Assert.Null(map["missing"]);
+        Assert.Null(map["empty"]);
+    }
+
     private const string PlainExpressionType = "PlainTest";
     private const string SensitiveExpressionType = "SensitiveTest";
     private const string SensitiveExpressionValue = "resolved-secret";
@@ -95,6 +160,16 @@ public class InputEvaluationTests
         {
             CapturedSensitiveText = context.Get(SensitiveText);
             CapturedPublicText = context.Get(PublicText);
+        }
+    }
+
+    private sealed class ActivityWithInputCollections : CodeActivity
+    {
+        public List<Input<string?>>? Items { get; set; }
+        public Dictionary<string, Input<string?>>? Map { get; set; }
+
+        protected override void Execute(ActivityExecutionContext context)
+        {
         }
     }
 

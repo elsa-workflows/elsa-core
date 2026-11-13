@@ -1,3 +1,4 @@
+using System.Collections;
 using Elsa.Extensions;
 using Elsa.Workflows.Models;
 
@@ -24,13 +25,32 @@ public static class ActivityExecutionContextExtensions
                 if (x.IsSerializable == false)
                     return "(not serializable)";
 
+                // Expand a dictionary of outputs (Dictionary<string, Output<T>>) into its individual named values.
+                if (x.IsDictionaryWithValueOfOutput && x.ValueGetter(activity) is IDictionary dictionary)
+                {
+                    var expanded = new Dictionary<string, object?>();
+
+                    foreach (DictionaryEntry entry in dictionary)
+                    {
+                        var key = entry.Key.ToString()!;
+                        object? value = null;
+
+                        if (entry.Value is Output output && context.TryGet(output.MemoryBlockReference(), out var outputValue))
+                            value = outputValue;
+
+                        expanded[key] = value;
+                    }
+
+                    return expanded;
+                }
+
                 var cachedValue = activity.GetOutput(expressionExecutionContext, x.Name);
 
                 if (cachedValue != null)
                     return cachedValue;
 
-                if (x.ValueGetter(activity) is Output output && context.TryGet(output.MemoryBlockReference(), out var outputValue))
-                    return outputValue!;
+                if (x.ValueGetter(activity) is Output singleOutput && context.TryGet(singleOutput.MemoryBlockReference(), out var singleOutputValue))
+                    return singleOutputValue!;
 
                 return null!;
             });

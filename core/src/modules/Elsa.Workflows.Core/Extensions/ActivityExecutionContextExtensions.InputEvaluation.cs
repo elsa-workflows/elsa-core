@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Linq.Expressions;
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Helpers;
@@ -130,24 +131,53 @@ public static partial class ActivityExecutionContextExtensions
                     context.ExpressionExecutionContext.Set(memoryReference, value!);
                 }
             }
+            else if (inputDescriptor.IsCollectionOfInput)
+            {
+                if (input is ICollection collectionOfInput)
+                {
+                    var values = new List<object?>();
+
+                    foreach (Input? entryInput in collectionOfInput)
+                    {
+                        values.Add(await EvaluateInputEntryAsync(context, entryInput));
+                    }
+
+                    value = values;
+                }
+            }
+            else if (inputDescriptor.IsDictionaryWithValueOfInput)
+            {
+                if (input is IDictionary dictionaryOfInput)
+                {
+                    var values = new Dictionary<string, object?>();
+
+                    foreach (DictionaryEntry entry in dictionaryOfInput)
+                    {
+                        values.Add((string)entry.Key, await EvaluateInputEntryAsync(context, entry.Value as Input));
+                    }
+
+                    value = values;
+                }
+            }
             else
             {
                 value = input;
             }
 
-            await StoreInputValueAsync(context, inputDescriptor, input as Input, value!);
+            await StoreInputValueAsync(context, inputDescriptor, input, value!);
 
             return value;
         }
     }
 
-    private static Task StoreInputValueAsync(ActivityExecutionContext context, InputDescriptor inputDescriptor, Input? input, object value)
+    private static Task StoreInputValueAsync(ActivityExecutionContext context, InputDescriptor inputDescriptor, object? input, object value)
     {
         // Sensitive inputs are never kept in activity state: it is persisted with the workflow instance and copied
         // into the execution journal. An input counts as sensitive when its descriptor says so (CanContainSecrets)
-        // or when it is bound to an expression type flagged as sensitive (e.g. Secret). The activity still receives
-        // the evaluated value in memory; removing the entry also clears any value carried over from a previous run.
-        if (inputDescriptor.IsSensitive || IsBoundToSensitiveExpression(context, input))
+        // or when it, or any entry of a collection or dictionary of inputs, is bound to an expression type flagged as
+        // sensitive (e.g. Secret). The activity still receives the evaluated value in memory; removing the entry also
+        // clears any value carried over from a previous run.
+        if (inputDescriptor.IsSensitive || GetBoundInputs(input).Any(x => IsBoundToSensitiveExpression(context, x)))
         {
             context.ActivityState.Remove(inputDescriptor.Name);
             return Task.CompletedTask;
@@ -167,6 +197,40 @@ public static partial class ActivityExecutionContextExtensions
 
         return Task.CompletedTask;
     }
+
+    /// <summary>
+    /// Evaluates one entry of a collection or dictionary of inputs and declares its memory block in the current context.
+    /// </summary>
+    private static async Task<object?> EvaluateInputEntryAsync(ActivityExecutionContext context, Input? input)
+    {
+        if (input == null)
+            return null;
+
+        var expressionExecutionContext = context.ExpressionExecutionContext;
+        object? value = null;
+
+        if (input.Expression != null)
+        {
+            var evaluator = context.GetRequiredService<IExpressionEvaluator>();
+            value = await evaluator.EvaluateAsync(input, expressionExecutionContext);
+        }
+
+        // The identity graph assigns entry memory block IDs; an entry without one has nothing to declare.
+        var memoryReference = input.MemoryBlockReference();
+
+        if (memoryReference?.Id != null!)
+            expressionExecutionContext.Set(memoryReference, value!);
+
+        return value;
+    }
+
+    private static IEnumerable<Input> GetBoundInputs(object? input) => input switch
+    {
+        Input wrappedInput => [wrappedInput],
+        IDictionary dictionaryOfInput => dictionaryOfInput.Values.OfType<Input>(),
+        ICollection collectionOfInput => collectionOfInput.OfType<Input>(),
+        _ => []
+    };
 
     private static bool IsBoundToSensitiveExpression(ActivityExecutionContext context, Input? input)
     {

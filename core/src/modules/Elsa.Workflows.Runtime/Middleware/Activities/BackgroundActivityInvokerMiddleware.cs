@@ -1,4 +1,6 @@
-﻿using System.Text.Json;
+﻿using System.Collections;
+using System.Text.Json;
+using Elsa.Expressions.Helpers;
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Attributes;
@@ -187,8 +189,34 @@ public class BackgroundActivityInvokerMiddleware(
             if (outputDescriptor == null)
                 continue;
 
+            if (outputDescriptor.IsDictionaryWithValueOfOutput)
+            {
+                CaptureDictionaryOutput(context, outputDescriptor, outputEntry.Value);
+                continue;
+            }
+
             var output = (Output?)outputDescriptor.ValueGetter(activity);
             context.Set(output, outputEntry.Value, outputDescriptor.Name);
+        }
+    }
+
+    /// <summary>
+    /// Applies the captured entries of a dictionary output to the outputs with the same keys.
+    /// </summary>
+    private static void CaptureDictionaryOutput(ActivityExecutionContext context, OutputDescriptor outputDescriptor, object? capturedValue)
+    {
+        if (outputDescriptor.ValueGetter(context.Activity) is not IDictionary outputs)
+            return;
+
+        var capturedEntries = capturedValue.ConvertTo<Dictionary<string, object?>>();
+
+        if (capturedEntries == null)
+            return;
+
+        foreach (var (key, value) in capturedEntries)
+        {
+            if (outputs[key] is Output output)
+                context.Set(output, value, key);
         }
     }
 

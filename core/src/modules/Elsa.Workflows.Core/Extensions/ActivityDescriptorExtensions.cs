@@ -1,3 +1,4 @@
+using System.Collections;
 using Elsa.Workflows;
 using Elsa.Workflows.Models;
 
@@ -46,6 +47,22 @@ public static class ActivityDescriptorExtensions
         }
 
         /// <summary>
+        /// Returns each collection of input from the specified activity.
+        /// </summary>
+        public IDictionary<string, ICollection?> GetCollectionOfInputProperties(IActivity activity)
+        {
+            return activityDescriptor.Inputs.Where(x => x.IsCollectionOfInput).ToDictionary(x => x.Name, x => (ICollection?)x.ValueGetter(activity));
+        }
+
+        /// <summary>
+        /// Returns each dictionary with input value from the specified activity.
+        /// </summary>
+        public IDictionary<string, IDictionary?> GetDictionaryWithValueOfInputProperties(IActivity activity)
+        {
+            return activityDescriptor.Inputs.Where(x => x.IsDictionaryWithValueOfInput).ToDictionary(x => x.Name, x => (IDictionary?)x.ValueGetter(activity));
+        }
+
+        /// <summary>
         /// Returns each input descriptor from the specified activity.
         /// </summary>
         public InputDescriptor? GetWrappedInputPropertyDescriptor(IActivity activity, string name)
@@ -60,6 +77,14 @@ public static class ActivityDescriptorExtensions
         {
             var inputDescriptor = activityDescriptor.Inputs.FirstOrDefault(x => x.Name == name && x.IsWrapped);
             return inputDescriptor?.ValueGetter(activity) as Input;
+        }
+
+        /// <summary>
+        /// Returns each dictionary with output value from the specified activity.
+        /// </summary>
+        public IDictionary<string, IDictionary?> GetDictionaryWithValueOfOutputProperties(IActivity activity)
+        {
+            return activityDescriptor.Outputs.Where(x => x.IsDictionaryWithValueOfOutput).ToDictionary(x => x.Name, x => (IDictionary?)x.ValueGetter(activity));
         }
     }
 }

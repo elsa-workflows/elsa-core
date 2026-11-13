@@ -1,10 +1,13 @@
+using System.Collections;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Elsa.Expressions.Helpers;
+using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Exceptions;
 using Elsa.Workflows.Memory;
+using Elsa.Workflows.Serialization.Converters;
 using Humanizer;
 using Microsoft.Extensions.Logging;
 
@@ -62,6 +65,7 @@ public static class JsonActivityConstructorContextHelper
         // 9) Existing synthetic inputs/outputs routines, using the cleanedElement
         ReadSyntheticInputs(activityDescriptor, activity, cleanedElement, serializerOptions, exceptions);
         ReadSyntheticOutputs(activityDescriptor, activity, cleanedElement);
+        ReadDictionaryOutputs(activityDescriptor, activity);
 
         // 10) Finally re‑apply those flags
         activity.SetCanStartWorkflow(canStartWorkflow);
@@ -222,6 +226,43 @@ public static class JsonActivityConstructorContextHelper
             }
 
             activity.SyntheticProperties[outputName] = output!;
+        }
+    }
+
+    /// <summary>
+    /// Reconstructs entries for <c>Dictionary&lt;string, Output&lt;T&gt;&gt;</c> outputs. Unbound outputs are
+    /// serialized without a memory-reference id, so <see cref="OutputJsonConverter{T}"/> deserializes their
+    /// values as null. The dictionary keys survive, but the null values would drop the named outputs and leave
+    /// nothing for the identity graph to bind. Here we replace each null value with a fresh unbound
+    /// <c>Output&lt;T&gt;</c> so a memory block can be assigned per key downstream.
+    /// </summary>
+    private static void ReadDictionaryOutputs(ActivityDescriptor activityDescriptor, IActivity activity)
+    {
+        foreach (var outputDescriptor in activityDescriptor.Outputs.Where(x => x.IsDictionaryWithValueOfOutput))
+        {
+            // Use the descriptor's PropertyInfo rather than looking the property up by name, so outputs
+            // renamed via [Output(Name = ...)] are still matched.
+            var property = outputDescriptor.PropertyInfo;
+
+            if (property?.GetValue(activity) is not IDictionary dictionary)
+                continue;
+
+            // The property is Dictionary<string, Output<T>>; the value type is the last generic argument.
+            var outputType = property.PropertyType.GetGenericArguments().LastOrDefault();
+
+            // Only reconstruct when the value type is a concrete Output<T> we can instantiate with a
+            // MemoryBlockReference. An abstract base Output or a missing ctor is skipped rather than throwing.
+            if (outputType is null
+                || outputType.IsAbstract
+                || !typeof(Output).IsAssignableFrom(outputType)
+                || outputType.GetConstructor([typeof(MemoryBlockReference)]) is null)
+                continue;
+
+            // Snapshot the keys first, since we mutate the dictionary while iterating.
+            var nullKeys = dictionary.Keys.Cast<object>().Where(key => dictionary[key] == null).ToList();
+
+            foreach (var key in nullKeys)
+                dictionary[key] = Activator.CreateInstance(outputType, new MemoryBlockReference())!;
         }
     }
 
