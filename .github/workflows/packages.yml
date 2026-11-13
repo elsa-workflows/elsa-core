@@ -102,6 +102,10 @@ jobs:
         with:
           dotnet-version: 10.0.1xx
 
+      # Hosted images can default to a newer SDK major; keep the tests on the newest installed 10.0.x SDK.
+      - name: Pin the .NET 10 SDK
+        run: echo '{"sdk":{"version":"10.0.100","rollForward":"latestFeature","allowPrerelease":false}}' > global.json
+
       - name: Show .NET info
         run: |
           dotnet --info
@@ -203,6 +207,10 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.1xx
+
+      # Hosted images can default to a newer SDK major; keep the tests on the newest installed 10.0.x SDK.
+      - name: Pin the .NET 10 SDK
+        run: echo '{"sdk":{"version":"10.0.100","rollForward":"latestFeature","allowPrerelease":false}}' > global.json
 
       - name: Show .NET info
         run: |
