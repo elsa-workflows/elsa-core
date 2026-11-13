@@ -83,6 +83,38 @@ public class ActivityOutputRegister
     }
 
     /// <summary>
+    /// Gets the most recent output value that the specified activity recorded in one of the specified containers.
+    /// </summary>
+    /// <param name="activityId">The activity ID.</param>
+    /// <param name="outputName">Name of the output, or <c>null</c> for <see cref="DefaultOutputName"/>.</param>
+    /// <param name="containerIds">The IDs of the containers to look in, usually the reader's own activity execution context and its ancestors.</param>
+    /// <param name="value">The output value, which can be <c>null</c> when the activity recorded <c>null</c>.</param>
+    /// <returns><c>true</c> if the activity recorded the output in one of the specified containers; otherwise, <c>false</c>.</returns>
+    public bool TryFindOutputByActivityId(string activityId, string? outputName, IEnumerable<string> containerIds, out object? value)
+    {
+        ArgumentNullException.ThrowIfNull(containerIds);
+        var key = CreateActivityIdLookupKey(activityId, outputName);
+
+        if (_recordsByActivityIdAndOutputName.TryGetValue(key, out var records))
+        {
+            var containerIdSet = containerIds as ISet<string> ?? containerIds.ToHashSet();
+
+            // Records are in recording order, so the last matching one is the most recent.
+            for (var i = records.Count - 1; i >= 0; i--)
+            {
+                if (containerIdSet.Contains(records[i].ContainerId))
+                {
+                    value = records[i].Value;
+                    return true;
+                }
+            }
+        }
+
+        value = null;
+        return false;
+    }
+
+    /// <summary>
     /// Gets the output value for the specified activity instance ID.
     /// </summary>
     /// <param name="activityInstanceId">The activity instance ID.</param>
