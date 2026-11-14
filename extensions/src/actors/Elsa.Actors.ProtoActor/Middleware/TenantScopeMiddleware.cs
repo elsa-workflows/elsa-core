@@ -1,7 +1,6 @@
 using Elsa.Common.Multitenancy;
 using Microsoft.Extensions.DependencyInjection;
 using Proto;
-using Proto.DependencyInjection;
 
 namespace Elsa.Actors.ProtoActor.Middleware;
 
@@ -25,16 +24,9 @@ public static class TenantScopeMiddleware
                 var tenant = await tenantFinder.FindByIdAsync(tenantId);
                 var tenantScopeFactory = sp.GetRequiredService<ITenantScopeFactory>();
                 await using var tenantScope = tenantScopeFactory.CreateScope(tenant);
-                var originalServiceProvider = sp;
-                context.System.WithServiceProvider(tenantScope.ServiceProvider);
-                try
-                {
-                    await next(context, envelope);
-                }
-                finally
-                {
-                    context.System.WithServiceProvider(originalServiceProvider);
-                }
+                // The actor system's service provider intentionally stays the root provider. Per-message tenant isolation comes from
+                // the ambient tenant that the tenant scope sets (ITenantAccessor), which is local to this message's async flow.
+                await next(context, envelope);
             }
             else
             {
