@@ -325,6 +325,7 @@ public class HttpWorkflowsMiddlewareTests
             .AddSingleton(bookmarkStore)
             .AddSingleton(workflowInstanceStore)
             .AddSingleton(workflowDefinitionService)
+            .AddSingleton(Substitute.For<IHttpEndpointAuthorizationHandler>())
             .AddSingleton(workflowRunner)
             .BuildServiceProvider();
         var httpContext = new DefaultHttpContext
