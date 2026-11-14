@@ -1,6 +1,9 @@
+using System.Collections.Concurrent;
 using Elsa.Extensions;
 using Elsa.Testing.Shared;
 using Elsa.Workflows.IntegrationTests.Scenarios.DispatchWorkflowCancellation;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.BulkDispatchWorkflowsCancellation;
@@ -43,24 +46,108 @@ public class FailingPageReadTests(ITestOutputHelper testOutputHelper) : ChildWor
 }
 
 /// <summary>
-/// What happens when every cancel-cascade page read fails, including the one retry, until the consecutive-failure cap.
+/// What happens when the first page's reads fail twice and then succeed, so the page is recovered on its last attempt.
 /// </summary>
-public class GivingUpPageReadTests : ChildWorkflowCancellationTests
+public class RecoveringPageReadTests : ChildWorkflowCancellationTests
 {
     private readonly RejectedCascadeReadCounter _rejectedReads;
 
-    public GivingUpPageReadTests(ITestOutputHelper testOutputHelper) : this(testOutputHelper, new RejectedCascadeReadCounter())
+    public RecoveringPageReadTests(ITestOutputHelper testOutputHelper) : this(testOutputHelper, new RejectedCascadeReadCounter())
     {
     }
 
-    private GivingUpPageReadTests(ITestOutputHelper testOutputHelper, RejectedCascadeReadCounter rejectedReads) : base(
+    private RecoveringPageReadTests(ITestOutputHelper testOutputHelper, RejectedCascadeReadCounter rejectedReads) : base(
         testOutputHelper,
-        builder => FailingPageReadTests.Configure(builder, failureCount: int.MaxValue, rejectedReads))
+        builder => FailingPageReadTests.Configure(builder, failureCount: 2, rejectedReads))
     {
         _rejectedReads = rejectedReads;
     }
 
-    [Fact(DisplayName = "Paging gives up after three consecutive failed page reads")]
+    [Fact(DisplayName = "A page whose first two reads fail is recovered on the third attempt and every child is cancelled")]
+    public async Task CancellingTheWaitingBulkDispatchActivity_WhenTheFirstPageFailsTwiceThenSucceeds_CancelsEveryChild()
+    {
+        const int childCount = BulkDispatchAndWaitInForkWorkflow.ChildCount;
+
+        // Arrange: more than one page of children, ordered the same way the cancel cascade reads them.
+        var parentId = await StartParentAsync(nameof(BulkDispatchAndWaitInForkWorkflow));
+        var childIds = (await WaitForChildrenAsync(parentId, nameof(BlockingChildWorkflow), childCount, IsSuspended)).Select(x => x.Id).Order().ToList();
+
+        // Act: page 0 fails on attempts one and two, and succeeds on attempt three. Nothing is left uncancelled.
+        var resumed = await ResumeAsync(parentId, BulkDispatchAndWaitInForkWorkflow.ProceedActivityId);
+        Assert.Equal(WorkflowStatus.Finished, resumed.Status);
+        Assert.Equal(WorkflowSubStatus.Finished, resumed.SubStatus);
+        Assert.Empty((await ExportStateAsync(parentId)).Incidents);
+
+        Assert.Equal(2, _rejectedReads.Count);
+        Assert.Equal(childIds, CancellationTargets.Order());
+    }
+}
+
+/// <summary>
+/// What happens when the first page exhausts all of its attempts but a later page reads normally.
+/// </summary>
+public class SkippedFirstPageReadTests : ChildWorkflowCancellationTests
+{
+    private readonly RejectedCascadeReadCounter _rejectedReads;
+
+    public SkippedFirstPageReadTests(ITestOutputHelper testOutputHelper) : this(testOutputHelper, new RejectedCascadeReadCounter())
+    {
+    }
+
+    private SkippedFirstPageReadTests(ITestOutputHelper testOutputHelper, RejectedCascadeReadCounter rejectedReads) : base(
+        testOutputHelper,
+        builder => FailingPageReadTests.Configure(builder, failureCount: 3, rejectedReads))
+    {
+        _rejectedReads = rejectedReads;
+    }
+
+    [Fact(DisplayName = "After one page exhausts its attempts, the children on a later readable page are still cancelled")]
+    public async Task CancellingTheWaitingBulkDispatchActivity_WhenTheFirstPageExhaustsItsAttempts_CancelsChildrenOnLaterPages()
+    {
+        const int childCount = BulkDispatchAndWaitInForkWorkflow.ChildCount;
+        const int pageSize = 100;
+
+        // Arrange: two pages of children (100 and 1), ordered the same way the cancel cascade reads them.
+        var parentId = await StartParentAsync(nameof(BulkDispatchAndWaitInForkWorkflow));
+        var childIds = (await WaitForChildrenAsync(parentId, nameof(BlockingChildWorkflow), childCount, IsSuspended)).Select(x => x.Id).Order().ToList();
+
+        // Act: page 0 fails on all three attempts and is left uncancelled. Page 1 reads normally.
+        var resumed = await ResumeAsync(parentId, BulkDispatchAndWaitInForkWorkflow.ProceedActivityId);
+        Assert.Equal(WorkflowStatus.Finished, resumed.Status);
+        Assert.Equal(WorkflowSubStatus.Finished, resumed.SubStatus);
+        Assert.Empty((await ExportStateAsync(parentId)).Incidents);
+
+        Assert.Equal(3, _rejectedReads.Count);
+        Assert.Equal(childIds.Skip(pageSize), CancellationTargets.Order());
+    }
+}
+
+/// <summary>
+/// What happens when every cancel-cascade page read fails, including the retries, until the consecutive-unreadable-page cap.
+/// </summary>
+public class GivingUpPageReadTests : ChildWorkflowCancellationTests
+{
+    private readonly RejectedCascadeReadCounter _rejectedReads;
+    private readonly WarningLogCapture _logs;
+
+    public GivingUpPageReadTests(ITestOutputHelper testOutputHelper) : this(testOutputHelper, new RejectedCascadeReadCounter(), new WarningLogCapture())
+    {
+    }
+
+    private GivingUpPageReadTests(ITestOutputHelper testOutputHelper, RejectedCascadeReadCounter rejectedReads, WarningLogCapture logs) : base(
+        testOutputHelper,
+        builder => FailingPageReadTests.Configure(builder, failureCount: int.MaxValue, rejectedReads)
+            .ConfigureServices(services => services.AddLogging(logging => logging.AddProvider(logs))))
+    {
+        _rejectedReads = rejectedReads;
+        _logs = logs;
+    }
+
+    /// <summary>
+    /// Verifies that every unreadable page is attempted three times and then left uncancelled, that paging stops after three unreadable pages in a row,
+    /// and that each abandoned page and the give-up are logged as warnings with the parent instance ID.
+    /// </summary>
+    [Fact(DisplayName = "Every page is tried three times, and paging gives up after three unreadable pages in a row")]
     public async Task CancellingTheWaitingBulkDispatchActivity_WhenEveryPageReadFails_GivesUpAfterTheCap()
     {
         const int childCount = BulkDispatchAndWaitInForkWorkflow.ChildCount;
@@ -69,15 +156,60 @@ public class GivingUpPageReadTests : ChildWorkflowCancellationTests
         var parentId = await StartParentAsync(nameof(BulkDispatchAndWaitInForkWorkflow));
         await WaitForChildrenAsync(parentId, nameof(BlockingChildWorkflow), childCount, IsSuspended);
 
-        // Act: each page fails, is retried, then skipped, until the cap. The parent must still finish.
+        // Act: each page fails on every attempt and is left uncancelled, then paging moves on. The parent must still finish.
         var resumed = await ResumeAsync(parentId, BulkDispatchAndWaitInForkWorkflow.ProceedActivityId);
         Assert.Equal(WorkflowStatus.Finished, resumed.Status);
         Assert.Equal(WorkflowSubStatus.Finished, resumed.SubStatus);
         Assert.Empty((await ExportStateAsync(parentId)).Incidents);
 
         Assert.Empty(CancellationTargets);
-        // Three unreadable pages, each tried twice. A cap of 1 or 2, or the #8837 no-retry loop, cannot reach 6.
-        Assert.Equal(6, _rejectedReads.Count);
+        // Three pages, three attempts each. The third unreadable page in a row hits the cap and paging stops.
+        Assert.Equal(9, _rejectedReads.Count);
+
+        // Each abandoned page is logged with its number, the parent, and the last read failure.
+        var pageWarnings = _logs.Entries.Where(x => x.Level == LogLevel.Warning && x.Message.Contains("Left page")).ToList();
+        Assert.Equal(3, pageWarnings.Count);
+        for (var page = 0; page < 3; page++)
+            Assert.Contains(pageWarnings, x => x.Message.Contains($"page {page} of") && x.Message.Contains(parentId) && x.Exception is not null);
+
+        // The give-up warning is logged once, when the cap is reached.
+        var giveUp = Assert.Single(_logs.Entries, x => x.Level == LogLevel.Warning && x.Message.Contains("Giving up"));
+        Assert.Contains(parentId, giveUp.Message);
+        Assert.NotNull(giveUp.Exception);
+    }
+}
+
+/// <summary>
+/// Captures warning-or-higher log entries so a test can assert on what was logged.
+/// </summary>
+internal sealed class WarningLogCapture : ILoggerProvider
+{
+    private readonly ConcurrentQueue<LoggedEntry> _entries = new();
+
+    public IEnumerable<LoggedEntry> Entries => _entries;
+
+    public ILogger CreateLogger(string categoryName) => new CapturingLogger(_entries);
+
+    public void Dispose()
+    {
+    }
+
+    internal sealed record LoggedEntry(LogLevel Level, string Message, Exception? Exception);
+
+    private sealed class CapturingLogger(ConcurrentQueue<LoggedEntry> entries) : ILogger
+    {
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+        public bool IsEnabled(LogLevel logLevel) => logLevel >= LogLevel.Warning;
+
+        /// <summary>
+    /// Formats and stores the entry when its level is warning or higher; lower-level entries are dropped.
+    /// </summary>
+    public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+        {
+            if (IsEnabled(logLevel))
+                entries.Enqueue(new LoggedEntry(logLevel, formatter(state, exception), exception));
+        }
     }
 }
 
