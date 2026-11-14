@@ -34,7 +34,14 @@ public class AlterationPlanManager(IAlterationPlanStore planStore, IAlterationJo
     /// <inheritdoc />
     public async Task CompletePlanAsync(AlterationPlan plan, CancellationToken cancellationToken = default)
     {
-        plan.Status = AlterationPlanStatus.Completed;
+        var failedJobsFilter = new AlterationJobFilter
+        {
+            PlanId = plan.Id,
+            Status = AlterationJobStatus.Failed
+        };
+        var hasFailedJobs = await jobStore.CountAsync(failedJobsFilter, cancellationToken) > 0;
+
+        plan.Status = hasFailedJobs ? AlterationPlanStatus.Failed : AlterationPlanStatus.Completed;
         plan.CompletedAt = systemClock.UtcNow;
         
         await planStore.SaveAsync(plan, cancellationToken);
