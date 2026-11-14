@@ -32,6 +32,8 @@ With the default prefix, endpoint paths look like `/elsa/api/workflow-definition
 When saving or publishing with `POST /elsa/api/workflow-definitions`, supply a nonblank `model.name`.
 The server trims surrounding whitespace. A missing, null, empty, or whitespace-only name returns HTTP 400 with a validation error under `errors.name`; the definition is not saved or published.
 
+Executing with `GET` or `POST /elsa/api/workflow-definitions/{definitionId}/execute` defaults to `VersionOptions.Published`. If the definition exists but has no published version, the endpoint returns HTTP 404 with `errors.generalErrors` explaining that the definition must be published or a specific version must be specified. A `definitionId` that does not exist returns a plain 404.
+
 For multipart imports with `POST /elsa/api/workflow-definitions/import-files`, uploads with
 `Content-Type: application/json` are read as definitions; other uploads are read as ZIP
 archives, selecting entries with a case-insensitive `.json` suffix. Malformed JSON,
