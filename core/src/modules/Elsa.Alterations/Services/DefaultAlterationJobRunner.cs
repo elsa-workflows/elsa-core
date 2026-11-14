@@ -54,9 +54,10 @@ public class DefaultAlterationJobRunner : IAlterationJobRunner
         {
             result = await _alterationRunner.RunAsync(workflowInstanceId, plan.Alterations, cancellationToken);
         }
-        catch (Exception e) when (e is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
+        catch (Exception e) when (!cancellationToken.IsCancellationRequested)
         {
             // Don't leave the job in the Running state: record the failure so the plan can complete.
+            // Once the job's token is cancelled nothing is recorded and the exception propagates.
             job.Status = AlterationJobStatus.Failed;
             job.Log = [new AlterationLogEntry(e.Message, LogLevel.Error, _systemClock.UtcNow, "Exception")];
             job.CompletedAt = _systemClock.UtcNow;
