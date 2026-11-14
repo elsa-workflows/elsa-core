@@ -36,6 +36,50 @@ public class ActivityDescriberTests
     }
 
     [Fact]
+    public async Task DescribeActivityAsync_DescribesCollectionAndDictionaryOfInputs()
+    {
+        var descriptor = await _describer.DescribeActivityAsync(typeof(ActivityWithInputAndOutputCollections));
+
+        var items = descriptor.Inputs.Single(x => x.Name == nameof(ActivityWithInputAndOutputCollections.Items));
+        var map = descriptor.Inputs.Single(x => x.Name == nameof(ActivityWithInputAndOutputCollections.Map));
+
+        Assert.True(items.IsCollectionOfInput);
+        Assert.False(items.IsDictionaryWithValueOfInput);
+        Assert.False(items.IsWrapped);
+        Assert.Equal(typeof(List<Input<string>>), items.Type);
+
+        Assert.True(map.IsDictionaryWithValueOfInput);
+        Assert.False(map.IsCollectionOfInput);
+        Assert.False(map.IsWrapped);
+        Assert.Equal(typeof(Dictionary<string, Input<object>>), map.Type);
+    }
+
+    [Fact]
+    public async Task DescribeActivityAsync_DescribesDictionaryOfOutputs()
+    {
+        var descriptor = await _describer.DescribeActivityAsync(typeof(ActivityWithInputAndOutputCollections));
+
+        var outputs = descriptor.Outputs.Single(x => x.Name == nameof(ActivityWithInputAndOutputCollections.Outputs));
+        var result = descriptor.Outputs.Single(x => x.Name == nameof(ActivityWithInputAndOutputCollections.Result));
+
+        Assert.True(outputs.IsDictionaryWithValueOfOutput);
+        Assert.Equal(typeof(Dictionary<string, Output<object>>), outputs.Type);
+
+        Assert.False(result.IsDictionaryWithValueOfOutput);
+        Assert.Equal(typeof(string), result.Type);
+    }
+
+    [Fact]
+    public async Task DescribeActivityAsync_IgnoresUnsupportedCollectionsOfInputsAndOutputs()
+    {
+        var descriptor = await _describer.DescribeActivityAsync(typeof(ActivityWithInputAndOutputCollections));
+
+        Assert.DoesNotContain(descriptor.Inputs, x => x.Name == nameof(ActivityWithInputAndOutputCollections.InputsByNumber));
+        Assert.DoesNotContain(descriptor.Outputs, x => x.Name == nameof(ActivityWithInputAndOutputCollections.OutputList));
+        Assert.DoesNotContain(descriptor.Outputs, x => x.Name == nameof(ActivityWithInputAndOutputCollections.OutputsByNumber));
+    }
+
+    [Fact]
     public async Task DescribeActivityAsync_FormatsGenericTypeFriendlyName()
     {
         var descriptor = await _describer.DescribeActivityAsync(typeof(GenericTestActivity<string>));
@@ -148,6 +192,17 @@ public class ActivityDescriberTests
 
         [Input]
         public Input<string?> PublicText { get; set; } = new("public");
+    }
+
+    private sealed class ActivityWithInputAndOutputCollections : CodeActivity
+    {
+        public List<Input<string>> Items { get; set; } = [];
+        public Dictionary<string, Input<object>> Map { get; set; } = [];
+        public Dictionary<int, Input<string>> InputsByNumber { get; set; } = [];
+        public Dictionary<string, Output<object>> Outputs { get; set; } = [];
+        public Output<string> Result { get; set; } = new();
+        public List<Output<string>> OutputList { get; set; } = [];
+        public Dictionary<int, Output<string>> OutputsByNumber { get; set; } = [];
     }
 
     private sealed class Container<T>
