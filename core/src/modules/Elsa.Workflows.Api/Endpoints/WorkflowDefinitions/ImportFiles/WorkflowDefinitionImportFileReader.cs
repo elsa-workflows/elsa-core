@@ -99,8 +99,10 @@ internal static class WorkflowDefinitionImportFileReader
             var model = apiSerializer.Deserialize<WorkflowDefinitionModel>(json);
             return model != null ? new([model]) : InvalidDefinition();
         }
-        catch (JsonException)
+        catch (Exception ex) when (ex is JsonException or FormatException or OverflowException)
         {
+            // Malformed JSON surfaces as JsonException. Elsa's IntegerJsonConverter parses string values
+            // with int.Parse, so a wrong-type value such as "version": "abc" surfaces as FormatException or OverflowException.
             return InvalidDefinition();
         }
 
