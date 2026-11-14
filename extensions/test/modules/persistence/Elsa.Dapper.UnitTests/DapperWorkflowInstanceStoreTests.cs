@@ -1,5 +1,6 @@
 using Dapper;
 using Elsa.Common.Multitenancy;
+using Elsa.Persistence.Dapper.Contracts;
 using Elsa.Persistence.Dapper.Modules.Management.Records;
 using Elsa.Persistence.Dapper.Modules.Management.Stores;
 using Elsa.Persistence.Dapper.Services;
@@ -281,6 +282,44 @@ public sealed class DapperWorkflowInstanceStoreTests : IDisposable
         Assert.Equal(("Finished", "Cancelled", 0, "{}"), ReadCancellationRow("wf-1"));
     }
 
+    // A first update count of -1 is what SQL Server returns with NOCOUNT ON, whether or not the row matched.
+    [Theory(DisplayName = "UpdateUpdatedTimestampAsync writes UpdatedAt and keeps the row's tenant")]
+    [InlineData("*", "", null)]
+    [InlineData("*", "tenant-a", null)]
+    [InlineData("tenant-a", "tenant-a", null)]
+    [InlineData(null, "", null)]
+    [InlineData("*", "", -1)]
+    [InlineData("*", "tenant-a", -1)]
+    [InlineData("tenant-a", "tenant-a", -1)]
+    [InlineData(null, "", -1)]
+    public async Task UpdateUpdatedTimestampAsync_KeepsTenant(string? rowTenantId, string ambientTenantId, int? firstUpdateCount)
+    {
+        var stampedAt = new DateTimeOffset(2026, 11, 2, 12, 0, 0, TimeSpan.Zero);
+        InsertInterruptible("wf-1", WorkflowStatus.Running, WorkflowSubStatus.Interrupted, isExecuting: false, tenantId: rowTenantId);
+        var store = CreateStore(firstUpdateCount);
+
+        using var tenantScope = _tenantAccessor.PushContext(new Tenant { Id = ambientTenantId });
+        await store.UpdateUpdatedTimestampAsync("wf-1", stampedAt);
+
+        Assert.Equal(stampedAt, ReadUpdatedAt("wf-1"));
+        Assert.Equal(rowTenantId, ReadTenantId("wf-1"));
+    }
+
+    [Theory(DisplayName = "UpdateUpdatedTimestampAsync refuses a row of another tenant")]
+    [InlineData(null)]
+    [InlineData(-1)]
+    public async Task UpdateUpdatedTimestampAsync_RefusesRowOfAnotherTenant(int? firstUpdateCount)
+    {
+        InsertInterruptible("wf-1", WorkflowStatus.Running, WorkflowSubStatus.Interrupted, isExecuting: false, tenantId: "tenant-b");
+        var updatedAt = ReadUpdatedAt("wf-1");
+        var store = CreateStore(firstUpdateCount);
+
+        using var tenantScope = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+        await Assert.ThrowsAsync<InvalidOperationException>(() => store.UpdateUpdatedTimestampAsync("wf-1", updatedAt.AddMinutes(1)));
+
+        Assert.Equal(updatedAt, ReadUpdatedAt("wf-1"));
+    }
+
     public void Dispose()
     {
         File.Delete(_databasePath);
@@ -314,11 +353,25 @@ public sealed class DapperWorkflowInstanceStoreTests : IDisposable
             new { Id = id });
     }
 
-    private void InsertInterruptible(string id, WorkflowStatus status, WorkflowSubStatus subStatus, bool isExecuting, string tenantId = "tenant-a")
+    private void InsertInterruptible(string id, WorkflowStatus status, WorkflowSubStatus subStatus, bool isExecuting, string? tenantId = "tenant-a")
     {
         using var connection = new SqliteConnection(_connectionString);
         connection.Open();
         Insert(connection, id, DateTimeOffset.UtcNow, isExecuting, status.ToString(), subStatus.ToString(), tenantId);
+    }
+
+    private DapperWorkflowInstanceStore CreateStore(int? firstUpdateCount)
+    {
+        var store = new FirstUpdateCountStore(new SqliteDbConnectionProvider(_connectionString), _tenantAccessor) { FirstUpdateCount = firstUpdateCount };
+        return new DapperWorkflowInstanceStore(store, Substitute.For<IWorkflowStateSerializer>());
+    }
+
+    private string? ReadTenantId(string id)
+    {
+        using var connection = new SqliteConnection(_connectionString);
+        return connection.QuerySingle<string?>(
+            "select TenantId from WorkflowInstances where Id = @Id",
+            new { Id = id });
     }
 
     private (string Status, string SubStatus, long IsExecuting) ReadMarkers(string id)
@@ -329,7 +382,7 @@ public sealed class DapperWorkflowInstanceStoreTests : IDisposable
             new { Id = id });
     }
 
-    private static void Insert(SqliteConnection connection, string id, DateTimeOffset updatedAt, bool isExecuting, string status = "Running", string subStatus = "Executing", string tenantId = "tenant-a")
+    private static void Insert(SqliteConnection connection, string id, DateTimeOffset updatedAt, bool isExecuting, string status = "Running", string subStatus = "Executing", string? tenantId = "tenant-a")
     {
         connection.Execute(
             """
@@ -348,6 +401,20 @@ public sealed class DapperWorkflowInstanceStoreTests : IDisposable
                 CreatedAt = updatedAt,
                 UpdatedAt = updatedAt
             });
+    }
+
+    /// <summary>Returns <see cref="FirstUpdateCount"/> instead of running the first update, when set.</summary>
+    private sealed class FirstUpdateCountStore(IDbConnectionProvider dbConnectionProvider, ITenantAccessor tenantAccessor)
+        : Store<WorkflowInstanceRecord>(dbConnectionProvider, tenantAccessor, "WorkflowInstances")
+    {
+        public int? FirstUpdateCount { get; set; }
+
+        internal override int? ConsumeForcedAffectedRows()
+        {
+            var count = FirstUpdateCount;
+            FirstUpdateCount = null;
+            return count;
+        }
     }
 
     private sealed class TestTenantAccessor : ITenantAccessor

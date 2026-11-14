@@ -313,9 +313,8 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
             // Domain service that backs all runtime-admin transports (US2). Encapsulates the audit-on-effective-
             // transition rule (SC-007) so transports stay thin. Scoped because INotificationSender is scoped.
             .AddScoped<IWorkflowRuntimeAdminService, Elsa.Workflows.Runtime.Services.WorkflowRuntimeAdminService>()
-            // Interrupted-workflow recovery on shell activation (US3). Disjoint from the timeout-based
-            // RestartInterruptedWorkflowsTask: filter is SubStatus = Interrupted AND Status = Running;
-            // that task's filter is IsExecuting=true.
+            // Interrupted-workflow recovery on shell activation (US3): filter is SubStatus = Interrupted AND Status = Running.
+            // The timeout-based RestartInterruptedWorkflowsTask repeats it for instances not updated within the inactivity threshold.
             .AddScoped<IInterruptedRecoveryScanner, Elsa.Workflows.Runtime.Services.InterruptedRecoveryScanner>()
             .AddSingleton<IAllTenantsActivatedEvent, Elsa.Workflows.Runtime.Handlers.RecoverInterruptedWorkflowsOnAllTenantsActivated>()
             // Internal bookmark-queue processor surfaced as an ingress source for diagnostic visibility (FR-006).

@@ -502,6 +502,11 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantAccesso
     /// <returns>The number of records updated.</returns>
     public async Task<int> UpdateAsync(T record, Expression<Func<T, object>>[] props, Action<ParameterizedQuery> filter, CancellationToken cancellationToken = default)
     {
+        if (ConsumeForcedAffectedRows() is { } forced)
+        {
+            return forced;
+        }
+
         using var connection = dbConnectionProvider.GetConnection();
         var fields = props.Select(x => x.GetPropertyName()).ToArray();
         var query = dbConnectionProvider.CreateQuery().Update(TableName, record, fields);
