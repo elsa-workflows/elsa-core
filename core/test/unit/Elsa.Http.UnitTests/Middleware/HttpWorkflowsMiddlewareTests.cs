@@ -9,6 +9,7 @@ using Elsa.Workflows;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime;
@@ -286,6 +287,63 @@ public class HttpWorkflowsMiddlewareTests
         Assert.Equal(trigger.ActivityId, runOptions.TriggerActivityId);
         Assert.NotNull(runOptions.Properties);
         Assert.Equal(triggerHash, runOptions.Properties[TriggerWorkflowProperties.StimulusHash]);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_WhenTheBookmarkedInstanceHasFinished_ReturnsNotFoundWithoutResuming()
+    {
+        // Arrange
+        var bookmark = new StoredBookmark
+        {
+            Id = "bookmark-1",
+            Hash = BookmarkHash,
+            WorkflowInstanceId = "finished-instance",
+            Payload = new HttpEndpointBookmarkPayload(BookmarkPath, "get", authorize: false)
+        };
+        var finishedInstance = new WorkflowInstance
+        {
+            Id = "finished-instance",
+            DefinitionVersionId = "workflow-version",
+            Status = WorkflowStatus.Finished
+        };
+        var workflow = new Workflow { Id = "workflow" };
+        var root = new ActivityNode(workflow, "Root");
+        var bookmarkStore = Substitute.For<IBookmarkStore>();
+        bookmarkStore.FindManyAsync(Arg.Any<BookmarkFilter>(), Arg.Any<CancellationToken>()).Returns(new ValueTask<IEnumerable<StoredBookmark>>([bookmark]));
+        var workflowInstanceStore = Substitute.For<IWorkflowInstanceStore>();
+        workflowInstanceStore.FindAsync(Arg.Is<WorkflowInstanceFilter>(x => x.Id == finishedInstance.Id), Arg.Any<CancellationToken>()).Returns(new ValueTask<WorkflowInstance?>(finishedInstance));
+        var workflowDefinitionService = Substitute.For<IWorkflowDefinitionService>();
+        workflowDefinitionService.FindWorkflowGraphAsync(finishedInstance.DefinitionVersionId, Arg.Any<CancellationToken>()).Returns(new WorkflowGraph(workflow, root, [root]));
+        var workflowRunner = Substitute.For<IWorkflowRunner>();
+        workflowRunner
+            .RunAsync(Arg.Any<Workflow>(), Arg.Any<WorkflowState>(), Arg.Any<RunWorkflowOptions?>(), Arg.Any<CancellationToken>())
+            .Returns(new RunWorkflowResult(null!, new WorkflowState(), workflow, null, Journal.Empty));
+        var serviceProvider = new ServiceCollection()
+            .AddSingleton<IRouteMatcher, ExactRouteMatcher>()
+            .AddSingleton<IRouteTable>(new ListRouteTable([new(BookmarkPath)]))
+            .AddSingleton<IStimulusHasher, FixedStimulusHasher>()
+            .AddSingleton(bookmarkStore)
+            .AddSingleton(workflowInstanceStore)
+            .AddSingleton(workflowDefinitionService)
+            .AddSingleton(workflowRunner)
+            .BuildServiceProvider();
+        var httpContext = new DefaultHttpContext
+        {
+            RequestServices = serviceProvider
+        };
+        httpContext.Request.Path = BookmarkPath;
+        httpContext.Request.Method = HttpMethod.Get.Method;
+
+        // Act
+        await _middleware.InvokeAsync(
+            httpContext,
+            serviceProvider,
+            Microsoft.Extensions.Options.Options.Create(new HttpActivityOptions { BasePath = null }),
+            new EmptyHttpWorkflowLookupService());
+
+        // Assert
+        Assert.Equal(StatusCodes.Status404NotFound, httpContext.Response.StatusCode);
+        Assert.Empty(workflowRunner.ReceivedCalls());
     }
 
     [Fact]

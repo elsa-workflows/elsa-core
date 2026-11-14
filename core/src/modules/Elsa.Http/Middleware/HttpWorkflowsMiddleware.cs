@@ -184,7 +184,8 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
         var workflowInstanceStore = serviceProvider.GetRequiredService<IWorkflowInstanceStore>();
         var workflowInstance = await workflowInstanceStore.FindAsync(bookmark.WorkflowInstanceId, cancellationToken);
 
-        if (workflowInstance == null)
+        // A finished instance can no longer be resumed (e.g. when concurrent requests target the same bookmark), so treat it like a missing one.
+        if (workflowInstance == null || workflowInstance.Status == WorkflowStatus.Finished)
         {
             await httpContext.Response.SendNotFoundAsync(cancellation: cancellationToken);
             return;
