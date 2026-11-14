@@ -446,19 +446,13 @@ public static class ExpressionExecutionContextExtensions
         /// <exception cref="InvalidOperationException">Thrown when the activity is not found.</exception>
         public object? GetOutput(string activityIdOrName, string? outputName)
         {
-            var workflowExecutionContext = context.GetWorkflowExecutionContext();
             var activityExecutionContext = context.GetActivityExecutionContext();
             var activity = activityExecutionContext.FindActivityByIdOrName(activityIdOrName);
 
             if (activity == null)
                 throw new InvalidOperationException("Activity not found.");
 
-            var outputRegister = workflowExecutionContext.GetActivityOutputRegister();
-            var outputRecordCandidates = outputRegister.FindMany(activity.Id, outputName);
-            var containerIds = activityExecutionContext.GetAncestors().Select(x => x.Id).ToList();
-            var filteredOutputRecordCandidates = outputRecordCandidates.Where(x => containerIds.Contains(x.ContainerId));
-            var outputRecord = filteredOutputRecordCandidates.LastOrDefault(); // Records are in recording order, so the last one is the most recent.
-            return outputRecord?.Value;
+            return activity.TryFindOutputInScope(activityExecutionContext, outputName, out var value) ? value : null;
         }
 
         /// <summary>

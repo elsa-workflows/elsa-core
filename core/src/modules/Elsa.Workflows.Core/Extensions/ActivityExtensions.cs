@@ -68,15 +68,41 @@ public static class ActivityExtensions
         /// <returns>The output value.</returns>
         public object? GetOutput(ActivityExecutionContext context, string? outputName = null)
         {
-            var workflowExecutionContext = context.WorkflowExecutionContext;
-            var outputRegister = workflowExecutionContext.GetActivityOutputRegister();
-        
-            // If the provided activity execution context is the same as the current activity's execution context, we return the exact output value of the current activity execution context.
-            if(context.Activity.NodeId == activity.NodeId)
-                return outputRegister.FindOutputByActivityInstanceId(context.Id, outputName);
-        
-            // If the provided activity execution context is different from the current activity's execution context, we look for the last output value of the activity.
-            return outputRegister.FindOutputByActivityId(activity.Id, outputName);
+            if (activity.TryFindOutputInScope(context, outputName, out var value))
+            {
+                return value;
+            }
+
+            // Nothing was recorded in scope, for example when reading an inner activity's output after its container completed.
+            // Such a read is likely an error, because the value may come from any branch or iteration, and expression reads such as getOutputFrom return null here.
+            // Return the most recent output anyway so that existing code-first workflows keep working.
+            return context.WorkflowExecutionContext.GetActivityOutputRegister().FindOutputByActivityId(activity.Id, outputName);
+        }
+
+        /// <summary>
+        /// Finds the output of the specified activity that is visible to the reader, so that concurrent branches or iterations don't see each other's output.
+        /// When the reader is an execution of the activity or runs inside one, this is the output of that execution.
+        /// Otherwise, it is the most recent output recorded in the reader's own context or one of its ancestors.
+        /// Unlike <c>GetOutput</c>, this method doesn't fall back to output recorded outside the reader's scope.
+        /// </summary>
+        /// <param name="context">The activity execution context of the reader.</param>
+        /// <param name="outputName">Name of the output, or <c>null</c> for <see cref="ActivityOutputRegister.DefaultOutputName"/>.</param>
+        /// <param name="value">The output value, which can be <c>null</c> when the activity recorded <c>null</c>.</param>
+        /// <returns><c>true</c> if an output is visible to the reader; otherwise, <c>false</c>.</returns>
+        public bool TryFindOutputInScope(ActivityExecutionContext context, string? outputName, out object? value)
+        {
+            var outputRegister = context.WorkflowExecutionContext.GetActivityOutputRegister();
+            var readerAndAncestors = context.GetAncestors().Prepend(context).ToList();
+            var enclosingExecution = readerAndAncestors.FirstOrDefault(x => x.Activity.NodeId == activity.NodeId);
+
+            if (enclosingExecution != null)
+            {
+                value = outputRegister.FindOutputByActivityInstanceId(enclosingExecution.Id, outputName);
+                return true;
+            }
+
+            var containerIds = readerAndAncestors.Select(x => x.Id);
+            return outputRegister.TryFindOutputByActivityId(activity.Id, outputName, containerIds, out value);
         }
 
         /// <summary>
