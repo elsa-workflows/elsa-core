@@ -175,7 +175,7 @@
         <PackageVersion Include="FluentMigrator.Runner.Postgres" Version="7.2.0"/>
         <PackageVersion Include="FluentMigrator.Runner.SqlServer" Version="7.2.0"/>
         <PackageVersion Include="FluentMigrator.Runner.SQLite" Version="7.2.0"/>
-        <PackageVersion Include="FluentStorage" Version="6.0.0"/>
+        <PackageVersion Include="FluentStorage" Version="8.0.22"/>
         <PackageVersion Include="Fluid.Core" Version="2.31.0"/>
         <PackageVersion Include="Fody" Version="6.9.3"/>
         <PackageVersion Include="GitHubActionsTestLogger" Version="3.0.1"/>
