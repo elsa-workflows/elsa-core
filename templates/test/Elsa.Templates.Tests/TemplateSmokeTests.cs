@@ -442,6 +442,14 @@ public sealed class TempWorkspace : IAsyncDisposable
             throw new InvalidOperationException("Template smoke workspaces must be outside the consolidated checkout.");
         }
         Directory.CreateDirectory(path);
+
+        // The workspace sits outside the checkout, so carry over the repository's SDK pin.
+        var globalJson = System.IO.Path.Combine(checkout, "global.json");
+        if (File.Exists(globalJson))
+        {
+            File.Copy(globalJson, System.IO.Path.Combine(path, "global.json"));
+        }
+
         return new(path);
     }
 
