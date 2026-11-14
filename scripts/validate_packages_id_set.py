@@ -72,7 +72,7 @@ def packed_ids(directory: Path) -> list[str]:
     """Return package IDs from *.nupkg names, ignoring symbol packages."""
     ids = []
     versions = set()
-    for nupkg in sorted(directory.glob("*.nupkg")):
+    for nupkg in sorted(directory.glob("*.nupkg"), key=lambda path: path.name):
         match = PACKAGE_FILE.fullmatch(nupkg.name)
         if match is None:
             raise SystemExit(f"Cannot parse package ID from {nupkg.name!r}.")
@@ -148,7 +148,7 @@ def filename_package_id(name: str) -> str | None:
 
 
 def remove_excluded_packages(directory: Path, excluded: set[str]) -> None:
-    for path in sorted(directory.iterdir()):
+    for path in sorted(directory.iterdir(), key=lambda path: path.name):
         if not path.is_file() or path.suffix not in {".nupkg", ".snupkg"}:
             continue
         package_id = filename_package_id(path.name)
@@ -192,7 +192,7 @@ def nupkg_dependency_ids(nupkg: Path) -> set[str]:
 def exclusion_dependency_errors(directory: Path, excluded: set[str]) -> list[str]:
     """Fail when a remaining package depends on an excluded ID."""
     dependents: list[str] = []
-    for nupkg in sorted(directory.glob("*.nupkg")):
+    for nupkg in sorted(directory.glob("*.nupkg"), key=lambda path: path.name):
         package_id = filename_package_id(nupkg.name)
         if package_id is None or package_id in excluded:
             continue
@@ -212,7 +212,7 @@ def exclusion_dependency_errors(directory: Path, excluded: set[str]) -> list[str
 def studio_content_errors(directory: Path) -> list[str]:
     """Fail when a packed Studio ClientLib package is missing a required bundle entry."""
     errors = []
-    for nupkg in sorted(directory.glob("*.nupkg")):
+    for nupkg in sorted(directory.glob("*.nupkg"), key=lambda path: path.name):
         match = PACKAGE_FILE.fullmatch(nupkg.name)
         if match is None:
             continue

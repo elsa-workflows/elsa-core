@@ -79,6 +79,23 @@ class IdSetTests(unittest.TestCase):
             self.write_packages(directory, ["Elsa", "Elsa.Workflows.Core"], version="3.10.0-preview.1")
             self.assertEqual(["Elsa", "Elsa.Workflows.Core"], packed_ids(directory))
 
+    def test_packed_ids_are_sorted_ordinally_on_every_platform(self):
+        # Windows pathlib sorts case-insensitively, POSIX by code point, so
+        # Elsa.AI.* and Elsa.Actors.* trade places across OSes (#9258). The
+        # guard must order the IDs by name the same way on every platform.
+        self.assertIn("Elsa.AI.Abstractions", self.expected)
+        self.assertIn("Elsa.Actors.ProtoActor", self.expected)
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            self.write_packages(directory, ["Elsa.Actors.ProtoActor", "Elsa.AI.Abstractions"])
+            self.assertEqual(["Elsa.AI.Abstractions", "Elsa.Actors.ProtoActor"], packed_ids(directory))
+
+    def test_expected_list_is_in_ordinal_order(self):
+        # packed_ids order is compared against this list; the explicit
+        # key=lambda path: path.name sorts keep the POSIX file order on
+        # case-insensitive filesystems too (#9258).
+        self.assertEqual(self.expected, sorted(self.expected))
+
     def test_packed_ids_reject_mixed_versions(self):
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)
