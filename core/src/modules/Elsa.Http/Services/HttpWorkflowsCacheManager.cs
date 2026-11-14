@@ -1,11 +1,12 @@
 using Elsa.Caching;
+using Elsa.Common.Multitenancy;
 using Elsa.Http.Bookmarks;
 using Elsa.Workflows;
 
 namespace Elsa.Http.Services;
 
 /// <inheritdoc />
-public class HttpWorkflowsCacheManager(ICacheManager cache, IHasher bookmarkHasher) : IHttpWorkflowsCacheManager
+public class HttpWorkflowsCacheManager(ICacheManager cache, IHasher bookmarkHasher, ITenantAccessor tenantAccessor) : IHttpWorkflowsCacheManager
 {
     /// <inheritdoc />
     public ICacheManager Cache => cache;
@@ -25,15 +26,21 @@ public class HttpWorkflowsCacheManager(ICacheManager cache, IHasher bookmarkHash
     }
 
     /// <inheritdoc />
-    public string GetWorkflowChangeTokenKey(string workflowDefinitionId) => $"{GetType().FullName}:workflow:{workflowDefinitionId}:changeToken";
+    public string GetWorkflowChangeTokenKey(string workflowDefinitionId) => TenantPrefix() + $"{GetType().FullName}:workflow:{workflowDefinitionId}:changeToken";
 
     /// <inheritdoc />
-    public string GetTriggerChangeTokenKey(string bookmarkHash) => $"{GetType().FullName}:trigger:{bookmarkHash}:changeToken";
+    public string GetTriggerChangeTokenKey(string bookmarkHash) => TenantPrefix() + $"{GetType().FullName}:trigger:{bookmarkHash}:changeToken";
 
     /// <inheritdoc />
     public string ComputeBookmarkHash(string path, string method)
     {
         var bookmarkPayload = new HttpEndpointBookmarkPayload(path, method);
         return bookmarkHasher.Hash(HttpStimulusNames.HttpEndpoint, bookmarkPayload);
+    }
+
+    private string TenantPrefix()
+    {
+        var tenantId = tenantAccessor.TenantId;
+        return string.IsNullOrEmpty(tenantId) ? string.Empty : $"{tenantId}:";
     }
 }
