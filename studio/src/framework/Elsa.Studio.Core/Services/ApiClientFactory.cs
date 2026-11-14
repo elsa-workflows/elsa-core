@@ -10,5 +10,8 @@ internal static class ApiClientFactory
 {
     internal static T Create<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(IServiceProvider serviceProvider, Uri backendUrl) where T : class
         => serviceProvider.CreateApi<T>(backendUrl);
+
+    internal static T Create<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(IServiceProvider serviceProvider, HttpClient httpClient) where T : class
+        => serviceProvider.CreateApi<T>(httpClient);
 }
 
