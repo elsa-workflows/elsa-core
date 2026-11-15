@@ -48,10 +48,12 @@ public static partial class ActivityExecutionContextExtensions
             var activity = context.Activity;
             var activityRegistryLookup = context.GetRequiredService<IActivityRegistryLookupService>();
             var activityDescriptor = await activityRegistryLookup.FindAsync(activity.Type) ?? throw new Exception("Activity descriptor not found");
-            var inputDescriptor = activityDescriptor.GetWrappedInputPropertyDescriptor(activity, inputName);
+            var inputDescriptor = activityDescriptor.Inputs.FirstOrDefault(x => x.Name == inputName && (x.IsWrapped || x.IsCollectionOfInput || x.IsDictionaryWithValueOfInput));
 
             if (inputDescriptor == null)
+            {
                 throw new Exception($"No input with name {inputName} could be found");
+            }
 
             return await EvaluateInputPropertyAsync(context, activityDescriptor, inputDescriptor);
         }
@@ -90,6 +92,10 @@ public static partial class ActivityExecutionContextExtensions
             var value = defaultValue;
             var input = inputDescriptor.ValueGetter(activity);
             var identityGenerator = context.GetRequiredService<IIdentityGenerator>();
+
+            // Read the bound inputs before evaluating, so the sensitivity check sees the same entries that are evaluated,
+            // even if the collection or dictionary changes while an entry is being evaluated.
+            var boundInputs = GetBoundInputs(input).ToList();
 
             if (inputDescriptor.IsWrapped)
             {
@@ -167,20 +173,20 @@ public static partial class ActivityExecutionContextExtensions
                 value = input;
             }
 
-            await StoreInputValueAsync(context, inputDescriptor, input, value!);
+            await StoreInputValueAsync(context, inputDescriptor, boundInputs, value!);
 
             return value;
         }
     }
 
-    private static Task StoreInputValueAsync(ActivityExecutionContext context, InputDescriptor inputDescriptor, object? input, object value)
+    private static Task StoreInputValueAsync(ActivityExecutionContext context, InputDescriptor inputDescriptor, IEnumerable<Input> boundInputs, object value)
     {
         // Sensitive inputs are never kept in activity state: it is persisted with the workflow instance and copied
         // into the execution journal. An input counts as sensitive when its descriptor says so (CanContainSecrets)
         // or when it, or any entry of a collection or dictionary of inputs, is bound to an expression type flagged as
         // sensitive (e.g. Secret). The activity still receives the evaluated value in memory; removing the entry also
         // clears any value carried over from a previous run.
-        if (inputDescriptor.IsSensitive || GetBoundInputs(input).Any(x => IsBoundToSensitiveExpression(context, x)))
+        if (inputDescriptor.IsSensitive || boundInputs.Any(x => IsBoundToSensitiveExpression(context, x)))
         {
             context.ActivityState.Remove(inputDescriptor.Name);
             return Task.CompletedTask;

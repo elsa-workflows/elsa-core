@@ -2,6 +2,7 @@ using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Models;
+using Elsa.Extensions;
 using Elsa.Testing.Shared;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Models;
@@ -200,8 +201,43 @@ public class InputEvaluationTests
         Assert.False(context.ActivityState.ContainsKey(nameof(ActivityWithOtherInputCollections.Map)));
     }
 
+    [Fact]
+    public async Task EvaluateInputPropertyAsync_EvaluatesCollectionAndDictionaryInputsThatAreNotAutoEvaluated()
+    {
+        var activity = new ActivityWithManuallyEvaluatedInputCollections
+        {
+            Items = [new("first"), new("second")],
+            Map = new() { ["key"] = new("value") }
+        };
+        var fixture = new ActivityTestFixture(activity);
+        var context = await fixture.ExecuteAsync();
+        Assert.False(context.ActivityState.ContainsKey(nameof(ActivityWithManuallyEvaluatedInputCollections.Items)));
+
+        var items = await context.EvaluateInputPropertyAsync(nameof(ActivityWithManuallyEvaluatedInputCollections.Items));
+        var map = await context.EvaluateInputPropertyAsync(nameof(ActivityWithManuallyEvaluatedInputCollections.Map));
+
+        Assert.Equal(["first", "second"], Assert.IsType<List<object?>>(items));
+        Assert.Equal("value", Assert.IsType<Dictionary<string, object?>>(map)["key"]);
+        Assert.Equal("second", context.Get(activity.Items[1]));
+    }
+
+    [Fact]
+    public async Task EvaluateInputPropertiesAsync_WhenSensitiveEntryIsRemovedDuringEvaluation_StillRemovesInputFromActivityState()
+    {
+        var activity = new ActivityWithInputCollections();
+        activity.Items = [new(new Expression(ClearingExpressionType, null)), new(new Expression(SensitiveExpressionType, null))];
+        var fixture = new ActivityTestFixture(activity)
+            .ConfigureServices(services => services.AddSingleton<IExpressionDescriptorProvider>(new SensitiveExpressionDescriptorProvider(() => activity.Items!.Clear())));
+
+        var context = await fixture.ExecuteAsync();
+
+        Assert.Empty(activity.Items!);
+        Assert.False(context.ActivityState.ContainsKey(nameof(ActivityWithInputCollections.Items)));
+    }
+
     private const string PlainExpressionType = "PlainTest";
     private const string SensitiveExpressionType = "SensitiveTest";
+    private const string ClearingExpressionType = "ClearingTest";
     private const string SensitiveExpressionValue = "resolved-secret";
 
     private Task<ActivityExecutionContext> ActivateAsync() => _fixture.ExecuteAsync();
@@ -228,6 +264,19 @@ public class InputEvaluationTests
     {
         public List<Input<string?>>? Items { get; set; }
         public Dictionary<string, Input<string?>>? Map { get; set; }
+
+        protected override void Execute(ActivityExecutionContext context)
+        {
+        }
+    }
+
+    private sealed class ActivityWithManuallyEvaluatedInputCollections : CodeActivity
+    {
+        [Input(AutoEvaluate = false)]
+        public List<Input<string?>> Items { get; set; } = [];
+
+        [Input(AutoEvaluate = false)]
+        public Dictionary<string, Input<string?>> Map { get; set; } = new();
 
         protected override void Execute(ActivityExecutionContext context)
         {
@@ -270,7 +319,7 @@ public class InputEvaluationTests
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 
-    private sealed class SensitiveExpressionDescriptorProvider : IExpressionDescriptorProvider
+    private sealed class SensitiveExpressionDescriptorProvider(Action? onClearingExpressionEvaluated = null) : IExpressionDescriptorProvider
     {
         public IEnumerable<ExpressionDescriptor> GetDescriptors()
         {
@@ -287,6 +336,24 @@ public class InputEvaluationTests
                 DisplayName = "Plain test",
                 HandlerFactory = _ => new SensitiveExpressionHandler()
             };
+            yield return new()
+            {
+                Type = ClearingExpressionType,
+                DisplayName = "Clearing test",
+                HandlerFactory = _ => new ClearingExpressionHandler(onClearingExpressionEvaluated)
+            };
+        }
+    }
+
+    /// <summary>
+    /// Runs a callback when evaluated, to change the activity's inputs while they are being evaluated.
+    /// </summary>
+    private sealed class ClearingExpressionHandler(Action? onEvaluated) : IExpressionHandler
+    {
+        public ValueTask<object?> EvaluateAsync(Expression expression, Type returnType, ExpressionExecutionContext context, ExpressionEvaluatorOptions options)
+        {
+            onEvaluated?.Invoke();
+            return ValueTask.FromResult<object?>("public");
         }
     }
 

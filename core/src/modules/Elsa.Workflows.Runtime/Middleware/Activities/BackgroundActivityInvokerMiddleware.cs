@@ -207,7 +207,8 @@ public class BackgroundActivityInvokerMiddleware(
     {
         var outputs = InputOutputCollections.ReadDictionary<Output>(outputDescriptor.ValueGetter(context.Activity));
 
-        if (outputs == null)
+        // A non-serializable output is captured as a placeholder string, so it has no entries to restore.
+        if (outputs == null || outputDescriptor.IsSerializable == false)
         {
             return;
         }
