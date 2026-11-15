@@ -4,7 +4,7 @@ using Elsa.Workflows.Models;
 namespace Elsa.Workflows.IntegrationTests.Scenarios.RunAsynchronousActivityOutput.Activities;
 
 /// <summary>
-/// A task with a dictionary of outputs that sets each output under its key.
+/// A task with a dictionary of outputs that sets each entry by its key.
 /// </summary>
 [Activity("Elsa.Test", Kind = ActivityKind.Task)]
 internal class DynamicOutputsActivity : CodeActivity
@@ -19,9 +19,14 @@ internal class DynamicOutputsActivity : CodeActivity
             ["age"] = 42d
         };
 
-        foreach (var (key, output) in Outputs ?? [])
+        if (Outputs == null)
         {
-            context.Set(output, values[key], key);
+            return;
+        }
+
+        foreach (var key in Outputs.Keys)
+        {
+            context.Set(Outputs, key, values[key]);
         }
     }
 }

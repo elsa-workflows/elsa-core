@@ -72,7 +72,41 @@ public class CollectionsOfOutputTests
         Assert.Equal("Producer1:output-outputs:age", deserialized.Outputs!["age"].MemoryBlockReference().Id);
 
         var register = result.WorkflowExecutionContext.GetActivityOutputRegister();
-        Assert.Equal("Frank", register.FindOutputByActivityId("Producer1", "name"));
-        Assert.Equal(42d, register.FindOutputByActivityId("Producer1", "age"));
+        Assert.Equal("Frank", register.FindOutputByActivityId("Producer1", "Outputs:name"));
+        Assert.Equal(42d, register.FindOutputByActivityId("Producer1", "Outputs:age"));
+    }
+
+    [Fact(DisplayName = "Dictionary output entries don't collide with other outputs that use the same name")]
+    public async Task EntriesDoNotCollideWithOtherOutputsTest()
+    {
+        await _services.PopulateRegistriesAsync();
+        var producer = new ProduceOverlappingOutputs
+        {
+            Id = "Producer1",
+            Result = new(),
+            Outputs = { ["Result"] = new() },
+            MoreOutputs = { ["Result"] = new() }
+        };
+
+        var result = await _workflowRunner.RunAsync(producer);
+
+        var register = result.WorkflowExecutionContext.GetActivityOutputRegister();
+        Assert.Equal("single", register.FindOutputByActivityId("Producer1", "Result"));
+        Assert.Equal("outputs-Result", register.FindOutputByActivityId("Producer1", "Outputs:Result"));
+        Assert.Equal("more-outputs-Result", register.FindOutputByActivityId("Producer1", "MoreOutputs:Result"));
+    }
+
+    [Theory(DisplayName = "Dictionary output keys that are empty or contain the separator are rejected")]
+    [InlineData("")]
+    [InlineData(" ")]
+    [InlineData("first:second")]
+    public async Task InvalidKeyTest(string key)
+    {
+        await _services.PopulateRegistriesAsync();
+        var producer = new ProduceDynamicOutputs(new Dictionary<string, Output<object>> { [key] = new() });
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => _workflowRunner.RunAsync(producer));
+
+        Assert.Contains($"key '{key}' in 'Outputs'", exception.Message);
     }
 }

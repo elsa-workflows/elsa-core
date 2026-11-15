@@ -1,3 +1,5 @@
+using System.Collections;
+using System.Diagnostics.CodeAnalysis;
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Models;
 using Elsa.Testing.Shared;
@@ -139,6 +141,65 @@ public class InputEvaluationTests
         Assert.Null(map["empty"]);
     }
 
+    [Fact]
+    public async Task EvaluateInputPropertiesAsync_WhenEntryHasNoMemoryBlockId_AssignsDeterministicId()
+    {
+        var activity = new ActivityWithInputCollections
+        {
+            Items = [new("first")],
+            Map = new() { ["key"] = new("value") }
+        };
+        var fixture = new ActivityTestFixture(activity);
+        var context = await fixture.BuildAsync();
+
+        // Simulate entries created without identities, for example by an activity provider.
+        activity.Items![0].MemoryBlockReference().Id = null!;
+        activity.Map!["key"].MemoryBlockReference().Id = null!;
+        await fixture.ExecuteAsync(context);
+
+        Assert.Equal($"{activity.NodeId}.Items:1", activity.Items![0].MemoryBlockReference().Id);
+        Assert.Equal($"{activity.NodeId}.Map:key", activity.Map!["key"].MemoryBlockReference().Id);
+        Assert.Equal("first", context.Get(activity.Items![0]));
+        Assert.Equal("value", context.Get(activity.Map!["key"]));
+    }
+
+    [Fact]
+    public async Task EvaluateInputPropertiesAsync_EvaluatesArraysSetsAndGenericOnlyDictionaries()
+    {
+        var activity = new ActivityWithOtherInputCollections
+        {
+            ArrayItems = [new("first"), new("second")],
+            SetItems = [new("only")],
+            Map = new() { ["key"] = new("value") }
+        };
+        var fixture = new ActivityTestFixture(activity);
+
+        var context = await fixture.ExecuteAsync();
+
+        Assert.Equal(["first", "second"], Assert.IsType<List<object?>>(context.ActivityState[nameof(ActivityWithOtherInputCollections.ArrayItems)]));
+        Assert.Equal(["only"], Assert.IsType<List<object?>>(context.ActivityState[nameof(ActivityWithOtherInputCollections.SetItems)]));
+        Assert.Equal("value", Assert.IsType<Dictionary<string, object?>>(context.ActivityState[nameof(ActivityWithOtherInputCollections.Map)])["key"]);
+        Assert.Equal("second", context.Get(activity.ArrayItems[1]));
+        Assert.Equal("value", context.Get(activity.Map!["key"]));
+    }
+
+    [Fact]
+    public async Task EvaluateInputPropertiesAsync_WhenSetOrGenericOnlyDictionaryEntryIsSensitive_RemovesItFromActivityState()
+    {
+        var activity = new ActivityWithOtherInputCollections
+        {
+            SetItems = [new(new Expression(SensitiveExpressionType, null))],
+            Map = new() { ["secret"] = new(new Expression(SensitiveExpressionType, null)) }
+        };
+        var fixture = new ActivityTestFixture(activity)
+            .ConfigureServices(services => services.AddSingleton<IExpressionDescriptorProvider, SensitiveExpressionDescriptorProvider>());
+
+        var context = await fixture.ExecuteAsync();
+
+        Assert.False(context.ActivityState.ContainsKey(nameof(ActivityWithOtherInputCollections.SetItems)));
+        Assert.False(context.ActivityState.ContainsKey(nameof(ActivityWithOtherInputCollections.Map)));
+    }
+
     private const string PlainExpressionType = "PlainTest";
     private const string SensitiveExpressionType = "SensitiveTest";
     private const string SensitiveExpressionValue = "resolved-secret";
@@ -171,6 +232,42 @@ public class InputEvaluationTests
         protected override void Execute(ActivityExecutionContext context)
         {
         }
+    }
+
+    private sealed class ActivityWithOtherInputCollections : CodeActivity
+    {
+        public Input<string?>[] ArrayItems { get; set; } = [];
+        public HashSet<Input<string?>> SetItems { get; set; } = [];
+        public GenericOnlyDictionary<Input<string?>> Map { get; set; } = new();
+
+        protected override void Execute(ActivityExecutionContext context)
+        {
+        }
+    }
+
+    /// <summary>
+    /// Implements only the generic <see cref="IDictionary{TKey,TValue}"/>, not the non-generic <see cref="System.Collections.IDictionary"/>.
+    /// </summary>
+    private sealed class GenericOnlyDictionary<TValue> : IDictionary<string, TValue>
+    {
+        private readonly Dictionary<string, TValue> _entries = new();
+
+        public TValue this[string key] { get => _entries[key]; set => _entries[key] = value; }
+        public ICollection<string> Keys => _entries.Keys;
+        public ICollection<TValue> Values => _entries.Values;
+        public int Count => _entries.Count;
+        public bool IsReadOnly => false;
+        public void Add(string key, TValue value) => _entries.Add(key, value);
+        public void Add(KeyValuePair<string, TValue> item) => _entries.Add(item.Key, item.Value);
+        public void Clear() => _entries.Clear();
+        public bool Contains(KeyValuePair<string, TValue> item) => _entries.Contains(item);
+        public bool ContainsKey(string key) => _entries.ContainsKey(key);
+        public void CopyTo(KeyValuePair<string, TValue>[] array, int arrayIndex) => ((ICollection<KeyValuePair<string, TValue>>)_entries).CopyTo(array, arrayIndex);
+        public bool Remove(string key) => _entries.Remove(key);
+        public bool Remove(KeyValuePair<string, TValue> item) => ((ICollection<KeyValuePair<string, TValue>>)_entries).Remove(item);
+        public bool TryGetValue(string key, [MaybeNullWhen(false)] out TValue value) => _entries.TryGetValue(key, out value);
+        public IEnumerator<KeyValuePair<string, TValue>> GetEnumerator() => _entries.GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 
     private sealed class SensitiveExpressionDescriptorProvider : IExpressionDescriptorProvider

@@ -1,7 +1,7 @@
-using System.Collections;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Activities;
+using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Models;
 using Humanizer;
 using Microsoft.Extensions.Logging;
@@ -65,14 +65,16 @@ public class IdentityGraphService(IActivityVisitor activityVisitor, IActivityReg
         foreach (var (inputName, collectionOfInput) in collectionOfInputDictionary)
         {
             if (collectionOfInput == null)
-                continue;
-
-            var position = 0;
-
-            foreach (Input? input in collectionOfInput)
             {
-                var index = ++position;
-                AssignBlockReference(input?.MemoryBlockReference(), () => $"{activity.Id}:input-{inputName.Humanize().Kebaberize()}:{index}");
+                continue;
+            }
+
+            // Entry IDs are positional (1-based), so they are only stable while the collection keeps its order.
+            // Memory blocks live for one workflow execution, so an ID is never resolved against a reordered collection.
+            for (var index = 0; index < collectionOfInput.Count; index++)
+            {
+                var position = index + 1;
+                AssignBlockReference(collectionOfInput[index]?.MemoryBlockReference(), () => $"{activity.Id}:input-{inputName.Humanize().Kebaberize()}:{position}");
             }
         }
 
@@ -80,12 +82,14 @@ public class IdentityGraphService(IActivityVisitor activityVisitor, IActivityReg
         foreach (var (inputName, dictionaryWithValueOfInput) in dictionaryOfInputDictionary)
         {
             if (dictionaryWithValueOfInput == null)
-                continue;
-
-            foreach (DictionaryEntry entry in dictionaryWithValueOfInput)
             {
-                var input = entry.Value as Input;
-                AssignBlockReference(input?.MemoryBlockReference(), () => $"{activity.Id}:input-{inputName.Humanize().Kebaberize()}:{entry.Key}");
+                continue;
+            }
+
+            foreach (var (key, input) in dictionaryWithValueOfInput)
+            {
+                DictionaryEntryNames.EnsureValidKey(key, activity.Id, inputName);
+                AssignBlockReference(input?.MemoryBlockReference(), () => $"{activity.Id}:input-{inputName.Humanize().Kebaberize()}:{key}");
             }
         }
 
@@ -100,12 +104,14 @@ public class IdentityGraphService(IActivityVisitor activityVisitor, IActivityReg
         foreach (var (outputName, dictionaryWithValueOfOutput) in dictionaryOfOutputDictionary)
         {
             if (dictionaryWithValueOfOutput == null)
-                continue;
-
-            foreach (DictionaryEntry entry in dictionaryWithValueOfOutput)
             {
-                var output = entry.Value as Output;
-                AssignBlockReference(output?.MemoryBlockReference(), () => $"{activity.Id}:output-{outputName.Humanize().Kebaberize()}:{entry.Key}");
+                continue;
+            }
+
+            foreach (var (key, output) in dictionaryWithValueOfOutput)
+            {
+                DictionaryEntryNames.EnsureValidKey(key, activity.Id, outputName);
+                AssignBlockReference(output?.MemoryBlockReference(), () => $"{activity.Id}:output-{outputName.Humanize().Kebaberize()}:{key}");
             }
         }
     }
@@ -113,10 +119,14 @@ public class IdentityGraphService(IActivityVisitor activityVisitor, IActivityReg
     private static void AssignBlockReference(MemoryBlockReference? blockReference, Func<string> idFactory)
     {
         if (blockReference == null!)
+        {
             return;
+        }
 
         if (string.IsNullOrEmpty(blockReference.Id))
+        {
             blockReference.Id = idFactory();
+        }
     }
 
     /// <inheritdoc />

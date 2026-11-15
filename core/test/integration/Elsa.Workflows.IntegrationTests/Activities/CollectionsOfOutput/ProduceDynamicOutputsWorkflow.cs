@@ -21,11 +21,11 @@ class ProduceDynamicOutputsWorkflow : WorkflowBase
             {
                 producer,
 
-                // Each read goes through IActivity.GetOutput -> ActivityOutputRegister.FindOutputByActivityId(activityId, key),
+                // Each read goes through IActivity.GetOutput, using the composite name "{OutputName}:{key}" of the entry,
                 // proving the dynamic outputs are addressable by name. Fixed order also keeps the assertion deterministic.
-                new WriteLine(context => Format("name", producer.GetOutput<object>(context, "name"))),
-                new WriteLine(context => Format("isAdmin", producer.GetOutput<object>(context, "isAdmin"))),
-                new WriteLine(context => Format("age", producer.GetOutput<object>(context, "age")))
+                new WriteLine(context => Format("name", producer.GetOutput<object>(context, "Outputs:name"))),
+                new WriteLine(context => Format("isAdmin", producer.GetOutput<object>(context, "Outputs:isAdmin"))),
+                new WriteLine(context => Format("age", producer.GetOutput<object>(context, "Outputs:age")))
             }
         };
     }

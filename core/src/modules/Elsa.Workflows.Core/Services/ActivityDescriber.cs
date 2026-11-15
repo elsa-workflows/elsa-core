@@ -263,40 +263,16 @@ public class ActivityDescriber(IPropertyDefaultValueResolver defaultValueResolve
     }
 
     /// <summary>
-    /// Returns true if the property type is a collection (for example <c>List&lt;Input&lt;T&gt;&gt;</c>) whose items are assignable to the specified type.
+    /// Returns true if the property type is a collection (for example <c>List&lt;Input&lt;T&gt;&gt;</c>, <c>Input&lt;T&gt;[]</c> or a subclass of either) whose items are assignable to the specified type.
     /// </summary>
-    private static bool IsCollectionOfType(PropertyInfo propertyInfo, Type itemType)
-    {
-        var propertyType = propertyInfo.PropertyType;
-
-        if (!propertyType.IsGenericType)
-            return false;
-
-        var genericTypes = propertyType.GenericTypeArguments;
-
-        if (genericTypes.Length != 1 || !itemType.IsAssignableFrom(genericTypes[0]))
-            return false;
-
-        return typeof(ICollection<>).MakeGenericType(genericTypes).IsAssignableFrom(propertyType);
-    }
+    private static bool IsCollectionOfType(PropertyInfo propertyInfo, Type itemType) =>
+        InputOutputCollections.GetCollectionItemType(propertyInfo.PropertyType, itemType) != null;
 
     /// <summary>
-    /// Returns true if the property type is a dictionary with string keys (for example <c>Dictionary&lt;string, Output&lt;T&gt;&gt;</c>) whose values are assignable to the specified type.
+    /// Returns true if the property type is a dictionary with string keys (for example <c>Dictionary&lt;string, Output&lt;T&gt;&gt;</c> or a subclass of it) whose values are assignable to the specified type.
     /// </summary>
-    private static bool IsDictionaryWithValueOfType(PropertyInfo propertyInfo, Type valueType)
-    {
-        var propertyType = propertyInfo.PropertyType;
-
-        if (!propertyType.IsGenericType)
-            return false;
-
-        var genericTypes = propertyType.GenericTypeArguments;
-
-        if (genericTypes.Length != 2 || genericTypes[0] != typeof(string) || !valueType.IsAssignableFrom(genericTypes[1]))
-            return false;
-
-        return typeof(IDictionary<,>).MakeGenericType(genericTypes).IsAssignableFrom(propertyType);
-    }
+    private static bool IsDictionaryWithValueOfType(PropertyInfo propertyInfo, Type valueType) =>
+        InputOutputCollections.GetDictionaryValueType(propertyInfo.PropertyType, valueType) != null;
 
     private async Task<IEnumerable<InputDescriptor>> DescribeInputPropertiesAsync(IEnumerable<PropertyInfo> properties, CancellationToken cancellationToken = default)
     {

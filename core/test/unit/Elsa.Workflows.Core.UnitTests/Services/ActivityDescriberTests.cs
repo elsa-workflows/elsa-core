@@ -79,6 +79,46 @@ public class ActivityDescriberTests
         Assert.DoesNotContain(descriptor.Outputs, x => x.Name == nameof(ActivityWithInputAndOutputCollections.OutputsByNumber));
     }
 
+    [Theory]
+    [InlineData(nameof(ActivityWithOtherInputAndOutputCollections.ArrayItems))]
+    [InlineData(nameof(ActivityWithOtherInputAndOutputCollections.SetItems))]
+    [InlineData(nameof(ActivityWithOtherInputAndOutputCollections.ListSubclassItems))]
+    [InlineData(nameof(ActivityWithOtherInputAndOutputCollections.InterfaceItems))]
+    public async Task DescribeActivityAsync_DescribesArraysSetsSubclassesAndInterfacesAsCollectionsOfInputs(string inputName)
+    {
+        var descriptor = await _describer.DescribeActivityAsync(typeof(ActivityWithOtherInputAndOutputCollections));
+
+        var input = descriptor.Inputs.Single(x => x.Name == inputName);
+
+        Assert.True(input.IsCollectionOfInput);
+        Assert.False(input.IsDictionaryWithValueOfInput);
+    }
+
+    [Theory]
+    [InlineData(nameof(ActivityWithOtherInputAndOutputCollections.DictionarySubclassMap))]
+    [InlineData(nameof(ActivityWithOtherInputAndOutputCollections.InterfaceMap))]
+    public async Task DescribeActivityAsync_DescribesSubclassesAndInterfacesAsDictionariesOfInputs(string inputName)
+    {
+        var descriptor = await _describer.DescribeActivityAsync(typeof(ActivityWithOtherInputAndOutputCollections));
+
+        var input = descriptor.Inputs.Single(x => x.Name == inputName);
+
+        Assert.True(input.IsDictionaryWithValueOfInput);
+        Assert.False(input.IsCollectionOfInput);
+    }
+
+    [Theory]
+    [InlineData(nameof(ActivityWithOtherInputAndOutputCollections.DictionarySubclassOutputs))]
+    [InlineData(nameof(ActivityWithOtherInputAndOutputCollections.InterfaceOutputs))]
+    public async Task DescribeActivityAsync_DescribesSubclassesAndInterfacesAsDictionariesOfOutputs(string outputName)
+    {
+        var descriptor = await _describer.DescribeActivityAsync(typeof(ActivityWithOtherInputAndOutputCollections));
+
+        var output = descriptor.Outputs.Single(x => x.Name == outputName);
+
+        Assert.True(output.IsDictionaryWithValueOfOutput);
+    }
+
     [Fact]
     public async Task DescribeActivityAsync_FormatsGenericTypeFriendlyName()
     {
@@ -204,6 +244,24 @@ public class ActivityDescriberTests
         public List<Output<string>> OutputList { get; set; } = [];
         public Dictionary<int, Output<string>> OutputsByNumber { get; set; } = [];
     }
+
+    private sealed class ActivityWithOtherInputAndOutputCollections : CodeActivity
+    {
+        public Input<string>[] ArrayItems { get; set; } = [];
+        public HashSet<Input<string>> SetItems { get; set; } = [];
+        public InputList ListSubclassItems { get; set; } = [];
+        public ICollection<Input<string>> InterfaceItems { get; set; } = [];
+        public InputMap DictionarySubclassMap { get; set; } = [];
+        public IDictionary<string, Input<string>> InterfaceMap { get; set; } = new Dictionary<string, Input<string>>();
+        public OutputMap DictionarySubclassOutputs { get; set; } = [];
+        public IDictionary<string, Output<string>> InterfaceOutputs { get; set; } = new Dictionary<string, Output<string>>();
+    }
+
+    private sealed class InputList : List<Input<string>>;
+
+    private sealed class InputMap : Dictionary<string, Input<string>>;
+
+    private sealed class OutputMap : Dictionary<string, Output<object>>;
 
     private sealed class Container<T>
     {

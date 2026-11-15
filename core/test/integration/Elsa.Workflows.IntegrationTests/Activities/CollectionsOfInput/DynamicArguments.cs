@@ -21,7 +21,7 @@ public class DynamicArguments : CodeActivity
             foreach (var argument in Arguments)
             {
                 var name = argument.Key;
-                string value = context.Get(argument.Value) switch
+                var value = context.Get(argument.Value) switch
                 {
                     bool boolValue => $"{boolValue} (bool)",
                     string stringValue => $"{stringValue} (string)",

@@ -1,11 +1,11 @@
-using System.Collections;
-using System.Text.Json;
+﻿using System.Text.Json;
 using System.Text.Json.Nodes;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Exceptions;
+using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Serialization.Converters;
 using Humanizer;
@@ -243,26 +243,32 @@ public static class JsonActivityConstructorContextHelper
             // Use the descriptor's PropertyInfo rather than looking the property up by name, so outputs
             // renamed via [Output(Name = ...)] are still matched.
             var property = outputDescriptor.PropertyInfo;
+            var dictionary = property?.GetValue(activity);
 
-            if (property?.GetValue(activity) is not IDictionary dictionary)
+            if (property == null || dictionary == null)
+            {
                 continue;
+            }
 
-            // The property is Dictionary<string, Output<T>>; the value type is the last generic argument.
-            var outputType = property.PropertyType.GetGenericArguments().LastOrDefault();
+            // The value type comes from the implemented IDictionary<string, Output<T>>, so subclasses are handled too.
+            var outputType = InputOutputCollections.GetDictionaryValueType(property.PropertyType, typeof(Output));
 
             // Only reconstruct when the value type is a concrete Output<T> we can instantiate with a
             // MemoryBlockReference. An abstract base Output or a missing ctor is skipped rather than throwing.
             if (outputType is null
                 || outputType.IsAbstract
-                || !typeof(Output).IsAssignableFrom(outputType)
                 || outputType.GetConstructor([typeof(MemoryBlockReference)]) is null)
+            {
                 continue;
+            }
 
             // Snapshot the keys first, since we mutate the dictionary while iterating.
-            var nullKeys = dictionary.Keys.Cast<object>().Where(key => dictionary[key] == null).ToList();
+            var nullKeys = InputOutputCollections.ReadDictionary<Output>(dictionary)!.Where(x => x.Value == null).Select(x => x.Key).ToList();
 
             foreach (var key in nullKeys)
-                dictionary[key] = Activator.CreateInstance(outputType, new MemoryBlockReference())!;
+            {
+                InputOutputCollections.SetDictionaryEntry(dictionary, outputType, key, Activator.CreateInstance(outputType, new MemoryBlockReference()));
+            }
         }
     }
 

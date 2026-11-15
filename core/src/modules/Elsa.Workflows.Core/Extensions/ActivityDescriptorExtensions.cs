@@ -1,5 +1,5 @@
-using System.Collections;
 using Elsa.Workflows;
+using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Models;
 
 // ReSharper disable once CheckNamespace
@@ -47,19 +47,19 @@ public static class ActivityDescriptorExtensions
         }
 
         /// <summary>
-        /// Returns each collection of input from the specified activity.
+        /// Returns the entries of each collection of inputs from the specified activity, by input name.
         /// </summary>
-        public IDictionary<string, ICollection?> GetCollectionOfInputProperties(IActivity activity)
+        public IDictionary<string, IReadOnlyList<Input?>?> GetCollectionOfInputProperties(IActivity activity)
         {
-            return activityDescriptor.Inputs.Where(x => x.IsCollectionOfInput).ToDictionary(x => x.Name, x => (ICollection?)x.ValueGetter(activity));
+            return activityDescriptor.Inputs.Where(x => x.IsCollectionOfInput).ToDictionary(x => x.Name, x => InputOutputCollections.ReadCollection<Input>(x.ValueGetter(activity)));
         }
 
         /// <summary>
-        /// Returns each dictionary with input value from the specified activity.
+        /// Returns the entries of each dictionary of inputs from the specified activity, by input name.
         /// </summary>
-        public IDictionary<string, IDictionary?> GetDictionaryWithValueOfInputProperties(IActivity activity)
+        public IDictionary<string, IReadOnlyDictionary<string, Input?>?> GetDictionaryWithValueOfInputProperties(IActivity activity)
         {
-            return activityDescriptor.Inputs.Where(x => x.IsDictionaryWithValueOfInput).ToDictionary(x => x.Name, x => (IDictionary?)x.ValueGetter(activity));
+            return activityDescriptor.Inputs.Where(x => x.IsDictionaryWithValueOfInput).ToDictionary(x => x.Name, x => InputOutputCollections.ReadDictionary<Input>(x.ValueGetter(activity)));
         }
 
         /// <summary>
@@ -80,11 +80,11 @@ public static class ActivityDescriptorExtensions
         }
 
         /// <summary>
-        /// Returns each dictionary with output value from the specified activity.
+        /// Returns the entries of each dictionary of outputs from the specified activity, by output name.
         /// </summary>
-        public IDictionary<string, IDictionary?> GetDictionaryWithValueOfOutputProperties(IActivity activity)
+        public IDictionary<string, IReadOnlyDictionary<string, Output?>?> GetDictionaryWithValueOfOutputProperties(IActivity activity)
         {
-            return activityDescriptor.Outputs.Where(x => x.IsDictionaryWithValueOfOutput).ToDictionary(x => x.Name, x => (IDictionary?)x.ValueGetter(activity));
+            return activityDescriptor.Outputs.Where(x => x.IsDictionaryWithValueOfOutput).ToDictionary(x => x.Name, x => InputOutputCollections.ReadDictionary<Output>(x.ValueGetter(activity)));
         }
     }
 }

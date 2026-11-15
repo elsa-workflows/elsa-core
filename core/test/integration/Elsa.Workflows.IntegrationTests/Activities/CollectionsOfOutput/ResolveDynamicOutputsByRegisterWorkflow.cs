@@ -22,8 +22,8 @@ class ResolveDynamicOutputsByRegisterWorkflow : WorkflowBase
             {
                 producer,
 
-                // Resolve each dynamic output straight from the ActivityOutputRegister using the
-                // producer's runtime activity Id + dynamic name - the same lookup ActivityOutputExpressionHandler performs.
+                // Resolve each dynamic output straight from the ActivityOutputRegister using the producer's runtime activity Id
+                // and the entry's composite name "Outputs:{key}" - the same lookup ActivityOutputExpressionHandler performs.
                 new WriteLine(context => Resolve(context, producer, "name")),
                 new WriteLine(context => Resolve(context, producer, "isAdmin")),
                 new WriteLine(context => Resolve(context, producer, "age"))
@@ -34,7 +34,7 @@ class ResolveDynamicOutputsByRegisterWorkflow : WorkflowBase
     private static string Resolve(ExpressionExecutionContext context, IActivity producer, string name)
     {
         var register = context.GetActivityExecutionContext().WorkflowExecutionContext.GetActivityOutputRegister();
-        var value = register.FindOutputByActivityId(producer.Id, name);
+        var value = register.FindOutputByActivityId(producer.Id, $"Outputs:{name}");
 
         return value switch
         {

@@ -1,10 +1,10 @@
-using System.Collections;
 using System.Linq.Expressions;
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Workflows;
 using Elsa.Workflows.Exceptions;
+using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Models;
 
 // ReSharper disable once CheckNamespace
@@ -133,13 +133,14 @@ public static partial class ActivityExecutionContextExtensions
             }
             else if (inputDescriptor.IsCollectionOfInput)
             {
-                if (input is ICollection collectionOfInput)
+                if (InputOutputCollections.ReadCollection<Input>(input) is { } collectionOfInput)
                 {
                     var values = new List<object?>();
 
-                    foreach (Input? entryInput in collectionOfInput)
+                    for (var index = 0; index < collectionOfInput.Count; index++)
                     {
-                        values.Add(await EvaluateInputEntryAsync(context, entryInput));
+                        var fallbackId = $"{activity.NodeId}.{inputDescriptor.Name}{DictionaryEntryNames.Separator}{index + 1}";
+                        values.Add(await EvaluateInputEntryAsync(context, collectionOfInput[index], fallbackId));
                     }
 
                     value = values;
@@ -147,13 +148,15 @@ public static partial class ActivityExecutionContextExtensions
             }
             else if (inputDescriptor.IsDictionaryWithValueOfInput)
             {
-                if (input is IDictionary dictionaryOfInput)
+                if (InputOutputCollections.ReadDictionary<Input>(input) is { } dictionaryOfInput)
                 {
                     var values = new Dictionary<string, object?>();
 
-                    foreach (DictionaryEntry entry in dictionaryOfInput)
+                    foreach (var (key, entryInput) in dictionaryOfInput)
                     {
-                        values.Add((string)entry.Key, await EvaluateInputEntryAsync(context, entry.Value as Input));
+                        DictionaryEntryNames.EnsureValidKey(key, activity.Id, inputDescriptor.Name);
+                        var fallbackId = $"{activity.NodeId}.{inputDescriptor.Name}{DictionaryEntryNames.Separator}{key}";
+                        values.Add(key, await EvaluateInputEntryAsync(context, entryInput, fallbackId));
                     }
 
                     value = values;
@@ -201,10 +204,15 @@ public static partial class ActivityExecutionContextExtensions
     /// <summary>
     /// Evaluates one entry of a collection or dictionary of inputs and declares its memory block in the current context.
     /// </summary>
-    private static async Task<object?> EvaluateInputEntryAsync(ActivityExecutionContext context, Input? input)
+    /// <param name="context">The activity execution context.</param>
+    /// <param name="input">The entry.</param>
+    /// <param name="fallbackId">The memory block ID to use when the entry has none, for example when an activity provider created it.</param>
+    private static async Task<object?> EvaluateInputEntryAsync(ActivityExecutionContext context, Input? input, string fallbackId)
     {
         if (input == null)
+        {
             return null;
+        }
 
         var expressionExecutionContext = context.ExpressionExecutionContext;
         object? value = null;
@@ -215,22 +223,32 @@ public static partial class ActivityExecutionContextExtensions
             value = await evaluator.EvaluateAsync(input, expressionExecutionContext);
         }
 
-        // The identity graph assigns entry memory block IDs; an entry without one has nothing to declare.
         var memoryReference = input.MemoryBlockReference();
 
-        if (memoryReference?.Id != null!)
+        if (memoryReference != null!)
+        {
+            // Like a single input, construct a deterministic ID when the identity graph didn't assign one.
+            if (memoryReference.Id == null!)
+            {
+                memoryReference.Id = fallbackId;
+            }
+
             expressionExecutionContext.Set(memoryReference, value!);
+        }
 
         return value;
     }
 
-    private static IEnumerable<Input> GetBoundInputs(object? input) => input switch
+    private static IEnumerable<Input> GetBoundInputs(object? input)
     {
-        Input wrappedInput => [wrappedInput],
-        IDictionary dictionaryOfInput => dictionaryOfInput.Values.OfType<Input>(),
-        ICollection collectionOfInput => collectionOfInput.OfType<Input>(),
-        _ => []
-    };
+        if (input is Input wrappedInput)
+        {
+            return [wrappedInput];
+        }
+
+        var entries = InputOutputCollections.ReadCollection<Input>(input) ?? InputOutputCollections.ReadDictionary<Input>(input)?.Values.ToList();
+        return entries?.OfType<Input>() ?? [];
+    }
 
     private static bool IsBoundToSensitiveExpression(ActivityExecutionContext context, Input? input)
     {

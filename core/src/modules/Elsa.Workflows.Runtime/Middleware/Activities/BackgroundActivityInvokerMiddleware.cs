@@ -1,11 +1,11 @@
-﻿using System.Collections;
-using System.Text.Json;
+﻿using System.Text.Json;
 using Elsa.Expressions.Helpers;
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.CommitStates;
 using Elsa.Workflows.Exceptions;
+using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Middleware.Activities;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
@@ -201,22 +201,30 @@ public class BackgroundActivityInvokerMiddleware(
     }
 
     /// <summary>
-    /// Applies the captured entries of a dictionary output to the outputs with the same keys.
+    /// Applies the captured entries of a dictionary output to the outputs with the same keys, recording each under its composite name.
     /// </summary>
     private static void CaptureDictionaryOutput(ActivityExecutionContext context, OutputDescriptor outputDescriptor, object? capturedValue)
     {
-        if (outputDescriptor.ValueGetter(context.Activity) is not IDictionary outputs)
+        var outputs = InputOutputCollections.ReadDictionary<Output>(outputDescriptor.ValueGetter(context.Activity));
+
+        if (outputs == null)
+        {
             return;
+        }
 
         var capturedEntries = capturedValue.ConvertTo<Dictionary<string, object?>>();
 
         if (capturedEntries == null)
+        {
             return;
+        }
 
         foreach (var (key, value) in capturedEntries)
         {
-            if (outputs[key] is Output output)
-                context.Set(output, value, key);
+            if (outputs.TryGetValue(key, out var output) && output != null)
+            {
+                context.Set(output, value, DictionaryEntryNames.GetOutputName(outputDescriptor.Name, key));
+            }
         }
     }
 

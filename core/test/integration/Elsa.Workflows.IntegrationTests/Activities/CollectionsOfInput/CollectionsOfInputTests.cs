@@ -77,4 +77,18 @@ public class CollectionsOfInputTests
         var lines = _capturingTextWriter.Lines.ToArray();
         Assert.Equal(new[] { "orange", "apple", "isAdmin: False (bool)", "age: 42 (double)" }, lines);
     }
+
+    [Theory(DisplayName = "Dictionary input keys that are empty or contain the separator are rejected")]
+    [InlineData("")]
+    [InlineData(" ")]
+    [InlineData("first:second")]
+    public async Task InvalidKeyTest(string key)
+    {
+        await _services.PopulateRegistriesAsync();
+        var dynamicArguments = new DynamicArguments(new Dictionary<string, Input<object>> { [key] = new(false) });
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => _workflowRunner.RunAsync(dynamicArguments));
+
+        Assert.Contains($"key '{key}' in 'Arguments'", exception.Message);
+    }
 }

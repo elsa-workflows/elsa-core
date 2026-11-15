@@ -22,16 +22,20 @@ public class ProduceDynamicOutputs : CodeActivity
         };
 
         if (Outputs == null)
+        {
             return;
+        }
 
-        foreach (var (key, output) in Outputs)
+        foreach (var key in Outputs.Keys)
         {
             if (!values.TryGetValue(key, out var value))
+            {
                 continue;
+            }
 
-            // Record under the dynamic key so it is resolvable by name via the
-            // ActivityOutputRegister (the path used by ActivityOutputExpressionHandler: "{activity}|{name}").
-            context.Set(output, value, key);
+            // Records the entry in the ActivityOutputRegister under "Outputs:{key}", the name used to read it
+            // (for example by ActivityOutputExpressionHandler: "{activity}|Outputs:{key}").
+            context.Set(Outputs, key, value);
         }
     }
 }

@@ -198,7 +198,8 @@ public class Tests
         Assert.Equal(42d, Convert.ToDouble(recordedOutputs["age"].ToString()));
 
         var activityOutputRegister = workflowFinishedRecord.WorkflowExecutionContext.GetActivityOutputRegister();
-        Assert.Equal("Frank", activityOutputRegister.FindOutputByActivityId("DynamicOutputs1", "name")?.ToString());
-        Assert.Equal(42d, Convert.ToDouble(activityOutputRegister.FindOutputByActivityId("DynamicOutputs1", "age")));
+        Assert.Equal("Frank", activityOutputRegister.FindOutputByActivityId("DynamicOutputs1", "Outputs:name")?.ToString());
+        Assert.Equal(42d, Convert.ToDouble(activityOutputRegister.FindOutputByActivityId("DynamicOutputs1", "Outputs:age")));
+        Assert.Null(activityOutputRegister.FindOutputByActivityId("DynamicOutputs1", "name"));
     }
 }

@@ -1,5 +1,5 @@
-using System.Collections;
 using Elsa.Extensions;
+using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Models;
 
 namespace Elsa.Workflows;
@@ -16,7 +16,6 @@ public static class ActivityExecutionContextExtensions
         public IDictionary<string, object> GetOutputs()
         {
             var activity = context.Activity;
-            var expressionExecutionContext = context.ExpressionExecutionContext;
             var activityDescriptor = context.ActivityDescriptor;
             var outputDescriptors = activityDescriptor.Outputs;
 
@@ -26,36 +25,47 @@ public static class ActivityExecutionContextExtensions
                     return "(not serializable)";
 
                 // Expand a dictionary of outputs (Dictionary<string, Output<T>>) into its individual named values.
-                if (x.IsDictionaryWithValueOfOutput && x.ValueGetter(activity) is IDictionary dictionary)
+                // Each entry is read like a single output, from the register under its composite name first.
+                if (x.IsDictionaryWithValueOfOutput)
                 {
+                    var entries = InputOutputCollections.ReadDictionary<Output>(x.ValueGetter(activity));
+
+                    if (entries == null)
+                    {
+                        return null!;
+                    }
+
                     var expanded = new Dictionary<string, object?>();
 
-                    foreach (DictionaryEntry entry in dictionary)
+                    foreach (var (key, output) in entries)
                     {
-                        var key = entry.Key.ToString()!;
-                        object? value = null;
-
-                        if (entry.Value is Output output && context.TryGet(output.MemoryBlockReference(), out var outputValue))
-                            value = outputValue;
-
-                        expanded[key] = value;
+                        expanded[key] = ReadOutputValue(context, DictionaryEntryNames.GetOutputName(x.Name, key), output);
                     }
 
                     return expanded;
                 }
 
-                var cachedValue = activity.GetOutput(expressionExecutionContext, x.Name);
-
-                if (cachedValue != null)
-                    return cachedValue;
-
-                if (x.ValueGetter(activity) is Output singleOutput && context.TryGet(singleOutput.MemoryBlockReference(), out var singleOutputValue))
-                    return singleOutputValue!;
-
-                return null!;
+                return ReadOutputValue(context, x.Name, x.ValueGetter(activity) as Output)!;
             });
 
             return outputs;
         }
+    }
+
+    private static object? ReadOutputValue(ActivityExecutionContext context, string outputName, Output? output)
+    {
+        var cachedValue = context.Activity.GetOutput(context.ExpressionExecutionContext, outputName);
+
+        if (cachedValue != null)
+        {
+            return cachedValue;
+        }
+
+        if (output != null && context.TryGet(output.MemoryBlockReference(), out var outputValue))
+        {
+            return outputValue;
+        }
+
+        return null;
     }
 }
