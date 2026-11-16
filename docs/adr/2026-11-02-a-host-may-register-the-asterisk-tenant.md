@@ -21,7 +21,7 @@ Code that restarts tenant-agnostic work outside a request does not know about su
 - `"*"` keeps its meaning from 0009: on an entity, it means every tenant. Elsa never creates a tenant with ID `"*"`, and its own resolvers never resolve one.
 - A host may register a tenant with ID `"*"`. Entities saved in that tenant's context are tenant-agnostic. Tenant validation must not reject this ID.
 - When Elsa restarts tenant-agnostic work outside a request, starting with interrupted-workflow recovery, it uses the registered `"*"` tenant. Without one, it uses the default tenant, as before.
-- Code that runs outside a request and writes tenant-owned rows picks its ambient tenant this way: the registered `"*"` tenant for a `"*"` instance, otherwise the default tenant. `TenantKey.From` maps `"*"` to `""` and is only for identity and de-duplication, never for choosing the ambient tenant.
+- Code that runs outside a request and writes tenant-owned rows picks its ambient tenant this way: an instance of a named tenant runs under that tenant (and is skipped with a warning if the tenant is not found); a `"*"` instance runs under the registered `"*"` tenant, or the default tenant if there is none; an instance with an empty or null tenant ID runs under the default tenant. `TenantKey.From` maps `"*"` to `""` and is only for identity and de-duplication, never for choosing the ambient tenant.
 - A registered `"*"` tenant belongs to the shared store. A host must not give it a database of its own (a connection string in its configuration).
 
 ## Consequences
