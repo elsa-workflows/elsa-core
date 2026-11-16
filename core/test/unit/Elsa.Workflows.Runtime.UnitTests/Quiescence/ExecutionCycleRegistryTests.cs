@@ -58,9 +58,15 @@ public class ExecutionCycleRegistryTests
     {
         var sut = new ExecutionCycleRegistry(_sources, _clock, new DefaultTenantAccessor());
         var listedWhileConfiguring = new List<ExecutionCycleHandle>();
+        ExecutionCycleHandle? configured = null;
 
-        using var handle = sut.BeginCycle("instance-1", ingressSourceName: null, CancellationToken.None, cancelCallback: null, configure: _ => listedWhileConfiguring.AddRange(sut.ListActiveCycles()));
+        using var handle = sut.BeginCycle("instance-1", ingressSourceName: null, CancellationToken.None, cancelCallback: null, configure: h =>
+        {
+            configured = h;
+            listedWhileConfiguring.AddRange(sut.ListActiveCycles());
+        });
 
+        Assert.Same(handle, configured);
         Assert.Empty(listedWhileConfiguring);
         Assert.Contains(handle, sut.ListActiveCycles());
     }
