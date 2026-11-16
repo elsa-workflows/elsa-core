@@ -175,7 +175,7 @@ public class HostStopInterruptTests(ITestOutputHelper testOutputHelper) : IAsync
 
         _gate.Continue.TrySetResult();
         try { await run.WaitAsync(TimeSpan.FromSeconds(5)); }
-        catch (Exception ex) when (!ex.IsFatal()) { /* the cut-off runner may surface an exception */ }
+        catch (Exception ex) when (!ex.IsFatal() && ex is not TimeoutException) { /* the cut-off runner may surface an exception */ }
 
         var instance = await FindAsync(instanceId);
         Assert.NotNull(instance);

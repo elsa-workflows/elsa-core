@@ -1,6 +1,7 @@
 using Elsa.Workflows.Management.Options;
 using Elsa.Workflows.Pipelines.WorkflowExecution;
 using Elsa.Workflows.Runtime.Options;
+using Elsa.Workflows.Runtime.Services;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.Workflows.Runtime.Middleware.Workflows;
@@ -35,11 +36,16 @@ public class ExecutionCycleTrackingMiddleware(WorkflowMiddlewareDelegate next, I
             var ingressSourceName = context.TransientProperties.TryGetValue(IngressSourceNameKey, out var raw) ? raw as string : null;
             // Keep the existing cancellation bridge. Cancellation requests do not release ownership;
             // drain still waits for the owner to unwind before writing Interrupted.
+            Action<ExecutionCycleHandle>? captureRestartPoint = context.GetService<IOptions<GracefulShutdownOptions>>()?.Value.InterruptOnHostStop == true
+                ? handle => CaptureRestartPoint(handle, context)
+                : null;
+
+            // The default registry captures the restart point before the handle becomes visible to a drain.
+            if (cycleRegistry is ExecutionCycleRegistry registry)
+                return registry.BeginCycle(context.Id, ingressSourceName, context.CancellationToken, context.Cancel, captureRestartPoint);
+
             var handle = cycleRegistry.BeginCycle(context.Id, ingressSourceName, context.CancellationToken, cancelCallback: context.Cancel);
-
-            if (context.GetService<IOptions<GracefulShutdownOptions>>()?.Value.InterruptOnHostStop == true)
-                CaptureRestartPoint(handle, context);
-
+            captureRestartPoint?.Invoke(handle);
             return handle;
         });
         await Next(context);

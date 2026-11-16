@@ -22,8 +22,9 @@ Shell deactivation and operator force keep cancelling.
 
 ## What to do
 
-- Set `InterruptOnHostStop = true` in `ConfigureGracefulShutdown` (or under `Runtime:GracefulShutdown`) to opt in.
+- Set `InterruptOnHostStop = true` in `ConfigureGracefulShutdown`, or, on a host that uses shell features, in `WorkflowRuntimeFeature.GracefulShutdown`, to opt in.
 - Commits are dropped by `ExecutionCycleAwareCommitStateHandler`, the default `ICommitStateHandler` of the workflow runtime. A custom commit state handler that does not wrap it keeps committing after the interrupt.
 - Activities that ran after the last commit run again on recovery. This is the same at-least-once rule as for any other interrupted instance.
 - A resume that came from the bookmark queue is queued twice: once by the drain, and once by its own queue item, which is deleted only after the resume returns. When the bookmark is burned on resume (the default), the second item finds no bookmark and is purged later. A bookmark that is not burned is resumed twice.
-- Only commits are dropped. If the cut-off runner finishes before the process ends, the notifications it publishes outside a commit still go out; for example, `WorkflowExecuted` of a finished child resumes a parent that waits in `DispatchWorkflow`.
+- Only commits are dropped. If the cut-off runner finishes before the process ends, the notifications it publishes outside a commit still go out; for example, `WorkflowExecuted` of a finished child resumes a parent that waits in `DispatchWorkflow`. That resume uses the child's output in memory, but the child's own commit is dropped. The parent can then commit a result that the child's stored state does not record, and the recovered child runs again from its last checkpoint and can produce a different result. Consider this for workflows that use `DispatchWorkflow` with `WaitForCompletion`.
+- A commit that had already started when the drain interrupted the cycle is not dropped and can land after the drain's write. It stores the runner's newer checkpoint, which the recurring `RestartInterruptedWorkflowsTask` restarts once it is older than the inactivity threshold, or the finished workflow.

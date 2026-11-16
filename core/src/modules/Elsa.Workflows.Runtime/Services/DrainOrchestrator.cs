@@ -563,7 +563,8 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
 
         using var budget = new CancellationTokenSource(InterruptPersistBudget);
 
-        foreach (var handle in interrupted.DistinctBy(handle => handle.WorkflowInstanceId))
+        // Keyed by tenant too: tenants with their own database can hold the same instance id.
+        foreach (var handle in interrupted.DistinctBy(handle => (handle.Tenant?.Id, handle.WorkflowInstanceId)))
         {
             try
             {

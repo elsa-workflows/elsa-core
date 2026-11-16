@@ -89,6 +89,25 @@ public class DrainOrchestratorHostStopTests : DrainOrchestratorTestsBase
         Assert.Equal(TenantA.Id, addedUnder);
     }
 
+    [Fact(DisplayName = "Cycles of two tenants with the same instance id are each persisted under their tenant")]
+    public async Task SameInstanceIdInTwoTenantsIsPersistedForEach()
+    {
+        var tenantB = new Tenant { Id = "tenant-b", Name = "tenant-b" };
+        ExecutionCycleRegistry.ListActiveCycles().Returns(new[] { NewHandle("order-42", TenantA), NewHandle("order-42", tenantB) });
+        var checkpoint = Instance("order-42", new() { SubStatus = WorkflowSubStatus.Executing, ActivityExecutionContexts = { new() { IsExecuting = true } } });
+        InstanceStore.FindAsync(Arg.Is<WorkflowInstanceFilter>(f => f.Id == "order-42"), Arg.Any<CancellationToken>()).Returns(new ValueTask<WorkflowInstance?>(checkpoint));
+        var markedUnder = new List<string?>();
+        InstanceStore.TryMarkInterruptedAsync("order-42", Arg.Any<CancellationToken>(), Arg.Any<bool>()).Returns(_ =>
+        {
+            markedUnder.Add(TenantAccessor.Tenant?.Id);
+            return new ValueTask<bool>(true);
+        });
+
+        await BuildSut().DrainAsync(DrainTrigger.HostStopSignal);
+
+        Assert.Equal([TenantA.Id, tenantB.Id], markedUnder);
+    }
+
     [Theory(DisplayName = "Operator force, and a host stop without InterruptOnHostStop, still cancel")]
     [InlineData(DrainTrigger.OperatorForce, true)]
     [InlineData(DrainTrigger.HostStopSignal, false)]
@@ -120,13 +139,16 @@ public class DrainOrchestratorHostStopTests : DrainOrchestratorTestsBase
 
     private ExecutionCycleHandle Handle(string instanceId)
     {
-        var handle = new ExecutionCycleHandle(Guid.NewGuid(), instanceId, ingressSourceName: null, startedAt: DateTimeOffset.UtcNow, linkedToken: CancellationToken.None, cancelCallback: () => _cancelCallbackInvoked = true)
-        {
-            Tenant = TenantA
-        };
+        var handle = NewHandle(instanceId, TenantA);
         ExecutionCycleRegistry.ListActiveCycles().Returns(new[] { handle });
         return handle;
     }
+
+    private ExecutionCycleHandle NewHandle(string instanceId, Tenant tenant) =>
+        new(Guid.NewGuid(), instanceId, ingressSourceName: null, startedAt: DateTimeOffset.UtcNow, linkedToken: CancellationToken.None, cancelCallback: () => _cancelCallbackInvoked = true)
+        {
+            Tenant = tenant
+        };
 
     // Visible only under the cycle's tenant, as the tenant query filter does.
     private void StubInstance(WorkflowInstance instance) =>

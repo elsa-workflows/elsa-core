@@ -53,6 +53,18 @@ public class ExecutionCycleRegistryTests
         }
     }
 
+    [Fact(DisplayName = "Begin configures the handle before a drain can see it")]
+    public void BeginConfiguresBeforeRegistering()
+    {
+        var sut = new ExecutionCycleRegistry(_sources, _clock, new DefaultTenantAccessor());
+        var listedWhileConfiguring = new List<ExecutionCycleHandle>();
+
+        using var handle = sut.BeginCycle("instance-1", ingressSourceName: null, CancellationToken.None, cancelCallback: null, configure: _ => listedWhileConfiguring.AddRange(sut.ListActiveCycles()));
+
+        Assert.Empty(listedWhileConfiguring);
+        Assert.Contains(handle, sut.ListActiveCycles());
+    }
+
     [Fact(DisplayName = "The obsolete constructor records no tenant")]
     public void ObsoleteConstructorRecordsNoTenant()
     {
