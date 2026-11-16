@@ -70,7 +70,7 @@ This is local simulation evidence, not a live recovery or Feedz publication resu
 
 ## Artifact-only executor
 
-[Task #8649](https://github.com/elsa-workflows/elsa-core/issues/8649) adds an executor for this exact candidate. Its default operation verifies and rehearses; publication is blocked while the reviewed operational policy is unset. The [executor workflow](../../.github/workflows/publish-consolidated-original-candidate.yml) reuses the recovery workflow's fixed retrieval and verification jobs. It never builds or packs candidate projects. The only compiled project is the symbol inspection helper.
+[Task #8649](https://github.com/elsa-workflows/elsa-core/issues/8649) adds an executor for this exact candidate. Its default operation verifies and rehearses; publication is blocked while the reviewed operational policy is unset. The executor workflow (`publish-consolidated-original-candidate.yml`, since removed in favor of the candidate-promotion mode of `packages.yml`) reused the recovery workflow's fixed retrieval and verification jobs. It never builds or packs candidate projects. The only compiled project is the symbol inspection helper.
 
 From the reviewed executor checkout, compile the helper and use new destinations for each invocation:
 

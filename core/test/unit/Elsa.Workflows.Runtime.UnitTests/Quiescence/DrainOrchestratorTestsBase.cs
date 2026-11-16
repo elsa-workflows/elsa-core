@@ -1,4 +1,5 @@
 using Elsa.Common;
+using Elsa.Common.Multitenancy;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Services;
@@ -21,6 +22,7 @@ public abstract class DrainOrchestratorTestsBase
     protected readonly IExecutionCycleRegistry ExecutionCycleRegistry = Substitute.For<IExecutionCycleRegistry>();
     protected readonly IWorkflowInstanceStore InstanceStore = Substitute.For<IWorkflowInstanceStore>();
     protected readonly IWorkflowExecutionLogStore LogStore = Substitute.For<IWorkflowExecutionLogStore>();
+    protected readonly DefaultTenantAccessor TenantAccessor = new();
     protected readonly GracefulShutdownOptions Options = new();
     protected readonly HostOptions HostOptionsValue = new() { ShutdownTimeout = TimeSpan.FromSeconds(60) };
     private DateTimeOffset _now = DateTimeOffset.Parse("2026-04-25T10:00:00Z");
@@ -42,7 +44,12 @@ public abstract class DrainOrchestratorTestsBase
 
     protected void SetTime(DateTimeOffset value) => _now = value;
 
-    protected DrainOrchestrator BuildSut()
+    protected DrainOrchestrator BuildSut() => BuildSut(withTenantScopeFactory: true);
+
+    /// <summary>
+    /// Builds the orchestrator. Without a tenant scope factory, it is built through the obsolete constructor.
+    /// </summary>
+    protected DrainOrchestrator BuildSut(bool withTenantScopeFactory)
     {
         var scopeFactory = Substitute.For<IServiceScopeFactory>();
         var scope = Substitute.For<IServiceScope>();
@@ -55,16 +62,15 @@ public abstract class DrainOrchestratorTestsBase
         var identityGenerator = Substitute.For<IIdentityGenerator>();
         identityGenerator.GenerateId().Returns(_ => Guid.NewGuid().ToString("N"));
 
-        return new DrainOrchestrator(
-            Signal,
-            Registry,
-            ExecutionCycleRegistry,
-            scopeFactory,
-            Microsoft.Extensions.Options.Options.Create(Options),
-            Microsoft.Extensions.Options.Options.Create(HostOptionsValue),
-            Clock,
-            identityGenerator,
-            Substitute.For<ILogger<DrainOrchestrator>>());
+        var options = Microsoft.Extensions.Options.Options.Create(Options);
+        var hostOptions = Microsoft.Extensions.Options.Options.Create(HostOptionsValue);
+        var logger = Substitute.For<ILogger<DrainOrchestrator>>();
+
+        if (!withTenantScopeFactory)
+            return new DrainOrchestrator(Signal, Registry, ExecutionCycleRegistry, scopeFactory, options, hostOptions, Clock, identityGenerator, logger);
+
+        var tenantScopeFactory = new DefaultTenantScopeFactory(TenantAccessor, scopeFactory);
+        return new DrainOrchestrator(Signal, Registry, ExecutionCycleRegistry, scopeFactory, options, hostOptions, Clock, identityGenerator, logger, tenantScopeFactory);
     }
 
     protected static IIngressSource CreateSource(string name, TimeSpan? pauseTimeout = null, Func<CancellationToken, ValueTask>? pauseImpl = null)

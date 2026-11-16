@@ -13,10 +13,27 @@ namespace Elsa.Workflows.Management.Services
         private readonly IActivitySerializer _serializer;
         private readonly IWorkflowDefinitionPublisher _workflowDefinitionPublisher;
         private readonly VariableDefinitionMapper _variableDefinitionMapper;
+        private readonly IWorkflowDefinitionStore? _workflowDefinitionStore;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="WorkflowDefinitionImporter"/> class.
         /// </summary>
+        public WorkflowDefinitionImporter(
+            IActivitySerializer serializer,
+            IWorkflowDefinitionPublisher workflowDefinitionPublisher,
+            VariableDefinitionMapper variableDefinitionMapper,
+            IWorkflowDefinitionStore workflowDefinitionStore)
+        {
+            _serializer = serializer;
+            _workflowDefinitionPublisher = workflowDefinitionPublisher;
+            _variableDefinitionMapper = variableDefinitionMapper;
+            _workflowDefinitionStore = workflowDefinitionStore;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="WorkflowDefinitionImporter"/> class.
+        /// </summary>
+        [Obsolete("Use the constructor that accepts an IWorkflowDefinitionStore. This overload keeps the imported version id even when another tenant already uses it.")]
         public WorkflowDefinitionImporter(
             IActivitySerializer serializer,
             IWorkflowDefinitionPublisher workflowDefinitionPublisher,
@@ -49,7 +66,9 @@ namespace Elsa.Workflows.Management.Services
                     draft.DefinitionId = definitionId;
                 
                 if (!string.IsNullOrWhiteSpace(model.Id))
-                    draft.Id = model.Id;
+                    draft.Id = _workflowDefinitionStore != null
+                        ? await _workflowDefinitionStore.ResolveVersionIdAsync(model.Id, draft.Id, cancellationToken)
+                        : model.Id;
             }
 
             // Update the draft with the received model.

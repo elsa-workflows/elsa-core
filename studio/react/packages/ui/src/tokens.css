@@ -615,10 +615,6 @@
     opacity: 0;
   }
 }
-.react-flow__attribution {
-  display: none;
-}
-
 /* Scrollbars: slim and themed */
 *::-webkit-scrollbar {
   width: 10px;

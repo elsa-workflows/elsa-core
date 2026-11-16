@@ -25,6 +25,7 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
     private readonly ISystemClock _systemClock;
     private readonly IIdentityGraphService _identityGraphService;
     private readonly ITenantAccessor _tenantAccessor;
+    private readonly IIdentityGenerator _identityGenerator;
     private readonly IClrWorkflowDefinitionTenantRestamper? _clrTenantRestamper;
     private readonly TenantAgnosticWorkflowsCache? _tenantAgnosticWorkflowsCache;
     private readonly ILogger<DefaultWorkflowDefinitionStorePopulator> _logger;
@@ -45,7 +46,8 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         ITenantAccessor tenantAccessor,
         TenantAgnosticWorkflowsCache tenantAgnosticWorkflowsCache,
         ILogger<DefaultWorkflowDefinitionStorePopulator> logger,
-        IClrWorkflowDefinitionTenantRestamper? clrTenantRestamper)
+        IClrWorkflowDefinitionTenantRestamper? clrTenantRestamper,
+        IIdentityGenerator? identityGenerator = null)
     {
         _workflowDefinitionProviders = workflowDefinitionProviders;
         _triggerIndexer = triggerIndexer;
@@ -58,6 +60,7 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         _tenantAgnosticWorkflowsCache = tenantAgnosticWorkflowsCache;
         _logger = logger;
         _clrTenantRestamper = clrTenantRestamper;
+        _identityGenerator = identityGenerator ?? new ShortGuidIdentityGenerator();
     }
 
     /// <summary>
@@ -113,6 +116,7 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         _tenantAccessor = tenantAccessor;
         _logger = logger;
         _clrTenantRestamper = clrTenantRestamper;
+        _identityGenerator = new ShortGuidIdentityGenerator();
     }
 
     /// <summary>
@@ -132,7 +136,8 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
             serviceProvider.GetRequiredService<ITenantAccessor>(),
             serviceProvider.GetRequiredService<TenantAgnosticWorkflowsCache>(),
             serviceProvider.GetRequiredService<ILogger<DefaultWorkflowDefinitionStorePopulator>>(),
-            serviceProvider.GetService<IClrWorkflowDefinitionTenantRestamper>());
+            serviceProvider.GetService<IClrWorkflowDefinitionTenantRestamper>(),
+            serviceProvider.GetRequiredService<IIdentityGenerator>());
     }
 
     /// <inheritdoc />
@@ -487,7 +492,13 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
                 // It's possible that the imported workflow definition has a different ID than the existing one in the store.
                 // In a future update, we might store this discrepancy in a "troubleshooting" table and provide tooling for managing these, and other, discrepancies.
                 // See https://github.com/elsa-workflows/elsa-core/issues/5540
-                _logger.LogWarning("Workflow with ID {WorkflowId} already exists with a different ID {ExistingWorkflowId}", workflow.Identity.Id, existingDefinitionVersion.Id);
+                // Another tenant holding the provider's id is the intended state for a provider workflow shared by several tenants.
+                var idUsedByOtherTenant = await _workflowDefinitionStore.AnyAsync(new WorkflowDefinitionFilter { Id = workflow.Identity.Id, TenantAgnostic = true }, cancellationToken);
+
+                if (idUsedByOtherTenant)
+                    _logger.LogDebug("Workflow with ID {WorkflowId} already exists with a different ID {ExistingWorkflowId}", workflow.Identity.Id, existingDefinitionVersion.Id);
+                else
+                    _logger.LogWarning("Workflow with ID {WorkflowId} already exists with a different ID {ExistingWorkflowId}", workflow.Identity.Id, existingDefinitionVersion.Id);
             }
         }
 
@@ -530,6 +541,12 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         {
             _logger.LogInformation("Workflow with ID {WorkflowId} already exists", workflowDefinition.Id);
             return workflowDefinition;
+        }
+
+        if (existingDefinitionVersion is null && workflow.Identity.TenantId.NormalizeTenantId() != Tenant.AgnosticTenantId)
+        {
+            // A tenant-specific provider can serve the same workflow to several tenants of a shared store, but the version id is a primary key.
+            workflowDefinition.Id = await _workflowDefinitionStore.ResolveVersionIdAsync(workflowDefinition.Id, _identityGenerator.GenerateId(), cancellationToken);
         }
 
         workflowDefinitionsToSave.Add(workflowDefinition);

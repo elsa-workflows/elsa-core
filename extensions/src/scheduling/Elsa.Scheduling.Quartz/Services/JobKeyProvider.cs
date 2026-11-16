@@ -13,7 +13,7 @@ public class JobKeyProvider(ITenantAccessor tenantAccessor) : IJobKeyProvider
 
     public string GetGroupName()
     {
-        var tenantId = tenantAccessor.Tenant?.Id;
+        var tenantId = tenantAccessor.TenantId;
         return string.IsNullOrWhiteSpace(tenantId) ? "Default" : tenantId;
     }
 }

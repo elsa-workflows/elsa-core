@@ -5,7 +5,6 @@ using Elsa.Expressions.JavaScript.Helpers;
 using Elsa.Expressions.JavaScript.Options;
 using Elsa.Expressions.JavaScript.TypeDefinitions.Abstractions;
 using Elsa.Expressions.JavaScript.TypeDefinitions.Models;
-using Humanizer;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Options;
 
@@ -151,9 +150,8 @@ internal class CommonFunctionsDefinitionProvider(ITypeAliasRegistry typeAliasReg
         if (!options.Value.DisableWrappers)
         {
             // Variable getter and setters.
-            foreach (var variable in context.WorkflowGraph.Workflow.Variables.Where(x => VariableNameValidator.HasVariableAccessors(x.Name)))
+            foreach (var (pascalName, variable) in VariableAccessorNames.Resolve(context.WorkflowGraph.Workflow.Variables, x => x.Name))
             {
-                var pascalName = variable.Name.Pascalize();
                 var variableType = variable.GetVariableType();
                 var typeAlias = typeAliasRegistry.TryGetAlias(variableType, out var alias) ? alias : "any";
 

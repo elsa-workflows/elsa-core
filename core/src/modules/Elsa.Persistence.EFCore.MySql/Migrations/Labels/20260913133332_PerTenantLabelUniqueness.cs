@@ -26,37 +26,10 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Labels
                 WHERE `TenantId` IS NULL;
                 """);
 
-            // No silent dedupe. List leftover keys and abort; operators must resolve them before upgrading.
-            // SIGNAL MESSAGE_TEXT is limited to 128 characters, so the listed keys are truncated.
-            migrationBuilder.Sql("""
-                SET @duplicate_keys := (
-                    SELECT GROUP_CONCAT(CONCAT('(', IFNULL(`TenantId`, '<null>'), ', ', `NormalizedName`, ')') SEPARATOR '; ')
-                    FROM (
-                        SELECT `TenantId`, `NormalizedName`
-                        FROM `Labels`
-                        GROUP BY `TenantId`, `NormalizedName`
-                        HAVING COUNT(*) > 1
-                    ) AS Duplicates
-                );
-
-                SET @sql := IF(
-                    @duplicate_keys IS NOT NULL,
-                    CONCAT(
-                        'SIGNAL SQLSTATE ''45000'' SET MESSAGE_TEXT = ''',
-                        LEFT(REPLACE(CONCAT(
-                            'Duplicate keys. Resolve before upgrade: ',
-                            @duplicate_keys
-                        ), '''', ''), 128),
-                        ''''
-                    ),
-                    'SELECT 1'
-                );
-                PREPARE stmt FROM @sql;
-                EXECUTE stmt;
-                DEALLOCATE PREPARE stmt;
-                """);
-
             // Name/NormalizedName are not truncated; list over-length Ids and abort before ALTER.
+            // MySQL 8 rejects SIGNAL through PREPARE (ERROR 1295), and the migration user
+            // has no ROUTINE privilege. GTID_SUBSET is a built-in that raises ERROR 1772
+            // with the supplied text, preserving the diagnostic without extra privileges.
             migrationBuilder.Sql("""
                 SET @over_length_ids := (
                     SELECT GROUP_CONCAT(`Id` SEPARATOR ', ')
@@ -64,21 +37,17 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Labels
                     WHERE CHAR_LENGTH(`Name`) > 255 OR CHAR_LENGTH(`NormalizedName`) > 255
                 );
 
-                SET @sql := IF(
-                    @over_length_ids IS NOT NULL,
-                    CONCAT(
-                        'SIGNAL SQLSTATE ''45000'' SET MESSAGE_TEXT = ''',
+                SELECT IF(
+                    @over_length_ids IS NULL,
+                    1,
+                    GTID_SUBSET(
                         LEFT(REPLACE(CONCAT(
                             'Over-length Name/NormalizedName. Shorten before upgrade. Ids: ',
                             @over_length_ids
                         ), '''', ''), 128),
-                        ''''
-                    ),
-                    'SELECT 1'
+                        ''
+                    )
                 );
-                PREPARE stmt FROM @sql;
-                EXECUTE stmt;
-                DEALLOCATE PREPARE stmt;
                 """);
 
             migrationBuilder.AlterColumn<string>(

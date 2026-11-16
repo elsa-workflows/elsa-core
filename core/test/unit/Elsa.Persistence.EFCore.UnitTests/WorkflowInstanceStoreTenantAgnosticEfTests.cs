@@ -102,4 +102,170 @@ public class WorkflowInstanceStoreTenantAgnosticEfTests
             File.Delete(databasePath);
         }
     }
+
+    [Fact(DisplayName = "Without tenant context reads include default, null and agnostic rows but exclude named tenants")]
+    public async Task ReadsWithoutTenantContext_IncludeDefaultNullAndAgnostic()
+    {
+        var databasePath = Path.Join(Path.GetTempPath(), $"elsa-no-context-read-{Guid.NewGuid():N}.db");
+        var tenantAccessor = new DefaultTenantAccessor();
+        var services = BuildServices(databasePath, tenantAccessor);
+
+        try
+        {
+            await using (var dbContext = await services.GetRequiredService<IDbContextFactory<ManagementElsaDbContext>>().CreateDbContextAsync())
+            {
+                await dbContext.Database.EnsureCreatedAsync();
+
+                // Explicit TenantId values are preserved when no tenant context exists.
+                foreach (var (id, tenantId) in new[]
+                {
+                    ("default-row", (string?)Tenant.DefaultTenantId),
+                    ("null-row", (string?)null),
+                    ("star-row", Tenant.AgnosticTenantId),
+                    ("t1-row", "t1")
+                })
+                {
+                    dbContext.WorkflowInstances.Add(new()
+                    {
+                        Id = id,
+                        DefinitionId = "def",
+                        DefinitionVersionId = "def-v1",
+                        Version = 1,
+                        TenantId = tenantId,
+                        CreatedAt = DateTimeOffset.UnixEpoch,
+                        UpdatedAt = DateTimeOffset.UnixEpoch
+                    });
+                }
+
+                await dbContext.SaveChangesAsync();
+            }
+
+            await using (var readContext = await services.GetRequiredService<IDbContextFactory<ManagementElsaDbContext>>().CreateDbContextAsync())
+            {
+                Assert.Equal(Tenant.DefaultTenantId, readContext.TenantId);
+                Assert.False(readContext.HasTenantContext);
+
+                var ids = await readContext.WorkflowInstances
+                    .Select(x => x.Id)
+                    .OrderBy(x => x)
+                    .ToListAsync();
+
+                Assert.Equal(new[] { "default-row", "null-row", "star-row" }, ids);
+            }
+        }
+        finally
+        {
+            await services.DisposeAsync();
+            SqliteConnection.ClearAllPools();
+            File.Delete(databasePath);
+        }
+    }
+
+    [Fact(DisplayName = "Without tenant context writes stamp missing TenantId with the default tenant and keep explicit ids")]
+    public async Task WritesWithoutTenantContext_StampDefaultAndKeepExplicit()
+    {
+        var databasePath = Path.Join(Path.GetTempPath(), $"elsa-no-context-write-{Guid.NewGuid():N}.db");
+        var tenantAccessor = new DefaultTenantAccessor();
+        var services = BuildServices(databasePath, tenantAccessor);
+
+        try
+        {
+            await using (var dbContext = await services.GetRequiredService<IDbContextFactory<ManagementElsaDbContext>>().CreateDbContextAsync())
+            {
+                await dbContext.Database.EnsureCreatedAsync();
+
+                dbContext.WorkflowInstances.Add(new()
+                {
+                    Id = "unassigned-row",
+                    DefinitionId = "def",
+                    DefinitionVersionId = "def-v1",
+                    Version = 1,
+                    CreatedAt = DateTimeOffset.UnixEpoch,
+                    UpdatedAt = DateTimeOffset.UnixEpoch
+                });
+
+                dbContext.WorkflowInstances.Add(new()
+                {
+                    Id = "explicit-row",
+                    DefinitionId = "def",
+                    DefinitionVersionId = "def-v1",
+                    Version = 1,
+                    TenantId = "t1",
+                    CreatedAt = DateTimeOffset.UnixEpoch,
+                    UpdatedAt = DateTimeOffset.UnixEpoch
+                });
+
+                await dbContext.SaveChangesAsync();
+            }
+
+            await using (var verifyContext = await services.GetRequiredService<IDbContextFactory<ManagementElsaDbContext>>().CreateDbContextAsync())
+            {
+                var unassigned = await verifyContext.WorkflowInstances.IgnoreQueryFilters().SingleAsync(x => x.Id == "unassigned-row");
+                var explicitRow = await verifyContext.WorkflowInstances.IgnoreQueryFilters().SingleAsync(x => x.Id == "explicit-row");
+
+                Assert.Equal(Tenant.DefaultTenantId, unassigned.TenantId);
+                Assert.Equal("t1", explicitRow.TenantId);
+            }
+        }
+        finally
+        {
+            await services.DisposeAsync();
+            SqliteConnection.ClearAllPools();
+            File.Delete(databasePath);
+        }
+    }
+
+    [Fact(DisplayName = "With a tenant context an explicit foreign tenant id is rejected")]
+    public async Task WritesWithTenantContext_RejectExplicitForeignTenant()
+    {
+        var databasePath = Path.Join(Path.GetTempPath(), $"elsa-context-write-{Guid.NewGuid():N}.db");
+        var tenantAccessor = new DefaultTenantAccessor();
+        var services = BuildServices(databasePath, tenantAccessor);
+
+        try
+        {
+            await using (var dbContext = await services.GetRequiredService<IDbContextFactory<ManagementElsaDbContext>>().CreateDbContextAsync())
+            {
+                await dbContext.Database.EnsureCreatedAsync();
+            }
+
+            using (tenantAccessor.PushContext(new Tenant { Id = "t1", Name = "t1" }))
+            {
+                await using var dbContext = await services.GetRequiredService<IDbContextFactory<ManagementElsaDbContext>>().CreateDbContextAsync();
+
+                dbContext.WorkflowInstances.Add(new()
+                {
+                    Id = "foreign-row",
+                    DefinitionId = "def",
+                    DefinitionVersionId = "def-v1",
+                    Version = 1,
+                    TenantId = "t2",
+                    CreatedAt = DateTimeOffset.UnixEpoch,
+                    UpdatedAt = DateTimeOffset.UnixEpoch
+                });
+
+                var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => dbContext.SaveChangesAsync());
+                Assert.Contains("t2", exception.Message);
+            }
+        }
+        finally
+        {
+            await services.DisposeAsync();
+            SqliteConnection.ClearAllPools();
+            File.Delete(databasePath);
+        }
+    }
+
+    private static ServiceProvider BuildServices(string databasePath, DefaultTenantAccessor tenantAccessor) =>
+        new ServiceCollection()
+            .AddLogging()
+            .AddSingleton<ITenantAccessor>(tenantAccessor)
+            .Configure<TenantsOptions>(options => options.IsEnabled = true)
+            .AddScoped<IEntitySavingHandler, ApplyTenantId>()
+            .AddScoped<IEntityModelCreatingHandler, SetTenantIdFilter>()
+            .AddSqliteEntityModelCreatingHandlers()
+            .AddDbContextFactory<ManagementElsaDbContext>((_, builder) =>
+                builder.UseElsaSqlite(typeof(RuntimeDbContextFactory).Assembly, $"Data Source={databasePath};Default Timeout=30"))
+            .Decorate<IDbContextFactory<ManagementElsaDbContext>, TenantAwareDbContextFactory<ManagementElsaDbContext>>()
+            .BuildServiceProvider();
 }

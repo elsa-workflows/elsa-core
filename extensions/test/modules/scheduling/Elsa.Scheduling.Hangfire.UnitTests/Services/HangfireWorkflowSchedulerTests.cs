@@ -215,6 +215,96 @@ public class HangfireWorkflowSchedulerTests
         Assert.Equal(secondStartAt.UtcDateTime, scheduled.EnqueueAt, TimeSpan.FromSeconds(1));
     }
 
+    [Fact]
+    public async Task ScheduleCronAsync_DefaultTenant_PersistsEmptyTenantId()
+    {
+        // The scheduler must persist the normalized TenantId ("") so the job runs in the default tenant context.
+        var (sut, storage) = CreateScheduler(Tenant.DefaultTenantId);
+
+        await sut.ScheduleCronAsync("task-1", CreateNewInstanceRequest(), "* * * * *");
+
+        var recurring = Assert.Single(GetRecurringJobs(storage), job => job.Id == "task-1");
+        Assert.Equal(typeof(RunWorkflowJob), recurring.Job.Type);
+        Assert.Equal(Tenant.DefaultTenantId, (string)recurring.Job.Args[2]!);
+    }
+
+    [Fact]
+    public async Task ScheduleCronAsync_NamedTenant_PersistsTenantId()
+    {
+        var (sut, storage) = CreateScheduler("tenant-a");
+
+        await sut.ScheduleCronAsync("task-1", CreateNewInstanceRequest(), "* * * * *");
+
+        var recurring = Assert.Single(GetRecurringJobs(storage), job => job.Id == "task-1");
+        Assert.Equal("tenant-a", (string)recurring.Job.Args[2]!);
+    }
+
+    [Fact]
+    public async Task ScheduleAtAsync_DefaultTenant_PersistsEmptyTenantId()
+    {
+        var (sut, storage) = CreateScheduler(Tenant.DefaultTenantId);
+
+        await sut.ScheduleAtAsync("task-1", CreateNewInstanceRequest(), DateTimeOffset.UtcNow.AddHours(1));
+
+        var scheduled = Assert.Single(GetScheduledJobs(storage, "task-1"));
+        Assert.Equal(typeof(RunWorkflowJob), scheduled.Job.Type);
+        Assert.Equal(Tenant.DefaultTenantId, (string)scheduled.Job.Args[2]!);
+    }
+
+    [Fact]
+    public async Task ScheduleAtAsync_NamedTenant_PersistsTenantId()
+    {
+        var (sut, storage) = CreateScheduler("tenant-a");
+
+        await sut.ScheduleAtAsync("task-1", CreateExistingInstanceRequest(), DateTimeOffset.UtcNow.AddHours(1));
+
+        var scheduled = Assert.Single(GetScheduledJobs(storage, "task-1"));
+        Assert.Equal("tenant-a", (string)scheduled.Job.Args[2]!);
+    }
+
+    [Fact]
+    public async Task UnscheduleAsync_RemovesLegacyJobPersistedWithNullTenantId()
+    {
+        // Jobs persisted before tenant normalization store a null tenantId; they must still be found and removed.
+        var (sut, storage) = CreateScheduler();
+        var request = CreateNewInstanceRequest();
+        new BackgroundJobClient(storage).Schedule<RunWorkflowJob>(job => job.ExecuteAsync("task-1", request, null, CancellationToken.None), DateTimeOffset.UtcNow.AddHours(1));
+        Assert.NotEmpty(GetScheduledJobIds(storage, "task-1"));
+
+        await sut.UnscheduleAsync("task-1");
+
+        Assert.Empty(GetScheduledJobIds(storage, "task-1"));
+    }
+
+    [Fact]
+    public async Task UnscheduleAsync_RemovesLegacyRecurringJobPersistedWithNullTenantId()
+    {
+        var (sut, storage) = CreateScheduler();
+        var request = CreateNewInstanceRequest();
+        new RecurringJobManager(storage).AddOrUpdate<RunWorkflowJob>("task-1", job => job.ExecuteAsync("task-1", request, null, CancellationToken.None), "* * * * *");
+        Assert.Contains(GetRecurringJobs(storage), job => job.Id == "task-1" && job.Job.Args[2] == null);
+
+        await sut.UnscheduleAsync("task-1");
+
+        Assert.DoesNotContain(GetRecurringJobs(storage), job => job.Id == "task-1");
+    }
+
+    [Fact]
+    public async Task ScheduleRecurringAsync_ReplacesLegacyCronJobPersistedWithNullTenantId()
+    {
+        // Rescheduling over a legacy job must clear it and persist the normalized tenant ID going forward.
+        var (sut, storage) = CreateScheduler(Tenant.DefaultTenantId);
+        var request = CreateNewInstanceRequest();
+        new RecurringJobManager(storage).AddOrUpdate<RunWorkflowJob>("task-1", job => job.ExecuteAsync("task-1", request, null, CancellationToken.None), "* * * * *");
+        Assert.Contains(GetRecurringJobs(storage), job => job.Id == "task-1" && job.Job.Args[2] == null);
+
+        await sut.ScheduleRecurringAsync("task-1", request, DateTimeOffset.UtcNow.AddHours(1), TimeSpan.FromHours(1));
+
+        Assert.DoesNotContain(GetRecurringJobs(storage), job => job.Id == "task-1");
+        var scheduled = Assert.Single(GetScheduledJobs(storage, "task-1"));
+        Assert.Equal(Tenant.DefaultTenantId, (string)scheduled.Job.Args[2]!);
+    }
+
     public static TheoryData<TimeSpan> CommonIntervals =>
     [
         TimeSpan.FromMinutes(30),
@@ -222,11 +312,12 @@ public class HangfireWorkflowSchedulerTests
         TimeSpan.FromHours(24)
     ];
 
-    private static (HangfireWorkflowScheduler Sut, JobStorage Storage) CreateScheduler()
+    private static (HangfireWorkflowScheduler Sut, JobStorage Storage) CreateScheduler(string? tenantId = null)
     {
         var storage = new MemoryStorage();
         var tenantAccessor = new Mock<ITenantAccessor>();
-        tenantAccessor.Setup(t => t.Tenant).Returns((Tenant?)null);
+        tenantAccessor.Setup(t => t.Tenant).Returns(tenantId == null ? null : string.IsNullOrEmpty(tenantId) ? Tenant.Default : new Tenant { Id = tenantId });
+        tenantAccessor.Setup(t => t.TenantId).Returns(tenantId ?? Tenant.DefaultTenantId);
 
         var sut = new HangfireWorkflowScheduler(
             new BackgroundJobClient(storage),

@@ -7,8 +7,9 @@ namespace Elsa.Persistence.EFCore.UnitTests;
 /// <summary>
 /// PerTenantLabelUniqueness must stamp null TenantId to "" and must not
 /// auto-delete duplicate labels (associations would be at risk). Providers that
-/// can abort from raw SQL list leftover keys first; SQLite cannot, so CreateIndex
-/// is the fail-loud path.
+/// can abort from raw SQL list leftover keys first; SQLite cannot abort from raw
+/// SQL, and MySQL's SIGNAL through PREPARE fails with ERROR 1295 (#9114), so
+/// CreateIndex is their fail-loud path.
 /// SQL Server/MySQL/Oracle also preflight over-length Name/NormalizedName
 /// before narrowing those columns. PostgreSQL/SQLite keep provider column types.
 /// </summary>
@@ -69,7 +70,6 @@ public class LabelPerTenantUniquenessMigrationTests
     [Theory]
     [InlineData("Elsa.Persistence.EFCore.SqlServer", "THROW")]
     [InlineData("Elsa.Persistence.EFCore.PostgreSql", "RAISE EXCEPTION")]
-    [InlineData("Elsa.Persistence.EFCore.MySql", "SIGNAL")]
     [InlineData("Elsa.Persistence.EFCore.Oracle", "RAISE_APPLICATION_ERROR")]
     public void PerTenantLabelUniqueness_PreflightsDuplicateKeys(string providerProject, string abortKeyword)
     {
@@ -79,6 +79,21 @@ public class LabelPerTenantUniquenessMigrationTests
         Assert.Contains("COUNT(*)", migration, StringComparison.Ordinal);
         Assert.Contains("Duplicate keys", migration, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("HAVING COUNT(*) > 1", migration, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void PerTenantLabelUniqueness_MySqlLetsUniqueIndexFailLoudly()
+    {
+        // SIGNAL via PREPARE fails with MySQL ERROR 1295 (#9114), so MySQL has no
+        // duplicate-key preflight: CreateIndex aborts with error 1062 when duplicates
+        // exist. The separate over-length preflight deliberately survives.
+        var migration = FindMigration("Elsa.Persistence.EFCore.MySql");
+
+        Assert.DoesNotContain("@duplicate_keys", migration, StringComparison.Ordinal);
+        Assert.DoesNotContain("Duplicate keys", migration, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("HAVING COUNT(*) > 1", migration, StringComparison.Ordinal);
+        Assert.Contains("CreateIndex", migration, StringComparison.Ordinal);
+        Assert.Contains("unique: true", migration, StringComparison.Ordinal);
     }
 
     [Theory]

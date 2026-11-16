@@ -640,6 +640,47 @@ public class QuartzWorkflowSchedulerTests
     }
 
     [Fact]
+    public async Task ScheduleCronAsync_DefaultTenant_OmitsTenantIdFromTriggerData()
+    {
+        // The default tenant (normalized "") must not be stamped into the trigger data map, matching legacy jobs.
+        const string tenantId = Tenant.DefaultTenantId;
+        var scheduler = new Mock<global::Quartz.IScheduler>();
+        scheduler.Setup(s => s.CheckExists(It.IsAny<JobKey>(), It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        ITrigger? capturedTrigger = null;
+        scheduler.Setup(s => s.ScheduleJob(It.IsAny<ITrigger>(), It.IsAny<CancellationToken>()))
+            .Callback<ITrigger, CancellationToken>((trigger, _) => capturedTrigger = trigger)
+            .ReturnsAsync(DateTimeOffset.UtcNow);
+
+        var sut = CreateScheduler(scheduler, out _, tenantId);
+
+        await sut.ScheduleCronAsync("task-1", CreateNewRequest(), "0 0/5 * * * ?");
+
+        Assert.NotNull(capturedTrigger);
+        Assert.Equal(new TriggerKey("task-1", "Default"), capturedTrigger!.Key);
+        Assert.False(capturedTrigger.JobDataMap.ContainsKey("TenantId"));
+    }
+
+    [Fact]
+    public async Task ScheduleCronAsync_NamedTenant_PersistsTenantIdInTriggerData()
+    {
+        const string tenantId = "tenant-a";
+        var scheduler = new Mock<global::Quartz.IScheduler>();
+        scheduler.Setup(s => s.CheckExists(It.IsAny<JobKey>(), It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        ITrigger? capturedTrigger = null;
+        scheduler.Setup(s => s.ScheduleJob(It.IsAny<ITrigger>(), It.IsAny<CancellationToken>()))
+            .Callback<ITrigger, CancellationToken>((trigger, _) => capturedTrigger = trigger)
+            .ReturnsAsync(DateTimeOffset.UtcNow);
+
+        var sut = CreateScheduler(scheduler, out _, tenantId);
+
+        await sut.ScheduleCronAsync("task-1", CreateNewRequest(), "0 0/5 * * * ?");
+
+        Assert.NotNull(capturedTrigger);
+        Assert.Equal(new TriggerKey("task-1", tenantId), capturedTrigger!.Key);
+        Assert.Equal(tenantId, (string)capturedTrigger.JobDataMap["TenantId"]);
+    }
+
+    [Fact]
     public async Task ScheduleAndUnscheduleAsync_UseTheOriginalScheduleCoordinator()
     {
         var scheduler = new Mock<global::Quartz.IScheduler>();
@@ -661,6 +702,7 @@ public class QuartzWorkflowSchedulerTests
 
         var tenantAccessor = new Mock<ITenantAccessor>();
         tenantAccessor.Setup(t => t.Tenant).Returns(tenantId == null ? null : new Tenant { Id = tenantId });
+        tenantAccessor.Setup(t => t.TenantId).Returns(tenantId ?? Tenant.DefaultTenantId);
 
         var jobKeyProvider = new JobKeyProvider(tenantAccessor.Object);
         var jsonSerializer = new Mock<IJsonSerializer>();

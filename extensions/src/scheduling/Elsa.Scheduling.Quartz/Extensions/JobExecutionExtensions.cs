@@ -135,7 +135,7 @@ internal static class JobExecutionExtensions
         if (tenantId is null)
             return;
 
-        var currentTenantId = tenantAccessor.Tenant?.Id;
+        var currentTenantId = tenantAccessor.TenantId;
         if (string.Equals(currentTenantId, tenantId, StringComparison.Ordinal))
             return;
 

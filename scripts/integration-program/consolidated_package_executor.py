@@ -57,6 +57,10 @@ REVIEWED_OPERATIONAL_POLICY = {
 MAX_BYTES = 32 * 1024 * 1024
 MAX_REQUESTS = 5000
 MAX_SECONDS = 1800
+# NuGet PackagePublish documents 201/202; server implementations vary, and the
+# pinned Feedz endpoint returns 200 on a successful first PUT. Exact-byte
+# readback still decides verified content. 204/409/other statuses stay unknown.
+ACCEPTED_UPLOAD_STATUSES = frozenset({200, 201, 202})
 SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 KEY = re.compile(r"([a-z0-9_.-]+\.pdb)/([0-9a-f]{32}FFFFFFFF)/\1\Z")
 PENDING = ["approved_live_cutover", "provider_overwrite_controls", "full_compatibility",
@@ -668,7 +672,9 @@ def run_verified(root, provenance, inspector, *, mode, transport=None, authorize
             try:
                 response = reader.put(kind, data, key)
                 operation.update(status=response.status, finished_at=now())
-                require(response.complete is True and response.failure_category is None and type(response.status) is int and response.status in {201, 202}, "upload_acceptance_unknown")
+                require(response.complete is True and response.failure_category is None
+                        and type(response.status) is int and response.status in ACCEPTED_UPLOAD_STATUSES,
+                        "upload_acceptance_unknown")
                 operation["state"] = "accepted_pending_readback"
                 if kind == "snupkg":
                     uploaded_symbol_keys.update(item["key"] for item in symbols)
@@ -702,6 +708,7 @@ class SimulatedTransport:
         self.root, self.manifest, self.expected = root, manifest, expected
         self.accepted, self.symbols, self.calls = {}, {}, []
         self.interrupt_next = False
+        self.accept_status = 201
         self.index = json.dumps({"version": "3.0.0", "resources": [
             {"@type": "PackageBaseAddress/3.0.0", "@id": "https://f.feedz.io/elsa-workflows/elsa-3/nuget/v3/packages"},
             {"@type": "PackagePublish/2.0.0", "@id": PACKAGE_PUBLISH},
@@ -733,7 +740,7 @@ class SimulatedTransport:
         if self.interrupt_next:
             self.interrupt_next = False
             return recovery.ReadResult(None, b"", False, "timeout")
-        return recovery.ReadResult(201, b"", True)
+        return recovery.ReadResult(self.accept_status, b"", True)
 
 
 def rehearse(root, provenance, inspector):

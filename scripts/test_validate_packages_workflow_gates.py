@@ -385,179 +385,243 @@ class WorkflowGateTests(unittest.TestCase):
             """)
         self.assertEqual([], gates.source_violations(source))
 
-    def test_candidate_publisher_must_run_the_same_id_set_guard_before_feedz(self):
-        source = gates.CANDIDATE_WORKFLOW.read_text(encoding="utf-8")
-        self.assertEqual([], gates.candidate_publisher_violations(source))
-        stripped = source.replace(gates.GUARD_CANDIDATE, "true")
-        self.assertIn(
-            "publish-consolidated-original-candidate.yml must run the same ID-set guard before Feedz",
-            gates.candidate_publisher_violations(stripped),
-        )
-        reordered = source.replace(gates.GUARD_CANDIDATE, "GUARD_PLACEHOLDER").replace(
-            gates.CANDIDATE_PUBLISH, f"{gates.CANDIDATE_PUBLISH}\n          {gates.GUARD_CANDIDATE}"
-        ).replace("GUARD_PLACEHOLDER", "true")
-        self.assertIn(
-            "publish-consolidated-original-candidate.yml must run the ID-set guard before the Feedz publish",
-            gates.candidate_publisher_violations(reordered),
-        )
+    # --- Candidate promotion (ported from the publish-consolidated-original-candidate.yml guard tests) ---
+    FEEDZ_GUARD_NAME = "      - name: Guard the full ID set before Feedz\n"
+    FEEDZ_GUARD_RUN_BLOCK = (
+        "          set -euo pipefail\n"
+        "          python3 scripts/validate_packages_id_set.py\n"
+        '          python3 scripts/verify_consolidated_candidate.py count --version "$VERSION" --feed feedz --dir "$PACKAGES_DIR"\n'
+    )
+    FEEDZ_GUARD_RUN_VIOLATION = (
+        "publish_candidate_feedz guard run: must be exactly set -euo pipefail, the ID-set guard and the pinned count"
+    )
 
-    def _candidate_guard_with(self, extra_line: str) -> str:
-        source = gates.CANDIDATE_WORKFLOW.read_text(encoding="utf-8")
-        return source.replace(
-            "      - name: Guard the pinned candidate ID set before Feedz\n",
-            f"      - name: Guard the pinned candidate ID set before Feedz\n        {extra_line}\n",
+    def candidate_violations(self, source):
+        return gates.candidate_promotion_violations(source)
+
+    def feedz_guard_with(self, extra_line):
+        return self.mutated(self.FEEDZ_GUARD_NAME, f"{self.FEEDZ_GUARD_NAME}        {extra_line}\n")
+
+    def mutate_feedz_guard_run(self, new_block):
+        return self.mutated(self.FEEDZ_GUARD_RUN_BLOCK, new_block)
+
+    def test_real_candidate_promotion_passes(self):
+        self.assertEqual([], self.candidate_violations(self.source))
+
+    def test_candidate_publisher_must_run_the_same_id_set_guard_before_feedz(self):
+        guard_job = "publish_candidate_feedz must run the ID-set guard before publishing"
+        stripped = self.mutated(
+            self.FEEDZ_GUARD_RUN_BLOCK,
+            "          set -euo pipefail\n          true\n",
         )
+        self.assertTrue(any(guard_job in v for v in self.candidate_violations(stripped)))
+        reordered = self.mutated(
+            "      - name: Publish the candidate to feedz.io\n        uses: ./.github/actions/push-nuget-packages\n"
+            "        with:\n          feed-source: ${{ env.feedz_feed_source }}\n"
+            "          api-key: ${{ secrets.ELSA_CONSOLIDATED_FEEDZ_PUBLISH_KEY }}\n",
+            "",
+        )
+        self.assertTrue(any("must publish with the push-nuget-packages action" in v for v in self.candidate_violations(reordered)))
+        moved = self.source.replace(self.FEEDZ_GUARD_NAME, "      - name: Guard moved\n", 1)
+        self.assertEqual([], [v for v in self.candidate_violations(moved) if "Guard" in v])
 
     def test_candidate_guard_rejects_continue_on_error(self):
-        mutated = self._candidate_guard_with("continue-on-error: true")
         self.assertIn(
-            "publish-consolidated-original-candidate.yml must not continue on error",
-            gates.candidate_publisher_violations(mutated),
+            "candidate promotion: publish_candidate_feedz must not continue on error",
+            self.candidate_violations(self.feedz_guard_with("continue-on-error: true")),
         )
 
     def test_candidate_guard_allows_continue_on_error_false(self):
-        # Explicit false is GitHub's default and the existing publish_nuget contract.
-        mutated = self._candidate_guard_with("continue-on-error: false")
-        self.assertEqual([], gates.candidate_publisher_violations(mutated))
+        self.assertEqual([], self.candidate_violations(self.feedz_guard_with("continue-on-error: false")))
 
     def test_candidate_guard_rejects_an_if_condition(self):
-        mutated = self._candidate_guard_with("if: always()")
-        self.assertIn(
-            "publish-consolidated-original-candidate.yml guard step must not have an if:",
-            gates.candidate_publisher_violations(mutated),
-        )
-
-    def test_candidate_guard_rejects_falsy_if_values(self):
-        for extra in ("if: false", "if: ''", "if: 0"):
+        for extra in ("if: always()", "if: false", "if: ''", "if: 0"):
             with self.subTest(extra=extra):
-                mutated = self._candidate_guard_with(extra)
                 self.assertIn(
-                    "publish-consolidated-original-candidate.yml guard step must not have an if:",
-                    gates.candidate_publisher_violations(mutated),
+                    "candidate promotion: publish_candidate_feedz steps must not have an if:; every version runs the same steps",
+                    self.candidate_violations(self.feedz_guard_with(extra)),
                 )
-
-    CANDIDATE_GUARD_RUN_BLOCK = (
-        "          set -euo pipefail\n"
-        "          python3 scripts/stage_consolidated_candidate_nupkgs.py stage\n"
-        "          python3 scripts/validate_packages_id_set.py\n"
-    )
-    CANDIDATE_GUARD_RUN_VIOLATION = (
-        "publish-consolidated-original-candidate.yml guard run: must be exactly set -euo pipefail, stage, and the ID-set guard"
-    )
-
-    def _mutate_candidate_guard_run(self, new_block: str) -> str:
-        source = gates.CANDIDATE_WORKFLOW.read_text(encoding="utf-8")
-        self.assertEqual(1, source.count(self.CANDIDATE_GUARD_RUN_BLOCK))
-        return source.replace(self.CANDIDATE_GUARD_RUN_BLOCK, new_block)
 
     def test_candidate_guard_rejects_failure_suppressing_run_forms(self):
-        forms = (
-            "||true",
-            "|| :",
-            "|| exit 0",
-            "; true",
-            "|| echo ok",
-        )
-        for suffix in forms:
+        for suffix in ("||true", "|| :", "|| exit 0", "; true", "|| echo ok"):
             with self.subTest(suffix=suffix):
-                mutated = self._mutate_candidate_guard_run(
-                    "          set -euo pipefail\n"
-                    "          python3 scripts/stage_consolidated_candidate_nupkgs.py stage\n"
-                    f"          python3 scripts/validate_packages_id_set.py {suffix}\n"
+                mutated = self.mutate_feedz_guard_run(
+                    self.FEEDZ_GUARD_RUN_BLOCK.replace("--dir \"$PACKAGES_DIR\"\n", f"--dir \"$PACKAGES_DIR\" {suffix}\n")
                 )
-                self.assertIn(self.CANDIDATE_GUARD_RUN_VIOLATION, gates.candidate_publisher_violations(mutated))
+                self.assertTrue(any(self.FEEDZ_GUARD_RUN_VIOLATION in v for v in self.candidate_violations(mutated)))
+                mutated = self.mutate_feedz_guard_run(
+                    self.FEEDZ_GUARD_RUN_BLOCK.replace("id_set.py\n", f"id_set.py {suffix}\n")
+                )
+                self.assertTrue(any(self.FEEDZ_GUARD_RUN_VIOLATION in v for v in self.candidate_violations(mutated)))
 
     def test_candidate_guard_rejects_set_plus_e_before_the_guard(self):
-        mutated = self._mutate_candidate_guard_run(
-            "          set -euo pipefail\n"
-            "          python3 scripts/stage_consolidated_candidate_nupkgs.py stage\n"
-            "          set +e\n"
-            "          python3 scripts/validate_packages_id_set.py\n"
-        )
-        self.assertIn(self.CANDIDATE_GUARD_RUN_VIOLATION, gates.candidate_publisher_violations(mutated))
+        mutated = self.mutate_feedz_guard_run(self.FEEDZ_GUARD_RUN_BLOCK.replace("set -euo pipefail\n", "set -euo pipefail\n          set +e\n"))
+        self.assertTrue(any(self.FEEDZ_GUARD_RUN_VIOLATION in v for v in self.candidate_violations(mutated)))
 
     def test_candidate_guard_accepts_harmless_run_whitespace(self):
-        mutated = self._mutate_candidate_guard_run(
+        mutated = self.mutate_feedz_guard_run(
             "          set  -euo   pipefail  \n"
             "\n"
-            "          python3 scripts/stage_consolidated_candidate_nupkgs.py stage   \n"
-            "          python3 scripts/validate_packages_id_set.py\n"
+            "          python3 scripts/validate_packages_id_set.py   \n"
+            '          python3 scripts/verify_consolidated_candidate.py count --version "$VERSION" --feed feedz --dir "$PACKAGES_DIR"\n'
         )
-        self.assertEqual([], gates.candidate_publisher_violations(mutated))
+        self.assertEqual([], self.candidate_violations(mutated))
 
     def test_candidate_guard_rejects_folded_run(self):
-        source = gates.CANDIDATE_WORKFLOW.read_text(encoding="utf-8")
-        old = "        run: |\n" + self.CANDIDATE_GUARD_RUN_BLOCK
-        self.assertEqual(1, source.count(old))
-        mutated = source.replace(old, "        run: >-\n" + self.CANDIDATE_GUARD_RUN_BLOCK)
-        self.assertIn(self.CANDIDATE_GUARD_RUN_VIOLATION, gates.candidate_publisher_violations(mutated))
+        mutated = self.mutated("        run: |\n" + self.FEEDZ_GUARD_RUN_BLOCK, "        run: >-\n" + self.FEEDZ_GUARD_RUN_BLOCK)
+        self.assertTrue(any(self.FEEDZ_GUARD_RUN_VIOLATION in v for v in self.candidate_violations(mutated)))
 
     def test_candidate_guard_rejects_shell(self):
-        mutated = self._candidate_guard_with("shell: true {0}")
-        self.assertIn(
-            "publish-consolidated-original-candidate.yml guard step keys must be among name, env, run, id, if, continue-on-error",
-            gates.candidate_publisher_violations(mutated),
-        )
+        self.assertTrue(any(
+            "publish_candidate_feedz guard step keys must be among name, env, run, id, if, continue-on-error" in v
+            for v in self.candidate_violations(self.feedz_guard_with("shell: true {0}"))
+        ))
 
     def test_candidate_guard_rejects_workflow_defaults_shell(self):
-        source = gates.CANDIDATE_WORKFLOW.read_text(encoding="utf-8")
-        old = "permissions: {}\n"
-        self.assertEqual(1, source.count(old))
-        mutated = source.replace(old, "permissions: {}\ndefaults:\n  run:\n    shell: bash\n")
-        self.assertIn(
-            "publish-consolidated-original-candidate.yml must not set defaults.run.shell",
-            gates.candidate_publisher_violations(mutated),
-        )
+        mutated = self.mutated("\njobs:\n", "\ndefaults:\n  run:\n    shell: bash\n\njobs:\n")
+        self.assertIn("candidate promotion: must not set defaults.run.shell", self.candidate_violations(mutated))
 
     def test_candidate_guard_rejects_job_defaults_shell(self):
-        source = gates.CANDIDATE_WORKFLOW.read_text(encoding="utf-8")
-        old = (
-            "    environment: feedz-publish\n"
-            "    permissions:\n"
-            "      contents: read\n"
-            "      actions: none\n"
-            "    runs-on: ubuntu-latest\n"
-            "    timeout-minutes: 60\n"
-            "    steps:\n"
-        )
-        self.assertEqual(1, source.count(old))
-        mutated = source.replace(
-            old,
-            "    environment: feedz-publish\n"
-            "    permissions:\n"
-            "      contents: read\n"
-            "      actions: none\n"
-            "    runs-on: ubuntu-latest\n"
-            "    timeout-minutes: 60\n"
-            "    defaults:\n"
-            "      run:\n"
-            "        shell: bash\n"
-            "    steps:\n",
-        )
-        self.assertIn(
-            "publish-consolidated-original-candidate.yml must not set defaults.run.shell",
-            gates.candidate_publisher_violations(mutated),
-        )
+        anchor = "    name: Publish the pinned candidate to Feedz\n"
+        mutated = self.mutated(anchor, anchor + "    defaults:\n      run:\n        shell: bash\n")
+        self.assertIn("candidate promotion: must not set defaults.run.shell", self.candidate_violations(mutated))
 
-    def test_candidate_guard_rejects_a_different_ref(self):
-        source = gates.CANDIDATE_WORKFLOW.read_text(encoding="utf-8")
-        old = "          REF: refs/tags/3.10.0\n"
-        self.assertEqual(1, source.count(old))
-        mutated = source.replace(old, "          REF: refs/tags/3.10.1\n")
-        self.assertIn(
-            "publish-consolidated-original-candidate.yml guard env REF must be refs/tags/3.10.0",
-            gates.candidate_publisher_violations(mutated),
-        )
+    FEEDZ_IF = "    if: ${{ inputs.promote_target == 'all' || inputs.promote_target == 'feedz' }}\n"
+    NUGET_IF = ("    if: ${{ !cancelled() && needs.validate_candidate_pin.result == 'success'"
+                " && needs.retrieve_candidate.result == 'success'"
+                " && (inputs.promote_target == 'all' || inputs.promote_target == 'nuget')"
+                " && (needs.publish_candidate_feedz.result == 'success'"
+                " || (inputs.promote_target == 'nuget' && needs.publish_candidate_feedz.result == 'skipped')) }}\n")
+    NUGET_NEEDS = "    needs: [validate_candidate_pin, retrieve_candidate, publish_candidate_feedz]\n"
 
-    def test_candidate_publisher_rejects_exclude_ids(self):
-        source = gates.CANDIDATE_WORKFLOW.read_text(encoding="utf-8")
-        old = "          PACKAGES_DIR: ${{ runner.temp }}/candidate-nupkgs\n"
-        self.assertEqual(1, source.count(old))
-        mutated = source.replace(old, old + "          EXCLUDE_IDS: Elsa\n")
-        self.assertIn(
-            "publish-consolidated-original-candidate.yml must not set EXCLUDE_IDS",
-            gates.candidate_publisher_violations(mutated),
+    def test_candidate_publishers_must_key_on_the_promote_target_only(self):
+        for line, job in ((self.FEEDZ_IF, "publish_candidate_feedz"), (self.NUGET_IF, "publish_candidate_nuget")):
+            self.assertEqual(1, self.source.count(line))
+            expected = f"candidate promotion: {job} if: must be exactly"
+            # Dropping the condition (the mutation the shape tests exist to catch).
+            self.assertTrue(any(expected in v for v in self.candidate_violations(self.source.replace(line, ""))), job)
+            for replacement in ("    if: ${{ always() }}\n", "    if: ${{ inputs.promote_target != '' }}\n",
+                                "    if: ${{ inputs.promote_candidate_version == '3.10.1' }}\n",
+                                line.replace("'all' || ", "", 1), line.replace("promote_target ==", "promote_target !=", 1)):
+                with self.subTest(job=job, replacement=replacement):
+                    self.assertTrue(any(expected in v for v in self.candidate_violations(self.source.replace(line, replacement))))
+        # The feedz condition must not be swapped onto the nuget job (or the reverse).
+        swapped = self.source.replace(self.FEEDZ_IF, "@@").replace(self.NUGET_IF, self.FEEDZ_IF).replace("@@", self.NUGET_IF)
+        self.assertTrue(any("must be exactly" in v for v in self.candidate_violations(swapped)))
+
+    def test_nuget_condition_must_follow_feedz_on_all(self):
+        expected = "candidate promotion: publish_candidate_nuget if: must be exactly"
+        for mutation in (
+                ("!cancelled() && ", ""),  # a skipped feedz would then skip nuget on a nuget-only run
+                ("!cancelled()", "always()"),  # would run after a cancelled run
+                ("inputs.promote_target == 'nuget' && needs.publish_candidate_feedz", "needs.publish_candidate_feedz"),  # skipped feedz on 'all'
+                ("needs.publish_candidate_feedz.result == 'success' || ", "needs.publish_candidate_feedz.result != 'success' || "),
+                ("needs.retrieve_candidate.result == 'success' && ", ""),
+                ("needs.validate_candidate_pin.result == 'success' && ", "")):
+            with self.subTest(mutation=mutation):
+                mutated = self.source.replace(self.NUGET_IF, self.NUGET_IF.replace(*mutation))
+                self.assertNotEqual(self.source, mutated)
+                self.assertTrue(any(expected in v for v in self.candidate_violations(mutated)))
+
+    def test_cancelled_is_only_allowed_in_the_pinned_nuget_condition(self):
+        self.assertEqual([], self.candidate_violations(self.source))
+        mutated = self.source.replace(self.FEEDZ_IF, "    if: ${{ !cancelled() && (inputs.promote_target == 'all' || inputs.promote_target == 'feedz') }}\n")
+        self.assertIn("candidate promotion: publish_candidate_feedz must not call always(), failure() or cancelled()",
+                      self.candidate_violations(mutated))
+
+    def test_publisher_needs_are_pinned(self):
+        self.assertEqual(1, self.source.count(self.NUGET_NEEDS))
+        for replacement in ("    needs: retrieve_candidate\n", "    needs: [retrieve_candidate, publish_candidate_feedz]\n"):
+            with self.subTest(replacement=replacement):
+                self.assertIn("candidate promotion: publish_candidate_nuget must need exactly "
+                              "['publish_candidate_feedz', 'retrieve_candidate', 'validate_candidate_pin']",
+                              self.candidate_violations(self.source.replace(self.NUGET_NEEDS, replacement)))
+
+    def test_promote_target_input_and_selection_env_are_enforced(self):
+        options = "        options:\n          - all\n          - feedz\n          - nuget\n"
+        self.assertEqual(1, self.source.count(options))
+        for mutated in (self.source.replace(options, options + "          - both\n"),
+                        self.source.replace("        type: choice\n" + options, "        type: string\n"),
+                        self.source.replace("        default: all\n  push:", "        default: nuget\n  push:")):
+            self.assertTrue(any("'promote_target' must be a choice" in v for v in self.candidate_violations(mutated)))
+        env = "          PROMOTE_TARGET: ${{ inputs.promote_target }}\n"
+        self.assertEqual(1, self.source.count(env))
+        self.assertNotEqual([], gates.source_violations(self.source.replace(env, "")))
+
+    def test_candidate_publishers_reject_a_changed_ref_requirement(self):
+        # Replaces the old fixed REF env: every candidate job must require refs/heads/main.
+        for ref in ("refs/tags/3.10.1", "refs/heads/release/3.10.0"):
+            with self.subTest(ref=ref):
+                mutated = self.source.replace("test \"$GITHUB_REF\" = 'refs/heads/main'", f"test \"$GITHUB_REF\" = '{ref}'")
+                self.assertTrue(any("must require the repository, refs/heads/main and run attempt 1" in v
+                                    for v in self.candidate_violations(mutated)))
+
+    def test_candidate_publisher_rejects_exclude_ids_for_feedz_and_unpinned_ones_for_nuget(self):
+        mutated = self.mutated(
+            self.FEEDZ_GUARD_NAME + "        env:\n          PACKAGES_DIR: ${{ github.workspace }}\n",
+            self.FEEDZ_GUARD_NAME + "        env:\n          PACKAGES_DIR: ${{ github.workspace }}\n          EXCLUDE_IDS: Elsa\n",
         )
+        self.assertIn("candidate promotion: publish_candidate_feedz must not set EXCLUDE_IDS", self.candidate_violations(mutated))
+        nuget = self.source.replace("EXCLUDE_IDS: ${{ steps.pin.outputs.exclude_ids }}", "EXCLUDE_IDS: Elsa")
+        self.assertIn("candidate promotion: publish_candidate_nuget guard EXCLUDE_IDS must be the pinned exclusions",
+                      self.candidate_violations(nuget))
+
+    def test_candidate_steps_reject_status_functions(self):
+        mutated = self.mutated(self.FEEDZ_GUARD_NAME, f"{self.FEEDZ_GUARD_NAME}        if: always()\n")
+        self.assertTrue(any("must not call always(), failure() or cancelled()" in v for v in self.candidate_violations(mutated)))
+
+    def test_candidate_jobs_reject_skip_overrides_and_tagging(self):
+        for text in ("skip_id_set", "BYPASS_GUARD"):
+            with self.subTest(text=text):
+                mutated = self.mutated(self.FEEDZ_GUARD_RUN_BLOCK, self.FEEDZ_GUARD_RUN_BLOCK + f"          echo {text}\n")
+                self.assertIn("candidate promotion: must not offer a skip, bypass, or ID-list override", self.candidate_violations(mutated))
+        mutated = self.mutated(self.FEEDZ_GUARD_RUN_BLOCK, self.FEEDZ_GUARD_RUN_BLOCK + "          git tag 3.10.1\n")
+        self.assertTrue(any("must not create or push a tag" in v for v in self.candidate_violations(mutated)))
+
+    def test_candidate_publishers_must_verify_tokenless_before_the_key_or_login(self):
+        blank = "          GITHUB_TOKEN: ''\n          GH_TOKEN: ''\n          ACTIONS_READ_TOKEN: ''\n"
+        self.assertEqual(2, self.source.count(blank))
+        mutated = self.source.replace(blank, "          GH_TOKEN: ''\n          ACTIONS_READ_TOKEN: ''\n")
+        self.assertEqual(2, sum("verify step must blank" in v for v in self.candidate_violations(mutated)))
+        mutated = self.source.replace(blank, blank.replace("ACTIONS_READ_TOKEN: ''", "ACTIONS_READ_TOKEN: x"))
+        self.assertEqual(2, sum("verify step must blank" in v for v in self.candidate_violations(mutated)))
+
+    def test_candidate_environments_retrieve_and_permissions_are_enforced(self):
+        anchor = "    environment: feedz-publish\n    # One feedz promotion"
+        self.assertEqual(1, self.source.count(anchor))
+        mutated = self.source.replace(anchor, "    environment: other\n    # One feedz promotion")
+        self.assertIn("candidate promotion: publish_candidate_feedz must use environment feedz-publish", self.candidate_violations(mutated))
+        mutated = self.source.replace("    name: Retrieve and verify the pinned candidate\n", "    name: Retrieve and verify the pinned candidate\n    environment: feedz-publish\n")
+        self.assertTrue(any("retrieve_candidate must have no environment" in v for v in self.candidate_violations(mutated)))
+        mutated = self.source.replace("    needs: validate_publication_selection\n    if: ${{ github.event_name == 'workflow_dispatch' && inputs.promote_candidate_version != '' }}",
+                                       "    needs: validate_publication_selection\n    if: ${{ inputs.promote_candidate_version != '' }}")
+        self.assertTrue(any("validate_candidate_pin if: must be exactly" in v for v in self.candidate_violations(mutated)))
+        mutated = self.source.replace("run: python3 scripts/verify_consolidated_candidate.py validate-pin", "run: true # validate-pin")
+        self.assertTrue(any("first run step of validate_candidate_pin must validate the pin" in v for v in self.candidate_violations(mutated)))
+
+    def test_candidate_jobs_reject_unpinned_actions_and_version_literals(self):
+        pinned = "actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5"
+        last = self.source.rindex(pinned)  # the candidate jobs are the last jobs in the workflow
+        mutated = self.source[:last] + "actions/setup-python@v5" + self.source[last + len(pinned):]
+        self.assertTrue(any("must be pinned to a full commit SHA" in v for v in self.candidate_violations(mutated)))
+        mutated = self.mutated(self.FEEDZ_GUARD_RUN_BLOCK, self.FEEDZ_GUARD_RUN_BLOCK + "          echo 3.10.1\n")
+        self.assertTrue(any("must not name a version" in v for v in self.candidate_violations(mutated)))
+
+    def test_candidate_promotion_input_must_be_a_string_defaulting_to_empty(self):
+        mutated = self.source.replace("      promote_candidate_version:\n        description:", "      promote_candidate_version:\n        x: 1\n        description:")
+        self.assertEqual([], self.candidate_violations(mutated))
+        mutated = self.source.replace("        type: string\n        default: ''\n      promote_target:", "        type: boolean\n        default: false\n      promote_target:")
+        self.assertTrue(any("promote_candidate_version' must be a string" in v for v in self.candidate_violations(mutated)))
+
+    def test_candidate_publishers_are_not_flagged_by_the_capability_scan_but_other_jobs_still_are(self):
+        self.assertEqual([], gates.source_violations(self.source))
+        mutated = self.mutated(None, """
+            leak2:
+              runs-on: ubuntu-latest
+              steps:
+                - run: echo ${{ secrets.ELSA_CONSOLIDATED_FEEDZ_PUBLISH_KEY }}
+        """)
+        self.assertTrue(gates.source_violations(mutated))
 
     NUGET_GUARD_RUN_BLOCK = (
         "        run: |\n"
@@ -640,17 +704,6 @@ class WorkflowGateTests(unittest.TestCase):
             "",
         )
         self.assertEqual([], gates.source_violations(source))
-
-    def test_candidate_recheck_rejects_always(self):
-        source = gates.CANDIDATE_WORKFLOW.read_text(encoding="utf-8")
-        mutated = source.replace(
-            "      - name: Recheck protected admission with metadata-only authority before exposing the publisher credential\n",
-            "      - name: Recheck protected admission with metadata-only authority before exposing the publisher credential\n        if: always()\n",
-        )
-        self.assertIn(
-            "publish-consolidated-original-candidate.yml recheck and publish steps must not call always(), failure() or cancelled()",
-            gates.candidate_publisher_violations(mutated),
-        )
 
     def test_inverted_compile_pack_condition_is_rejected(self):
         source = self.mutated(
@@ -767,13 +820,446 @@ class WorkflowGateTests(unittest.TestCase):
             "publish_npm must not build the Studio pair; build_npm owns that step",
         )
 
-    def test_feedz_publish_must_pass_a_dist_tag(self):
+    def test_wasm_publish_must_pass_a_dist_tag(self):
         self.assert_rejected(
             self.mutated(
-                '            if output=$(npm publish "$file" --access public --tag "$tag" 2>&1); then\n',
-                '            if output=$(npm publish "$file" --access public 2>&1); then\n',
+                '            --tag "$tag" \\\n            --registry "https://f.feedz.io/elsa-workflows/elsa-3/npm/" \\\n            --verify-published\n          echo "wasm-published=true" >> "$GITHUB_OUTPUT"',
+                '            --registry "https://f.feedz.io/elsa-workflows/elsa-3/npm/" \\\n            --verify-published\n          echo "wasm-published=true" >> "$GITHUB_OUTPUT"',
             ),
-            "publish_npm Feedz publish must pass a dist-tag",
+            "publish_npm WASM publish must pass --tag $tag",
+        )
+
+    def test_wasm_publish_must_use_feedz_registry(self):
+        self.assert_rejected(
+            self.mutated(
+                '            --registry "https://f.feedz.io/elsa-workflows/elsa-3/npm/" \\\n            --verify-published\n          echo "wasm-published=true" >> "$GITHUB_OUTPUT"',
+                '            --registry "https://registry.npmjs.org/" \\\n            --verify-published\n          echo "wasm-published=true" >> "$GITHUB_OUTPUT"',
+            ),
+            "publish_npm WASM publish must use the Feedz npm registry",
+        )
+
+    def test_wasm_publish_accepts_unquoted_registry(self):
+        source = self.source.replace(
+            '--package "@elsa-workflows/elsa-studio-wasm"',
+            '--package "@elsa-workflows/elsa-studio-wasm"',
+        ).replace(
+            '--registry "https://f.feedz.io/elsa-workflows/elsa-3/npm/"',
+            '--registry https://f.feedz.io/elsa-workflows/elsa-3/npm/',
+            1,
+        )
+        self.assertEqual([], gates.source_violations(source))
+
+    def test_wasm_publish_rejects_duplicate_registry_mixed(self):
+        source = self.source.replace(
+            '--registry "https://f.feedz.io/elsa-workflows/elsa-3/npm/"',
+            '--registry "https://f.feedz.io/elsa-workflows/elsa-3/npm/" --registry https://f.feedz.io/elsa-workflows/elsa-3/npm/',
+            1,
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm WASM publish must pass exactly one --registry argument",
+        )
+
+    def test_wasm_publish_must_pass_registry_argument(self):
+        self.assert_rejected(
+            self.mutated(
+                '            --registry "https://f.feedz.io/elsa-workflows/elsa-3/npm/" \\\n            --verify-published\n          echo "wasm-published=true" >> "$GITHUB_OUTPUT"',
+                '            --verify-published\n          echo "wasm-published=true" >> "$GITHUB_OUTPUT"',
+            ),
+            "publish_npm WASM publish must pass exactly one --registry argument",
+        )
+
+    def test_wasm_publish_must_not_count_verify_in_comment(self):
+        self.assert_rejected(
+            self.mutated(
+                '            --verify-published\n          echo "wasm-published=true" >> "$GITHUB_OUTPUT"',
+                '            # --verify-published\n          echo "wasm-published=true" >> "$GITHUB_OUTPUT"',
+            ),
+            "publish_npm WASM publish must pass --verify-published",
+        )
+
+    def test_wasm_publish_rejects_fake_publisher_invocation(self):
+        source = self.source.replace(
+            'python3 scripts/publish_npm_tarball.py \\',
+            'echo "scripts/publish_npm_tarball.py" \\',
+            1,
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm WASM publish must invoke scripts/publish_npm_tarball.py",
+        )
+
+    def test_wasm_publish_requires_set_euo_pipefail(self):
+        source = self.source.replace(
+            "          set -euo pipefail\n          if [ -z \"${NODE_AUTH_TOKEN:-}\" ]; then",
+            "          if [ -z \"${NODE_AUTH_TOKEN:-}\" ]; then",
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm WASM publish must set -euo pipefail before publishing",
+        )
+
+    def test_wasm_publish_rejects_set_plus_e(self):
+        source = self.source.replace(
+            'wasm="elsa-workflows-elsa-studio-wasm-${version}.tgz"\n          python3 scripts/publish_npm_tarball.py \\',
+            'wasm="elsa-workflows-elsa-studio-wasm-${version}.tgz"\n          set +e\n          python3 scripts/publish_npm_tarball.py \\',
+            1,
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm WASM publish must not disable errexit before publishing",
+        )
+
+    def test_wasm_publish_rejects_or_true(self):
+        source = self.source.replace(
+            '--verify-published\n          echo "wasm-published=true" >> "$GITHUB_OUTPUT"',
+            '--verify-published || true\n          echo "wasm-published=true" >> "$GITHUB_OUTPUT"',
+            1,
+        )
+        self.assert_rejected(
+            source,
+            "publisher is followed by error-suppressing || true/:",
+        )
+
+    def test_wasm_publish_rejects_or_colon(self):
+        source = self.source.replace(
+            '--verify-published\n          echo "wasm-published=true" >> "$GITHUB_OUTPUT"',
+            '--verify-published || :\n          echo "wasm-published=true" >> "$GITHUB_OUTPUT"',
+            1,
+        )
+        self.assert_rejected(
+            source,
+            "publisher is followed by error-suppressing || true/:",
+        )
+
+    def test_wasm_publish_rejects_semicolon_continuation(self):
+        source = self.source.replace(
+            '--verify-published\n          echo "wasm-published=true" >> "$GITHUB_OUTPUT"',
+            '--verify-published ; echo continuing\n          echo "wasm-published=true" >> "$GITHUB_OUTPUT"',
+            1,
+        )
+        self.assert_rejected(
+            source,
+            "publisher is chained with ; before the output command",
+        )
+
+    def test_wasm_publish_rejects_echo_invocation(self):
+        source = self.source.replace(
+            'python3 scripts/publish_npm_tarball.py \\\n',
+            'echo "python3 scripts/publish_npm_tarball.py" \\\n',
+            1,
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm WASM publish must invoke scripts/publish_npm_tarball.py",
+        )
+
+    def test_wasm_publish_rejects_commented_output(self):
+        source = self.source.replace(
+            'echo "wasm-published=true" >> "$GITHUB_OUTPUT"',
+            '# echo "wasm-published=true" >> "$GITHUB_OUTPUT"',
+            1,
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm WASM publish must execute wasm-published output command",
+        )
+
+    def test_wasm_publish_rejects_missing_output(self):
+        source = self.source.replace(
+            '          echo "wasm-published=true" >> "$GITHUB_OUTPUT"\n\n      - name: Publish @elsa-workflows/elsa-studio-wasm-react to Feedz',
+            '          true\n\n      - name: Publish @elsa-workflows/elsa-studio-wasm-react to Feedz',
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm WASM publish must execute wasm-published output command",
+        )
+
+    def test_wasm_publish_rejects_react_tarball(self):
+        source = self.source.replace(
+            '--tarball "$RUNNER_TEMP/studio-npm-pair/$wasm"',
+            '--tarball "$RUNNER_TEMP/studio-npm-pair/$react"',
+            1,
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm WASM publish must pass the correct tarball",
+        )
+
+    def test_wasm_publish_rejects_react_package(self):
+        source = self.source.replace(
+            '--package "@elsa-workflows/elsa-studio-wasm"',
+            '--package "@elsa-workflows/elsa-studio-wasm-react"',
+            1,
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm must publish @elsa-workflows/elsa-studio-wasm",
+        )
+
+    def test_publish_npm_rejects_direct_npm_publish(self):
+        source = self.source.replace(
+            '  deploy_coverage:\n    name: Deploy coverage to GitHub Pages',
+            '  direct_npm_publish:\n    name: Direct npm publish\n    needs: [build_npm, validate_publication_selection]\n    runs-on: ubuntu-latest\n    if: ${{ github.event_name == \'workflow_dispatch\' && inputs.publish_npm && startsWith(github.ref, \'refs/tags/\') }}\n    permissions:\n      contents: read\n    steps:\n      - name: Publish directly\n        run: npm publish package.tgz\n\n  deploy_coverage:\n    name: Deploy coverage to GitHub Pages',
+        )
+        self.assert_rejected(
+            source,
+            "references npm publish",
+        )
+
+    def test_publish_npm_rejects_direct_npm_publish_no_space(self):
+        source = self.source.replace(
+            '  deploy_coverage:\n    name: Deploy coverage to GitHub Pages',
+            '  direct_npm_publish:\n    name: Direct npm publish\n    needs: [build_npm, validate_publication_selection]\n    runs-on: ubuntu-latest\n    if: ${{ github.event_name == \'workflow_dispatch\' && inputs.publish_npm && startsWith(github.ref, \'refs/tags/\') }}\n    permissions:\n      contents: read\n    steps:\n      - name: Publish directly\n        run: echo preparing;npm publish package.tgz\n\n  deploy_coverage:\n    name: Deploy coverage to GitHub Pages',
+        )
+        self.assert_rejected(
+            source,
+            "references npm publish",
+        )
+
+    def _assert_ungated_run_rejected(self, run: str, label: str) -> None:
+        source = self.source.replace(
+            '  deploy_coverage:\n    name: Deploy coverage to GitHub Pages',
+            (
+                '  leak:\n'
+                '    name: Leak\n'
+                '    needs: [build_npm, validate_publication_selection]\n'
+                '    runs-on: ubuntu-latest\n'
+                '    if: ${{ github.event_name == \'workflow_dispatch\' && inputs.publish_npm && startsWith(github.ref, \'refs/tags/\') }}\n'
+                '    permissions:\n'
+                '      contents: read\n'
+                '    steps:\n'
+                '      - name: Leak\n'
+                '        run: __RUN__\n'
+                '\n'
+                '  deploy_coverage:\n'
+                '    name: Deploy coverage to GitHub Pages'
+            ).replace("__RUN__", run),
+        )
+        self.assert_rejected(source, label)
+
+    def test_publish_npm_rejects_wrapped_npm_publish_commands(self):
+        cases = [
+            ("npm publish x.tgz", "plain npm publish"),
+            ('bash -c "npm publish x.tgz"', "bash -c wrapper"),
+            ("sh -c 'npm publish x.tgz'", "sh -c wrapper"),
+            ("env A=1 npm publish x.tgz", "env assignment wrapper"),
+            ("sudo npm publish x.tgz", "sudo wrapper"),
+            ('echo x.tgz | xargs npm publish', "xargs wrapper"),
+            ("npx npm publish", "npx wrapper"),
+            ("command npm publish x.tgz", "command wrapper"),
+            ("eval 'npm publish x.tgz'", "eval wrapper"),
+        ]
+        for run, description in cases:
+            with self.subTest(run=run, description=description):
+                self._assert_ungated_run_rejected(run, "references npm publish")
+
+    def test_publish_npm_rejects_publisher_script_outside_gated_jobs(self):
+        self._assert_ungated_run_rejected(
+            "python3 scripts/publish_npm_tarball.py --package @elsa-workflows/elsa-studio-wasm",
+            "the npm tarball publisher script",
+        )
+
+    def test_publish_npm_rejects_dotnet_nuget_push_outside_gated_jobs(self):
+        self._assert_ungated_run_rejected(
+            'dotnet nuget push "packages/*.nupkg" --source "$FEED"',
+            "dotnet nuget push",
+        )
+
+    def test_wasm_publish_rejects_printf_invocation(self):
+        source = self.source.replace(
+            'python3 scripts/publish_npm_tarball.py \\',
+            'printf "python3 scripts/publish_npm_tarball.py" \\',
+            1,
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm WASM publish must invoke scripts/publish_npm_tarball.py",
+        )
+
+    def test_wasm_publish_rejects_set_plus_o_errexit(self):
+        source = self.source.replace(
+            'wasm="elsa-workflows-elsa-studio-wasm-${version}.tgz"\n          python3 scripts/publish_npm_tarball.py \\',
+            'wasm="elsa-workflows-elsa-studio-wasm-${version}.tgz"\n          set +o errexit\n          python3 scripts/publish_npm_tarball.py \\',
+            1,
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm WASM publish must not disable errexit before publishing",
+        )
+
+    def test_wasm_publish_rejects_set_plus_o_e(self):
+        source = self.source.replace(
+            'wasm="elsa-workflows-elsa-studio-wasm-${version}.tgz"\n          python3 scripts/publish_npm_tarball.py \\',
+            'wasm="elsa-workflows-elsa-studio-wasm-${version}.tgz"\n          set +o e\n          python3 scripts/publish_npm_tarball.py \\',
+            1,
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm WASM publish must not disable errexit before publishing",
+        )
+
+    def test_wasm_publish_rejects_if_false(self):
+        source = self.source.replace(
+            '      - name: Publish @elsa-workflows/elsa-studio-wasm to Feedz\n        id: publish_wasm\n',
+            '      - name: Publish @elsa-workflows/elsa-studio-wasm to Feedz\n        id: publish_wasm\n        if: false\n',
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm WASM publish step must not be conditionally skipped",
+        )
+
+    def test_wasm_publish_accepts_success_if(self):
+        for condition in ("success()", "${{ success() }}", "  success(  )  ", "${{   success()   }}"):
+            with self.subTest(condition=condition):
+                source = self.source.replace(
+                    '      - name: Publish @elsa-workflows/elsa-studio-wasm to Feedz\n        id: publish_wasm\n',
+                    f'      - name: Publish @elsa-workflows/elsa-studio-wasm to Feedz\n        id: publish_wasm\n        if: {condition}\n',
+                )
+                self.assertEqual([], gates.source_violations(source))
+
+    def test_wasm_publish_rejects_success_and_false(self):
+        source = self.source.replace(
+            '      - name: Publish @elsa-workflows/elsa-studio-wasm to Feedz\n        id: publish_wasm\n',
+            '      - name: Publish @elsa-workflows/elsa-studio-wasm to Feedz\n        id: publish_wasm\n        if: success() && false\n',
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm WASM publish step must not be conditionally skipped",
+        )
+
+    def test_wasm_publish_rejects_unrecognized_if(self):
+        source = self.source.replace(
+            '      - name: Publish @elsa-workflows/elsa-studio-wasm to Feedz\n        id: publish_wasm\n',
+            '      - name: Publish @elsa-workflows/elsa-studio-wasm to Feedz\n        id: publish_wasm\n        if: github.event_name == \'workflow_dispatch\'\n',
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm WASM publish step must not be conditionally skipped",
+        )
+
+    def test_wasm_publish_rejects_custom_shell(self):
+        source = self.source.replace(
+            '      - name: Publish @elsa-workflows/elsa-studio-wasm to Feedz\n        id: publish_wasm\n',
+            '      - name: Publish @elsa-workflows/elsa-studio-wasm to Feedz\n        id: publish_wasm\n        shell: true {0}\n',
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm WASM publish step must use a standard shell",
+        )
+
+    def test_wasm_publish_rejects_output_without_github_output(self):
+        source = self.source.replace(
+            'echo "wasm-published=true" >> "$GITHUB_OUTPUT"',
+            'echo "wasm-published=true" > /dev/null',
+            1,
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm WASM publish must execute wasm-published output command",
+        )
+
+    def test_wasm_publish_rejects_output_wrong_value(self):
+        source = self.source.replace(
+            'echo "wasm-published=true" >> "$GITHUB_OUTPUT"',
+            'echo "wasm-published=false" >> "$GITHUB_OUTPUT"',
+            1,
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm WASM publish must execute wasm-published output command",
+        )
+
+    def test_react_publish_must_use_feedz_registry(self):
+        self.assert_rejected(
+            self.mutated(
+                '            --registry "https://f.feedz.io/elsa-workflows/elsa-3/npm/" \\\n            --verify-published\n\n  deploy_coverage:',
+                '            --registry "https://registry.npmjs.org/" \\\n            --verify-published\n\n  deploy_coverage:',
+            ),
+            "publish_npm React publish must use the Feedz npm registry",
+        )
+
+    def test_react_publish_accepts_unquoted_registry(self):
+        source = self.source.replace(
+            '--registry "https://f.feedz.io/elsa-workflows/elsa-3/npm/"',
+            '--registry https://f.feedz.io/elsa-workflows/elsa-3/npm/',
+        )
+        self.assertEqual([], gates.source_violations(source))
+
+    def test_react_publish_rejects_duplicate_registry_mixed(self):
+        source = self.source.replace(
+            '--registry "https://f.feedz.io/elsa-workflows/elsa-3/npm/"',
+            '--registry "https://f.feedz.io/elsa-workflows/elsa-3/npm/" --registry https://f.feedz.io/elsa-workflows/elsa-3/npm/',
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm React publish must pass exactly one --registry argument",
+        )
+
+    def test_react_publish_must_pass_registry_argument(self):
+        self.assert_rejected(
+            self.mutated(
+                '            --registry "https://f.feedz.io/elsa-workflows/elsa-3/npm/" \\\n            --verify-published\n\n  deploy_coverage:',
+                '            --verify-published\n\n  deploy_coverage:',
+            ),
+            "publish_npm React publish must pass exactly one --registry argument",
+        )
+
+    def test_react_publish_must_not_count_verify_in_comment(self):
+        self.assert_rejected(
+            self.mutated(
+                '            --verify-published\n\n  deploy_coverage:',
+                '            # --verify-published\n\n  deploy_coverage:',
+            ),
+            "publish_npm React publish must pass --verify-published",
+        )
+
+    def test_react_publish_must_wait_for_wasm(self):
+        self.assert_rejected(
+            self.mutated(
+                "      - name: Publish @elsa-workflows/elsa-studio-wasm-react to Feedz\n        if: steps.publish_wasm.outputs.wasm-published == 'true'\n",
+                "      - name: Publish @elsa-workflows/elsa-studio-wasm-react to Feedz\n",
+            ),
+            "publish_npm React publish must run only when WASM is confirmed",
+        )
+
+    def test_wasm_publish_must_set_confirmed_output(self):
+        self.assert_rejected(
+            self.mutated(
+                '          echo "wasm-published=true" >> "$GITHUB_OUTPUT"\n\n      - name: Publish @elsa-workflows/elsa-studio-wasm-react',
+                '\n      - name: Publish @elsa-workflows/elsa-studio-wasm-react',
+            ),
+            "publish_npm WASM publish step must set output 'wasm-published=true'",
+        )
+
+    def test_npm_publish_must_have_exactly_two_steps(self):
+        source = self.source.replace(
+            '--package "@elsa-workflows/elsa-studio-wasm"',
+            '--package "@elsa-workflows/elsa-studio-wasm-react"',
+            1,
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm must contain exactly one @elsa-workflows/elsa-studio-wasm-react publish step",
+        )
+
+    def test_wasm_must_be_published_before_react(self):
+        source = self.source
+        source = source.replace(
+            '--package "@elsa-workflows/elsa-studio-wasm"',
+            '--package "@elsa-workflows/elsa-studio-wasm-SWAP"',
+        )
+        source = source.replace(
+            '--package "@elsa-workflows/elsa-studio-wasm-react"',
+            '--package "@elsa-workflows/elsa-studio-wasm"',
+        )
+        source = source.replace(
+            '--package "@elsa-workflows/elsa-studio-wasm-SWAP"',
+            '--package "@elsa-workflows/elsa-studio-wasm-react"',
+        )
+        self.assert_rejected(
+            source,
+            "publish_npm must fail closed, download and verify the pair, publish WASM, then publish React",
         )
 
     def test_id_set_count_is_pinned(self):

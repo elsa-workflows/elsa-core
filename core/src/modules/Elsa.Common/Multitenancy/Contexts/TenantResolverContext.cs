@@ -9,7 +9,8 @@ namespace Elsa.Common.Multitenancy;
 /// </remarks>
 public class TenantResolverContext
 {
-    private readonly IDictionary<string, Tenant> _tenantsDictionary;
+    private readonly IDictionary<string, Tenant>? _tenantsDictionary;
+    private readonly ITenantService? _tenantService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TenantResolverContext"/> class.
@@ -21,6 +22,16 @@ public class TenantResolverContext
     }
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="TenantResolverContext"/> class that looks tenants up in the tenant service.
+    /// Nothing is loaded up front: a lookup by ID is a single dictionary read and only a predicate lookup enumerates the tenants.
+    /// </summary>
+    public TenantResolverContext(ITenantService tenantService, CancellationToken cancellationToken)
+    {
+        CancellationToken = cancellationToken;
+        _tenantService = tenantService;
+    }
+
+    /// <summary>
     /// Gets the cancellation token.
     /// </summary>
     public CancellationToken CancellationToken { get; }
@@ -28,12 +39,37 @@ public class TenantResolverContext
     /// <summary>
     /// Finds a tenant based on the provided tenant ID.
     /// </summary>
+    /// <remarks>
+    /// When the context is backed by an <see cref="ITenantService"/>, this blocks until the tenant service has started. Under a single-threaded
+    /// <see cref="SynchronizationContext"/> that can deadlock if it has not started yet. Prefer an async resolver.
+    /// </remarks>
     /// <param name="tenantId">The tenant ID.</param>
     /// <returns>The found tenant or null if no tenant with the provided ID exists.</returns>
     public Tenant? FindTenant(string? tenantId)
     {
         var normalizedId = tenantId.NormalizeTenantId();
-        return _tenantsDictionary.TryGetValue(normalizedId, out var tenant) ? tenant : null;
+
+        if (_tenantsDictionary != null)
+        {
+            return _tenantsDictionary.TryGetValue(normalizedId, out var tenant) ? tenant : null;
+        }
+
+        // The tenant service answers from memory once started, so blocking here does not wait on I/O.
+        return _tenantService!.FindAsync(normalizedId, CancellationToken).GetAwaiter().GetResult();
+    }
+
+    /// <summary>
+    /// Finds a tenant based on the provided predicate.
+    /// </summary>
+    /// <remarks>
+    /// When the context is backed by an <see cref="ITenantService"/>, this blocks until the tenant service has started. Under a single-threaded
+    /// <see cref="SynchronizationContext"/> that can deadlock if it has not started yet. Use <see cref="FindTenantAsync"/> instead.
+    /// </remarks>
+    /// <param name="predicate">The predicate used to filter the tenants.</param>
+    /// <returns>The found tenant or null if no tenant satisfies the predicate.</returns>
+    public Tenant? FindTenant(Func<Tenant, bool> predicate)
+    {
+        return FindTenantAsync(predicate).GetAwaiter().GetResult();
     }
 
     /// <summary>
@@ -41,8 +77,14 @@ public class TenantResolverContext
     /// </summary>
     /// <param name="predicate">The predicate used to filter the tenants.</param>
     /// <returns>The found tenant or null if no tenant satisfies the predicate.</returns>
-    public Tenant? FindTenant(Func<Tenant, bool> predicate)
+    public async Task<Tenant?> FindTenantAsync(Func<Tenant, bool> predicate)
     {
-        return _tenantsDictionary.Values.FirstOrDefault(predicate);
+        if (_tenantsDictionary != null)
+        {
+            return _tenantsDictionary.Values.FirstOrDefault(predicate);
+        }
+
+        var tenants = await _tenantService!.ListAsync(CancellationToken);
+        return tenants.FirstOrDefault(predicate);
     }
 }

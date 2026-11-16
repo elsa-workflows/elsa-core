@@ -30,7 +30,7 @@ This maps the structured logs hub at `/elsa/hubs/diagnostics/structured-logs` an
 
 ## Authorization
 
-The recent-log endpoint, source-list endpoint, and storage-diagnostics endpoint require the `read:diagnostics:structured-logs` permission. The SignalR hub requires an authenticated user, matching the existing Elsa workflow hub authorization pattern. Grant `read:diagnostics:structured-logs` only to operators and developers who are allowed to inspect backend logs.
+The recent-log endpoint, source-list endpoint, and storage-diagnostics endpoint require the `diagnostics/structured-logs:view` permission. The SignalR hub requires an authenticated user with the same permission, and streams only the events of the caller's tenant (plus tenant-agnostic events), whatever tenant the subscription filter names. The recent-log endpoint returns the same tenant-scoped view. New events are stamped with the tenant that was active when they were written; a `TenantId` named in a log property or scope is kept as data but never used as the event's tenant. Events without a tenant, including those written before this behaviour, belong to the default tenant. Grant `diagnostics/structured-logs:view` only to operators and developers who are allowed to inspect backend logs.
 
 ## Studio Integration
 

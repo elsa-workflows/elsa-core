@@ -1,8 +1,12 @@
+using Elsa.Common.Multitenancy;
 using Elsa.Diagnostics.StructuredLogs.Contracts;
+using Elsa.Diagnostics.StructuredLogs.Extensions;
 using Elsa.Diagnostics.StructuredLogs.Logging;
 using Elsa.Diagnostics.StructuredLogs.Models;
 using Elsa.Diagnostics.StructuredLogs.Options;
+using Elsa.Diagnostics.StructuredLogs.RealTime;
 using Elsa.Diagnostics.StructuredLogs.Services;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MicrosoftOptions = Microsoft.Extensions.Options.Options;
 
@@ -53,7 +57,7 @@ public class StructuredLogLoggerProviderTests
         Assert.Equal("tenant-a", logEvent.Properties["TenantId"]);
         Assert.False(logEvent.Properties.ContainsKey("{OriginalFormat}"));
         Assert.Equal("workflow-instance-a", logEvent.WorkflowInstanceId);
-        Assert.Equal("tenant-a", logEvent.TenantId);
+        Assert.Null(logEvent.TenantId);
     }
 
     [Fact]
@@ -71,7 +75,7 @@ public class StructuredLogLoggerProviderTests
         var logEvent = Assert.Single(_logProvider.Events);
         Assert.Equal("tenant-a", logEvent.Scopes["TenantId"]);
         Assert.Equal("[Redacted]", logEvent.Scopes["Password"]);
-        Assert.Equal("tenant-a", logEvent.TenantId);
+        Assert.Null(logEvent.TenantId);
     }
 
     [Fact]
@@ -94,6 +98,122 @@ public class StructuredLogLoggerProviderTests
         logger.LogInformation("Internal structured logs chatter");
 
         Assert.Empty(_logProvider.Events);
+    }
+
+    [Fact]
+    public void Log_WhenTenantContextIsActive_StampsAmbientTenant()
+    {
+        var logger = CreateLogger(new TestTenantAccessor("tenant-a"));
+
+        logger.LogInformation("Event without tenant property");
+
+        Assert.Equal("tenant-a", Assert.Single(_logProvider.Events).TenantId);
+    }
+
+    [Theory]
+    [InlineData("tenant-b")]
+    [InlineData("*")]
+    public void Log_WhenPropertyNamesAnotherTenant_KeepsAmbientTenant(string namedTenantId)
+    {
+        var logger = CreateLogger(new TestTenantAccessor("tenant-a"));
+
+        logger.LogInformation("Tenant {TenantId} activated", namedTenantId);
+
+        var logEvent = Assert.Single(_logProvider.Events);
+        Assert.Equal("tenant-a", logEvent.TenantId);
+        Assert.Equal(namedTenantId, logEvent.Properties["TenantId"]);
+        Assert.False(StructuredLogFilterEvaluator.IsVisibleToTenant(logEvent, "tenant-b"));
+    }
+
+    [Theory]
+    [InlineData("tenant-b")]
+    [InlineData("*")]
+    public void Log_WhenScopeNamesAnotherTenant_KeepsAmbientTenant(string namedTenantId)
+    {
+        var logger = CreateLogger(new TestTenantAccessor("tenant-a"));
+
+        using var scope = logger.BeginScope(new Dictionary<string, object?> { ["TenantId"] = namedTenantId });
+        logger.LogInformation("Scoped event");
+
+        var logEvent = Assert.Single(_logProvider.Events);
+        Assert.Equal("tenant-a", logEvent.TenantId);
+        Assert.False(StructuredLogFilterEvaluator.IsVisibleToTenant(logEvent, "tenant-b"));
+    }
+
+    [Theory]
+    [InlineData(null, "tenant-b")]
+    [InlineData(null, "*")]
+    [InlineData("", "tenant-b")]
+    [InlineData("", "*")]
+    [InlineData("*", "tenant-b")]
+    public void Log_WhenThereIsNoNamedTenantContext_IgnoresTenantNamedByTheEvent(string? ambientTenantId, string namedTenantId)
+    {
+        var logger = CreateLogger(ambientTenantId == null ? null : new TestTenantAccessor(ambientTenantId));
+
+        using var scope = logger.BeginScope(new Dictionary<string, object?> { ["TenantId"] = namedTenantId });
+        logger.LogInformation("Tenant {TenantId} event", namedTenantId);
+
+        var logEvent = Assert.Single(_logProvider.Events);
+        Assert.Null(logEvent.TenantId);
+        Assert.False(StructuredLogFilterEvaluator.IsVisibleToTenant(logEvent, "tenant-b"));
+        Assert.False(StructuredLogFilterEvaluator.IsVisibleToTenant(logEvent, "tenant-a"));
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    public void Log_WhenThereIsNoTenantContext_LeavesEventUntagged(string? tenantId)
+    {
+        var logger = CreateLogger(tenantId == null ? null : new TestTenantAccessor(tenantId));
+
+        logger.LogInformation("Host event");
+
+        Assert.Null(Assert.Single(_logProvider.Events).TenantId);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void AddStructuredLogsServices_ResolvesLoggerProviderWithOrWithoutTenantAccessor(bool registerTenantAccessor)
+    {
+        var services = new ServiceCollection();
+        services.AddStructuredLogsServices();
+        if (registerTenantAccessor)
+            services.AddSingleton<ITenantAccessor>(new TestTenantAccessor("tenant-a"));
+
+        using var serviceProvider = services.BuildServiceProvider();
+
+        Assert.Contains(serviceProvider.GetServices<ILoggerProvider>(), x => x is StructuredLogLoggerProvider);
+    }
+
+    [Fact]
+    public void PublicConstructors_KeepTheirOriginalSignatures()
+    {
+        var options = MicrosoftOptions.Create(new StructuredLogsOptions());
+
+        Assert.NotNull(new StructuredLogLoggerProvider(_logProvider, new StructuredLogRedactor(options), _sourceRegistry, options));
+        Assert.NotNull(new StructuredLogLogger("Test", _logProvider, new StructuredLogRedactor(options), _sourceRegistry, new StructuredLogsOptions(), () => new LoggerExternalScopeProvider()));
+    }
+
+    [Fact]
+    public void RealTimeTypes_KeepTheirOriginalPublicSignatures()
+    {
+        Assert.NotNull(typeof(StructuredLogsHub).GetConstructor([typeof(StructuredLogSubscriptionManager)]));
+        Assert.NotNull(typeof(StructuredLogSubscriptionManager).GetMethod(nameof(StructuredLogSubscriptionManager.SubscribeAsync), [typeof(string), typeof(StructuredLogFilter), typeof(CancellationToken)]));
+        Assert.NotNull(typeof(StructuredLogSubscriptionManager).GetMethod(nameof(StructuredLogSubscriptionManager.UpdateFilterAsync), [typeof(string), typeof(StructuredLogFilter), typeof(CancellationToken)]));
+    }
+
+    private ILogger CreateLogger(ITenantAccessor? tenantAccessor)
+    {
+        var options = MicrosoftOptions.Create(new StructuredLogsOptions());
+        return new StructuredLogLoggerProvider(_logProvider, new StructuredLogRedactor(options), _sourceRegistry, options, tenantAccessor).CreateLogger("Elsa.Workflows.Runtime");
+    }
+
+    private sealed class TestTenantAccessor(string tenantId) : ITenantAccessor
+    {
+        public string TenantId { get; } = tenantId;
+        public Tenant? Tenant => null;
+        public IDisposable PushContext(Tenant? tenant) => throw new NotSupportedException();
     }
 
     private sealed class CapturingStructuredLogProvider : IStructuredLogProvider

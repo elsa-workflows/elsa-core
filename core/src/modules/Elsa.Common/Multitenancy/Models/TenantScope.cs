@@ -13,12 +13,15 @@ public class TenantScope(IServiceScope serviceScope, ITenantAccessor tenantAcces
     public IServiceScope ServiceScope { get; } = serviceScope;
     public IServiceProvider ServiceProvider => ServiceScope.ServiceProvider;
 
-    public async ValueTask DisposeAsync()
+    // Not async: the tenant is restored in an AsyncLocal, and a change made inside an async method does not reach the caller.
+    public ValueTask DisposeAsync()
     {
         _tenantContext.Dispose();
+
         if (ServiceScope is IAsyncDisposable asyncDisposable)
-            await asyncDisposable.DisposeAsync();
-        else
-            ServiceScope.Dispose();
+            return asyncDisposable.DisposeAsync();
+
+        ServiceScope.Dispose();
+        return ValueTask.CompletedTask;
     }
 }

@@ -12,7 +12,9 @@ against which tenant owns the secret, so any caller holding it reached the whole
 Apply the `SecretTenancy` and `SecretDefaultTenantUniqueness` migrations for your provider. The second
 migration stamps leftover null `TenantId` values to `""` (the default tenant) and rebuilds the unique
 index. It does **not** delete duplicate names — if two leftover rows share a name in the same tenant,
-the upgrade aborts and lists the keys. Reconcile those rows, then re-run.
+the upgrade aborts before anything is deleted. Use the duplicate-check queries below to find the
+offending rows, reconcile them, then re-run. On MySQL the failed index creation itself names the
+duplicate value and the index.
 
 ## Existing secrets
 
@@ -70,8 +72,38 @@ on `NVL(TenantId, CHR(1))` plus `NormalizedName` instead. `CHR(1)` is not a tena
 NULL default-tenant names share one index key. The EF model snapshot cannot express `NVL`, so it looks like
 the other unfiltered unique indexes; the physical Oracle index is the function-based one from this migration.
 
-The migration does not delete duplicates: it lists leftover `(TenantId, NormalizedName)` keys and aborts,
-then the unique index fails loudly if any remain.
+The migration does not delete duplicates. SQL Server, PostgreSQL and Oracle preflight duplicate
+`(TenantId, NormalizedName)` keys and abort with the keys listed. MySQL no longer preflights — raising
+`SIGNAL` through `PREPARE` fails with MySQL ERROR 1295 — so its unique index creation is the fail-loud
+path: it aborts with error 1062, which names the duplicate value and the index.
+
+### Finding duplicates before upgrading
+
+Run these on MySQL before an upgrade to catch collisions early (SQL Server, PostgreSQL and Oracle will
+list them anyway). `COALESCE` folds null `TenantId` into `""`, matching what the unique index sees after
+the migration stamps nulls to `""`, and grouping follows the columns' collation exactly like the index:
+
+```sql
+SELECT
+    COALESCE(TenantId, '') AS TenantId,
+    NormalizedName,
+    COUNT(*) AS DuplicateCount
+FROM Labels
+GROUP BY COALESCE(TenantId, ''), NormalizedName
+HAVING COUNT(*) > 1;
+```
+
+```sql
+SELECT
+    COALESCE(TenantId, '') AS TenantId,
+    NormalizedName,
+    COUNT(*) AS DuplicateCount
+FROM Secrets
+GROUP BY COALESCE(TenantId, ''), NormalizedName
+HAVING COUNT(*) > 1;
+```
+
+Nothing is deleted; reconcile the reported rows by hand.
 
 `SetTenantIdFilter`'s null-compatibility clause still treats a stray null as the default tenant, so a row
 that somehow remains unstamped stays visible there. File and InMemory already treat null and `""` as the

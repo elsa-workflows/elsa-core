@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
-"""Check that .github/workflows/packages.yml can publish only through its three gated jobs.
+"""Check that .github/workflows/packages.yml can publish only through its gated jobs.
 
 Parses the workflow (PyYAML) and fails when a publication capability - Feedz or NuGet secrets, NuGet
 login, package pushes, Pages deployment, OIDC tokens or environments - appears outside
-publish_preview_feedz, publish_nuget and deploy_coverage, or when one of those jobs can start without a
-validated, explicit workflow_dispatch opt-in.
+publish_preview_feedz, publish_nuget, publish_npm, deploy_coverage and the two candidate-promotion publish
+jobs, or when one of those jobs can start without a validated, explicit workflow_dispatch opt-in.
+Candidate promotion (promote_candidate_version) has its own rules: see candidate_promotion_violations.
 """
 
 from __future__ import annotations
 
 import re
+import shlex
 import sys
 from pathlib import Path
 from typing import Any, Iterator
@@ -23,8 +25,6 @@ from validate_packages_publication_selection import COVERAGE_REFS, selection_err
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / ".github/workflows/packages.yml"
-CANDIDATE_WORKFLOW = ROOT / ".github/workflows/publish-consolidated-original-candidate.yml"
-CANDIDATE_PUBLISH = "consolidated_package_executor.py publish"
 
 SELECTION_JOB = "validate_publication_selection"
 # Each gated job is switched on by the workflow_dispatch input of the same name.
@@ -51,6 +51,8 @@ SELECTION_ENV = {
     "PUBLISH_NPM": "${{ inputs.publish_npm }}",
     "DEPLOY_COVERAGE": "${{ inputs.deploy_coverage }}",
     "EXCLUDE_IDS": "${{ inputs.exclude_ids }}",
+    "PROMOTE_CANDIDATE_VERSION": "${{ inputs.promote_candidate_version }}",
+    "PROMOTE_TARGET": "${{ inputs.promote_target }}",
 }
 GUARD_EXCLUDE_IDS = SELECTION_ENV["EXCLUDE_IDS"]
 # Probed against the script the selection job runs, not a copy of its rules.
@@ -63,12 +65,16 @@ REQUIRED_REJECTIONS = (
     ("exclude_ids on a prerelease tag", "refs/tags/3.10.0-rc1", {"nuget": True, "exclude_ids": "Elsa"}),
     ("exclude_ids on a non-3.10 tag", "refs/tags/3.8.5", {"nuget": True, "exclude_ids": "Elsa"}),
     ("exclude_ids when publish_nuget is false", "refs/tags/3.10.0", {"exclude_ids": "Elsa"}),
+    ("candidate promotion from a release branch", "refs/heads/release/3.10.0", {"promote": "3.10.1"}),
+    ("candidate promotion from a tag", "refs/tags/3.10.1", {"promote": "3.10.1"}),
+    ("candidate promotion combined with publish_nuget", "refs/heads/main", {"promote": "3.10.1", "nuget": True}),
 )
 REQUIRED_ACCEPTANCES = (
     ("Feedz from a 3.10.x prerelease tag", "refs/tags/3.10.0-rc1", {"feedz": True}),
     ("NuGet from a stable 3.10.x tag", "refs/tags/3.10.0", {"nuget": True}),
     ("npm from a 3.10.x prerelease tag", "refs/tags/3.10.0-rc1", {"npm": True}),
     ("exclude_ids on a stable 3.10 nuget dispatch", "refs/tags/3.10.0", {"nuget": True, "exclude_ids": "Elsa"}),
+    ("candidate promotion from main", "refs/heads/main", {"promote": "3.10.1"}),
 )
 PROMOTE_STABLE_REF = "startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-')"
 TAG_3100 = "github.ref == 'refs/tags/3.10.0'"
@@ -111,13 +117,15 @@ DOTNET_SDK = "10.0.300"
 NPM_ARTIFACT = "studio-npm-pair"
 WASM_TGZ = "elsa-workflows-elsa-studio-wasm-${GITHUB_REF_NAME}.tgz"
 REACT_TGZ = "elsa-workflows-elsa-studio-wasm-react-${GITHUB_REF_NAME}.tgz"
+NPM_PUBLISH_SCRIPT = "scripts/publish_npm_tarball.py"
+WASM_PACKAGE = "@elsa-workflows/elsa-studio-wasm"
+REACT_PACKAGE = "@elsa-workflows/elsa-studio-wasm-react"
+FEEDZ_NPM_REGISTRY = "https://f.feedz.io/elsa-workflows/elsa-3/npm/"
 ID_SET = ROOT / "scripts/validate_packages_id_set.txt"
 EXPECTED_PACKAGE_COUNT = 231
 # Exact non-empty run: lines after horizontal-whitespace collapse. A joined
 # string would accept YAML `>-`, which folds the block into one no-op `set`.
-CANDIDATE_GUARD_LINES = ("set -euo pipefail", STAGE_CANDIDATE, GUARD_CANDIDATE)
 NUGET_GUARD_LINES = (STAGE_CANDIDATE, GUARD_CANDIDATE)
-CANDIDATE_GUARD_REF = "refs/tags/3.10.0"
 GUARD_STEP_KEYS = frozenset({"name", "env", "run", "id", "if", "continue-on-error"})
 FORBIDDEN_PACK_ROUTE = (
     ("CONSOLIDATED_RELEASE_CANDIDATE", "packages.yml must not set CONSOLIDATED_RELEASE_CANDIDATE; the candidate workflow owns that pack"),
@@ -127,12 +135,14 @@ FORBIDDEN_PACK_ROUTE = (
 # Capabilities only a gated job may reference. Expression contexts and action names are case-insensitive.
 PUBLICATION_REFERENCES = {
     "secrets.FEEDZ*": re.compile(r"\bsecrets\s*(?:\.|\[\s*')\s*feedz", re.IGNORECASE),
+    "secrets.ELSA_CONSOLIDATED*": re.compile(r"\bsecrets\s*(?:\.|\[\s*')\s*elsa_consolidated", re.IGNORECASE),
     "secrets.NUGET*": re.compile(r"\bsecrets\s*(?:\.|\[\s*')\s*nuget", re.IGNORECASE),
     "NuGet/login": re.compile(r"\bnuget/login\b", re.IGNORECASE),
     "actions/deploy-pages": re.compile(r"\bactions/deploy-pages\b", re.IGNORECASE),
     "dotnet nuget push": re.compile(r"\bdotnet[\s\\]+nuget[\s\\]+push\b", re.IGNORECASE),
     "the push-nuget-packages action": re.compile(r"push-nuget-packages", re.IGNORECASE),
     "npm publish": re.compile(r"\bnpm[\s\\]+publish\b", re.IGNORECASE),
+    "the npm tarball publisher script": re.compile(r"publish_npm_tarball\.py"),
 }
 EXPRESSION = re.compile(r"\$\{\{(.*?)\}\}", re.DOTALL)
 # Inside ${{ }}: the secrets context as a whole, e.g. toJSON(secrets), which carries every feed key.
@@ -263,12 +273,16 @@ def capability_violations(workflow: dict) -> list[str]:
     scopes.update(
         (f"job {name!r}", job)
         for name, job in workflow["jobs"].items()
-        if name not in GATED_JOBS and isinstance(job, dict)
+        if name not in GATED_JOBS and name not in CANDIDATE_PUBLISH_JOBS and isinstance(job, dict)
     )
     violations = []
     for scope, node in scopes.items():
         texts = list(strings(node))
-        found = [label for label, pattern in PUBLICATION_REFERENCES.items() if any(map(pattern.search, texts))]
+        found = [
+            label
+            for label, pattern in PUBLICATION_REFERENCES.items()
+            if any(map(pattern.search, texts))
+        ]
         expressions = [expression for text in texts for expression in EXPRESSION.findall(text)]
         if any(WHOLE_SECRETS.search(expression) for expression in expressions):
             found.append("the whole secrets context")
@@ -280,7 +294,10 @@ def capability_violations(workflow: dict) -> list[str]:
             found.append("an environment")
         if "secrets" in node:
             found.append("secrets passed to a reusable workflow")
-        violations += [f"{scope} references {label}; only {', '.join(GATED_JOBS)} may" for label in found]
+        violations += [
+            f"{scope} references {label}; only {', '.join((*GATED_JOBS, *CANDIDATE_PUBLISH_JOBS))} may"
+            for label in found
+        ]
     return violations
 
 
@@ -378,6 +395,254 @@ def _step_run(step: dict) -> str:
 def _run_lines(step: dict) -> list[str]:
     """Whitespace-normalized non-empty lines of a step's run: body."""
     return [" ".join(line.split()) for line in str(step.get("run") or "").splitlines() if line.strip()]
+
+
+def _run_command_lines(step: dict) -> list[str]:
+    """Lines of a step's run with shell line continuations joined and comments removed."""
+    raw = _run_lines(step)
+    merged = []
+    for line in raw:
+        if merged and merged[-1].endswith("\\"):
+            merged[-1] = merged[-1][:-1].rstrip() + " " + line
+        else:
+            merged.append(line)
+    result = []
+    for line in merged:
+        comment = line.find("#")
+        if comment >= 0:
+            line = line[:comment].rstrip()
+        if line:
+            result.append(line)
+    return result
+
+
+def _split_shell_commands(line: str) -> list[tuple[str, str | None]]:
+    """Split a shell line into commands separated by top-level ; && || |.
+
+    Respects quoting so operators inside strings are not treated as separators.
+    """
+    try:
+        lexer = shlex.shlex(line, posix=True, punctuation_chars=";&|")
+        lexer.whitespace_split = True
+        tokens = list(lexer)
+    except ValueError:
+        return []
+    commands = []
+    current: list[str] = []
+    for token in tokens:
+        if token in (";", "&&", "||", "|"):
+            if current:
+                commands.append((" ".join(current), token))
+                current = []
+        else:
+            current.append(token)
+    if current:
+        commands.append((" ".join(current), None))
+    return commands
+
+
+def _command_tokens(command: str) -> list[str] | None:
+    try:
+        return shlex.split(command)
+    except ValueError:
+        return None
+
+
+def _is_publisher_command(command: str) -> bool:
+    tokens = _command_tokens(command)
+    if tokens is None or len(tokens) < 2:
+        return False
+    return Path(tokens[0]).name in {"python", "python3"} and tokens[1] == NPM_PUBLISH_SCRIPT
+
+
+def _is_npm_publish_command(command: str) -> bool:
+    tokens = _command_tokens(command)
+    if tokens is None or len(tokens) < 2:
+        return False
+    return tokens[0] == "npm" and tokens[1] == "publish"
+
+
+def _publisher_command_line(command_lines: list[str]) -> str | None:
+    """The first command line that actually invokes the npm tarball publisher, if any."""
+    for line in command_lines:
+        for command, _ in _split_shell_commands(line):
+            if _is_publisher_command(command):
+                return line
+    return None
+
+
+def _publisher_command(line: str) -> str | None:
+    """The publisher command within a command line, if any."""
+    for command, _ in _split_shell_commands(line):
+        if _is_publisher_command(command):
+            return command
+    return None
+
+
+def _parse_publisher_args(command: str) -> dict[str, list[str | None]]:
+    """Map argument names to their values for a publisher invocation."""
+    tokens = _command_tokens(command)
+    if tokens is None:
+        return {}
+    args: dict[str, list[str | None]] = {}
+    i = 2
+    while i < len(tokens):
+        token = tokens[i]
+        if token.startswith("-"):
+            if i + 1 < len(tokens) and not tokens[i + 1].startswith("-"):
+                args.setdefault(token, []).append(tokens[i + 1])
+                i += 2
+            else:
+                args.setdefault(token, []).append(None)
+                i += 1
+        else:
+            i += 1
+    return args
+
+
+def _single_arg_value(args: dict[str, list[str | None]], name: str) -> str | None:
+    """Single value for an option, or None if missing or duplicated."""
+    values = args.get(name)
+    if not values or len(values) != 1:
+        return None
+    return values[0]
+
+
+def _has_flag(args: dict[str, list[str | None]], name: str) -> bool:
+    """Whether an option appears exactly once as a boolean flag."""
+    values = args.get(name)
+    return values is not None and len(values) == 1 and values[0] is None
+
+
+def _validate_publisher_args(
+    args: dict[str, list[str | None]], *, package: str, tarball: str
+) -> list[str]:
+    """Validate the parsed arguments of a publisher invocation."""
+    errors = []
+    if _single_arg_value(args, "--package") != package:
+        errors.append(f"must target {package}")
+    if _single_arg_value(args, "--tarball") != tarball:
+        errors.append("must pass the correct tarball")
+    tag = _single_arg_value(args, "--tag")
+    if tag is None or tag != "$tag":
+        errors.append("must pass --tag $tag")
+    registry = _single_arg_value(args, "--registry")
+    if registry is None:
+        errors.append("must pass exactly one --registry argument")
+    elif registry != FEEDZ_NPM_REGISTRY:
+        errors.append("must use the Feedz npm registry")
+    if not _has_flag(args, "--verify-published"):
+        errors.append("must pass --verify-published")
+    return errors
+
+
+def _step_publisher(step: dict) -> tuple[str, dict[str, list[str | None]]] | None:
+    """The publisher command and its parsed arguments for a step, if any."""
+    for line in _run_command_lines(step):
+        command = _publisher_command(line)
+        if command is not None:
+            return command, _parse_publisher_args(command)
+    return None
+
+
+def _step_package(step: dict) -> str | None:
+    """The --package value of the publisher invocation in a step, if any."""
+    publisher = _step_publisher(step)
+    if publisher is None:
+        return None
+    return _single_arg_value(publisher[1], "--package")
+
+
+def _publisher_line_index(command_lines: list[str]) -> int | None:
+    for i, line in enumerate(command_lines):
+        if _publisher_command(line) is not None:
+            return i
+    return None
+
+
+def _is_output_command(command: str) -> bool:
+    """True for the exact echo command that writes wasm-published=true to GITHUB_OUTPUT."""
+    tokens = _command_tokens(command)
+    if tokens is None:
+        return False
+    return (
+        len(tokens) >= 4
+        and tokens[0] == "echo"
+        and "wasm-published=true" in tokens
+        and ">>" in tokens
+        and "$GITHUB_OUTPUT" in tokens
+    )
+
+
+def _output_command_index(command_lines: list[str]) -> int | None:
+    """Index of the command line that writes wasm-published=true, if any."""
+    for i, line in enumerate(command_lines):
+        for command, _ in _split_shell_commands(line):
+            if _is_output_command(command):
+                return i
+    return None
+
+
+def _publisher_error_suppressions(command_lines: list[str]) -> list[str]:
+    """Detect constructs that let a failed publisher continue."""
+    errors = []
+    for line in command_lines:
+        commands = _split_shell_commands(line)
+        for j, (command, sep) in enumerate(commands):
+            if not _is_publisher_command(command):
+                continue
+            if sep == "||" and j + 1 < len(commands) and commands[j + 1][0] in ("true", ":"):
+                errors.append("publisher is followed by error-suppressing || true/:")
+            if sep == ";" and j + 1 < len(commands):
+                errors.append("publisher is chained with ; before the output command")
+            if sep == "|" and j + 1 < len(commands):
+                errors.append("publisher is piped into another command before the output")
+    return errors
+
+
+def _errexit_disable_index(command_lines: list[str]) -> int | None:
+    """Index of a command that disables errexit, if any."""
+    for i, line in enumerate(command_lines):
+        for command, _ in _split_shell_commands(line):
+            tokens = _command_tokens(command)
+            if tokens is None:
+                continue
+            if len(tokens) >= 2 and tokens[0] == "set":
+                if "+e" in tokens[1:]:
+                    return i
+                if "+o" in tokens[1:] and any(tok in {"errexit", "e"} for tok in tokens[1:]):
+                    return i
+    return None
+
+
+def _shell_override_violation(step: dict) -> str | None:
+    """Reject non-default shells that could bypass the publisher or error handling."""
+    shell = step.get("shell")
+    if shell is None:
+        return None
+    allowed = {"bash", "sh", "pwsh", "powershell", "cmd"}
+    if isinstance(shell, str) and shell.split()[0] in allowed:
+        return None
+    return "must use a standard shell"
+
+
+def _wasm_step_if_violation(step: dict) -> str | None:
+    """The WASM publish step must run whenever the job runs.
+
+    Only an explicit, plain success() condition (or no condition at all) is
+    accepted; anything else could skip the step and let the React publish run.
+    """
+    value = step.get("if")
+    if value is None:
+        return None
+    expression = if_expression(value)
+    text = "".join((expression if expression is not None else str(value)).split()).lower()
+    if text == "success()":
+        return None
+    return "must not be conditionally skipped"
+
+
+
 
 
 def _has_defaults_run_shell(node: Any) -> bool:
@@ -652,28 +917,110 @@ def npm_job_violations(jobs: dict) -> list[str]:
         duplicate="publish_npm must contain exactly one Studio npm pair verify step",
     )
     violations += extra
-    feedz_publish, extra = _unique_step(
+    wasm_publish, extra = _unique_step(
         steps,
-        lambda step: step.get("name") == "npm publish to Feedz",
-        missing="publish_npm must contain npm publish to Feedz",
-        duplicate="publish_npm must contain exactly one Feedz npm publish step",
+        lambda step: NPM_PUBLISH_SCRIPT in _step_run(step) and f'--package "{WASM_PACKAGE}"' in _step_run(step),
+        missing="publish_npm must publish @elsa-workflows/elsa-studio-wasm",
+        duplicate="publish_npm must contain exactly one @elsa-workflows/elsa-studio-wasm publish step",
     )
     violations += extra
-    if feedz_publish is not None:
-        run = _step_run(steps[feedz_publish])
-        if not re.search(r"\bnpm[\s\\]+publish\b.*--tag", run):
-            violations.append("publish_npm Feedz publish must pass a dist-tag")
-        if "EPUBLISHCONFLICT" not in run or "cannot publish over" not in run:
-            violations.append("publish_npm Feedz publish must skip a version that already exists")
-        if "::error::" not in run:
-            violations.append("publish_npm Feedz publish must fail closed when the Feedz key is empty")
-    publishes = [index for index, step in enumerate(steps) if re.search(r"\bnpm[\s\\]+publish\b", _step_run(step), re.IGNORECASE)]
-    if len(publishes) != 1:
-        violations.append("publish_npm must contain exactly one npm publish step")
+    react_publish, extra = _unique_step(
+        steps,
+        lambda step: NPM_PUBLISH_SCRIPT in _step_run(step) and f'--package "{REACT_PACKAGE}"' in _step_run(step),
+        missing="publish_npm must publish @elsa-workflows/elsa-studio-wasm-react",
+        duplicate="publish_npm must contain exactly one @elsa-workflows/elsa-studio-wasm-react publish step",
+    )
+    violations += extra
+
+    # Reject any real npm publish invocation anywhere in the job.
+    for step in steps:
+        for line in _run_command_lines(step):
+            for command, _ in _split_shell_commands(line):
+                if _is_npm_publish_command(command):
+                    violations.append("publish_npm must not invoke npm publish directly")
+
+    if wasm_publish is not None:
+        run = _step_run(steps[wasm_publish])
+        wasm_command_lines = _run_command_lines(steps[wasm_publish])
+        publisher = _step_publisher(steps[wasm_publish])
+        publisher_index = _publisher_line_index(wasm_command_lines)
+        output_index = _output_command_index(wasm_command_lines)
+        set_e_index = next((i for i, line in enumerate(wasm_command_lines) if 'set -euo pipefail' in line), None)
+        set_plus_e_index = _errexit_disable_index(wasm_command_lines)
+
+        if publisher is None:
+            violations.append("publish_npm WASM publish must invoke scripts/publish_npm_tarball.py")
+        else:
+            for error in _validate_publisher_args(
+                publisher[1], package=WASM_PACKAGE, tarball='$RUNNER_TEMP/studio-npm-pair/$wasm'
+            ):
+                violations.append(f"publish_npm WASM publish {error}")
+            for error in _publisher_error_suppressions(wasm_command_lines):
+                violations.append(f"publish_npm WASM publish must not suppress errors ({error})")
+
+        if "::error::Feedz npm key resolved empty" not in run:
+            violations.append("publish_npm WASM publish must fail closed when the Feedz key is empty")
+        if steps[wasm_publish].get("id") != "publish_wasm":
+            violations.append("publish_npm WASM publish step must have id 'publish_wasm'")
+        if 'echo "wasm-published=true" >> "$GITHUB_OUTPUT"' not in str(steps[wasm_publish].get("run") or ""):
+            violations.append("publish_npm WASM publish step must set output 'wasm-published=true'")
+        if output_index is None:
+            violations.append("publish_npm WASM publish must execute wasm-published output command")
+        elif publisher_index is not None and output_index <= publisher_index:
+            violations.append("publish_npm WASM output must occur after successful publication")
+        if set_e_index is None:
+            violations.append("publish_npm WASM publish must set -euo pipefail before publishing")
+        elif publisher_index is not None and set_e_index > publisher_index:
+            violations.append("publish_npm WASM publish must set -euo pipefail before publishing")
+        if set_plus_e_index is not None:
+            if publisher_index is None or set_plus_e_index < publisher_index:
+                violations.append("publish_npm WASM publish must not disable errexit before publishing")
+            if output_index is None or set_plus_e_index < output_index:
+                violations.append("publish_npm WASM publish must not disable errexit before writing wasm-published output")
+        shell_violation = _shell_override_violation(steps[wasm_publish])
+        if shell_violation:
+            violations.append(f"publish_npm WASM publish step {shell_violation}")
+        if_violation = _wasm_step_if_violation(steps[wasm_publish])
+        if if_violation:
+            violations.append(f"publish_npm WASM publish step {if_violation}")
+
+    if react_publish is not None:
+        run = _step_run(steps[react_publish])
+        react_command_lines = _run_command_lines(steps[react_publish])
+        publisher = _step_publisher(steps[react_publish])
+        publisher_index = _publisher_line_index(react_command_lines)
+        set_e_index = next((i for i, line in enumerate(react_command_lines) if 'set -euo pipefail' in line), None)
+        set_plus_e_index = _errexit_disable_index(react_command_lines)
+
+        if publisher is None:
+            violations.append("publish_npm React publish must invoke scripts/publish_npm_tarball.py")
+        else:
+            for error in _validate_publisher_args(
+                publisher[1], package=REACT_PACKAGE, tarball='$RUNNER_TEMP/studio-npm-pair/$react'
+            ):
+                violations.append(f"publish_npm React publish {error}")
+
+        if "::error::Feedz npm key resolved empty" not in run:
+            violations.append("publish_npm React publish must fail closed when the Feedz key is empty")
+        if if_expression(steps[react_publish].get("if")) != "steps.publish_wasm.outputs.wasm-published == 'true'":
+            violations.append("publish_npm React publish must run only when WASM is confirmed")
+        if set_e_index is None:
+            violations.append("publish_npm React publish must set -euo pipefail before publishing")
+        elif publisher_index is not None and set_e_index > publisher_index:
+            violations.append("publish_npm React publish must set -euo pipefail before publishing")
+        if set_plus_e_index is not None and (publisher_index is None or set_plus_e_index < publisher_index):
+            violations.append("publish_npm React publish must not disable errexit before publishing")
+        shell_violation = _shell_override_violation(steps[react_publish])
+        if shell_violation:
+            violations.append(f"publish_npm React publish step {shell_violation}")
+
+    publisher_step_count = sum(1 for step in steps if _step_publisher(step) is not None)
+    if publisher_step_count != 2:
+        violations.append("publish_npm must contain exactly two tarball publish steps")
     if any(step.get("name") == "npm publish to npmjs.com" or re.search(r"registry\.npmjs\.(org|com)", _step_run(step)) for step in steps):
         violations.append("publish_npm must not publish to npmjs.com until trusted publishing is confirmed")
-    if None not in (closed, download, verify, feedz_publish) and not closed < download < verify < feedz_publish:
-        violations.append("publish_npm must fail closed on stable 3.10.x, download and verify the pair, then publish to Feedz")
+    if None not in (closed, download, verify, wasm_publish, react_publish) and not closed < download < verify < wasm_publish < react_publish:
+        violations.append("publish_npm must fail closed, download and verify the pair, publish WASM, then publish React")
     return violations
 
 
@@ -681,83 +1028,179 @@ def promotion_source_violations(source: str) -> list[str]:
     return [message for needle, message in FORBIDDEN_PACK_ROUTE if needle in source]
 
 
-def candidate_publisher_violations(source: str) -> list[str]:
-    """The candidate Feedz publisher must run the same 231-ID guard before any push."""
-    violations = []
-    lowered = source.lower()
-    for marker in ("skip_id_set", "skip_guard", "bypass_id_set", "bypass_guard", "expected_ids"):
-        if marker in lowered:
-            violations.append(
-                "publish-consolidated-original-candidate.yml must not offer a skip, bypass, or ID-list override"
-            )
-    if "EXCLUDE_IDS" in source:
-        violations.append("publish-consolidated-original-candidate.yml must not set EXCLUDE_IDS")
-    guard = source.find(GUARD_CANDIDATE)
-    publish = source.find(CANDIDATE_PUBLISH)
-    if guard < 0:
-        violations.append(
-            "publish-consolidated-original-candidate.yml must run the same ID-set guard before Feedz"
-        )
-    elif publish < 0 or guard > publish:
-        violations.append(
-            "publish-consolidated-original-candidate.yml must run the ID-set guard before the Feedz publish"
-        )
+CANDIDATE_VALIDATE_JOB = "validate_candidate_pin"
+CANDIDATE_RETRIEVE_JOB = "retrieve_candidate"
+CANDIDATE_FEEDZ_JOB = "publish_candidate_feedz"
+CANDIDATE_NUGET_JOB = "publish_candidate_nuget"
+CANDIDATE_PUBLISH_JOBS = (CANDIDATE_FEEDZ_JOB, CANDIDATE_NUGET_JOB)
+CANDIDATE_JOBS = (CANDIDATE_VALIDATE_JOB, CANDIDATE_RETRIEVE_JOB, *CANDIDATE_PUBLISH_JOBS)
+CANDIDATE_VALIDATE_IF = "github.event_name == 'workflow_dispatch' && inputs.promote_candidate_version != ''"
+VERIFIER = "scripts/verify_consolidated_candidate.py"
+BLANK_TOKENS = {"GITHUB_TOKEN": "", "GH_TOKEN": "", "ACTIONS_READ_TOKEN": ""}
+CONTEXT_LINES = (
+    "set -euo pipefail",
+    "test \"$GITHUB_REPOSITORY\" = 'elsa-workflows/elsa-core'",
+    "test \"$GITHUB_REF\" = 'refs/heads/main'",
+    "test \"$GITHUB_REF_TYPE\" = 'branch'",
+    "test \"$GITHUB_RUN_ATTEMPT\" = '1'",
+)
+# Each publisher runs for its own target (or all) and never depends on a version.
+CANDIDATE_PUBLISH_IF = {
+    CANDIDATE_FEEDZ_JOB: "inputs.promote_target == 'all' || inputs.promote_target == 'feedz'",
+    # nuget.org follows Feedz on 'all' (a Feedz failure blocks it) and runs alone on 'nuget'.
+    CANDIDATE_NUGET_JOB: ("!cancelled() && needs.validate_candidate_pin.result == 'success'"
+                          " && needs.retrieve_candidate.result == 'success'"
+                          " && (inputs.promote_target == 'all' || inputs.promote_target == 'nuget')"
+                          " && (needs.publish_candidate_feedz.result == 'success'"
+                          " || (inputs.promote_target == 'nuget' && needs.publish_candidate_feedz.result == 'skipped'))"),
+}
+CANDIDATE_PUBLISH_NEEDS = {
+    CANDIDATE_FEEDZ_JOB: {CANDIDATE_RETRIEVE_JOB},
+    CANDIDATE_NUGET_JOB: {CANDIDATE_VALIDATE_JOB, CANDIDATE_RETRIEVE_JOB, CANDIDATE_FEEDZ_JOB},
+}
+CANDIDATE_TARGETS = ["all", "feedz", "nuget"]
+CANDIDATE_ENVIRONMENTS = {CANDIDATE_FEEDZ_JOB: "feedz-publish", CANDIDATE_NUGET_JOB: "nuget-org"}
+CANDIDATE_FEED = {CANDIDATE_FEEDZ_JOB: "feedz", CANDIDATE_NUGET_JOB: "nuget"}
+CANDIDATE_GUARD_LINES = {
+    job: ("set -euo pipefail", GUARD_CANDIDATE,
+          f'python3 {VERIFIER} count --version "$VERSION" --feed {feed} --dir "$PACKAGES_DIR"')
+    for job, feed in CANDIDATE_FEED.items()
+}
+CANDIDATE_MARKERS = ("skip_id_set", "skip_guard", "bypass_id_set", "bypass_guard", "expected_ids")
+CANDIDATE_NO_TAGGING = ("git tag", "git push", "refs/tags", "gh release", "git/refs")
+PINNED_ACTION = re.compile(r"[^@]+@[0-9a-f]{40}")
+CANDIDATE_SECRET = "secrets.ELSA_CONSOLIDATED_FEEDZ_PUBLISH_KEY"
+
+
+def candidate_promotion_violations(source: str) -> list[str]:
+    """Candidate promotion installs pinned bytes to Feedz and nuget.org: same steps for every version.
+
+    Checks the four candidate jobs of packages.yml (source text, so mutations can be tested): the pin is
+    validated first, retrieval has no environment, each publisher re-verifies tokenless and runs the ID-set
+    guard and the pinned count before any key or login, and nothing is conditional on a version.
+    """
+    violations: list[str] = []
     workflow = yaml.safe_load(source)
     jobs = workflow.get("jobs") if isinstance(workflow, dict) else None
-    job = jobs.get("publish") if isinstance(jobs, dict) else None
-    steps = [step for step in (job or {}).get("steps") or [] if isinstance(step, dict)] if isinstance(job, dict) else []
-    guard_steps = [step for step in steps if GUARD_CANDIDATE in _step_run(step)]
-    if not guard_steps and guard >= 0:
-        violations.append(
-            "publish-consolidated-original-candidate.yml must run the same ID-set guard before Feedz"
-        )
-    if _has_defaults_run_shell(workflow) or _has_defaults_run_shell(job):
-        violations.append(
-            "publish-consolidated-original-candidate.yml must not set defaults.run.shell"
-        )
-    if isinstance(job, dict) and "continue-on-error" in job and job.get("continue-on-error") is not False:
-        violations.append(
-            "publish-consolidated-original-candidate.yml must not continue on error"
-        )
-    for step in guard_steps:
-        # Absent or continue-on-error: false is GitHub's default and the same
-        # allowlist publish_nuget uses. Any other value, including 0 or '', is a
-        # violation. An if: key always disables or conditions the guard, including
-        # falsy values such as false, '' and 0.
-        if "continue-on-error" in step and step.get("continue-on-error") is not False:
-            violations.append(
-                "publish-consolidated-original-candidate.yml must not continue on error"
-            )
-        if "if" in step:
-            violations.append(
-                "publish-consolidated-original-candidate.yml guard step must not have an if:"
-            )
-        if _guard_step_extra_keys(step):
-            violations.append(
-                "publish-consolidated-original-candidate.yml guard step keys must be among name, env, run, id, if, continue-on-error"
-            )
-        if _run_lines(step) != list(CANDIDATE_GUARD_LINES):
-            violations.append(
-                "publish-consolidated-original-candidate.yml guard run: must be exactly set -euo pipefail, stage, and the ID-set guard"
-            )
-        env = step.get("env") if isinstance(step.get("env"), dict) else {}
-        if " ".join(str(env.get("REF") or "").split()) != CANDIDATE_GUARD_REF:
-            violations.append(
-                "publish-consolidated-original-candidate.yml guard env REF must be refs/tags/3.10.0"
-            )
-    # Recheck and publish must not be gated by always()/failure()/cancelled().
-    # The evidence upload's if: always() is the one allowed status-function use.
-    for step in steps:
-        uses = str(step.get("uses") or "").lower()
-        if "upload-artifact" in uses:
+    if not isinstance(jobs, dict):
+        return ["candidate promotion: the workflow has no jobs mapping"]
+    prefix = "candidate promotion"
+    for name in CANDIDATE_JOBS:
+        if not isinstance(jobs.get(name), dict):
+            violations.append(f"{prefix}: job {name!r} is missing")
+    if violations:
+        return violations
+    section = {name: jobs[name] for name in CANDIDATE_JOBS}
+    text = " ".join(strings(section)).lower()
+    for marker in CANDIDATE_MARKERS:
+        if marker in text:
+            violations.append(f"{prefix}: must not offer a skip, bypass, or ID-list override")
+    for needle in CANDIDATE_NO_TAGGING:
+        if needle in text:
+            violations.append(f"{prefix}: must not create or push a tag or release ({needle})")
+    if _has_defaults_run_shell(workflow) or any(_has_defaults_run_shell(job) for job in section.values()):
+        violations.append(f"{prefix}: must not set defaults.run.shell")
+    inputs = (triggers(workflow).get("workflow_dispatch") or {}).get("inputs") or {}
+    spec = inputs.get("promote_candidate_version")
+    if not isinstance(spec, dict) or spec.get("type") != "string" or spec.get("default") != "":
+        violations.append(f"{prefix}: workflow_dispatch input 'promote_candidate_version' must be a string defaulting to ''")
+    target = inputs.get("promote_target")
+    if (not isinstance(target, dict) or target.get("type") != "choice" or target.get("default") != "all"
+            or target.get("options") != CANDIDATE_TARGETS):
+        violations.append(f"{prefix}: workflow_dispatch input 'promote_target' must be a choice of {CANDIDATE_TARGETS} defaulting to 'all'")
+    for name, job in section.items():
+        steps = [step for step in job.get("steps") or [] if isinstance(step, dict)]
+        if any(node.get("continue-on-error") not in (None, False) for node in (job, *steps)):
+            violations.append(f"{prefix}: {name} must not continue on error")
+        if any("if" in step for step in steps):
+            violations.append(f"{prefix}: {name} steps must not have an if:; every version runs the same steps")
+        if re.search(r"\b[0-9]+\.[0-9]+\.[0-9]+\b", " ".join(strings(job))):
+            violations.append(f"{prefix}: {name} must not name a version; versions live in the pin file")
+        for step in steps:
+            uses = str(step.get("uses") or "")
+            if uses and not uses.startswith("./") and not PINNED_ACTION.fullmatch(uses):
+                violations.append(f"{prefix}: {name} action {uses!r} must be pinned to a full commit SHA")
+        conditions = [if_expression(node["if"]) or "" for node in (job, *steps) if "if" in node]
+        expressions = [e for t in strings(job) for e in EXPRESSION.findall(t)]
+        if name == CANDIDATE_NUGET_JOB:
+            # Its pinned if: (checked exactly below) is the one place cancelled() is allowed.
+            pinned = CANDIDATE_PUBLISH_IF[name]
+            conditions = [c for c in conditions if c != pinned]
+            expressions = [e for e in expressions if e.strip() != pinned]
+        if any(STATUS_FUNCTION.search(e) for e in (*expressions, *conditions)):
+            violations.append(f"{prefix}: {name} must not call always(), failure() or cancelled()")
+    validate = section[CANDIDATE_VALIDATE_JOB]
+    if SELECTION_JOB not in needs(validate):
+        violations.append(f"{prefix}: {CANDIDATE_VALIDATE_JOB} must need {SELECTION_JOB}")
+    if if_expression(validate.get("if")) != CANDIDATE_VALIDATE_IF:
+        violations.append(f"{prefix}: {CANDIDATE_VALIDATE_JOB} if: must be exactly {CANDIDATE_VALIDATE_IF}")
+    first_run = next((step for step in validate.get("steps") or [] if isinstance(step, dict) and "run" in step), None)
+    if first_run is None or f"{VERIFIER} validate-pin" not in _step_run(first_run):
+        violations.append(f"{prefix}: the first run step of {CANDIDATE_VALIDATE_JOB} must validate the pin entry")
+    if "if" in section[CANDIDATE_RETRIEVE_JOB]:
+        violations.append(f"{prefix}: {CANDIDATE_RETRIEVE_JOB} must not have its own if:; it follows {CANDIDATE_VALIDATE_JOB} through needs")
+    for name in CANDIDATE_PUBLISH_JOBS:
+        if if_expression(section[name].get("if")) != CANDIDATE_PUBLISH_IF[name]:
+            violations.append(f"{prefix}: {name} if: must be exactly {CANDIDATE_PUBLISH_IF[name]} (keyed on the promote target and job results, never a version)")
+    retrieve = section[CANDIDATE_RETRIEVE_JOB]
+    if needs(retrieve) != {CANDIDATE_VALIDATE_JOB}:
+        violations.append(f"{prefix}: {CANDIDATE_RETRIEVE_JOB} must need only {CANDIDATE_VALIDATE_JOB}")
+    scan = " ".join(strings(retrieve))
+    if "environment" in retrieve or "secrets" in scan.lower() or grants_id_token(retrieve.get("permissions")):
+        violations.append(f"{prefix}: {CANDIDATE_RETRIEVE_JOB} must have no environment, secret or id-token")
+    if not any(f"{VERIFIER} retrieve" in _step_run(step) for step in retrieve.get("steps") or [] if isinstance(step, dict)):
+        violations.append(f"{prefix}: {CANDIDATE_RETRIEVE_JOB} must run the verifier's retrieve")
+    for name, job in section.items():
+        if name in (CANDIDATE_VALIDATE_JOB,):
             continue
-        if GUARD_CANDIDATE in _step_run(step):
-            continue
-        expression = if_expression(step.get("if")) if "if" in step else ""
-        if STATUS_FUNCTION.search(expression or ""):
-            violations.append(
-                "publish-consolidated-original-candidate.yml recheck and publish steps must not call always(), failure() or cancelled()"
-            )
+        steps = [step for step in job.get("steps") or [] if isinstance(step, dict)]
+        first = next((step for step in steps if "run" in step), None)
+        if first is None or _run_lines(first) != list(CONTEXT_LINES):
+            violations.append(f"{prefix}: the first run step of {name} must require the repository, refs/heads/main and run attempt 1")
+    for name in CANDIDATE_PUBLISH_JOBS:
+        job = section[name]
+        steps = [step for step in job.get("steps") or [] if isinstance(step, dict)]
+        feed = CANDIDATE_FEED[name]
+        if needs(job) != CANDIDATE_PUBLISH_NEEDS[name]:
+            violations.append(f"{prefix}: {name} must need exactly {sorted(CANDIDATE_PUBLISH_NEEDS[name])}")
+        if job.get("environment") != CANDIDATE_ENVIRONMENTS[name]:
+            violations.append(f"{prefix}: {name} must use environment {CANDIDATE_ENVIRONMENTS[name]}")
+        if grants_id_token(job.get("permissions")) != (name == CANDIDATE_NUGET_JOB):
+            violations.append(f"{prefix}: only the nuget publisher may request id-token: write")
+        verify, extra = _unique_step(steps, lambda step: f"{VERIFIER} verify" in _step_run(step),
+                                     missing=f"{prefix}: {name} must re-verify the pin before publishing",
+                                     duplicate=f"{prefix}: {name} must contain exactly one verify step")
+        violations += extra
+        guard, extra = _unique_step(steps, lambda step: GUARD_CANDIDATE in _step_run(step),
+                                    missing=f"{prefix}: {name} must run the ID-set guard before publishing",
+                                    duplicate=f"{prefix}: {name} must contain exactly one ID-set guard step")
+        violations += extra
+        publish = next((i for i, step in enumerate(steps)
+                        if "push-nuget-packages" in str(step.get("uses") or "")), None)
+        secret = next((i for i, step in enumerate(steps)
+                       if CANDIDATE_SECRET in str(step) or "nuget/login" in str(step.get("uses") or "").lower()), None)
+        if publish is None or secret is None:
+            violations.append(f"{prefix}: {name} must publish with the push-nuget-packages action after its key or login")
+        if None not in (verify, guard, secret, publish) and not verify < guard < secret <= publish:
+            violations.append(f"{prefix}: {name} must verify, guard and count before the key or login, then publish")
+        if verify is not None and (steps[verify].get("env") or {}) != {**BLANK_TOKENS, "VERSION": "${{ inputs.promote_candidate_version }}"}:
+            violations.append(f"{prefix}: {name} verify step must blank GITHUB_TOKEN, GH_TOKEN and ACTIONS_READ_TOKEN")
+        if guard is not None:
+            step = steps[guard]
+            if _run_lines(step) != list(CANDIDATE_GUARD_LINES[name]):
+                violations.append(f"{prefix}: {name} guard run: must be exactly set -euo pipefail, the ID-set guard and the pinned count")
+            if _guard_step_extra_keys(step):
+                violations.append(f"{prefix}: {name} guard step keys must be among name, env, run, id, if, continue-on-error")
+            env = step.get("env") if isinstance(step.get("env"), dict) else {}
+            expected_exclude = "${{ steps.pin.outputs.exclude_ids }}" if feed == "nuget" else None
+            if env.get("EXCLUDE_IDS") != expected_exclude:
+                violations.append(
+                    f"{prefix}: {name} guard EXCLUDE_IDS must be the pinned exclusions"
+                    if feed == "nuget" else f"{prefix}: {name} must not set EXCLUDE_IDS")
+        if feed == "feedz" and "EXCLUDE_IDS" in " ".join(strings(job)):
+            violations.append(f"{prefix}: {name} must not set EXCLUDE_IDS")
+        if CANDIDATE_SECRET in " ".join(strings(job)) and name != CANDIDATE_FEEDZ_JOB:
+            violations.append(f"{prefix}: only the Feedz publisher may read the Feedz key")
     return violations
 
 
@@ -791,6 +1234,7 @@ def source_violations(source: str) -> list[str]:
     return [
         *workflow_violations(yaml.safe_load(source)),
         *promotion_source_violations(source),
+        *candidate_promotion_violations(source),
     ]
 
 
@@ -798,16 +1242,12 @@ def main() -> int:
     violations = [
         *(f"{ID_SET.relative_to(ROOT)}: {violation}" for violation in id_set_count_violations()),
         *(f"{WORKFLOW.relative_to(ROOT)}: {violation}" for violation in source_violations(WORKFLOW.read_text(encoding="utf-8"))),
-        *(
-            f"{CANDIDATE_WORKFLOW.relative_to(ROOT)}: {violation}"
-            for violation in candidate_publisher_violations(CANDIDATE_WORKFLOW.read_text(encoding="utf-8"))
-        ),
     ]
     for violation in violations:
         print(violation, file=sys.stderr)
     if violations:
         return 1
-    print("Package publication gates hold: only the four default-off, validated dispatch jobs can publish or deploy.")
+    print("Package publication gates hold: only the default-off, validated dispatch jobs can publish or deploy.")
     return 0
 
 
