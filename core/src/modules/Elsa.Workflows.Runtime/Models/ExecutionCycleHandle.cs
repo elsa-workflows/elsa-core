@@ -79,8 +79,9 @@ public sealed class ExecutionCycleHandle : IDisposable
     /// <summary>
     /// Tenant that was current when the cycle started. The drain does not run in the cycle's tenant, so it reads and
     /// writes the instance in this tenant's scope. Null when no tenant was current or the registry did not record one.
+    /// A custom <see cref="IExecutionCycleRegistry"/> sets it when it creates the handle.
     /// </summary>
-    internal Tenant? Tenant { get; init; }
+    public Tenant? Tenant { get; init; }
 
     /// <summary>
     /// The bookmark this cycle resumes and the input it resumes it with, so a host-stop drain can queue a resume that
