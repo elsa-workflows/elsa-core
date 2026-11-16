@@ -10,6 +10,7 @@ using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Stores;
 using Elsa.Workflows.Runtime.Options;
+using Elsa.Workflows.Runtime.Services;
 using Elsa.Workflows.Runtime.StartupTasks;
 using Elsa.Workflows.Runtime.Tasks;
 using Elsa.Workflows.State;
@@ -323,6 +324,29 @@ public class RestartInterruptedWorkflowsTaskTests
         await task.ExecuteAsync(CancellationToken.None);
 
         Assert.Equal(["interrupted"], restarted);
+    }
+
+    [Fact(DisplayName = "A cycle right after the startup scan does not restart an Interrupted instance the scan restarted")]
+    public async Task ExecuteAsync_InterruptedInstance_NotRestartedAgainAfterStartupScan()
+    {
+        var now = DateTimeOffset.Parse("2026-04-14T12:00:00Z");
+        var store = new MemoryWorkflowInstanceStore(new MemoryStore<WorkflowInstance>());
+        await SaveInstanceAsync(store, "interrupted", WorkflowStatus.Running, WorkflowSubStatus.Interrupted, isExecuting: false, now.AddMinutes(-10));
+        var restarted = new List<string>();
+        var clock = Substitute.For<ISystemClock>();
+        clock.UtcNow.Returns(now);
+        // The startup scan of a new node and the recurring task of another node, as in a slot swap. The restarters only
+        // record: the dispatched run has not touched the row yet when the cycle starts.
+        var options = Microsoft.Extensions.Options.Options.Create(new RuntimeOptions { RestartInterruptedWorkflowsBatchSize = 10, InactivityThreshold = TimeSpan.FromMinutes(5) });
+        var scanner = new InterruptedRecoveryScanner(RecordingRestarter(restarted), store, options, Substitute.For<ILogger<InterruptedRecoveryScanner>>(), Substitute.For<ITenantService>(), new DefaultTenantAccessor(), null, clock);
+        var task = CreateTask(store, RecordingRestarter(restarted), clock);
+
+        await scanner.ScanAndRequeueAsync(CancellationToken.None);
+        await task.ExecuteAsync(CancellationToken.None);
+
+        Assert.Equal(["interrupted"], restarted);
+        var instance = await store.FindAsync(new WorkflowInstanceFilter { Id = "interrupted" });
+        Assert.Equal(now, instance!.UpdatedAt);
     }
 
     [Fact(DisplayName = "An Interrupted instance whose restart never ran is restarted again once the inactivity threshold passes")]
