@@ -40,13 +40,8 @@ public class ExecutionCycleTrackingMiddleware(WorkflowMiddlewareDelegate next, I
                 ? handle => CaptureRestartPoint(handle, context)
                 : null;
 
-            // The default registry captures the restart point before the handle becomes visible to a drain.
-            if (cycleRegistry is ExecutionCycleRegistry registry)
-                return registry.BeginCycle(context.Id, ingressSourceName, context.CancellationToken, context.Cancel, captureRestartPoint);
-
-            var handle = cycleRegistry.BeginCycle(context.Id, ingressSourceName, context.CancellationToken, cancelCallback: context.Cancel);
-            captureRestartPoint?.Invoke(handle);
-            return handle;
+            // The restart point is captured before the handle becomes visible to a drain.
+            return cycleRegistry.BeginCycle(context.Id, ingressSourceName, context.CancellationToken, context.Cancel, captureRestartPoint);
         });
         await Next(context);
     }

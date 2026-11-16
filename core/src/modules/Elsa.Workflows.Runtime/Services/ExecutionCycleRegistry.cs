@@ -36,11 +36,8 @@ public sealed class ExecutionCycleRegistry : IExecutionCycleRegistry
     public ExecutionCycleHandle BeginCycle(string workflowInstanceId, string? ingressSourceName, CancellationToken linkedToken, Action? cancelCallback = null) =>
         BeginCycle(workflowInstanceId, ingressSourceName, linkedToken, cancelCallback, configure: null);
 
-    /// <summary>
-    /// Like <see cref="BeginCycle(string, string?, CancellationToken, Action?)"/>, but runs <paramref name="configure"/> on the
-    /// handle before it is registered, so a drain never sees the handle without what <paramref name="configure"/> sets.
-    /// </summary>
-    internal ExecutionCycleHandle BeginCycle(string workflowInstanceId, string? ingressSourceName, CancellationToken linkedToken, Action? cancelCallback, Action<ExecutionCycleHandle>? configure)
+    /// <inheritdoc />
+    public ExecutionCycleHandle BeginCycle(string workflowInstanceId, string? ingressSourceName, CancellationToken linkedToken, Action? cancelCallback, Action<ExecutionCycleHandle>? configure)
     {
         // FR-018: a source that reports Paused but starts an execution cycle is inconsistent — flip it to PauseFailed.
         if (ingressSourceName is not null)
