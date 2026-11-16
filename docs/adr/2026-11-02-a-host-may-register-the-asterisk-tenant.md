@@ -4,7 +4,7 @@ Date: 2026-11-02
 
 ## Status
 
-Proposed; supersedes section 5 ("Reserved Character Constraint") of [0009](0009-asterisk-sentinel-value-for-tenant-agnostic-entities.md)
+Accepted; supersedes section 5 ("Reserved Character Constraint") of [0009](0009-asterisk-sentinel-value-for-tenant-agnostic-entities.md)
 
 ## Context
 
@@ -21,6 +21,8 @@ Code that restarts tenant-agnostic work outside a request does not know about su
 - `"*"` keeps its meaning from 0009: on an entity, it means every tenant. Elsa never creates a tenant with ID `"*"`, and its own resolvers never resolve one.
 - A host may register a tenant with ID `"*"`. Entities saved in that tenant's context are tenant-agnostic. Tenant validation must not reject this ID.
 - When Elsa restarts tenant-agnostic work outside a request, starting with interrupted-workflow recovery, it uses the registered `"*"` tenant. Without one, it uses the default tenant, as before.
+- Code that runs outside a request and writes tenant-owned rows picks its ambient tenant this way: the registered `"*"` tenant for a `"*"` instance, otherwise the default tenant. `TenantKey.From` maps `"*"` to `""` and is only for identity and de-duplication, never for choosing the ambient tenant.
+- A registered `"*"` tenant belongs to the shared store. A host must not give it a database of its own (a connection string in its configuration).
 
 ## Consequences
 
