@@ -240,6 +240,38 @@ public class ScheduledCronTaskTests : IDisposable
     private int CountParserCalls() =>
         _cronParser.ReceivedCalls().Count(call => call.GetMethodInfo().Name == nameof(_cronParser.GetNextOccurrence));
 
+    [Fact]
+    public async Task TimerCallbackError_IsLoggedInsteadOfEscaping()
+    {
+        // Arrange - the clock works while scheduling, then throws inside the timer callback.
+        _systemClock.UtcNow.Returns(_ => DefaultNow, _ => throw new InvalidOperationException("clock failed"));
+        SetupCronParser(DefaultNow.AddMilliseconds(20));
+        CreateScheduledTask();
+
+        // Act - wait for the timer to fire.
+        await WaitForErrorLoggedAsync();
+
+        // Assert - the top-level guard logged the error instead of letting it escape the async void handler.
+        _logger.Received().Log(
+            LogLevel.Error,
+            Arg.Any<EventId>(),
+            Arg.Any<object>(),
+            Arg.Is<Exception>(e => e is InvalidOperationException),
+            Arg.Any<Func<object, Exception?, string>>());
+    }
+
+    private async Task WaitForErrorLoggedAsync()
+    {
+        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(2);
+        while (DateTime.UtcNow < deadline)
+        {
+            if (_logger.ReceivedCalls().Any(call => call.GetArguments().FirstOrDefault() is LogLevel.Error))
+                return;
+
+            await Task.Delay(10);
+        }
+    }
+
     private async Task WaitForCommandAsync()
     {
         var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(2);

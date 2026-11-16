@@ -1,4 +1,5 @@
 using Elsa.Common.Multitenancy;
+using NSubstitute;
 
 namespace Elsa.Common.UnitTests.Multitenancy;
 
@@ -92,6 +93,38 @@ public class TenantResolverContextTests
         Assert.NotNull(resultFromNull);
         Assert.NotNull(resultFromEmptyString);
         Assert.Same(resultFromNull, resultFromEmptyString);
+    }
+
+    [Fact]
+    public void FindTenant_ById_WithTenantService_NormalizesAndReadsFromTheService()
+    {
+        // Arrange
+        var tenantService = Substitute.For<ITenantService>();
+        tenantService.FindAsync(string.Empty, Arg.Any<CancellationToken>()).Returns(Tenant.Default);
+        var context = new TenantResolverContext(tenantService, CancellationToken.None);
+
+        // Act
+        var result = context.FindTenant((string?)null);
+
+        // Assert
+        Assert.Same(Tenant.Default, result);
+    }
+
+    [Fact]
+    public async Task FindTenantAsync_WithTenantService_FindsMatchingTenantAndOnlyListsWhenAsked()
+    {
+        // Arrange
+        var tenant = new Tenant { Id = "tenant1", Name = "Tenant 1" };
+        var tenantService = Substitute.For<ITenantService>();
+        tenantService.ListAsync(Arg.Any<CancellationToken>()).Returns([Tenant.Default, tenant]);
+        var context = new TenantResolverContext(tenantService, CancellationToken.None);
+        await tenantService.DidNotReceive().ListAsync(Arg.Any<CancellationToken>());
+
+        // Act
+        var result = await context.FindTenantAsync(x => x.Name == "Tenant 1");
+
+        // Assert
+        Assert.Same(tenant, result);
     }
 
     // Helper methods

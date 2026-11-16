@@ -19,6 +19,109 @@ import prove_consolidated_packages as packages
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = "a" * 40
+POSTFIX_SOURCE = "b" * 40
+
+
+def _package_version(include, version, condition=None):
+    attribute = f' Condition="{condition}"' if condition else ""
+    return f'    <PackageVersion Include="{include}" Version="{version}"{attribute}/>'
+
+
+def _item_group(entries, condition=None):
+    attribute = f' Condition="{condition}"' if condition else ""
+    return "<ItemGroup" + attribute + ">\n" + "\n".join(entries) + "\n</ItemGroup>"
+
+
+def _props(groups):
+    return "<Project>\n" + "\n".join(groups) + "\n</Project>\n"
+
+
+def _tfm_eq(tfm):
+    return f"'$(TargetFramework)' == '{tfm}'"
+
+
+def _tfm_ne(tfm):
+    return f"'$(TargetFramework)' != '{tfm}'"
+
+
+def _net89():
+    return f"{_tfm_eq('net8.0')} or {_tfm_eq('net9.0')}"
+
+
+def _pkcs_asn1_groups():
+    per_tfm = []
+    for package_id in ("System.Formats.Asn1", "System.Security.Cryptography.Pkcs"):
+        per_tfm.extend((_package_version(package_id, "8.0.2", _tfm_eq("net8.0")),
+                        _package_version(package_id, "9.0.21", _tfm_eq("net9.0"))))
+    return (
+        _item_group(per_tfm, _net89()),
+        _item_group((_package_version("System.Formats.Asn1", "10.0.13"),
+                     _package_version("System.Security.Cryptography.Pkcs", "10.0.13")), _tfm_eq("net10.0")),
+    )
+
+
+def _connector_groups():
+    return _item_group((_package_version("MySqlConnector", "2.6.2"),
+                        _package_version("SQLitePCLRaw.lib.e_sqlite3", "2.1.14")))
+
+
+def _signalr_groups():
+    return tuple(_item_group((_package_version("Microsoft.AspNetCore.SignalR.Client", version),), _tfm_eq(tfm))
+                 for tfm, version in (("net8.0", "8.0.32"), ("net9.0", "9.0.21"), ("net10.0", "10.0.13")))
+
+
+def _dropins_csproj(*, net8_pkcs="9.0.21", net8_asn1="9.0.21"):
+    references = [
+        f'    <PackageReference Include="System.Formats.Asn1" Condition="{_tfm_ne("net8.0")}" />',
+        f'    <PackageReference Include="System.Formats.Asn1" Condition="{_tfm_eq("net8.0")}" VersionOverride="{net8_asn1}" />',
+        f'    <PackageReference Include="System.Security.Cryptography.Pkcs" Condition="{_tfm_ne("net8.0")}" />',
+        f'    <PackageReference Include="System.Security.Cryptography.Pkcs" Condition="{_tfm_eq("net8.0")}" VersionOverride="{net8_pkcs}" />',
+    ]
+    return "<Project>\n<ItemGroup>\n" + "\n".join(references) + "\n</ItemGroup>\n</Project>\n"
+
+
+def write_pinned_tree(root: Path, *, postfix=True, dropins=True, mutate=None):
+    (root / "extensions/src/dropins/Elsa.DropIns").mkdir(parents=True, exist_ok=True)
+    (root / "studio/src").mkdir(parents=True, exist_ok=True)
+    if postfix:
+        core = _props((*_pkcs_asn1_groups(), _connector_groups()))
+        extensions = _props((*_pkcs_asn1_groups(), _connector_groups()))
+        studio = _props(_signalr_groups())
+        dropins_text = _dropins_csproj()
+    else:
+        core = _props((_item_group((_package_version("MySqlConnector", "2.4.0"),
+                                    _package_version("System.Formats.Asn1", "10.0.8"),
+                                    _package_version("SQLitePCLRaw.lib.e_sqlite3", "2.1.2"))),))
+        extensions = core
+        studio = _props(tuple(_item_group((_package_version("Microsoft.AspNetCore.SignalR.Client", version),), _tfm_eq(tfm))
+                              for tfm, version in (("net8.0", "8.0.24"), ("net9.0", "9.0.13"), ("net10.0", "10.0.3"))))
+        dropins_text = "<Project>\n<ItemGroup>\n    <PackageReference Include=\"System.Formats.Asn1\" />\n</ItemGroup>\n</Project>\n"
+    files = {
+        "Directory.Packages.props": core,
+        "extensions/src/Directory.Packages.props": extensions,
+        "studio/src/Directory.Packages.props": studio,
+    }
+    if dropins:
+        files[candidate.DROPINS_PROJECT] = dropins_text
+    if mutate:
+        mutate(files)
+    for relative, text in files.items():
+        path = root / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text)
+
+
+def init_release_line(root: Path) -> str:
+    def git(*arguments):
+        return subprocess.run(["git", "-C", str(root), *arguments], check=True, capture_output=True, text=True)
+    git("init", "--quiet")
+    git("checkout", "-b", "release/3.10.0")
+    git("add", ".")
+    git("-c", "user.name=Candidate contract", "-c", "user.email=candidate@example.invalid",
+        "commit", "--quiet", "-m", "Reviewed pins")
+    sha = git("rev-parse", "HEAD").stdout.strip()
+    git("update-ref", "refs/remotes/origin/release/3.10.0", sha)
+    return sha
 
 
 class CandidateArchiveTests(unittest.TestCase):
@@ -178,9 +281,14 @@ class CandidateContractsTests(unittest.TestCase):
 
     def test_candidate_and_proof_versions_are_distinct(self):
         packages.validate_mode("3.10.0", "candidate")
+        packages.validate_mode("3.10.1", "candidate")
         packages.validate_mode("3.10.0-proof.1.1", "proof")
-        for mode, versions in (("candidate", ("3.10.0-proof.1.1", "3.10.1", "3.10.0-rc1", "1.0.1")),
-                               ("proof", ("3.10.0", "3.10.0-proof.0.1", "3.10.0-proof.1.0"))):
+        self.assertEqual("3.10.0.0", packages.assembly_identity("3.10.0"))
+        self.assertEqual("3.10.1.0", packages.assembly_identity("3.10.1"))
+        packages.validate_mode("3.10.2", "candidate")
+        self.assertEqual("3.10.2.0", packages.assembly_identity("3.10.2"))
+        for mode, versions in (("candidate", ("3.10.0-proof.1.1", "3.10.0-rc1", "3.10.01", "3.11.0", "3.9.0", "1.0.1")),
+                               ("proof", ("3.10.0", "3.10.1", "3.10.2", "3.10.0-proof.0.1", "3.10.0-proof.1.0"))):
             for version in versions:
                 with self.subTest(mode=mode, version=version), self.assertRaises(ValueError):
                     packages.validate_mode(version, mode)
@@ -268,6 +376,253 @@ class CandidateContractsTests(unittest.TestCase):
         self.assertIn('"scope": "retrieval_time_snapshot"', runner)
         self.assertIn("deletion after retrieval is not observed", runner)
         self.assertIn("Before approval or publication, recheck live original artifact ID", runner)
+
+    def test_later_patch_source_rejects_original_sha_and_missing_pins(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_pinned_tree(root, postfix=False)
+            with self.assertRaisesRegex(ValueError, "3.10.0 source"):
+                candidate.require_candidate_source(root, candidate.ORIGINAL_3100_SOURCE, "3.10.1")
+            with self.assertRaisesRegex(ValueError, "MySqlConnector"):
+                candidate.require_candidate_source(root, POSTFIX_SOURCE, "3.10.1")
+            write_pinned_tree(root, postfix=True)
+            candidate.require_candidate_source(root, POSTFIX_SOURCE, "3.10.1")
+            candidate.require_candidate_source(root, candidate.ORIGINAL_3100_SOURCE, "3.10.0")
+
+    def test_source_pin_fixtures_cover_pre_and_post_tfm_policy(self):
+        cases = (
+            ("prefix missing pins", False, None, "MySqlConnector|reviewed pin"),
+            ("postfix reviewed pins", True, None, None),
+            ("plaintext needles are not pins", True,
+             lambda files: files.__setitem__("Directory.Packages.props",
+                                             '<Project><!-- Include="MySqlConnector" Version="2.6.2" '
+                                             'Include="SQLitePCLRaw.lib.e_sqlite3" Version="2.1.14" --></Project>\n'),
+             "MySqlConnector"),
+            ("unconditional Pkcs conflicts with net8 pin", True,
+             lambda files: files.__setitem__(
+                 "Directory.Packages.props",
+                 _props([*_pkcs_asn1_groups(), _connector_groups(),
+                         _item_group([_package_version("System.Security.Cryptography.Pkcs", "10.0.13")])])
+             ),
+             "conflicting"),
+            ("unpatched net8 Pkcs", True,
+             lambda files: files.update({"Directory.Packages.props": files["Directory.Packages.props"].replace(
+                 _package_version("System.Security.Cryptography.Pkcs", "8.0.2", _tfm_eq("net8.0")),
+                 _package_version("System.Security.Cryptography.Pkcs", "8.0.1", _tfm_eq("net8.0")))}),
+             "8.0.2"),
+            ("SignalR net8 still 8.0.24", True,
+             lambda files: files.update({"studio/src/Directory.Packages.props": files["studio/src/Directory.Packages.props"].replace(
+                 'Version="8.0.32"', 'Version="8.0.24"')}),
+             "8.0.32"),
+            ("DropIns missing net8 override", True,
+             lambda files: files.__setitem__(candidate.DROPINS_PROJECT,
+                                             "<Project>\n<ItemGroup>\n    <PackageReference Include=\"System.Formats.Asn1\" />\n</ItemGroup>\n</Project>\n"),
+             "VersionOverride"),
+            ("DropIns net8 override not 9.0.21", True,
+             lambda files: files.__setitem__(candidate.DROPINS_PROJECT, _dropins_csproj(net8_pkcs="8.0.2")),
+             "9.0.21"),
+            ("extensions missing connector pin", True,
+             lambda files: files.__setitem__("extensions/src/Directory.Packages.props", _props(_pkcs_asn1_groups())),
+             "MySqlConnector"),
+        )
+        for label, postfix, mutate, pattern in cases:
+            with self.subTest(label=label), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                write_pinned_tree(root, postfix=postfix, mutate=mutate)
+                if pattern is None:
+                    candidate.require_candidate_source(root, POSTFIX_SOURCE, "3.10.1")
+                else:
+                    with self.assertRaisesRegex(ValueError, pattern):
+                        candidate.require_candidate_source(root, POSTFIX_SOURCE, "3.10.1")
+
+    def test_check_source_and_nupkg_helpers_are_tested_functions(self):
+        self.assertEqual(Path("/x"), candidate.parse_check_source_args(
+            ["check-source", "--version", "3.10.2", "--source", "b" * 40, "--source-root", "/x"]).source_root)
+        source = POSTFIX_SOURCE
+        for argv in (["--check-source", "--version", "3.10.1", "--source", source],
+                     ["check-source", "--version", "3.10.1", "--source", source]):
+            args = candidate.parse_check_source_args(argv)
+            self.assertEqual("3.10.1", args.version)
+            self.assertEqual(source, args.source)
+        with tempfile.TemporaryDirectory() as temporary:
+            packages_dir = Path(temporary)
+            with self.assertRaisesRegex(ValueError, "no nupkg"):
+                candidate.require_versioned_nupkgs(packages_dir, "3.10.1")
+            (packages_dir / "Elsa.3.10.0.nupkg").write_bytes(b"old")
+            with self.assertRaisesRegex(ValueError, "mixed versions"):
+                candidate.require_versioned_nupkgs(packages_dir, "3.10.1")
+            (packages_dir / "Elsa.3.10.0.nupkg").unlink()
+            (packages_dir / "Elsa.3.10.1.nupkg").write_bytes(b"ok")
+            (packages_dir / "Elsa.Workflows.Core.3.10.1.nupkg").write_bytes(b"ok")
+            nupkgs = candidate.require_versioned_nupkgs(packages_dir, "3.10.1")
+            self.assertEqual(["Elsa.3.10.1.nupkg", "Elsa.Workflows.Core.3.10.1.nupkg"], [path.name for path in nupkgs])
+            parsed = candidate.parse_check_nupkgs_args(["check-nupkgs", "--packages-dir", str(packages_dir), "--version", "3.10.1"])
+            self.assertEqual(packages_dir, parsed.packages_dir)
+            self.assertEqual("check-source", candidate.select_prepare_command(["--check-source", "--version", "3.10.1"]))
+            self.assertEqual("check-nupkgs", candidate.select_prepare_command(["check-nupkgs"]))
+            self.assertEqual("consume", candidate.select_prepare_command(["--consume", "--archive", "x"]))
+            self.assertIsNone(candidate.select_prepare_command(["--version", "3.10.1"]))
+
+    def test_dispatch_ref_is_irrelevant_and_source_must_be_on_the_versions_release_line(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_pinned_tree(root, postfix=True)
+            sha = init_release_line(root)
+            # The tooling runs from main; GITHUB_REF is never consulted.
+            for ref in ("refs/heads/main", "refs/heads/release/3.10.0", "refs/heads/cursor/other"):
+                with self.subTest(ref=ref), patch.dict(os.environ, GITHUB_REF=ref):
+                    for version in ("3.10.1", "3.10.2"):
+                        candidate.run_check_source(root, sha, version)
+            self.assertEqual("release/3.10.0", candidate.release_line("3.10.2"))
+            self.assertEqual("release/3.11.0", candidate.release_line("3.11.4"))
+            with self.assertRaises(ValueError):
+                candidate.release_line("3.10")
+            subprocess.run(["git", "-C", str(root), "-c", "user.name=Candidate contract",
+                            "-c", "user.email=candidate@example.invalid", "commit", "--allow-empty",
+                            "--quiet", "-m", "off line"], check=True, capture_output=True)
+            off_line = subprocess.run(["git", "-C", str(root), "rev-parse", "HEAD"],
+                                      check=True, capture_output=True, text=True).stdout.strip()
+            subprocess.run(["git", "-C", str(root), "update-ref", "HEAD", sha], check=True)
+            with self.assertRaisesRegex(ValueError, "not on the release/3.10.0 line"):
+                candidate.require_release_line(root, off_line, "3.10.1")
+            with self.assertRaisesRegex(ValueError, "missing the release/3.11.0 line"):
+                candidate.require_release_line(root, sha, "3.11.0")
+
+    def test_check_source_runs_against_a_separate_source_root(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary) / "source"
+            root.mkdir()
+            write_pinned_tree(root, postfix=True)
+            sha = init_release_line(root)
+            tooling_cwd = Path(temporary) / "tooling"
+            tooling_cwd.mkdir()
+            script = ROOT / "scripts/integration-program/prepare_consolidated_release_candidate.py"
+            ok = subprocess.run([sys.executable, "-B", str(script), "check-source", "--version", "3.10.2", "--source", sha,
+                                 "--source-root", str(root)], cwd=tooling_cwd, capture_output=True, text=True,
+                                env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"})
+            self.assertEqual(0, ok.returncode, ok.stderr)
+            bad = subprocess.run([sys.executable, "-B", str(script), "check-source", "--version", "3.10.2", "--source", "c" * 40,
+                                  "--source-root", str(root)], cwd=tooling_cwd, capture_output=True, text=True)
+            self.assertNotEqual(0, bad.returncode)
+            self.assertIn("not the HEAD of the source checkout", bad.stderr)
+
+    def test_check_source_requires_the_checkout_head_to_be_the_source_commit(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_pinned_tree(root, postfix=True)
+            sha = init_release_line(root)
+            candidate.run_check_source(root, sha, "3.10.1")
+            subprocess.run(["git", "-C", str(root), "-c", "user.name=Candidate contract",
+                            "-c", "user.email=candidate@example.invalid", "commit", "--allow-empty",
+                            "--quiet", "-m", "later"], check=True, capture_output=True)
+            tip = subprocess.run(["git", "-C", str(root), "rev-parse", "HEAD"], check=True,
+                                 capture_output=True, text=True).stdout.strip()
+            subprocess.run(["git", "-C", str(root), "update-ref", "refs/remotes/origin/release/3.10.0", tip], check=True)
+            # sha is still on the release line and still has the reviewed pins, but it is no longer what is checked out.
+            candidate.require_release_line(root, sha, "3.10.1")
+            candidate.require_candidate_source(root, sha, "3.10.1")
+            with self.assertRaisesRegex(ValueError, "not the HEAD of the source checkout"):
+                candidate.run_check_source(root, sha, "3.10.1")
+            candidate.run_check_source(root, tip, "3.10.1")
+            with self.assertRaisesRegex(ValueError, "not the HEAD"):
+                candidate.require_checkout_head(root / "missing", sha)
+
+    def test_reviewed_pins_are_minimums_so_a_later_patch_may_move_them_up(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_pinned_tree(root, postfix=True, mutate=lambda files: files.update({
+                "studio/src/Directory.Packages.props": files["studio/src/Directory.Packages.props"].replace('Version="8.0.32"', 'Version="8.0.40"')}))
+            candidate.require_candidate_source(root, POSTFIX_SOURCE, "3.10.2")
+
+    def test_producer_run_sha_may_be_the_tooling_commit_not_the_source(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary) / "candidate"
+            output.mkdir()
+            (output / "receipt.json").write_text('{"published":false}\n')
+            source, tooling = "b" * 40, "d" * 40
+            envelope = {"schema": 1, "published": False, "version": "3.10.2", "source_commit": source,
+                        "run_id": 9, "run_attempt": 1, "artifact_id": 5,
+                        "retrieved_at": datetime.now(timezone.utc).isoformat(),
+                        "artifact_name": f"consolidated-candidate-{source}-9-1", "retention_days": 30,
+                        "expires_at": (datetime.now(timezone.utc) + timedelta(days=30)).isoformat(),
+                        "archive_sha256": "a" * 64, "archive_size": 1, "preupload_manifest_sha256": "b" * 64}
+            metadata = {"id": 5, "name": envelope["artifact_name"], "expired": False, "expires_at": envelope["expires_at"],
+                        "digest": "sha256:" + "a" * 64, "size_in_bytes": 1, "workflow_run": {"id": 9, "head_sha": tooling}}
+            candidate.validate_envelope(envelope, metadata, source=source, run_id=9, attempt=1, version="3.10.2", run_sha=tooling)
+            with self.assertRaisesRegex(ValueError, "source mismatch"):
+                candidate.validate_envelope(envelope, metadata, source=source, run_id=9, attempt=1, version="3.10.2")
+            with self.assertRaisesRegex(ValueError, "source mismatch"):
+                candidate.validate_envelope(envelope, metadata, source=source, run_id=9, attempt=1, version="3.10.2", run_sha="e" * 40)
+
+    def test_later_patch_seal_and_envelope_reject_reused_3100_identity(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary) / "candidate"
+            output.mkdir()
+            (output / "receipt.json").write_text('{"published":false}\n')
+            source = "b" * 40
+            with patch.dict(os.environ, GITHUB_RUN_ID="7", GITHUB_RUN_ATTEMPT="1"):
+                manifest = candidate.seal(output, source, "3.10.1")
+            self.assertEqual("3.10.1", manifest["version"])
+            self.assertEqual(source, manifest["source_commit"])
+            envelope = {"schema": 1, "published": False, "version": "3.10.1", "source_commit": source,
+                        "run_id": 7, "run_attempt": 1, "artifact_id": candidate.ORIGINAL_3100_ARTIFACT,
+                        "retrieved_at": datetime.now(timezone.utc).isoformat(),
+                        "artifact_name": f"consolidated-candidate-{source}-7-1", "retention_days": 30,
+                        "expires_at": (datetime.now(timezone.utc) + timedelta(days=30)).isoformat(),
+                        "archive_sha256": "a" * 64, "archive_size": 1, "preupload_manifest_sha256": "b" * 64}
+            metadata = {"id": candidate.ORIGINAL_3100_ARTIFACT, "name": envelope["artifact_name"], "expired": False,
+                        "expires_at": envelope["expires_at"], "digest": "sha256:" + envelope["archive_sha256"],
+                        "size_in_bytes": 1, "workflow_run": {"id": 7, "head_sha": source}}
+            with self.assertRaisesRegex(ValueError, "3.10.0 artifact"):
+                candidate.validate_envelope(envelope, metadata, source=source, run_id=7, attempt=1, version="3.10.1")
+            reused = dict(envelope)
+            reused["source_commit"] = candidate.ORIGINAL_3100_SOURCE
+            reused["artifact_name"] = f"consolidated-candidate-{candidate.ORIGINAL_3100_SOURCE}-7-1"
+            reused_metadata = copy.deepcopy(metadata)
+            reused_metadata["name"] = reused["artifact_name"]
+            reused_metadata["workflow_run"] = {"id": 7, "head_sha": candidate.ORIGINAL_3100_SOURCE}
+            with self.assertRaisesRegex(ValueError, "3.10.0 source"):
+                candidate.validate_envelope(reused, reused_metadata, source=candidate.ORIGINAL_3100_SOURCE,
+                                            run_id=7, attempt=1, version="3.10.1")
+
+    def test_producer_workflow_runs_tooling_from_main_and_packs_the_source_commit(self):
+        workflow = (ROOT / ".github/workflows/prepare-consolidated-release-candidate.yml").read_text()
+        prepare = workflow.split("  prepare:")[1].split("  retrieve:")[0]
+        self.assertFalse((ROOT / ".github/workflows/prepare-consolidated-3.10.1-release-candidate.yml").exists())
+        self.assertIn("permissions: {}", workflow)
+        self.assertNotIn("type: choice", workflow)
+        for name in ("version:", "source_commit:"):
+            self.assertIn(name, workflow)
+        # Tooling comes from the workflow's own ref (main); the product source is a second checkout of source_commit.
+        self.assertIn("test \"$GITHUB_REF\" = 'refs/heads/main'", prepare)
+        self.assertIn("path: tooling", prepare)
+        self.assertIn("ref: ${{ github.sha }}", prepare)
+        self.assertIn("path: source", prepare)
+        self.assertIn("ref: ${{ needs.verify_source.outputs.verified-revision }}", prepare)
+        self.assertEqual(2, prepare.count("actions/checkout@"))
+        self.assertNotIn("git checkout", prepare)
+        self.assertNotIn("release/3.10.0", workflow)
+        self.assertNotIn("GITHUB_REF\" = \"refs/heads/$branch", workflow)
+        self.assertIn('git -C source merge-base --is-ancestor "$CANDIDATE_SOURCE" "origin/$branch"', prepare)
+        self.assertNotRegex(prepare, r"(?m)^\s+python3 scripts/")
+        for invocation in re.findall(r"python3 (\S+)", prepare):
+            self.assertTrue(invocation.startswith("tooling/") or invocation in ("-m",), invocation)
+        self.assertIn("check-source --version \"$VERSION\" --source \"$CANDIDATE_SOURCE\" --source-root source", prepare)
+        self.assertIn("--source-root source --output", prepare)
+        self.assertIn("check-nupkgs --packages-dir", prepare)
+        self.assertIn("validate_packages_id_set.py", prepare)
+        self.assertIn('version:$version', workflow)
+        self.assertIn('.head_branch == "main"', workflow)
+        self.assertIn('.path == ".github/workflows/prepare-consolidated-release-candidate.yml"', workflow)
+        self.assertIn('(.event == "workflow_dispatch")', workflow)
+        self.assertIn('test "$SOURCE_SHA" != "5cff67228e550b353b3483eb3b37dfdb73a41c74"', workflow)
+        self.assertIn('test "$ARTIFACT_ID" != "12664519771"', workflow)
+        self.assertIn('--run-sha "$RUN_SHA"', workflow.split("--consume", 1)[1])
+        self.assertIn("name: consolidated-candidate-${{ inputs.source_commit }}-", workflow)
+        for denied in ("secrets.", "packages: write", "deployments:", "environment:", "nuget push", "npm publish", "gh release", "publish_preview", "publish_nuget", "workflow_call:", "workflow_run:", "pull_request:"):
+            self.assertNotIn(denied, workflow)
+        self.assertNotIn("python3 -c", workflow.split("jobs:", 1)[1])
+        self.assertNotRegex(workflow.split("jobs:", 1)[1], r"--version [0-9]|version:\"[0-9]")
 
     def test_candidate_profile_is_core_owned_feedz_only_and_maintenance_is_preserved(self):
         references = ROOT / ".agents/skills/elsa-release/references"

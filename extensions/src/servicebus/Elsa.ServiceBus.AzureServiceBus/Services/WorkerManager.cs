@@ -11,6 +11,7 @@ public class WorkerManager(IServiceProvider serviceProvider) : IWorkerManager, I
 {
     private readonly ConcurrentBag<Worker> _workers = new();
     private readonly SemaphoreSlim _startLock = new(1, 1);
+    private TaskCompletionSource? _disposeCompletion;
 
     /// <summary>
     /// A list of workers under management.
@@ -20,13 +21,15 @@ public class WorkerManager(IServiceProvider serviceProvider) : IWorkerManager, I
     /// <inheritdoc />
     public async Task StartWorkerAsync(string queueOrTopic, string? subscription, CancellationToken cancellationToken = default)
     {
-        if (FindWorkerFor(queueOrTopic, subscription) != null) return;
-
         await _startLock.WaitAsync(cancellationToken);
 
         try
         {
-            if (FindWorkerFor(queueOrTopic, subscription) != null) return;
+            ObjectDisposedException.ThrowIf(_disposeCompletion != null, this);
+            if (FindWorkerFor(queueOrTopic, subscription) != null)
+            {
+                return;
+            }
             await CreateWorkerAsync(queueOrTopic, subscription, cancellationToken);
         }
         finally
@@ -59,6 +62,66 @@ public class WorkerManager(IServiceProvider serviceProvider) : IWorkerManager, I
     /// <inheritdoc />
     public async ValueTask DisposeAsync()
     {
-        foreach (var worker in Workers) await worker.DisposeAsync();
+        TaskCompletionSource completion;
+        Worker[]? workers = null;
+        await _startLock.WaitAsync();
+
+        try
+        {
+            if (_disposeCompletion == null)
+            {
+                _disposeCompletion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                try
+                {
+                    workers = Workers.ToArray();
+                }
+                catch (Exception exception)
+                {
+                    _disposeCompletion.SetException(exception);
+                }
+            }
+
+            completion = _disposeCompletion;
+        }
+        finally
+        {
+            _startLock.Release();
+        }
+
+        // Processor shutdown can wait for handlers that request starts. Never
+        // call worker code while holding the start gate.
+        if (workers != null)
+        {
+            try
+            {
+                var failures = new List<Exception>();
+                foreach (var worker in workers)
+                {
+                    try
+                    {
+                        await worker.DisposeAsync();
+                    }
+                    catch (Exception exception)
+                    {
+                        failures.Add(exception);
+                    }
+                }
+
+                if (failures.Count == 0)
+                {
+                    completion.SetResult();
+                }
+                else
+                {
+                    completion.SetException(failures.Count == 1 ? failures[0] : new AggregateException(failures));
+                }
+            }
+            catch (Exception exception)
+            {
+                completion.TrySetException(exception);
+            }
+        }
+
+        await completion.Task;
     }
 }

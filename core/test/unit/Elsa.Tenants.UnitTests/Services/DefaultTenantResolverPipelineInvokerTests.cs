@@ -118,6 +118,76 @@ public class DefaultTenantResolverPipelineInvokerTests
         Assert.Equal("Legacy", result.Name); // Should find the Legacy tenant (normalized from null)
     }
 
+    [Fact]
+    public async Task InvokePipelineAsync_WhenOnlyTheDefaultResolverResolves_ReturnsDefaultTenantByDefault()
+    {
+        // Arrange
+        var invoker = CreateInvokerWithMultipleResolvers(
+            CreateDefaultTenantList(),
+            rejectUnresolvedTenants: false,
+            CreateMockResolver(TenantResolverResult.Unresolved()),
+            new DefaultTenantResolver());
+
+        // Act
+        var result = await invoker.InvokePipelineAsync();
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(Tenant.DefaultTenantId, result.Id);
+    }
+
+    [Fact]
+    public async Task InvokePipelineAsync_WhenRejectingUnresolvedTenants_DoesNotFallBackToTheDefaultResolver()
+    {
+        // Arrange
+        var invoker = CreateInvokerWithMultipleResolvers(
+            CreateDefaultTenantList(),
+            rejectUnresolvedTenants: true,
+            CreateMockResolver(TenantResolverResult.Unresolved()),
+            new DefaultTenantResolver());
+
+        // Act
+        var result = await invoker.InvokePipelineAsync();
+
+        // Assert
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task InvokePipelineAsync_WhenRejectingUnresolvedTenants_StillResolvesAnExplicitDefaultTenant()
+    {
+        // Arrange
+        var invoker = CreateInvokerWithMultipleResolvers(
+            CreateDefaultTenantList(),
+            rejectUnresolvedTenants: true,
+            CreateMockResolver(TenantResolverResult.Resolved(string.Empty)),
+            new DefaultTenantResolver());
+
+        // Act
+        var result = await invoker.InvokePipelineAsync();
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(Tenant.DefaultTenantId, result.Id);
+    }
+
+    [Fact]
+    public async Task InvokePipelineAsync_WhenRejectingUnresolvedTenants_ReturnsNullForUnknownTenantId()
+    {
+        // Arrange
+        var invoker = CreateInvokerWithMultipleResolvers(
+            CreateDefaultTenantList(),
+            rejectUnresolvedTenants: true,
+            CreateMockResolver(TenantResolverResult.Resolved("non-existent")),
+            new DefaultTenantResolver());
+
+        // Act
+        var result = await invoker.InvokePipelineAsync();
+
+        // Assert
+        Assert.Null(result);
+    }
+
     // Helper methods
     private static List<Tenant> CreateDefaultTenantList() => new()
     {
@@ -125,6 +195,16 @@ public class DefaultTenantResolverPipelineInvokerTests
         new() { Id = "tenant1", Name = "Tenant 1" },
         new() { Id = "tenant2", Name = "Tenant 2" }
     };
+
+    private static ITenantService CreateTenantService(List<Tenant> tenants)
+    {
+        var tenantsById = tenants.ToDictionary(x => x.Id.NormalizeTenantId());
+        var tenantService = Substitute.For<ITenantService>();
+        tenantService.FindAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(call => tenantsById.GetValueOrDefault(call.Arg<string>().NormalizeTenantId()));
+        tenantService.ListAsync(Arg.Any<CancellationToken>()).Returns(tenants);
+        return tenantService;
+    }
 
     private static ITenantResolver CreateMockResolver(TenantResolverResult result)
     {
@@ -137,8 +217,7 @@ public class DefaultTenantResolverPipelineInvokerTests
         List<Tenant> tenants,
         TenantResolverResult resolverResult)
     {
-        var tenantsProvider = Substitute.For<ITenantsProvider>();
-        tenantsProvider.ListAsync(Arg.Any<CancellationToken>()).Returns(tenants);
+        var tenantService = CreateTenantService(tenants);
 
         var mockResolver = CreateMockResolver(resolverResult);
 
@@ -153,17 +232,21 @@ public class DefaultTenantResolverPipelineInvokerTests
 
         var serviceProvider = Substitute.For<IServiceProvider>();
         var logger = NullLogger<DefaultTenantResolverPipelineInvoker>.Instance;
-        var invoker = new DefaultTenantResolverPipelineInvoker(options, tenantsProvider, serviceProvider, logger);
+        var invoker = new DefaultTenantResolverPipelineInvoker(options, tenantService, serviceProvider, logger);
 
         return (invoker, mockResolver);
     }
 
     private static DefaultTenantResolverPipelineInvoker CreateInvokerWithMultipleResolvers(
         List<Tenant> tenants,
+        params ITenantResolver[] resolvers) => CreateInvokerWithMultipleResolvers(tenants, rejectUnresolvedTenants: false, resolvers);
+
+    private static DefaultTenantResolverPipelineInvoker CreateInvokerWithMultipleResolvers(
+        List<Tenant> tenants,
+        bool rejectUnresolvedTenants,
         params ITenantResolver[] resolvers)
     {
-        var tenantsProvider = Substitute.For<ITenantsProvider>();
-        tenantsProvider.ListAsync(Arg.Any<CancellationToken>()).Returns(tenants);
+        var tenantService = CreateTenantService(tenants);
 
         // Use a mock pipeline builder that directly returns our mock resolvers
         var pipelineBuilder = Substitute.For<ITenantResolverPipelineBuilder>();
@@ -171,11 +254,12 @@ public class DefaultTenantResolverPipelineInvokerTests
 
         var options = Microsoft.Extensions.Options.Options.Create(new MultitenancyOptions
         {
-            TenantResolverPipelineBuilder = pipelineBuilder
+            TenantResolverPipelineBuilder = pipelineBuilder,
+            RejectUnresolvedTenants = rejectUnresolvedTenants
         });
 
         var serviceProvider = Substitute.For<IServiceProvider>();
         var logger = NullLogger<DefaultTenantResolverPipelineInvoker>.Instance;
-        return new(options, tenantsProvider, serviceProvider, logger);
+        return new(options, tenantService, serviceProvider, logger);
     }
 }

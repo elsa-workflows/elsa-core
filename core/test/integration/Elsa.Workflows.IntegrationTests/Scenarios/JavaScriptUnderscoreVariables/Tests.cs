@@ -49,6 +49,24 @@ public class Tests
         Assert.Equal("Numeric name", _capturingTextWriter.Lines.ToList().ElementAt(0));
     }
 
+    [Fact(DisplayName = "A variable whose name contains an underscore gets get/set accessors")]
+    public async Task UnderscoreVariableGetsAccessors()
+    {
+        await _services.PopulateRegistriesAsync();
+        var workflow = await _workflowBuilderFactory.CreateBuilder().BuildWorkflowAsync<UnderscoreAccessorWorkflow>();
+        await _workflowRunner.RunAsync(workflow);
+        Assert.Equal(["before", "after", "after"], _capturingTextWriter.Lines.ToList());
+    }
+
+    [Fact(DisplayName = "A colliding accessor belongs to the underscore-free name even when the underscore name is declared first")]
+    public async Task UnderscoreFreeNameKeepsCollidingAccessor()
+    {
+        await _services.PopulateRegistriesAsync();
+        var workflow = await _workflowBuilderFactory.CreateBuilder().BuildWorkflowAsync<UnderscoreDeclaredFirstCollisionWorkflow>();
+        await _workflowRunner.RunAsync(workflow);
+        Assert.Equal(["plain context,plain foo", "set", "underscore context,set context,underscore foo,set foo"], _capturingTextWriter.Lines.ToList());
+    }
+
     [Fact(DisplayName = "An underscore name does not take over the accessor of its letters-and-digits counterpart")]
     public async Task UnderscoreVariableDoesNotTakeOverAccessor()
     {

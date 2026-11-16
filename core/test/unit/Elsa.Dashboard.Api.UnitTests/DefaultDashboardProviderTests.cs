@@ -5,6 +5,7 @@ using Elsa.Diagnostics.ConsoleLogs.Dashboard;
 using Elsa.Diagnostics.ConsoleLogs.Dashboard.Extensions;
 using Elsa.Diagnostics.StructuredLogs.Dashboard;
 using Elsa.Diagnostics.StructuredLogs.Dashboard.Extensions;
+using Elsa.Workflows;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
@@ -307,6 +308,88 @@ public class DefaultDashboardProviderTests
         Overview = new() { WorkflowInstances = metrics },
         OverviewPermissions = new() { WorkflowInstances = InstancesView }
     };
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task GetOverviewAsync_WithRuntimeFailure_PreservesReadableInstanceMetrics(bool canReadRuntime)
+    {
+        var runtime = Substitute.For<IWorkflowRuntimeAdminService>();
+        runtime.GetStatus().Returns<RuntimeAdminStatus>(_ => throw new InvalidOperationException("secret runtime error"));
+        var provider = CreateProvider(new WorkflowDashboardContributor(CreateWorkflowInstanceStoreWithMetrics(), runtime));
+
+        var overview = await provider.GetOverviewAsync(new() { CanRead = permission => permission == InstancesView || canReadRuntime && permission == RuntimeView });
+
+        Assert.Equal(DashboardRuntimeStatusKeys.Unavailable, overview.Runtime.Status);
+        Assert.Equal(canReadRuntime ? DashboardCapabilityStatus.Unavailable.Status : DashboardCapabilityStatus.Unauthorized.Status, overview.Runtime.Capability.Status);
+        Assert.Null(overview.Runtime.Reason);
+        Assert.DoesNotContain("secret", overview.Runtime.Capability.Reason ?? "");
+        AssertWorkflowInstanceMetrics(overview.WorkflowInstances);
+    }
+
+    [Fact]
+    public async Task GetOverviewAsync_WithHealthyRuntimeAndStore_ReturnsRuntimeAndInstanceMetrics()
+    {
+        var runtime = Substitute.For<IWorkflowRuntimeAdminService>();
+        runtime.GetStatus().Returns(new RuntimeAdminStatus(QuiescenceState.Initial("generation"), [new("source", IngressSourceState.Running, null, null)], 7));
+        var provider = CreateProvider(new WorkflowDashboardContributor(CreateWorkflowInstanceStoreWithMetrics(), runtime));
+
+        var overview = await provider.GetOverviewAsync(new() { CanRead = permission => permission == RuntimeView || permission == InstancesView });
+
+        Assert.Equal(DashboardRuntimeStatusKeys.AcceptingWork, overview.Runtime.Status);
+        Assert.Equal(DashboardCapabilityStatus.Available.Status, overview.Runtime.Capability.Status);
+        Assert.True(overview.Runtime.IsAcceptingWork);
+        Assert.Equal(7, overview.Runtime.ActiveExecutionCycleCount);
+        Assert.Equal(1, overview.Runtime.IngressSourceCount);
+        Assert.Equal(0, overview.Runtime.FailedIngressSourceCount);
+        AssertWorkflowInstanceMetrics(overview.WorkflowInstances);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task GetNeedsAttentionAsync_WithRuntimeFailure_StillReturnsInstanceFindings(bool canReadRuntime)
+    {
+        var runtime = Substitute.For<IWorkflowRuntimeAdminService>();
+        runtime.GetStatus().Returns<RuntimeAdminStatus>(_ => throw new InvalidOperationException("secret runtime error"));
+        var provider = CreateProvider(new WorkflowDashboardContributor(CreateWorkflowInstanceStoreWithMetrics(), runtime));
+
+        var response = await provider.GetNeedsAttentionAsync(new() { CanRead = permission => permission == InstancesView || canReadRuntime && permission == RuntimeView }, 10);
+
+        Assert.Equal(["workflow-faults", "workflow-interrupted", "workflow-incidents"], response.Findings.Select(x => x.Id));
+        Assert.Equal([40, 50, 60], response.Findings.Select(x => x.Priority));
+        Assert.Equal([DashboardFindingSeverity.Error, DashboardFindingSeverity.Warning, DashboardFindingSeverity.Error], response.Findings.Select(x => x.Severity));
+        Assert.Equal(["5 workflows faulted in the selected range", "11 workflows were interrupted in the selected range", "13 workflows have incidents"], response.Findings.Select(x => x.Message));
+        Assert.All(response.Findings, finding => Assert.Equal(InstancesView, finding.Permission));
+    }
+
+    private IWorkflowInstanceStore CreateWorkflowInstanceStoreWithMetrics()
+    {
+        var store = Substitute.For<IWorkflowInstanceStore>();
+        store.CountAsync(Arg.Is<WorkflowInstanceFilter>(x => x.WorkflowStatus == WorkflowStatus.Running), Arg.Any<CancellationToken>()).Returns(3L);
+        store.CountAsync(Arg.Is<WorkflowInstanceFilter>(x => x.WorkflowSubStatus == WorkflowSubStatus.Faulted), Arg.Any<CancellationToken>()).Returns(5L);
+        store.CountAsync(Arg.Is<WorkflowInstanceFilter>(x => x.WorkflowSubStatus == WorkflowSubStatus.Suspended), Arg.Any<CancellationToken>()).Returns(7L);
+        store.CountAsync(Arg.Is<WorkflowInstanceFilter>(x => x.WorkflowSubStatus == WorkflowSubStatus.Interrupted), Arg.Any<CancellationToken>()).Returns(11L);
+        store.CountAsync(Arg.Is<WorkflowInstanceFilter>(x => x.HasIncidents == true), Arg.Any<CancellationToken>()).Returns(13L);
+        store.SummarizeManyAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>()).Returns(new[]
+        {
+            new WorkflowInstanceSummary { CreatedAt = _now.AddMinutes(-4), FinishedAt = _now.AddMinutes(-2) },
+            new WorkflowInstanceSummary { CreatedAt = _now.AddMinutes(-6), FinishedAt = _now.AddMinutes(-2) }
+        });
+        return store;
+    }
+
+    private static void AssertWorkflowInstanceMetrics(DashboardWorkflowInstanceMetrics metrics)
+    {
+        Assert.Equal(DashboardCapabilityStatus.Available.Status, metrics.Capability.Status);
+        Assert.Equal(3, metrics.Running);
+        Assert.Equal(2, metrics.Completed);
+        Assert.Equal(5, metrics.Faulted);
+        Assert.Equal(7, metrics.Suspended);
+        Assert.Equal(11, metrics.Interrupted);
+        Assert.Equal(13, metrics.IncidentBearing);
+        Assert.Equal(TimeSpan.FromMinutes(3), metrics.AverageDuration);
+    }
 
     private static WorkflowDashboardContributor CreateWorkflowContributorWithFailingInstanceStore()
     {

@@ -15,14 +15,9 @@ public static class VariableNameValidator
     }
 
     /// <summary>
-    /// Returns true if a <c>get{Name}</c>/<c>set{Name}</c> accessor pair should be generated for the specified variable name.
+    /// Returns true if the specified variable name consists of letters and digits only.
     /// </summary>
-    /// <remarks>
-    /// Accessor names are built with <c>Pascalize()</c>, which drops underscores, so <c>foo_bar</c> and <c>fooBar</c> would both
-    /// map to <c>getFooBar</c>. Only names made of letters and digits get accessors, which keeps every accessor pointing at the
-    /// same variable it did before <c>_</c> and <c>$</c> were allowed. Other valid names are reached through
-    /// <c>variables.&lt;name&gt;</c> or <c>getVariable("&lt;name&gt;")</c>.
-    /// </remarks>
+    [Obsolete("Accessors are no longer decided per name: a name containing '_' or '$' also gets them unless another variable already claims the accessor. Removed in the next major version.")]
     public static bool HasVariableAccessors(string name)
     {
         return !string.IsNullOrWhiteSpace(name) && name.All(char.IsLetterOrDigit);

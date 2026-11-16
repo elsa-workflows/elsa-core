@@ -179,33 +179,49 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
         }
     }
 
-    private async Task<WorkflowDefinition?> GetWorkflowDefinitionAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken)
+    internal async Task<WorkflowDefinition?> GetWorkflowDefinitionAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken)
     {
         var workflowDefinitionService = serviceProvider.GetRequiredService<IWorkflowDefinitionService>();
+        var hasVersionId = !string.IsNullOrWhiteSpace(WorkflowDefinitionVersionId);
         var filter = new WorkflowDefinitionFilter
         {
             DefinitionId = WorkflowDefinitionId
         };
 
-        if (!string.IsNullOrWhiteSpace(WorkflowDefinitionVersionId))
+        if (hasVersionId)
             filter.Id = WorkflowDefinitionVersionId;
         else
             filter.VersionOptions = VersionOptions.SpecificVersion(Version);
 
-        var workflowDefinition =
-            await workflowDefinitionService.FindWorkflowDefinitionAsync(filter, cancellationToken)
-            ?? (await workflowDefinitionService.FindWorkflowDefinitionAsync(new WorkflowDefinitionFilter
-                {
-                    DefinitionId = WorkflowDefinitionId,
-                    VersionOptions = VersionOptions.Published
-                }, cancellationToken)
-                ?? await workflowDefinitionService.FindWorkflowDefinitionAsync(new WorkflowDefinitionFilter
-                {
-                    DefinitionId = WorkflowDefinitionId,
-                    VersionOptions = VersionOptions.Latest
-                }, cancellationToken));
+        var workflowDefinition = await workflowDefinitionService.FindWorkflowDefinitionAsync(filter, cancellationToken);
 
-        return workflowDefinition;
+        // An import into another tenant gives the child a new version id, so the pinned version id can miss while the pinned version number still resolves.
+        // An open draft is work in progress and must not run in place of the published version.
+        if (workflowDefinition == null && hasVersionId)
+        {
+            var pinnedVersion = await workflowDefinitionService.FindWorkflowDefinitionAsync(new WorkflowDefinitionFilter
+            {
+                DefinitionId = WorkflowDefinitionId,
+                VersionOptions = VersionOptions.SpecificVersion(Version)
+            }, cancellationToken);
+
+            if (pinnedVersion is { IsLatest: true, IsPublished: false })
+                pinnedVersion = null;
+
+            workflowDefinition = pinnedVersion;
+        }
+
+        return workflowDefinition
+               ?? await workflowDefinitionService.FindWorkflowDefinitionAsync(new WorkflowDefinitionFilter
+               {
+                   DefinitionId = WorkflowDefinitionId,
+                   VersionOptions = VersionOptions.Published
+               }, cancellationToken)
+               ?? await workflowDefinitionService.FindWorkflowDefinitionAsync(new WorkflowDefinitionFilter
+               {
+                   DefinitionId = WorkflowDefinitionId,
+                   VersionOptions = VersionOptions.Latest
+               }, cancellationToken);
     }
 
     private async Task<ActivityDescriptor?> FindActivityDescriptorAsync(IServiceProvider serviceProvider)

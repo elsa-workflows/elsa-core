@@ -9,7 +9,7 @@
         <ElsaExtensionsVersion>3.9.0</ElsaExtensionsVersion>
         <MicrosoftVersion>10.0.9</MicrosoftVersion>
         <!-- WebAssembly.Server is pinned to the first patched version of this line; sibling WebAssembly and Configuration pins match because apps enables central transitive pinning. -->
-        <WebAssemblyServerPatchedVersion>10.0.13</WebAssemblyServerPatchedVersion>
+        <WebAssemblyServerPatchedVersion>10.0.14</WebAssemblyServerPatchedVersion>
     </PropertyGroup>
     <ItemGroup>
         <PackageVersion Include="Elsa" Version="$(ElsaVersion)"/>
@@ -65,6 +65,7 @@
 
     <ItemGroup>
         <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="$(MicrosoftVersion)"/>
+        <PackageVersion Include="Microsoft.AspNetCore.WebUtilities" Version="10.0.15" />
         <PackageVersion Include="Microsoft.OpenApi" Version="2.7.5"/>
         <PackageVersion Include="Microsoft.Extensions.Configuration" Version="$(WebAssemblyServerPatchedVersion)"/>
         <PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="$(WebAssemblyServerPatchedVersion)"/>

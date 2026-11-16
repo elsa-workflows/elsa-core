@@ -125,6 +125,7 @@ public class DisplayInputEditorContext
     /// </summary>
     public async Task UpdateValueAsync(object? value)
     {
+        Value = value;
         await OnValueChanged(value);
     }
 

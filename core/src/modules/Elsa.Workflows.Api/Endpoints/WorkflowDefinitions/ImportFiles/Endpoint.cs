@@ -49,7 +49,17 @@ internal class ImportFiles : ElsaEndpoint<WorkflowDefinitionModel>
     {
         if (Files.Any())
         {
-            var models = await ReadWorkflowDefinitionModelsAsync(Files, cancellationToken);
+            var readResult = await WorkflowDefinitionImportFileReader.ReadAsync(Files, _apiSerializer, () => HttpContext.Response.HasStarted, cancellationToken);
+            if (readResult.ErrorMessage != null)
+            {
+                AddError(readResult.ErrorMessage);
+                if (!HttpContext.Response.HasStarted)
+                    await Send.ErrorsAsync(400, cancellationToken);
+
+                return;
+            }
+
+            var models = readResult.Models;
             if (!await AuthorizePythonUsageAsync(models, cancellationToken))
                 return;
 
@@ -69,12 +79,6 @@ internal class ImportFiles : ElsaEndpoint<WorkflowDefinitionModel>
 
         if (ValidationFailed && !HttpContext.Response.HasStarted)
             await Send.ErrorsAsync(400, cancellationToken);
-    }
-
-    private async Task<ICollection<WorkflowDefinitionModel>> ReadWorkflowDefinitionModelsAsync(IFormFileCollection files, CancellationToken cancellationToken)
-    {
-        var models = await WorkflowDefinitionImportFileReader.ReadAsync(files, _apiSerializer, () => HttpContext.Response.HasStarted, cancellationToken);
-        return models.ToList();
     }
 
     private async Task<bool> AuthorizePythonUsageAsync(IEnumerable<WorkflowDefinitionModel> models, CancellationToken cancellationToken)

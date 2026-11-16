@@ -25,7 +25,22 @@ public class ActivityExecutionContextState
     /// The depth of this activity in the call stack (0 for root activities).
     /// </summary>
     public int CallStackDepth { get; set; }
-    
+
+    /// <summary>
+    /// The ID of the activity execution context that scheduled this activity execution.
+    /// </summary>
+    public string? SchedulingActivityExecutionId { get; set; }
+
+    /// <summary>
+    /// The ID of the activity that scheduled this activity execution.
+    /// </summary>
+    public string? SchedulingActivityId { get; set; }
+
+    /// <summary>
+    /// The workflow instance ID of the workflow that scheduled this activity execution, when scheduled across workflow boundaries.
+    /// </summary>
+    public string? SchedulingWorkflowInstanceId { get; set; }
+
     /// <summary>
     /// The ID of the parent of the activity instance.
     /// </summary>

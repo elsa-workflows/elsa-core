@@ -6,6 +6,7 @@ using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Requests;
 using JetBrains.Annotations;
+using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Dispatch;
 
@@ -30,6 +31,13 @@ internal class Endpoint(
 
         if(workflowGraph == null)
         {
+            if (versionOptions.IsPublished && await workflowDefinitionService.FindWorkflowDefinitionAsync(definitionId, VersionOptions.Latest, cancellationToken) != null)
+            {
+                AddError($"Workflow definition '{definitionId}' has no published version. Publish it before dispatching, or specify the version to dispatch.");
+                await Send.ErrorsAsync(StatusCodes.Status404NotFound, cancellationToken);
+                return;
+            }
+
             await Send.NotFoundAsync(cancellationToken);
             return;
         }

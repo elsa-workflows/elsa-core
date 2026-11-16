@@ -1,4 +1,5 @@
 ﻿using System.Text.Json.Serialization;
+using Elsa.Workflows.Exceptions;
 
 // ReSharper disable NotAccessedPositionalProperty.Global
 
@@ -34,6 +35,11 @@ public record ExceptionState(
     {
         if (ex == null)
             return null;
+
+        if (ex is BackgroundActivityException backgroundActivityException)
+        {
+            return backgroundActivityException.ExceptionState;
+        }
 
         var metadataProvider = ex as ISafeExceptionMetadataProvider;
         var metadata = metadataProvider?.GetSafeMetadata();
