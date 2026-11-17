@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+        <ProjectReference Include="../../../../src/persistence/Elsa.Persistence.Elasticsearch/Elsa.Persistence.Elasticsearch.csproj" />
+    </ItemGroup>
+
+</Project>
