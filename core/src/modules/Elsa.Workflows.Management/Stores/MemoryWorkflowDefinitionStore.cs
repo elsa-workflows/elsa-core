@@ -179,6 +179,32 @@ public class MemoryWorkflowDefinitionStore(MemoryStore<WorkflowDefinition> store
     }
 
     /// <inheritdoc />
+    public bool SupportsDeletion(WorkflowDefinitionDeletionPlan plan) => true;
+
+    /// <inheritdoc />
+    public Task<bool> TryDeleteAsync(WorkflowDefinitionDeletionPlan plan, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        lock (store.Sync)
+        {
+            var filter = new WorkflowDefinitionFilter { DefinitionIds = plan.DefinitionIds };
+            var current = store.Query(query => Filter(query, filter)).ToArray();
+            if (!plan.Matches(current) || plan.Deleted.Concat(plan.Promoted).Any(version => !CanWrite(version.TenantId)))
+                return Task.FromResult(false);
+
+            store.DeleteMany(plan.Deleted.Select(version => version.Id));
+            foreach (var version in plan.Promoted)
+            {
+                var promoted = store.FindById(version.Id)!.ShallowClone();
+                promoted.IsLatest = true;
+                store.Save(promoted, GetId);
+            }
+
+            return Task.FromResult(true);
+        }
+    }
+
+    /// <inheritdoc />
     public Task SaveManyAsync(IEnumerable<WorkflowDefinition> definitions, CancellationToken cancellationToken = default)
     {
         lock (store.Sync)

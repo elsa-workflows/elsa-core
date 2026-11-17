@@ -90,11 +90,13 @@ Workflow API registers [NotReadOnlyRequirementHandler](../../src/modules/Elsa.Wo
 
 Bulk definition deletion, version deletion, publishing and retraction check the stored definitions before starting the operation.
 If a batch would change a read-only or system definition, it returns HTTP 403 before changing any definition in the batch.
+Definition mutations require ownership of the selected versions. Shared versions can be read in a tenant without granting mutation rights.
 Version deletion and revert also check any version whose latest status the operation would change.
-Bulk version deletion removes instances of the selected versions and preserves instances of other versions.
+Workflow authoring and BPMN HTTP writes use the same tenant mutation lock as deletion. Hosts running several replicas use a lock provider shared by those replicas.
+Definition deletion checks the complete version set before cleaning up dependent records by physical version ID. A stale version set returns HTTP 409. The selected rows remain available for retry if dependent cleanup fails. Removing versions and promoting surviving latest versions then commit together. Deletion affecting several MongoDB documents requires a transaction-capable deployment.
 Publishing compares the authorized latest and published versions at commit time. It writes the new publication and clears the previous flags in one operation. A changed version set returns HTTP 409 for a single publish or appears under `skipped` in bulk results. Multi-version publication on MongoDB requires a transaction-capable deployment. A single-version publication also works on a standalone server.
 
-Retraction clears the stored publication flag of the selected version and preserves a newer draft. If the authorized version disappears, is already retracted, or has different protection or ownership at write time, a single request returns HTTP 409 and bulk retraction lists its definition under `skipped`. Custom workflow definition stores implement `IWorkflowDefinitionStore.TryPublishAsync` and `TryRetractAsync` to support these conditional writes. Automatic reference updates skip protected consumers.
+Retraction clears the stored publication flag of the selected version and preserves a newer draft. If the authorized version disappears, is already retracted, or has different protection or ownership at write time, a single request returns HTTP 409 and bulk retraction lists its definition under `skipped`. Custom workflow definition stores implement `IWorkflowDefinitionStore.TryPublishAsync`, `TryRetractAsync`, `SupportsDeletion`, and `TryDeleteAsync` to support these conditional writes. Automatic reference updates skip protected consumers.
 
 Identity and API key setup are supplied by `Elsa.Identity`; see [Identity, Tenancy, And Security](identity-tenancy-security.md).
 

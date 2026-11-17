@@ -21,6 +21,8 @@ internal class RevertVersion(IWorkflowDefinitionManager workflowDefinitionManage
 
     public override async Task HandleAsync(CancellationToken cancellationToken)
     {
+        await using var mutationLock = await WorkflowDefinitionMutationLock.AcquireAsync(HttpContext.RequestServices, cancellationToken);
+
         var definitionId = Route<string>("definitionId")!;
         var version = Route<int>("version");
 

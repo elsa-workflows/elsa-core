@@ -8,4 +8,8 @@ namespace Elsa.Workflows.Management.Notifications;
 /// </summary>
 /// <param name="Ids">The IDs of the workflow definitions.</param>
 [PublicAPI]
-public record WorkflowDefinitionVersionsDeleted(ICollection<string> Ids) : INotification;
+public record WorkflowDefinitionVersionsDeleted(ICollection<string> Ids) : INotification
+{
+    /// <summary>The logical definitions whose cached versions changed, if known.</summary>
+    public ICollection<string> DefinitionIds { get; init; } = [];
+}

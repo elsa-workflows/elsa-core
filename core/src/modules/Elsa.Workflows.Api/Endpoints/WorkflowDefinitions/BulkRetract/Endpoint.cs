@@ -24,6 +24,8 @@ internal class BulkRetract(IWorkflowDefinitionStore store, IWorkflowDefinitionPu
 
     public override async Task<Response> ExecuteAsync(Request request, CancellationToken cancellationToken)
     {
+        await using var mutationLock = await WorkflowDefinitionMutationLock.AcquireAsync(HttpContext.RequestServices, cancellationToken);
+
         var authorizationResult = await authorizationService.AuthorizeAsync(User, new NotReadOnlyResource(), AuthorizationPolicies.NotReadOnlyPolicy);
 
         if (!authorizationResult.Succeeded)

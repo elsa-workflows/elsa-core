@@ -270,7 +270,7 @@ public class MongoWorkflowDefinitionStore(MongoDbStore<WorkflowDefinition> mongo
             return result.MatchedCount == 1;
         }
 
-        if (collection.Database.Client.Cluster.Description.Servers.Any(server => server.Type == ServerType.Standalone))
+        if (IsStandalone)
             return false;
 
         using var session = await collection.Database.Client.StartSessionAsync(cancellationToken: cancellationToken);
@@ -325,6 +325,77 @@ public class MongoWorkflowDefinitionStore(MongoDbStore<WorkflowDefinition> mongo
         FilterDefinition<WorkflowDefinition> ForWrite(string id) =>
             mongoDbStore.ApplyTenantScope(Builders<WorkflowDefinition>.Filter.Eq(version => version.Id, id));
     }
+
+    /// <inheritdoc />
+    public bool SupportsDeletion(WorkflowDefinitionDeletionPlan plan) =>
+        !IsStandalone || plan.Deleted.Count == 1 && plan.Promoted.Count == 0;
+
+    /// <inheritdoc />
+    public async Task<bool> TryDeleteAsync(WorkflowDefinitionDeletionPlan plan, CancellationToken cancellationToken = default)
+    {
+        var collection = mongoDbStore.GetCollection();
+        var filter = new WorkflowDefinitionFilter { DefinitionIds = plan.DefinitionIds };
+        if (IsStandalone)
+        {
+            if (!SupportsDeletion(plan))
+                return false;
+
+            var id = plan.Deleted.Single().Id;
+            var snapshot = await LoadRawSnapshotAsync(id, cancellationToken);
+            var observed = (await FindManyAsync(filter, cancellationToken)).ToArray();
+            if (snapshot == null || !plan.Matches(observed))
+                return false;
+
+            var current = BsonSerializer.Deserialize<WorkflowDefinition>(snapshot);
+            if (!plan.Matches(observed.Select(version => version.Id == id ? current : version).ToArray()))
+                return false;
+
+            var scoped = mongoDbStore.ApplyTenantScope(CreateExactSnapshotFilter(snapshot));
+            var deleted = await collection.DeleteOneAsync(scoped, new DeleteOptions { Collation = Collation.Simple }, cancellationToken);
+            return deleted.DeletedCount == 1;
+        }
+
+        using var session = await collection.Database.Client.StartSessionAsync(cancellationToken: cancellationToken);
+        session.StartTransaction(new TransactionOptions(readConcern: ReadConcern.Snapshot, readPreference: ReadPreference.Primary, writeConcern: WriteConcern.WMajority));
+        var readyToCommit = false;
+        try
+        {
+            var current = await mongoDbStore.FindManyAsync(session, query => Filter(query, filter), cancellationToken);
+            if (!plan.Matches(current))
+                return false;
+
+            var fields = Builders<WorkflowDefinition>.Filter;
+            var deleteFilter = mongoDbStore.ApplyTenantScope(fields.In(version => version.Id, plan.Deleted.Select(version => version.Id)));
+            var deleted = await collection.DeleteManyAsync(session, deleteFilter, new DeleteOptions { Collation = Collation.Simple }, cancellationToken);
+            if (deleted.DeletedCount != plan.Deleted.Count)
+                return false;
+
+            foreach (var version in plan.Promoted)
+            {
+                var scoped = mongoDbStore.ApplyTenantScope(fields.Eq(candidate => candidate.Id, version.Id));
+                var update = Builders<WorkflowDefinition>.Update.Set(candidate => candidate.IsLatest, true);
+                var promoted = await collection.UpdateOneAsync(session, scoped, update, new UpdateOptions { Collation = Collation.Simple }, cancellationToken);
+                if (promoted.MatchedCount != 1)
+                    return false;
+            }
+
+            readyToCommit = true;
+        }
+        catch (MongoException exception) when (IsKnownAbortedConflict(exception) || exception is MongoCommandException { Code: 20 })
+        {
+            return false;
+        }
+        finally
+        {
+            if (!readyToCommit)
+                await AbortTransactionQuietlyAsync(session);
+        }
+
+        await session.CommitTransactionAsync(cancellationToken);
+        return true;
+    }
+
+    private bool IsStandalone => mongoDbStore.GetCollection().Database.Client.Cluster.Description.Servers.Any(server => server.Type == ServerType.Standalone);
 
     /// <inheritdoc />
     public Task SaveManyAsync(IEnumerable<WorkflowDefinition> definitions, CancellationToken cancellationToken = default)

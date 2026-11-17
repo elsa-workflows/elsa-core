@@ -230,6 +230,59 @@ internal class DapperWorkflowDefinitionStore(Store<WorkflowDefinitionRecord> sto
     }
 
     /// <inheritdoc />
+    public bool SupportsDeletion(WorkflowDefinitionDeletionPlan plan) => true;
+
+    /// <inheritdoc />
+    public async Task<bool> TryDeleteAsync(WorkflowDefinitionDeletionPlan plan, CancellationToken cancellationToken = default)
+    {
+        using var connection = connectionProvider.GetConnection();
+        if (connection is DbConnection dbConnection)
+            await dbConnection.OpenAsync(cancellationToken);
+        else
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            connection.Open();
+        }
+
+        using var transaction = connection.BeginTransaction(IsolationLevel.Serializable);
+        try
+        {
+            var read = connectionProvider.CreateQuery().From(store.TableName).In(nameof(WorkflowDefinitionRecord.DefinitionId), plan.DefinitionIds);
+            store.ApplyTenantFilter(read);
+            var current = (await connection.QueryAsync<WorkflowDefinitionRecord>(Command(read))).ToDictionary(version => version.Id);
+            if (!plan.Matches(current.Values.Select(Map).ToArray()))
+                return false;
+
+            var removedIds = plan.Deleted.Select(version => version.Id).ToArray();
+
+            var remove = connectionProvider.CreateQuery().Delete(store.TableName).In(store.PrimaryKey, removedIds);
+            store.ApplyTenantFilter(remove);
+            if (await connection.ExecuteAsync(Command(remove)) != removedIds.Length)
+                return false;
+
+            foreach (var version in plan.Promoted)
+            {
+                var survivor = current[version.Id];
+                survivor.IsLatest = true;
+                var promote = connectionProvider.CreateQuery().Update(store.TableName, survivor, store.PrimaryKey, [nameof(WorkflowDefinitionRecord.IsLatest)]);
+                if (await connection.ExecuteAsync(Command(promote)) != 1)
+                    return false;
+            }
+        }
+        catch (DbException exception) when (IsAbortedContention(exception))
+        {
+            return false;
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+        transaction.Commit();
+        return true;
+
+        CommandDefinition Command(ParameterizedQuery query) =>
+            new(query.Sql.ToString(), query.Parameters, transaction, cancellationToken: cancellationToken);
+    }
+
+    /// <inheritdoc />
     public async Task<WorkflowDefinitionUpdateResult> TryUpdateLatestAsync(
         WorkflowDefinitionFilter filter,
         Func<WorkflowDefinition, bool> matchesExpected,

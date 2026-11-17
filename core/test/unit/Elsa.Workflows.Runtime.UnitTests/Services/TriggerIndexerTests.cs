@@ -8,6 +8,8 @@ using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.Runtime.Filters;
+using Elsa.Workflows.Runtime.Notifications;
 using Medallion.Threading;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -27,6 +29,9 @@ public class TriggerIndexerTests
 
     private readonly IStimulusHasher _hasher;
     private readonly TriggerIndexer _indexer;
+    private readonly ITriggerStore _triggerStore = Substitute.For<ITriggerStore>();
+    private readonly IWorkflowDefinitionService _definitionService = Substitute.For<IWorkflowDefinitionService>();
+    private readonly INotificationSender _notifications = Substitute.For<INotificationSender>();
 
     public TriggerIndexerTests()
     {
@@ -41,18 +46,39 @@ public class TriggerIndexerTests
 
         _indexer = new(
             new ActivityVisitor([], serviceProvider),
-            Substitute.For<IWorkflowDefinitionService>(),
+            _definitionService,
             Substitute.For<IExpressionEvaluator>(),
             identityGenerator,
-            Substitute.For<ITriggerStore>(),
+            _triggerStore,
             activityRegistry,
-            Substitute.For<INotificationSender>(),
+            _notifications,
             serviceProvider,
             _hasher,
             Substitute.For<IDistributedLockProvider>(),
             typeRegistry,
             Microsoft.Extensions.Options.Options.Create(new DistributedLockingOptions()),
             NullLogger<TriggerIndexer>.Instance);
+    }
+
+    [Fact]
+    public async Task VersionCleanupRemovesAndNotifiesOnlyTheSelectedTriggers()
+    {
+        var selected = new StoredTrigger { Id = "old-trigger", WorkflowDefinitionId = "definition", WorkflowDefinitionVersionId = "version-1" };
+        var other = new StoredTrigger { Id = "current-trigger", WorkflowDefinitionId = "definition", WorkflowDefinitionVersionId = "version-2" };
+        var records = new[] { selected, other };
+        _triggerStore.FindManyAsync(Arg.Any<TriggerFilter>(), Arg.Any<CancellationToken>())
+            .Returns(call => ValueTask.FromResult<IEnumerable<StoredTrigger>>(call.Arg<TriggerFilter>().Apply(records.AsQueryable()).ToArray()));
+
+        var activity = new Sequence { Id = "root" };
+        var workflow = new Workflow(activity) { Identity = new("definition", 1, "version-1") };
+        var node = new ActivityNode(activity, "root");
+        _definitionService.FindWorkflowGraphAsync("version-1", Arg.Any<CancellationToken>()).Returns(new WorkflowGraph(workflow, node, [node]));
+
+        await _indexer.DeleteTriggersAsync(new TriggerFilter { WorkflowDefinitionVersionId = "version-1" });
+
+        await _triggerStore.Received(1).ReplaceAsync(Arg.Is<IEnumerable<StoredTrigger>>(removed => removed.SequenceEqual(new[] { selected })),
+            Arg.Is<IEnumerable<StoredTrigger>>(added => !added.Any()), Arg.Any<CancellationToken>());
+        await _notifications.Received(1).SendAsync(Arg.Is<WorkflowTriggersIndexed>(message => message.IndexedWorkflowTriggers.RemovedTriggers.SequenceEqual(new[] { selected })), Arg.Any<CancellationToken>());
     }
 
     [Fact(DisplayName = "A payload without a name of its own is indexed under the activity type name")]

@@ -136,6 +136,19 @@ public class CachingWorkflowDefinitionStore(IWorkflowDefinitionStore decoratedSt
     }
 
     /// <inheritdoc />
+    public bool SupportsDeletion(WorkflowDefinitionDeletionPlan plan) => decoratedStore.SupportsDeletion(plan);
+
+    /// <inheritdoc />
+    public async Task<bool> TryDeleteAsync(WorkflowDefinitionDeletionPlan plan, CancellationToken cancellationToken = default)
+    {
+        var deleted = await decoratedStore.TryDeleteAsync(plan, cancellationToken);
+        if (deleted)
+            await cacheManager.TriggerTokenAsync(CacheInvalidationTokenKey, cancellationToken);
+
+        return deleted;
+    }
+
+    /// <inheritdoc />
     public async Task<WorkflowDefinitionUpdateResult> TryUpdateLatestAsync(
         WorkflowDefinitionFilter filter,
         Func<WorkflowDefinition, bool> matchesExpected,

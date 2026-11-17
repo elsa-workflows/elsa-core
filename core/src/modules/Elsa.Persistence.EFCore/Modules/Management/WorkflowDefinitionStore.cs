@@ -213,6 +213,40 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
     }
 
     /// <inheritdoc />
+    public bool SupportsDeletion(WorkflowDefinitionDeletionPlan plan) => true;
+
+    /// <inheritdoc />
+    public async Task<bool> TryDeleteAsync(WorkflowDefinitionDeletionPlan plan, CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await store.CreateDbContextAsync(cancellationToken);
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
+        var current = await dbContext.WorkflowDefinitions.AsTracking().Where(version => plan.DefinitionIds.Contains(version.DefinitionId)).ToListAsync(cancellationToken);
+        if (!plan.Matches(current))
+            return false;
+
+        var removedIds = plan.Deleted.Select(version => version.Id).ToArray();
+        var promotedIds = plan.Promoted.Select(version => version.Id).ToArray();
+        var changedIds = removedIds.Concat(promotedIds).ToArray();
+        if (await dbContext.WorkflowDefinitions.WhereTenantCanWrite(dbContext).CountAsync(version => changedIds.Contains(version.Id), cancellationToken) != changedIds.Length)
+            return false;
+
+        dbContext.WorkflowDefinitions.RemoveRange(current.Where(version => removedIds.Contains(version.Id)));
+        foreach (var survivor in current.Where(version => promotedIds.Contains(version.Id)))
+            survivor.IsLatest = true;
+
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            return true;
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return false;
+        }
+    }
+
+    /// <inheritdoc />
     public async Task SaveManyAsync(IEnumerable<WorkflowDefinition> definitions, CancellationToken cancellationToken = default)
     {
         await store.SaveManyAsync(definitions, OnSaveAsync, cancellationToken);

@@ -3,6 +3,7 @@ using Elsa.Persistence.EFCore.Modules.Management;
 using Elsa.Persistence.EFCore.Sqlite;
 using Elsa.Workflows;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Models;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -203,6 +204,14 @@ public class TenantScopedDefinitionIdsMigrationTests
         var stored = Assert.Single(versions, version => version.IsLatest);
         Assert.Equal("draft", stored.Id);
         Assert.Equal("Published draft", stored.Name);
+
+        var plan = new WorkflowDefinitionDeletionPlan([stored], versions);
+        Assert.True(await store.TryDeleteAsync(plan));
+        await using var afterDeletion = await factory.CreateDbContextAsync();
+        var promoted = await afterDeletion.WorkflowDefinitions.SingleAsync();
+        Assert.Equal("published", promoted.Id);
+        Assert.True(promoted.IsLatest);
+        Assert.False(promoted.IsPublished);
     }
 
     [Fact]
