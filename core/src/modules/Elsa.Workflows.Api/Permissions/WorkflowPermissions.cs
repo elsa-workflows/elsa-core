@@ -91,7 +91,7 @@ public sealed class WorkflowPermissionsDescriptorProvider : IPermissionDescripto
     [
         new(WorkflowPermissions.Definitions, [CoreVerbs.View, CoreVerbs.Write, CoreVerbs.Delete, CoreVerbs.Execute, "publish", "deploy", "retract", "refresh", "reload"], "Workflow definitions", "Author, publish, run, and refresh workflow definitions.", "Workflows"),
         new(WorkflowPermissions.DefinitionVersions, [CoreVerbs.View, CoreVerbs.Delete, "revert"], "Workflow definition versions", "Delete and revert individual definition versions. Listing versions is covered by workflows/definitions:view; the view verb is retained so existing roles that hold it stay valid.", "Workflows"),
-        new(WorkflowPermissions.Instances, [CoreVerbs.View, CoreVerbs.Write, CoreVerbs.Delete, "cancel"], "Workflow instances", "Inspect, import, delete, and cancel workflow instances.", "Workflows"),
+        new(WorkflowPermissions.Instances, [CoreVerbs.View, CoreVerbs.Write, CoreVerbs.Delete, "cancel", "restore"], "Workflow instances", "Inspect, import, delete, and cancel workflow instances.", "Workflows"),
         new(WorkflowPermissions.ActivityExecutions, [CoreVerbs.View], "Activity executions", "Inspect activity execution records and summaries.", "Workflows"),
         new(WorkflowPermissions.Runtime, [CoreVerbs.View, "control"], "Workflow runtime", "Inspect runtime status, and pause, resume, or drain the runtime.", "Workflows"),
         new(WorkflowPermissions.BookmarkQueueDeadLetters, [CoreVerbs.View, CoreVerbs.Delete, "replay"], "Bookmark queue dead letters", "Inspect, replay, and delete bookmark queue dead-letter items.", "Workflows"),

@@ -148,6 +148,18 @@ restart. Multi-replica or restart-resilient deployments must register a shared, 
 enabling sender traffic. Keep source keys in the secret store and share them only with the corresponding sender or
 authorized signing ingress.
 
+## Restoring an archived workflow instance
+
+The bulk instance import endpoint requires `workflows/instances:restore`. Give this permission only to
+trusted recovery operators. The endpoint accepts terminal instances for an existing matching definition version
+in the current tenant and refuses existing instance IDs, runnable state, scheduled callbacks and bookmarks.
+Named-tenant restores require an archive exported with the tenant identifier.
+
+The endpoint validates all submitted archives before starting a batch. Imported execution histories receive
+fresh record IDs. Store failures during writes can leave a partially restored batch, so verify which instance
+IDs were created before retrying. Keep running or suspended snapshots outside the live import endpoint for a
+separately qualified offline recovery procedure.
+
 ## Endpoint Discovery Command
 
 To quickly list routes:
