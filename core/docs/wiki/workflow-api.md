@@ -112,6 +112,13 @@ download and content revision. Retry with the same key and caller to reuse the e
 Anonymous requests and workflows without that key still generate a ZIP on demand.
 Client-supplied `x-download-id` values and old cache entries do not select a ZIP.
 
+## Downloading a remote file in an HTTP response
+
+The HTTP File Response activity treats strings as literal file content. For an intentional remote fetch, pass a typed
+`Uri` and add the exact DNS hostname to `HttpActivityOptions.RemoteDownloadHosts` in the host configuration.
+The built-in downloader uses direct HTTPS on the default port, verifies the resolved destination at connection time,
+and rejects redirects. Configure the final URL when a download service normally redirects clients.
+
 ## Endpoint Discovery Command
 
 To quickly list routes:

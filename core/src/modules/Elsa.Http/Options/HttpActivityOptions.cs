@@ -49,4 +49,9 @@ public class HttpActivityOptions
     /// <c>null</c> means unspecified and allows a host to assign a default policy; an empty string disables HTTP workflow trigger rate limiting.
     /// </summary>
     public string? RateLimitingPolicyName { get; set; }
+
+    /// <summary>
+    /// Exact DNS hostnames permitted for remote file responses over HTTPS. An empty list disables remote file responses.
+    /// </summary>
+    public ICollection<string> RemoteDownloadHosts { get; set; } = [];
 }
