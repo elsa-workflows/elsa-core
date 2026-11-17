@@ -77,7 +77,9 @@ public abstract class WorkflowStoreConformanceTests
 
         Assert.Null(await scenario.Triggers.FindAsync(new TriggerFilter { Id = "id-b" }));
 
-        var deleted = await scenario.Triggers.DeleteManyAsync(new TriggerFilter());
+        long deleted;
+        using (SharedTenantWriteScope.Enter<StoredTrigger>())
+            deleted = await scenario.Triggers.DeleteManyAsync(new TriggerFilter());
         var remaining = (await scenario.Triggers.FindManyAsync(new TriggerFilter { TenantAgnostic = true })).ToList();
         Assert.Equal(2, deleted);
         Assert.Equal("id-b", Assert.Single(remaining).Id);
@@ -193,7 +195,9 @@ public abstract class WorkflowStoreConformanceTests
         Assert.False(await scenario.Definitions.AnyAsync(new WorkflowDefinitionFilter { Id = "def-b" }));
         Assert.Equal(2, await scenario.Definitions.CountDistinctAsync());
 
-        var deleted = await scenario.Definitions.DeleteAsync(new WorkflowDefinitionFilter());
+        long deleted;
+        using (SharedTenantWriteScope.Enter<WorkflowDefinition>())
+            deleted = await scenario.Definitions.DeleteAsync(new WorkflowDefinitionFilter());
         var remaining = (await scenario.Definitions.FindManyAsync(new WorkflowDefinitionFilter { TenantAgnostic = true })).ToList();
         Assert.Equal(2, deleted);
         Assert.Equal("def-b", Assert.Single(remaining).Id);
@@ -227,7 +231,9 @@ public abstract class WorkflowStoreConformanceTests
 
         Assert.Null(await scenario.Bookmarks.FindAsync(new BookmarkFilter { BookmarkId = "bm-b" }));
 
-        var deleted = await scenario.Bookmarks.DeleteAsync(new BookmarkFilter());
+        long deleted;
+        using (SharedTenantWriteScope.Enter<StoredBookmark>())
+            deleted = await scenario.Bookmarks.DeleteAsync(new BookmarkFilter());
         var remaining = (await scenario.Bookmarks.FindManyAsync(new BookmarkFilter { TenantAgnostic = true })).ToList();
         Assert.Equal(2, deleted);
         Assert.Equal("bm-b", Assert.Single(remaining).Id);
@@ -521,22 +527,28 @@ public abstract class WorkflowStoreConformanceTests
     private static async Task SeedMixedTriggersAsync(WorkflowStoreScenario scenario)
     {
         await scenario.Triggers.SaveAsync(Trigger("id-a", hash: "hash-a", tenantId: "tenant-a"));
-        await scenario.Triggers.SaveAsync(Trigger("id-b", hash: "hash-b", tenantId: "tenant-b"));
-        await scenario.Triggers.SaveAsync(Trigger("id-star", hash: "hash-star", tenantId: Tenant.AgnosticTenantId));
+        using (scenario.UseTenant("tenant-b"))
+            await scenario.Triggers.SaveAsync(Trigger("id-b", hash: "hash-b", tenantId: "tenant-b"));
+        using (SharedTenantWriteScope.Enter<StoredTrigger>())
+            await scenario.Triggers.SaveAsync(Trigger("id-star", hash: "hash-star", tenantId: Tenant.AgnosticTenantId));
     }
 
     private static async Task SeedMixedDefinitionsAsync(WorkflowStoreScenario scenario)
     {
         await scenario.Definitions.SaveAsync(Definition("def-a", "A", "tenant-a"));
-        await scenario.Definitions.SaveAsync(Definition("def-b", "B", "tenant-b"));
-        await scenario.Definitions.SaveAsync(Definition("def-star", "Star", Tenant.AgnosticTenantId));
+        using (scenario.UseTenant("tenant-b"))
+            await scenario.Definitions.SaveAsync(Definition("def-b", "B", "tenant-b"));
+        using (SharedTenantWriteScope.Enter<WorkflowDefinition>())
+            await scenario.Definitions.SaveAsync(Definition("def-star", "Star", Tenant.AgnosticTenantId));
     }
 
     private static async Task SeedMixedBookmarksAsync(WorkflowStoreScenario scenario)
     {
         await scenario.Bookmarks.SaveAsync(Bookmark("bm-a", tenantId: "tenant-a"));
-        await scenario.Bookmarks.SaveAsync(Bookmark("bm-b", tenantId: "tenant-b"));
-        await scenario.Bookmarks.SaveAsync(Bookmark("bm-star", tenantId: Tenant.AgnosticTenantId));
+        using (scenario.UseTenant("tenant-b"))
+            await scenario.Bookmarks.SaveAsync(Bookmark("bm-b", tenantId: "tenant-b"));
+        using (SharedTenantWriteScope.Enter<StoredBookmark>())
+            await scenario.Bookmarks.SaveAsync(Bookmark("bm-star", tenantId: Tenant.AgnosticTenantId));
     }
 
     private static StoredTrigger Trigger(

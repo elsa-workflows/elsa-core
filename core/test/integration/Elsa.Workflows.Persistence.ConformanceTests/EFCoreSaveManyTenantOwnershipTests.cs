@@ -63,19 +63,41 @@ public sealed class EFCoreSaveManyTenantOwnershipTests
     public async Task SaveManyAsync_WhenPopulatorResavesStarUnderNamedTenant_KeepsStar()
     {
         await using var scenario = await WorkflowStoreScenario.CreateSqliteAsync("tenant-a");
-        await scenario.Bookmarks.SaveManyAsync([Bookmark("shared", Tenant.AgnosticTenantId, "before")], CancellationToken.None);
+        using (SharedTenantWriteScope.Enter<StoredBookmark>())
+            await scenario.Bookmarks.SaveManyAsync([Bookmark("shared", Tenant.AgnosticTenantId, "before")], CancellationToken.None);
 
-        await scenario.Bookmarks.SaveManyAsync([Bookmark("shared", Tenant.AgnosticTenantId, "after")], CancellationToken.None);
+        using (SharedTenantWriteScope.Enter<StoredBookmark>())
+            await scenario.Bookmarks.SaveManyAsync([Bookmark("shared", Tenant.AgnosticTenantId, "after")], CancellationToken.None);
 
         var found = await FindBookmarkAsync(scenario, "shared");
         AssertUnchanged(found, Tenant.AgnosticTenantId, "after");
     }
 
     [Fact]
+    public async Task SharedBookmarksAreReadableButTenantWritesRequireAuthority()
+    {
+        await using var scenario = await WorkflowStoreScenario.CreateSqliteAsync("tenant-a");
+        using (SharedTenantWriteScope.Enter<StoredBookmark>())
+            await scenario.Bookmarks.SaveAsync(Bookmark("shared", Tenant.AgnosticTenantId, "host record"));
+
+        using (scenario.UseTenant("tenant-b"))
+        {
+            AssertUnchanged(await FindBookmarkAsync(scenario, "shared"), Tenant.AgnosticTenantId, "host record");
+            Assert.Equal(0, await scenario.Bookmarks.DeleteAsync(new BookmarkFilter { BookmarkId = "shared" }));
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                scenario.Bookmarks.SaveAsync(Bookmark("shared", Tenant.AgnosticTenantId, "tenant edit")).AsTask());
+        }
+
+        using (SharedTenantWriteScope.Enter<StoredBookmark>())
+            Assert.Equal(1, await scenario.Bookmarks.DeleteAsync(new BookmarkFilter { BookmarkId = "shared" }));
+    }
+
+    [Fact]
     public async Task SaveManyAsync_WhenNamedTenantSavesNullTenantIdOverStar_ThrowsAndLeavesStar()
     {
         await using var scenario = await WorkflowStoreScenario.CreateSqliteAsync("tenant-a");
-        await scenario.Bookmarks.SaveManyAsync([Bookmark("shared", Tenant.AgnosticTenantId, "original")], CancellationToken.None);
+        using (SharedTenantWriteScope.Enter<StoredBookmark>())
+            await scenario.Bookmarks.SaveManyAsync([Bookmark("shared", Tenant.AgnosticTenantId, "original")], CancellationToken.None);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
             scenario.Bookmarks.SaveManyAsync([Bookmark("shared", tenantId: null, hash: "stolen")], CancellationToken.None).AsTask());

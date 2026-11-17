@@ -5,6 +5,7 @@ using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
+using Elsa.Workflows.Runtime.Entities;
 using Microsoft.Extensions.Logging;
 using Open.Linq.AsyncExtensions;
 
@@ -107,7 +108,12 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         return await result.OnSuccessAsync(async workflowDefinition =>
         {
             if (indexTriggers && workflowDefinition.IsPublished)
+            {
+                using var grant = workflowDefinition.TenantId == Tenant.AgnosticTenantId
+                    ? SharedTenantWriteScope.Enter<StoredTrigger>()
+                    : null;
                 await _triggerIndexer.IndexTriggersAsync(workflowDefinition, cancellationToken);
+            }
         });
     }
 
@@ -259,7 +265,8 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
             throw new Exception($"Unable to update WorkflowDefinition with ids {string.Join(',', duplicates)} multiple times.");
         }
 
-        await _workflowDefinitionStore.SaveManyAsync(workflowDefinitionsToSave, cancellationToken);
+        using (workflowTenantId == Tenant.AgnosticTenantId ? SharedTenantWriteScope.Enter<WorkflowDefinition>() : null)
+            await _workflowDefinitionStore.SaveManyAsync(workflowDefinitionsToSave, cancellationToken);
         return workflowDefinition;
 
         async Task UpdateIsLatest()

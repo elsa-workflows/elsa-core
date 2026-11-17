@@ -26,6 +26,7 @@ public class SetTenantIdFilter : IEntityModelCreatingHandler
         if (!typeof(Entity).IsAssignableFrom(entityType.ClrType) || typeof(Tenant).IsAssignableFrom(entityType.ClrType))
             return;
 
+        modelBuilder.Entity(entityType.ClrType).Property(nameof(Entity.TenantId)).IsConcurrencyToken();
         var tenantFilter = CreateTenantFilterExpression(dbContext, entityType.ClrType);
         var existingFilter = entityType.GetQueryFilter();
         if (existingFilter is not null)
