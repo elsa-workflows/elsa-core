@@ -14,7 +14,8 @@ public class WorkflowProposeUpdateTool(IServiceProvider serviceProvider, Workflo
             ("definitionId", GroundingToolSchemas.String("Logical workflow definition ID.")),
             ("baselineVersionId", GroundingToolSchemas.String("Baseline workflow version ID.")),
             ("draft", GroundingToolSchemas.Object("Workflow draft JSON payload.")),
-            ("rationale", GroundingToolSchemas.String("Why the draft should update the workflow."))));
+            ("rationale", GroundingToolSchemas.String("Why the draft should update the workflow."))),
+        AIGroundingPermissions.DefinitionView, AIGroundingPermissions.DefinitionWrite);
 
     public override async ValueTask<AIToolResult> ExecuteAsync(AIToolExecutionContext context, CancellationToken cancellationToken = default)
     {

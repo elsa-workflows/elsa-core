@@ -33,7 +33,7 @@ public class AIWorkflowGroundingToolTests
         using var provider = services.BuildServiceProvider();
         var registry = provider.GetRequiredService<IAIToolRegistry>();
 
-        using var searchTool = await registry.FindAsync("workflows.search", new AIToolQuery { ActorId = "user-1" });
+        using var searchTool = await registry.FindAsync("workflows.search", new AIToolQuery { ActorId = "user-1", UserPermissions = ["workflows/definitions:view"] });
         var searchResult = await searchTool!.ExecuteAsync(new AIToolExecutionContext
         {
             ActorId = "user-1",
@@ -41,7 +41,7 @@ public class AIWorkflowGroundingToolTests
             Arguments = new JsonObject { ["query"] = "order" }
         });
 
-        using var graphTool = await registry.FindAsync("workflows.getDefinitionGraph", new AIToolQuery { ActorId = "user-1" });
+        using var graphTool = await registry.FindAsync("workflows.getDefinitionGraph", new AIToolQuery { ActorId = "user-1", UserPermissions = ["workflows/definitions:view"] });
         var graphResult = await graphTool!.ExecuteAsync(new AIToolExecutionContext
         {
             ActorId = "user-1",

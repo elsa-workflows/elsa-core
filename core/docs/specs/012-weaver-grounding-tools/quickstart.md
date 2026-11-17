@@ -46,3 +46,10 @@ dotnet test test/unit/Elsa.AI.Host.UnitTests/Elsa.AI.Host.UnitTests.csproj
 dotnet test test/integration/Elsa.AI.IntegrationTests/Elsa.AI.IntegrationTests.csproj
 dotnet build Elsa.sln -m:1
 ```
+
+
+Workflow grounding requires the same read grants as the underlying resources. Definitions and activity
+descriptors require `workflows/definitions:view`. Instance and incident tools require
+`workflows/instances:view`, and activity execution history additionally requires
+`workflows/activity-executions:view`. Workflow proposals also require definition write permission.
+Attachments follow the same workflow read permissions and are omitted when the current caller lacks access.

@@ -14,7 +14,8 @@ public class WorkflowDefinitionTool(IServiceProvider serviceProvider, WorkflowGr
             ("versionId", GroundingToolSchemas.String("Workflow definition version ID.")),
             ("definitionId", GroundingToolSchemas.String("Logical workflow definition ID.")),
             ("version", GroundingToolSchemas.Integer("Specific workflow version.")),
-            ("published", GroundingToolSchemas.Boolean("Resolve the published version instead of the latest version."))));
+            ("published", GroundingToolSchemas.Boolean("Resolve the published version instead of the latest version."))),
+        AIGroundingPermissions.DefinitionView);
 
     public override async ValueTask<AIToolResult> ExecuteAsync(AIToolExecutionContext context, CancellationToken cancellationToken = default)
     {

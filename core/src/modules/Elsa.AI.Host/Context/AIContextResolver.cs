@@ -1,6 +1,7 @@
 using System.Text.RegularExpressions;
 using Elsa.AI.Abstractions.Contracts;
 using Elsa.AI.Abstractions.Models;
+using Elsa.AI.Host.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -31,6 +32,10 @@ public class AIContextResolver(IServiceScopeFactory scopeFactory, ILogger<AICont
 
         foreach (var item in attachmentsWithProviders)
         {
+            var requiredPermission = AIGroundingPermissions.ForAttachment(item.Attachment.Kind);
+            if (requiredPermission is not null && !AIGroundingPermissions.HasAll(request.UserPermissions, [requiredPermission]))
+                continue;
+
             if (item.Provider is IPlaceholderAIContextProvider)
                 logger.LogWarning(
                     "AI context kind {ContextKind} is using placeholder provider {ProviderType}. Replace it before production use.",
@@ -41,7 +46,8 @@ public class AIContextResolver(IServiceScopeFactory scopeFactory, ILogger<AICont
             {
                 Attachment = item.Attachment,
                 TenantId = request.TenantId,
-                UserId = request.UserId
+                UserId = request.UserId,
+                UserPermissions = request.UserPermissions.ToArray()
             }, cancellationToken);
 
             resolved.Add(Redact(context));

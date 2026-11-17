@@ -13,6 +13,9 @@ public class WorkflowDefinitionContextProvider(IServiceProvider serviceProvider,
     public async ValueTask<AIResolvedContext> ResolveAsync(AIContextResolutionRequest request, CancellationToken cancellationToken = default)
     {
         var attachment = request.Attachment;
+        if (!AIGroundingPermissions.HasAll(request.UserPermissions, [AIGroundingPermissions.DefinitionView]))
+            return NotFound(attachment);
+
         var store = serviceProvider.GetService(typeof(IWorkflowDefinitionStore)) as IWorkflowDefinitionStore;
         if (store == null)
             return Unavailable(attachment);
