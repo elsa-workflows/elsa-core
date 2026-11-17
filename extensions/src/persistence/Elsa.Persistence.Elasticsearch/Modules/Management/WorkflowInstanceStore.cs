@@ -7,6 +7,7 @@ using Elsa.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Exceptions;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
 using Humanizer;
@@ -123,9 +124,11 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
     }
 
     /// <inheritdoc />
+    /// <exception cref="WorkflowInstanceAlreadyExistsException">An instance already uses the specified ID.</exception>
     public async ValueTask AddAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
     {
-        await _store.SaveAsync(instance, cancellationToken);
+        if (!await _store.TryCreateAsync(instance, instance.Id, cancellationToken))
+            throw new WorkflowInstanceAlreadyExistsException(instance.Id);
     }
 
     public async ValueTask UpdateAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
@@ -157,9 +160,8 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
     /// </remarks>
     public async ValueTask<bool> TryMarkInterruptedAsync(string workflowInstanceId, CancellationToken cancellationToken = default, bool allowFinishedCancelled = false)
     {
-        // Conditional write: do not SaveAsync a Find snapshot. Id is a document field
-        // (not mapped as _id), so Update-by-id is unavailable. Refuse every Finished
-        // row (#8419). allowFinishedCancelled is ignored.
+        // Apply the status filter as part of the write so a stale snapshot cannot replace
+        // a Finished instance (#8419). allowFinishedCancelled is ignored.
         var updated = await _store.UpdateByQueryAsync(d =>
         {
             d.Refresh(true);

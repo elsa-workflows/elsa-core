@@ -88,6 +88,21 @@ public class ElasticStore<T> where T : class
             throw new Exception($"Failed to save data in Elasticsearch: {response.ElasticsearchServerError}");
     }
 
+    internal async Task<bool> TryCreateAsync(T document, string id, CancellationToken cancellationToken)
+    {
+        var response = await _elasticClient.CreateAsync(document, id,
+            request => request.RequestConfiguration(config => config.ThrowExceptions(false)), cancellationToken);
+
+        if (response.ApiCallDetails?.HttpStatusCode == 409 &&
+            response.ElasticsearchServerError?.Error?.Type == "version_conflict_engine_exception")
+            return false;
+
+        if (!response.IsSuccess())
+            throw new Exception($"Failed to add data in Elasticsearch: {response.ElasticsearchServerError}", response.ApiCallDetails?.OriginalException);
+
+        return true;
+    }
+
     /// <summary>
     /// Stores the specified documents in the index.
     /// </summary>
