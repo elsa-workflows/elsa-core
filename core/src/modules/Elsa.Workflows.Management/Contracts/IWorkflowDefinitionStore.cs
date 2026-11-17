@@ -130,6 +130,14 @@ public interface IWorkflowDefinitionStore
         Task.FromResult(false);
 
     /// <summary>
+    /// Clears the published flag only if the stored version still matches the expected identity,
+    /// tenant and protection flags. A missing or changed row is never inserted or overwritten.
+    /// </summary>
+    /// <remarks>Stores that do not implement conditional retraction return false.</remarks>
+    Task<bool> TryRetractAsync(WorkflowDefinition expected, CancellationToken cancellationToken = default) =>
+        Task.FromResult(false);
+
+    /// <summary>
     /// Compare-and-swap the latest definition matching <paramref name="filter"/>.
     /// </summary>
     /// <remarks>

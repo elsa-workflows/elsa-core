@@ -58,6 +58,33 @@ public sealed class DapperWorkflowDefinitionStoreCompareAndSwapTests : IDisposab
         _store = new DapperWorkflowDefinitionStore(store, new JsonPayloadSerializer(), connectionProvider, _tenantAccessor);
     }
 
+    [Fact]
+    public async Task RetractionChangesOnlyThePublishedFlagOfTheOwnedVersion()
+    {
+        using var tenant = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+        var published = Definition("definition", "published", name: "Original", stringData: "graph");
+        published.IsLatest = false;
+        published.IsPublished = true;
+        await _store.SaveAsync(published);
+        var expected = (await _store.FindAsync(new() { Id = published.Id }))!.ShallowClone();
+
+        using (_tenantAccessor.PushContext(new Tenant { Id = "tenant-b" }))
+            Assert.False(await _store.TryRetractAsync(expected));
+
+        var mismatched = expected.ShallowClone();
+        mismatched.IsReadonly = true;
+        Assert.False(await _store.TryRetractAsync(mismatched));
+
+        expected.Name = "Older name";
+        Assert.True(await _store.TryRetractAsync(expected));
+        Assert.False(await _store.TryRetractAsync(expected));
+
+        var stored = (await _store.FindAsync(new() { Id = published.Id }))!;
+        Assert.False(stored.IsPublished);
+        Assert.False(stored.IsLatest);
+        Assert.Equal("Original", stored.Name);
+    }
+
     [Fact(DisplayName = "A missing definition is NotFound")]
     public async Task TryUpdateLatestAsync_WhenNothingMatchesTheFilter_ReturnsNotFound()
     {

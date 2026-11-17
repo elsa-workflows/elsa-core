@@ -182,10 +182,15 @@ public class WorkflowDefinitionPublisher(
         if (!definition.IsPublished)
             throw new InvalidOperationException("Cannot retract an unpublished workflow definition.");
 
-        definition.IsPublished = false;
+        var expected = definition.ShallowClone();
+        var retracted = expected.ShallowClone();
+        retracted.IsPublished = false;
+        await mediator.SendAsync(new WorkflowDefinitionRetracting(retracted), cancellationToken);
 
-        await mediator.SendAsync(new WorkflowDefinitionRetracting(definition), cancellationToken);
-        await workflowDefinitionStore.SaveAsync(definition, cancellationToken);
+        if (!await workflowDefinitionStore.TryRetractAsync(expected, cancellationToken))
+            throw new WorkflowDefinitionEditConflictException();
+
+        definition.IsPublished = false;
         await mediator.SendAsync(new WorkflowDefinitionRetracted(definition), cancellationToken);
         return definition;
     }

@@ -83,6 +83,34 @@ public sealed class MongoWorkflowDefinitionStoreCompareAndSwapTests : IDisposabl
     public void Dispose() => _client.Dispose();
 
     [Fact]
+    public async Task RetractionChangesOnlyThePublishedFlagOfTheOwnedVersion()
+    {
+        using var tenant = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+        var published = Definition("published", "tenant-a");
+        published.IsLatest = false;
+        published.IsPublished = true;
+        published.Name = "Original";
+        await _collection.InsertOneAsync(published);
+
+        var expected = published.ShallowClone();
+        expected.Name = "Older name";
+        var mismatched = expected.ShallowClone();
+        mismatched.IsReadonly = true;
+
+        using (_tenantAccessor.PushContext(new Tenant { Id = "tenant-b" }))
+            Assert.False(await _store.TryRetractAsync(expected));
+
+        Assert.False(await _store.TryRetractAsync(mismatched));
+        Assert.True(await _store.TryRetractAsync(expected));
+        Assert.False(await _store.TryRetractAsync(expected));
+
+        var stored = await _collection.Find(x => x.Id == published.Id).SingleAsync();
+        Assert.False(stored.IsPublished);
+        Assert.False(stored.IsLatest);
+        Assert.Equal("Original", stored.Name);
+    }
+
+    [Fact]
     public async Task TryUpdateLatestAsync_WhenNothingMatchesTheFilter_ReturnsNotFound()
     {
         using var tenant = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });

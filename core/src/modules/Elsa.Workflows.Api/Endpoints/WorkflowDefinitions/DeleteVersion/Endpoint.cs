@@ -31,7 +31,7 @@ internal class DeleteVersion(IWorkflowDefinitionManager workflowDefinitionManage
         }
 
         var store = HttpContext.RequestServices.GetRequiredService<IWorkflowDefinitionStore>();
-        var definition = await store.FindAsync(new WorkflowDefinitionFilter { Id = request.Id }, cancellationToken);
+        var definition = (await store.FindAsync(new WorkflowDefinitionFilter { Id = request.Id }, cancellationToken))?.ShallowClone();
         if (definition is null)
         {
             await Send.NotFoundAsync(cancellationToken);
