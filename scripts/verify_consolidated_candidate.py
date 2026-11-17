@@ -115,14 +115,15 @@ def validate_pin_entry(version: str, entry: object) -> Pin:
             and ".." not in entry["ancestry_branch"],
             f"Pin {version}.ancestry_branch must be a branch name.")
     if version.startswith("3.11."):
-        from validate_packages_id_set import expected_ids_file, load_expected_ids
+        from validate_packages_id_set import STABLE_311, expected_ids_file, load_expected_ids
+        require(STABLE_311.fullmatch(version), f"Pin version {version} must be a canonical stable 3.11 version.")
         require(entry["ancestry_branch"] == "release/3.11.0",
                 f"Pin {version} must name the release/3.11.0 source line.")
         require(isinstance(entry["tooling_sha"], str) and HEX40.fullmatch(entry["tooling_sha"]),
                 f"Pin {version}.tooling_sha must be 40 lowercase hex characters.")
         expected = load_expected_ids(expected_ids_file(version))
-        require(entry["feedz_count"] == len(expected) and set(exclude) <= set(expected),
-                f"Pin {version} counts or exclusions differ from the reviewed 3.11 inventory.")
+        require(entry["feedz_count"] == len(expected) and entry["nuget_count"] == len(expected) and not exclude,
+                f"Pin {version} must use the full reviewed 3.11 inventory on both feeds, with no exclusions.")
     require(entry["nuget_count"] == entry["feedz_count"] - len(exclude),
             f"Pin {version}.nuget_count must be feedz_count minus the number of exclude_ids.")
     require(entry["run_id"] not in FORBIDDEN_RUNS and entry["artifact_id"] not in FORBIDDEN_ARTIFACTS

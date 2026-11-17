@@ -70,6 +70,7 @@ class Stable311PinTests(unittest.TestCase):
             {**entry, "ancestry_branch": "main"},
             {**entry, "tooling_sha": ""},
             {**entry, "feedz_count": 231, "nuget_count": 231},
+            {**entry, "nuget_count": 250, "exclude_ids": ["Elsa"]},
         ):
             with self.subTest(invalid=invalid), self.assertRaises(SystemExit):
                 verify.validate_pin_entry("3.11.0", invalid)
@@ -202,6 +203,26 @@ class ArchiveTests(unittest.TestCase):
         staged = verify.stage_packages(archive, verify.sealed_packages(pin, verify.read_manifest(pin, archive)), self.dir / "out")
         self.assertEqual(6, len(staged))
         self.assertEqual(3, len(list((self.dir / "out").glob("*.nupkg"))))
+
+    def test_version_keyed_311_archive_requires_matching_symbol_names(self):
+        version = "3.11.0"
+        content = packages(251, version)
+        for mismatched in (False, True):
+            with self.subTest(mismatched=mismatched):
+                archive = self.dir / "a.zip"
+                if mismatched:
+                    content[f"Other.{version}.snupkg"] = content.pop(f"Pkg1.{version}.snupkg")
+                manifest_sha = build_archive(archive, content, version=version)
+                pin = dataclasses.replace(self.pin_for(archive, manifest_sha, 251), version=version)
+                verify.check_archive(pin, archive)
+                manifest = verify.read_manifest(pin, archive)
+                if mismatched:
+                    with self.assertRaisesRegex(SystemExit, "missing .snupkg pairs"):
+                        verify.sealed_packages(pin, manifest)
+                else:
+                    sealed = verify.sealed_packages(pin, manifest)
+                    self.assertEqual(502, len(sealed))
+                    self.assertEqual(502, len(verify.stage_packages(archive, sealed, self.dir / "out")))
 
     def test_manifest_hash_must_match_the_pin(self):
         archive = self.dir / "a.zip"
