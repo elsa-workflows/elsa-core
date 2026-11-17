@@ -3,6 +3,7 @@ using CShells.Configuration;
 using CShells.Lifecycle;
 using Elsa.Extensions;
 using Elsa.Identity.Options;
+using Elsa.Secrets.Options;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 
@@ -56,6 +57,7 @@ internal static class IdentityTokenStartupValidation
         // Resolve the module's own validator the way a shell does: through DI, with the host environment injected,
         // so known-default keys keep working in Development/Demo.
         var validator = ActivatorUtilities.CreateInstance<ValidateIdentityTokenOptions>(rootServices);
+        var secretsValidator = ActivatorUtilities.CreateInstance<ValidateSecretsOptions>(rootServices);
 
         string? cursor = null;
         do
@@ -74,10 +76,18 @@ internal static class IdentityTokenStartupValidation
 
                 var settings = await blueprint.Blueprint.ComposeAsync(cancellationToken);
 
-                if (!RegistersIdentityTokenOptions(settings))
-                    continue;
+                if (RegistersIdentityTokenOptions(settings))
+                    ValidateOptions(validator, settings, rootConfiguration);
 
-                ValidateOptions(validator, settings, rootConfiguration);
+                if (settings.EnabledFeatures.Any(feature => Matches(feature, "Secrets")) &&
+                    !settings.DisabledFeatures.Any(feature => Matches(feature, "Secrets")))
+                {
+                    var secretsOptions = new SecretsOptions();
+                    new ShellConfiguration(settings, rootConfiguration).GetSection("Secrets").Bind(secretsOptions);
+                    var validation = secretsValidator.Validate(Options.DefaultName, secretsOptions);
+                    if (validation.Failed)
+                        throw new OptionsValidationException(Options.DefaultName, typeof(SecretsOptions), validation.Failures);
+                }
             }
 
             cursor = page.NextCursor;
