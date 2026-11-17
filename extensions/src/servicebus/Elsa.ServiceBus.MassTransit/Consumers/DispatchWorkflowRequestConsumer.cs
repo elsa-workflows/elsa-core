@@ -102,6 +102,7 @@ public class DispatchWorkflowRequestConsumer(IWorkflowDefinitionService workflow
         var request = new RunWorkflowInstanceRequest
         {
             TriggerActivityId = message.TriggerActivityId,
+            StartDeliveryId = message.StartDeliveryId,
             Input = message.Input,
             Properties = message.Properties
         };
