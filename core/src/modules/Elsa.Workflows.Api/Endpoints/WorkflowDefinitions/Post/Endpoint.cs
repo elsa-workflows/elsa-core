@@ -8,6 +8,7 @@ using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Api.Requirements;
 using Elsa.Workflows.Api.Security;
 using Elsa.Workflows.Management;
+using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Management.Models;
@@ -23,6 +24,7 @@ namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Post;
 internal class Post(
     IApiSerializer serializer,
     IWorkflowDefinitionPublisher workflowDefinitionPublisher,
+    IWorkflowDefinitionStore store,
     VariableDefinitionMapper variableDefinitionMapper,
     IDistributedLockProvider distributedLockProvider,
     IWorkflowDefinitionLinker linker,
@@ -73,6 +75,21 @@ internal class Post(
         {
             await Send.ForbiddenAsync(cancellationToken);
             return;
+        }
+
+        if (publish && !string.IsNullOrWhiteSpace(definitionId))
+        {
+            var targets = await store.FindManyAsync(new WorkflowDefinitionFilter
+            {
+                DefinitionId = definitionId,
+                VersionOptions = VersionOptions.LatestOrPublished
+            }, cancellationToken);
+
+            if (!await authorizationService.CanMutateAsync(User, targets))
+            {
+                await Send.ForbiddenAsync(cancellationToken);
+                return;
+            }
         }
 
         var scriptAuthorizationResult = await scriptAuthorizationService.AuthorizeAsync(model, cancellationToken);

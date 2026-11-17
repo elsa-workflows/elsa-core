@@ -17,7 +17,7 @@ namespace Elsa.Workflows.Api.UnitTests.Endpoints.WorkflowDefinitions;
 [Collection(nameof(FastEndpointsCollection))]
 public class WorkflowDefinitionMutationAuthorizationTests : IAsyncLifetime
 {
-    private const string Permission = "workflows/definitions:delete,workflows/definitions/versions:delete,workflows/definitions/versions:revert,workflows/definitions:publish,workflows/definitions:retract";
+    private const string Permission = "workflows/definitions:write,workflows/definitions:delete,workflows/definitions/versions:delete,workflows/definitions/versions:revert,workflows/definitions:publish,workflows/definitions:retract";
     private readonly MemoryWorkflowDefinitionStore _store = new(new MemoryStore<WorkflowDefinition>());
     private AuthorizationTestHost _host = null!;
     private ManagementOptions _managementOptions = null!;
@@ -146,6 +146,27 @@ public class WorkflowDefinitionMutationAuthorizationTests : IAsyncLifetime
         var definitions = (await _store.FindManyAsync(new())).ToList();
         Assert.Equal("published", Assert.Single(definitions, definition => definition.IsPublished).Id);
         Assert.Equal("draft", Assert.Single(definitions, definition => definition.IsLatest).Id);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task PublishRequestsCannotUnpublishProtectedVersionOfTheSameDefinition(bool saveInline)
+    {
+        await SeedAsync("first", "published", published: true, version: 1, isLatest: false, isSystem: true);
+        await SeedAsync("first", "draft", version: 2);
+
+        using var response = saveInline
+            ? await _host.SendAsync(HttpMethod.Post, "/workflow-definitions", Permission,
+                content: JsonContent.Create(new { model = new { definitionId = "first", name = "Changed" }, publish = true }))
+            : await _host.SendAsync(HttpMethod.Post, "/workflow-definitions/first/publish", Permission, content: JsonContent.Create(new { }));
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        var definitions = (await _store.FindManyAsync(new())).ToList();
+        Assert.Equal("published", Assert.Single(definitions, definition => definition.IsPublished).Id);
+        var draft = Assert.Single(definitions, definition => definition.IsLatest);
+        Assert.Equal("draft", draft.Id);
+        Assert.Equal("first", draft.Name);
     }
 
     private Task<HttpResponseMessage> SendBulkAsync(string operation, params string[] ids)

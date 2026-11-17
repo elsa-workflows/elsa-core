@@ -47,7 +47,8 @@ public class WorkflowReferenceUpdater(
             {
                 DefinitionIds = referencingIds,
                 VersionOptions = VersionOptions.Latest,
-                IsReadonly = false
+                IsReadonly = false,
+                IsSystem = false
             }, cancellationToken))
             .ToDictionary(g => g.Workflow.Identity.DefinitionId);
 
@@ -111,19 +112,37 @@ public class WorkflowReferenceUpdater(
             }
         }
 
+        var saved = new List<WorkflowDefinition>();
         _isUpdating = true;
-        foreach (var updatedWorkflow in updatedWorkflows.Values)
+        try
         {
-            var requiresPublication = initialPublicationState.GetValueOrDefault(updatedWorkflow.Definition.DefinitionId);
-            if (requiresPublication)
-                await publisher.PublishAsync(updatedWorkflow.Definition, cancellationToken);
-            else
-                await publisher.SaveDraftAsync(updatedWorkflow.Definition, cancellationToken);
+            foreach (var updatedWorkflow in updatedWorkflows.Values)
+            {
+                var definition = updatedWorkflow.Definition;
+                var requiresPublication = initialPublicationState.GetValueOrDefault(definition.DefinitionId);
+                var targets = await workflowDefinitionStore.FindManyAsync(new WorkflowDefinitionFilter
+                {
+                    DefinitionId = definition.DefinitionId,
+                    VersionOptions = requiresPublication ? VersionOptions.LatestOrPublished : VersionOptions.Latest
+                }, cancellationToken);
+
+                if (targets.Any(target => target.IsReadonly || target.IsSystem))
+                    continue;
+
+                if (requiresPublication)
+                    await publisher.PublishAsync(definition, cancellationToken);
+                else
+                    await publisher.SaveDraftAsync(definition, cancellationToken);
+
+                saved.Add(definition);
+            }
+        }
+        finally
+        {
+            _isUpdating = false;
         }
 
-        _isUpdating = false;
-
-        return new(updatedWorkflows.Select(u => u.Value.Definition));
+        return new(saved);
     }
 
 
@@ -145,8 +164,20 @@ public class WorkflowReferenceUpdater(
             VersionOptions = VersionOptions.Latest
         }, cancellationToken);
 
-        if (latest == null)
+        if (latest == null || latest.IsReadonly || latest.IsSystem)
             return null;
+
+        // Publishing the updated consumer also unpublishes its currently published version.
+        if (initialPublicationState.GetValueOrDefault(id))
+        {
+            var published = await workflowDefinitionStore.FindAsync(new WorkflowDefinitionFilter
+            {
+                DefinitionId = id,
+                VersionOptions = VersionOptions.Published
+            }, cancellationToken);
+            if (published is { IsReadonly: true } or { IsSystem: true })
+                return null;
+        }
 
         // Decide skip before creating a draft. GetOrCreateDraftAsync clones published
         // consumers and registers that unsaved version as latest in the activity registry.
@@ -187,6 +218,7 @@ public class WorkflowReferenceUpdater(
 
         if (newGraph.Root.Activity is Workflow wf)
         {
+            draft = draft.ShallowClone();
             draft.StringData = serializer.Serialize(wf.Root);
             draft.OriginalSource = null;
         }
@@ -205,7 +237,8 @@ public class WorkflowReferenceUpdater(
 
         // Create or get a draft for this workflow
         var draft = await publisher.GetDraftAsync(definitionId, VersionOptions.Latest, cancellationToken);
-        if (draft == null) return null;
+        if (draft == null || draft.IsReadonly || draft.IsSystem)
+            return null;
 
         // Store the draft in the cache for potential future use
         draftCache[definitionId] = draft;
