@@ -17,3 +17,9 @@ Valid plain JSON and supported legacy typed options remain readable and replayab
 `POST /workflow-definitions/{definitionId}/bulk-dispatch` accepts between 1 and 100 instances per request. Omitting `count` dispatches one instance. A request with a count outside this range returns HTTP 400 before any instances are dispatched. A successful response lists the instance IDs accepted for dispatch.
 
 Dispatches already accepted remain queued if the request is cancelled or a later dispatch fails. Split larger requests into batches and account for previously accepted work before retrying a partially completed request.
+
+## Outbound HTTP response bodies
+
+The HTTP Request, Flow HTTP Request, and Download File activities and the HTTP file cache downloader buffer at most 64 MiB per outbound response by default. The limit applies when the response declares a length and when the length is unknown. A response outside the limit follows the activity's existing HTTP request failure path. The HTTP client continues to apply its configured timeout across the request and response body.
+
+Set `HttpActivityOptions.MaxResponseBodySize` to a positive byte count for deployments that need a different limit. A lower limit already configured on the HTTP client takes precedence. This setting does not apply to inbound HTTP request bodies.

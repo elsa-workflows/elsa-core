@@ -138,12 +138,14 @@ public class HttpFeature : IMiddlewareShellFeature
             options.BaseUrl = HttpActivityOptions.BaseUrl;
             options.AvailableContentTypes = HttpActivityOptions.AvailableContentTypes;
             options.WriteHttpResponseSynchronously = HttpActivityOptions.WriteHttpResponseSynchronously;
+            options.MaxResponseBodySize = HttpActivityOptions.MaxResponseBodySize;
         });
 
         services.Configure(configureFileCacheOptions);
 
         var httpClientBuilder = services.AddHttpClient<SendHttpRequestBase>(HttpClient);
         HttpClientBuilder(httpClientBuilder);
+        httpClientBuilder.WithResponseBodyLimit();
 
         services
             .AddScoped<IRouteMatcher, RouteMatcher>()
@@ -217,7 +219,8 @@ public class HttpFeature : IMiddlewareShellFeature
 
         // HTTP clients.
         services.AddHttpClient<IFileDownloader, HttpClientFileDownloader>()
-            .ConfigurePrimaryHttpMessageHandler(HttpClientFileDownloader.CreateHandler);
+            .ConfigurePrimaryHttpMessageHandler(HttpClientFileDownloader.CreateHandler)
+            .WithResponseBodyLimit();
 
         // Add selectors.
         foreach (var httpCorrelationIdSelectorType in HttpCorrelationIdSelectorTypes)
