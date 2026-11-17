@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using System.Reflection;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.IO.Compression;
@@ -341,6 +343,51 @@ public class WriteFileHttpResponseTests
         Assert.Contains("The format of value 'W/\"weak-etag\"' is invalid", exception.Message);
     }
 
+    [Theory]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    public async Task MultiFileResponseDoesNotTouchCacheWithoutResumabilityAndServerSelectedKey(bool resumable, bool configuredKey)
+    {
+        var (activity, httpContext) = CreateWriteFileHttpResponseActivity();
+        activity.Content = new(new object[] { "one", "two" });
+        activity.EnableResumableDownloads = new(resumable);
+        if (configuredKey)
+            activity.DownloadCorrelationId = new("revision-1");
+
+        httpContext.User = DownloadUser("alice");
+        httpContext.Request.Headers["x-download-id"] = "client-selected";
+        var provider = Substitute.For<IFileCacheStorageProvider>();
+
+        await ExecuteActivityAsync(activity, httpContext, services => services.AddSingleton(provider));
+
+        provider.DidNotReceive().GetStorage();
+        Assert.Equal("application/zip", httpContext.Response.ContentType);
+    }
+
+    [Fact]
+    public void CacheKeyIsStableForSameDownloadAndChangesWithItsIsolationScope()
+    {
+        var alice = DownloadUser("alice");
+        var key = CacheKey(alice, "tenant", "workflow-version", "activity", "download-v1");
+        Assert.NotNull(key);
+        Assert.Equal(key, CacheKey(alice, "tenant", "workflow-version", "activity", "download-v1"));
+        Assert.NotEqual(key, CacheKey(DownloadUser("bob"), "tenant", "workflow-version", "activity", "download-v1"));
+        Assert.NotEqual(key, CacheKey(alice, "other-tenant", "workflow-version", "activity", "download-v1"));
+        Assert.NotEqual(key, CacheKey(alice, "tenant", "new-workflow-version", "activity", "download-v1"));
+        Assert.NotEqual(key, CacheKey(alice, "tenant", "workflow-version", "other-activity", "download-v1"));
+        Assert.NotEqual(key, CacheKey(alice, "tenant", "workflow-version", "activity", "download-v2"));
+        Assert.Null(CacheKey(new ClaimsPrincipal(), "tenant", "workflow-version", "activity", "download-v1"));
+    }
+
+    private static ClaimsPrincipal DownloadUser(string subject) =>
+        new(new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, subject)], "test"));
+
+    private static string? CacheKey(ClaimsPrincipal principal, string tenant, string version, string activity, string download)
+    {
+        var method = typeof(WriteFileHttpResponse).GetMethod("BuildDownloadCacheKey", BindingFlags.Static | BindingFlags.NonPublic)!;
+        return (string?)method.Invoke(null, [principal, tenant, tenant, version, activity, download]);
+    }
+
     // Helper Methods
     private static (WriteFileHttpResponse activity, HttpContext httpContext) CreateWriteFileHttpResponseActivity()
     {
@@ -402,7 +449,7 @@ public class WriteFileHttpResponseTests
         return mockContentTypeProvider;
     }
 
-    private static async Task<ActivityExecutionContext> ExecuteActivityAsync(WriteFileHttpResponse activity, HttpContext httpContext)
+    private static async Task<ActivityExecutionContext> ExecuteActivityAsync(WriteFileHttpResponse activity, HttpContext httpContext, Action<IServiceCollection>? configure = null)
     {
         var fixture = new ActivityTestFixture(activity);
         fixture.ConfigureServices(services =>
@@ -416,6 +463,7 @@ public class WriteFileHttpResponseTests
             AddMockServices(services);
             services.AddSingleton(Substitute.For<IStimulusHasher>());
             services.AddLogging();
+            configure?.Invoke(services);
         });
 
         return await fixture.ExecuteAsync();

@@ -116,6 +116,14 @@ serializable `Headers` output. Activities running in the original HTTP request c
 live `HttpRequest`. Keep values from the live request out of persistent workflow variables, logs and responses.
 Review access to execution records created before this change and rotate credentials confirmed to have been retained.
 
+## Resuming a multi-file response
+
+The HTTP File Response activity caches a ZIP only when resumability is enabled, the caller has a stable
+authenticated subject, and the workflow sets `DownloadCorrelationId` to a server-selected key for the exact
+download and content revision. Retry with the same key and caller to reuse the existing ZIP.
+Anonymous requests and workflows without that key still generate a ZIP on demand.
+Client-supplied `x-download-id` values and old cache entries do not select a ZIP.
+
 ## Endpoint Discovery Command
 
 To quickly list routes:
