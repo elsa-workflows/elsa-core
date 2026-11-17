@@ -35,7 +35,7 @@ public interface IWorkflowClient
     async Task<RunWorkflowInstanceResponse?> RunInstanceIfPendingAsync(RunWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
     {
         var state = await ExportStateAsync(cancellationToken);
-        return state.SubStatus == WorkflowSubStatus.Pending
+        return state.SubStatus == WorkflowSubStatus.Pending && WorkflowStartDelivery.Matches(state, request.StartDeliveryId)
             ? await RunInstanceAsync(request, cancellationToken)
             : null;
     }

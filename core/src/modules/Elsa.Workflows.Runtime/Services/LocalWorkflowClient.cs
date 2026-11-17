@@ -96,9 +96,9 @@ public class LocalWorkflowClient(
         await DemandUnownedAsync(workflowInstanceId, cancellationToken);
         var workflowInstance = await GetWorkflowInstanceAsync(cancellationToken);
 
-        if (workflowInstance.SubStatus != WorkflowSubStatus.Pending)
+        if (workflowInstance.SubStatus != WorkflowSubStatus.Pending || !WorkflowStartDelivery.Matches(workflowInstance.WorkflowState, request.StartDeliveryId))
         {
-            logger.LogDebug("Skipping run of workflow instance {WorkflowInstanceId}: sub-status is {SubStatus}, not Pending.", workflowInstanceId, workflowInstance.SubStatus);
+            logger.LogDebug("Skipping pending start of workflow instance {WorkflowInstanceId} because the status or delivery no longer matches ({SubStatus}).", workflowInstanceId, workflowInstance.SubStatus);
             return null;
         }
 
