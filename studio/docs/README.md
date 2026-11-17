@@ -90,3 +90,10 @@ import dispositions and verification are recorded in the
 The [Native compensation authoring, inspection and recovery program](../../core/docs/compensation/README.md) is the current program entrypoint for scope, ownership and readiness. The [Studio interaction plan](specs/native-compensation/plan.md) records Studio design details within the reviewed [Elsa 3 adaptation packet](../../core/docs/specs/native-compensation/README.md). Standing owner authorization permits delivery through the remaining technical gates; these plans do not claim implementation or proof.
 
 [Workflow import limits](workflow-import-limits.md) describes the limits applied to ZIP uploads and nested archives.
+
+## Platform submission
+
+Run credentialed Platform submission from a trusted Blazor Server host. The submit client verifies
+`workflows/definitions:deploy` with the current backend before constructing an outbound request.
+Grant that permission separately from workflow editing and publishing. Keep request credential configuration
+and Platform integration credentials out of WebAssembly hosts.
