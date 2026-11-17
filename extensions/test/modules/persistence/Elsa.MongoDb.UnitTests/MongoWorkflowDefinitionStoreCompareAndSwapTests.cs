@@ -510,7 +510,7 @@ public sealed class MongoWorkflowDefinitionStoreCompareAndSwapTests : IDisposabl
         await _collection.InsertOneAsync(conflictingVersion);
         var updateCalls = 0;
 
-        await Assert.ThrowsAsync<MongoWriteException>(() => _store.TryUpdateLatestAsync(
+        var result = await _store.TryUpdateLatestAsync(
             LatestFilter("definition"),
             _ => true,
             current =>
@@ -522,8 +522,9 @@ public sealed class MongoWorkflowDefinitionStoreCompareAndSwapTests : IDisposabl
                 draft.IsPublished = false;
                 draft.IsLatest = true;
                 return draft;
-            }));
+            });
 
+        Assert.Equal(WorkflowDefinitionUpdateOutcome.Conflict, result.Outcome);
         Assert.Equal(1, updateCalls);
         var storedPublished = await _collection.Find(x => x.Id == "published").SingleAsync();
         Assert.True(storedPublished.IsLatest, "Failed draft insertion must leave prior latest unchanged.");
