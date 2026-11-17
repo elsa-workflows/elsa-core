@@ -161,6 +161,7 @@ function EditorWorkspace({
         const result = await mutations.save.mutateAsync({ model, publish: options?.publish ?? false });
         const saved = result.workflowDefinition;
         if (result.validationErrors?.length) toast.warning(_t("Saved with validation errors"), { description: result.validationErrors.join("\n") });
+        if (result.validationWarnings?.length) toast.warning(_t("Published with warnings"), { description: result.validationWarnings.join("\n") });
         // Keep the user's graph; only adopt server-assigned identity/version fields.
         setDefinition((d) => ({ ...d, id: saved.id, version: saved.version, isLatest: saved.isLatest, isPublished: saved.isPublished, createdAt: saved.createdAt }));
         setSavedSnapshot(JSON.stringify(model));

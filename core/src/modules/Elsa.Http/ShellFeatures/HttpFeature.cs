@@ -19,6 +19,7 @@ using Elsa.Http.TriggerPayloadValidators;
 using Elsa.Http.UIHints;
 using Elsa.Resilience.Extensions;
 using Elsa.Resilience.ShellFeatures;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Extensions;
 using Elsa.Workflows.Options;
 using Elsa.Workflows;
@@ -158,6 +159,7 @@ public class HttpFeature : IMiddlewareShellFeature
 
             // Handlers.
             .AddNotificationHandler<UpdateRouteTable>()
+            .AddSingleton<IWorkflowDiagnosticProvider, HttpEndpointPolicyDiagnostics>()
 
             // Content parsers.
             .AddSingleton<IHttpContentParser, JsonHttpContentParser>()

@@ -96,9 +96,12 @@ internal class Publish(
             return;
         }
 
-        var validationErrors = result?.ValidationErrors.Select(e => e.Message).ToList() ?? [];
+        var validationErrors = result?.ValidationErrors.Where(error => !error.IsWarning).Select(error => error.Message).ToList() ?? [];
         var mappedDefinition = await linker.MapAsync(definition, cancellationToken);
-        var response = new Response(mappedDefinition, isPublished, result?.AffectedWorkflows.WorkflowDefinitions.Count ?? 0, validationErrors);
+        var response = new Response(mappedDefinition, isPublished, result?.AffectedWorkflows.WorkflowDefinitions.Count ?? 0, validationErrors)
+        {
+            ValidationWarnings = result?.ValidationErrors.Where(error => error.IsWarning).Select(error => error.Message).ToList() ?? []
+        };
         await Send.OkAsync(response, cancellationToken);
     }
 }

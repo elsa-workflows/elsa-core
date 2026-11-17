@@ -1,11 +1,13 @@
 using System.Net;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
+using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Http.Bookmarks;
 using Microsoft.AspNetCore.Http;
 using Elsa.Testing.Shared;
 using Elsa.Workflows;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
@@ -63,6 +65,32 @@ public class HttpEndpointAuthorizationTests : IAsyncLifetime
     {
         _client.Dispose();
         await _app.DisposeAsync();
+    }
+
+    [Theory]
+    [InlineData("policy-without-authorize", 2)]
+    [InlineData("policy", 0)]
+    [InlineData("anonymous", 0)]
+    public async Task ConfiguredPolicyDiagnosticsCoverStartAndResumeActivities(string definitionId, int expectedCount)
+    {
+        var definitions = _app.Services.GetRequiredService<IWorkflowDefinitionService>();
+        var definition = await definitions.FindWorkflowDefinitionAsync(definitionId, VersionOptions.Published);
+        Assert.NotNull(definition);
+        var graph = await definitions.MaterializeWorkflowAsync(definition);
+        var diagnostics = _app.Services.GetServices<IWorkflowDiagnosticProvider>()
+            .SelectMany(provider => provider.GetDiagnostics(graph))
+            .ToArray();
+
+        Assert.Equal(expectedCount, diagnostics.Length);
+        foreach (var diagnostic in diagnostics)
+        {
+            Assert.True(diagnostic.IsWarning);
+            Assert.Equal("http.endpoint.policy-without-authorization", diagnostic.Code);
+            Assert.IsType<HttpEndpoint>(graph.FindNodeByActivityId(diagnostic.ActivityId!)?.Activity);
+        }
+
+        if (expectedCount > 0)
+            Assert.Equal(expectedCount, diagnostics.Select(diagnostic => diagnostic.ActivityId).Distinct().Count());
     }
 
     // Anonymous, authenticated (but not an admin), and an admin.

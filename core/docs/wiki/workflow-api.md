@@ -35,6 +35,10 @@ A save request with `publish: true` also requires `workflows/definitions:publish
 If the caller lacks publish permission, the request returns HTTP 403 before creating or changing a draft.
 The server trims surrounding whitespace. A missing, null, empty, or whitespace-only name returns HTTP 400 with a validation error under `errors.name`; the definition is not saved or published.
 
+If an HTTP Endpoint has a policy configured and **Authorize** is off, publishing returns a warning in `validationWarnings`. Turning on **Authorize** makes the endpoint enforce the policy. Publishing with the warning remains supported for intentionally public endpoints. The diagnostic evaluates the saved configuration without running expressions. It skips endpoints whose **Authorize** value is computed at runtime.
+
+To review saved definitions, page through `GET /elsa/api/workflow-definitions?versionOptions=Latest` and list the versions of each relevant definition with `GET /elsa/api/workflow-definitions/{definitionId}/versions`. Pass each version's `id` to `GET /elsa/api/workflow-definition-versions/{id}/validation`. The endpoint requires `workflows/definitions:view` and returns the definition ID, version ID, version number, and diagnostics for that version. Look for `http.endpoint.policy-without-authorization` in `diagnostics[].code` and use `diagnostics[].activityId` to locate the affected activity.
+
 For multipart imports with `POST /elsa/api/workflow-definitions/import-files`, uploads with
 `Content-Type: application/json` are read as definitions; other uploads are read as ZIP
 archives, selecting entries with a case-insensitive `.json` suffix. Malformed JSON,

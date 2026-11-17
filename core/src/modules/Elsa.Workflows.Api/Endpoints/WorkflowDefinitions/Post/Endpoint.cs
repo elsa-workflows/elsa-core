@@ -149,8 +149,11 @@ internal class Post(
 
         var mappedDefinition = await linker.MapAsync(draft, cancellationToken);
         var affectedWorkflows = result?.AffectedWorkflows?.WorkflowDefinitions ?? [];
-        var validationErrors = result?.ValidationErrors.Select(e => e.Message).ToList() ?? [];
-        var response = new Response(mappedDefinition, false, affectedWorkflows.Count, validationErrors);
+        var validationErrors = result?.ValidationErrors.Where(error => !error.IsWarning).Select(error => error.Message).ToList() ?? [];
+        var response = new Response(mappedDefinition, false, affectedWorkflows.Count, validationErrors)
+        {
+            ValidationWarnings = result?.ValidationErrors.Where(error => error.IsWarning).Select(error => error.Message).ToList() ?? []
+        };
         await HttpContext.Response.WriteAsJsonAsync(response, serializerOptions, cancellationToken);
     }
 

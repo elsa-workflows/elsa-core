@@ -2,4 +2,7 @@ using Elsa.Workflows.Api.Models;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Post;
 
-internal record Response(LinkedWorkflowDefinitionModel WorkflowDefinition, bool AlreadyPublished, int ConsumingWorkflowCount, ICollection<string> ValidationErrors);
+internal record Response(LinkedWorkflowDefinitionModel WorkflowDefinition, bool AlreadyPublished, int ConsumingWorkflowCount, ICollection<string> ValidationErrors)
+{
+    public ICollection<string> ValidationWarnings { get; init; } = [];
+}

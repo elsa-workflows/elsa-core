@@ -7,4 +7,7 @@ internal class Request
     public string DefinitionId { get; set; } = default!;
 }
 
-internal record Response(LinkedWorkflowDefinitionModel WorkflowDefinition, bool AlreadyPublished, int ConsumingWorkflowCount, ICollection<string> ValidationErrors);
+internal record Response(LinkedWorkflowDefinitionModel WorkflowDefinition, bool AlreadyPublished, int ConsumingWorkflowCount, ICollection<string> ValidationErrors)
+{
+    public ICollection<string> ValidationWarnings { get; init; } = [];
+}

@@ -700,6 +700,7 @@
   "Publish": "Publiceer",
   "Published": "Gepubliceerd",
   "Published version {{value0}}": "Versie {{value0}} gepubliceerd",
+  "Published with warnings": "Gepubliceerd met waarschuwingen",
   "Published workflows · all time": "Gepubliceerde werkstromen · altijd",
   "Ran": "Uitgevoerd",
   "Re-schedules faulted activities (`POST /alterations/workflows/retry`). Leave the list empty to retry every activity that raised an incident.": "Plant mislukte activiteiten opnieuw (`POST /alterations/workflows/retry`). Laat de lijst leeg om elke activiteit met een incident opnieuw te proberen.",

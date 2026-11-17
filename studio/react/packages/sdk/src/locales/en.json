@@ -700,6 +700,7 @@
   "Publish": "Publish",
   "Published": "Published",
   "Published version {{value0}}": "Published version {{value0}}",
+  "Published with warnings": "Published with warnings",
   "Published workflows · all time": "Published workflows · all time",
   "Ran": "Ran",
   "Re-schedules faulted activities (`POST /alterations/workflows/retry`). Leave the list empty to retry every activity that raised an incident.": "Re-schedules faulted activities (`POST /alterations/workflows/retry`). Leave the list empty to retry every activity that raised an incident.",

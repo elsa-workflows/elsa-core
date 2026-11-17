@@ -142,7 +142,10 @@ async function installStudioBackend(page: Page) {
         root: model.root,
       };
       definitions.set(definitionId, saved);
-      return fulfill(route, { workflowDefinition: saved });
+      return fulfill(route, {
+        workflowDefinition: saved,
+        ...(publish ? { validationWarnings: ["Review the HTTP Endpoint policy."] } : {}),
+      });
     }
 
     const byDefinitionId = path.match(/^workflow-definitions\/by-definition-id\/([^/]+)$/);
@@ -282,6 +285,7 @@ test("sign-in, list, create, edit, save, publish, run, journal and settings", as
 
   await page.getByRole("button", { name: "Publish", exact: true }).click();
   await expect(page.getByText("Published version 1")).toBeVisible();
+  await expect(page.getByText("Review the HTTP Endpoint policy.")).toBeVisible();
   await expect(page.getByText("Published", { exact: true }).first()).toBeVisible();
 
   await page.getByRole("button", { name: "Run", exact: true }).click();

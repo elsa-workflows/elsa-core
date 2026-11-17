@@ -20,6 +20,7 @@ using Elsa.Http.UIHints;
 using Elsa.Resilience.Extensions;
 using Elsa.Resilience.Features;
 using Elsa.Workflows;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Options;
 using FluentStorage;
 using Microsoft.AspNetCore.Http;
@@ -178,6 +179,7 @@ public class HttpFeature(IModule module) : FeatureBase(module)
 
             // Handlers.
             .AddNotificationHandler<UpdateRouteTable>()
+            .AddSingleton<IWorkflowDiagnosticProvider, HttpEndpointPolicyDiagnostics>()
 
             // Graceful shutdown: register HTTP ingress for diagnostic visibility in the runtime's IIngressSourceRegistry.
             // The middleware short-circuits to 503 when paused (FR-006).

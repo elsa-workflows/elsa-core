@@ -40,7 +40,7 @@ public class WorkflowDefinitionPublisher(
         if (publish)
         {
             validationErrors = await ValidateForPublicationAsync(definition, cancellationToken);
-            if (validationErrors.Count > 0 && options.Value.FailOnValidationErrors)
+            if (options.Value.FailOnValidationErrors && validationErrors.Any(error => !error.IsWarning))
                 return new(false, validationErrors, affectedWorkflows);
 
             await mediator.SendAsync(new WorkflowDefinitionPublishing(definition), cancellationToken);
@@ -75,7 +75,7 @@ public class WorkflowDefinitionPublisher(
 
         var expected = expectedVersions.ToDictionary(version => version.Id, version => activitySerializer.Serialize(version), StringComparer.Ordinal);
         var validationErrors = await ValidateForPublicationAsync(definition, cancellationToken);
-        if (validationErrors.Count > 0 && options.Value.FailOnValidationErrors)
+        if (options.Value.FailOnValidationErrors && validationErrors.Any(error => !error.IsWarning))
             return new(false, validationErrors, new([]));
 
         await mediator.SendAsync(new WorkflowDefinitionPublishing(definition), cancellationToken);
@@ -170,7 +170,7 @@ public class WorkflowDefinitionPublisher(
     {
         var validationErrors = await ValidateForPublicationAsync(definition, cancellationToken);
 
-        if (validationErrors.Any() && options.Value.FailOnValidationErrors)
+        if (options.Value.FailOnValidationErrors && validationErrors.Any(error => !error.IsWarning))
             return new(false, validationErrors, new([]));
 
         await mediator.SendAsync(new WorkflowDefinitionPublishing(definition), cancellationToken);

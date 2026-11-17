@@ -8,7 +8,9 @@ using Elsa.UnitTests.Shared;
 using Elsa.Workflows.Api.Features;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Stores;
+using Elsa.Workflows.Models;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Api.UnitTests.Endpoints.WorkflowDefinitions;
@@ -19,17 +21,20 @@ public class SaveWorkflowDefinitionTests : IAsyncLifetime
     private const string Path = "/workflow-definitions";
     private const string WritePermission = "workflows/definitions:write";
     private const string PublishPermission = "workflows/definitions:publish";
+    private const string ViewPermission = "workflows/definitions:view";
     private readonly MemoryWorkflowDefinitionStore _store = new(new MemoryStore<WorkflowDefinition>());
     private AuthorizationTestHost _host = null!;
 
     public async Task InitializeAsync()
     {
         _host = await AuthorizationTestHost.StartAsync<WorkflowsApiFeature>(
-            type => type.Namespace == "Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Post",
+            type => type.Namespace is "Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Post"
+                or "Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.ValidateVersion",
             services =>
             {
                 services.AddElsa(elsa => elsa.UseWorkflowsApi());
                 services.AddSingleton<IWorkflowDefinitionStore>(_store);
+                services.AddSingleton<IWorkflowDiagnosticProvider>(new TestDiagnosticProvider());
             });
     }
 
@@ -113,6 +118,35 @@ public class SaveWorkflowDefinitionTests : IAsyncLifetime
         Assert.True(definition.IsPublished);
     }
 
+    [Fact]
+    public async Task PublicationReturnsWarningsAndAuthorizedReadersCanInspectTheSavedVersion()
+    {
+        using var publish = await _host.SendAsync(HttpMethod.Post, Path, $"{WritePermission},{PublishPermission}",
+            content: JsonContent.Create(new { model = new { name = "With a warning" }, publish = true }));
+
+        Assert.Equal(HttpStatusCode.OK, publish.StatusCode);
+        var payload = await publish.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("Review this workflow.", Assert.Single(payload.GetProperty("validationWarnings").EnumerateArray()).GetString());
+        var definition = Assert.Single(await _store.FindManyAsync(new()));
+        Assert.True(definition.IsPublished);
+
+        var diagnosticPath = $"/workflow-definition-versions/{definition.Id}/validation";
+        using var forbidden = await _host.SendAsync(HttpMethod.Get, diagnosticPath, WritePermission);
+        Assert.Equal(HttpStatusCode.Forbidden, forbidden.StatusCode);
+        using var response = await _host.SendAsync(HttpMethod.Get, diagnosticPath, ViewPermission);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var validation = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(definition.DefinitionId, validation.GetProperty("definitionId").GetString());
+        Assert.Equal(definition.Id, validation.GetProperty("definitionVersionId").GetString());
+        Assert.Equal(definition.Version, validation.GetProperty("version").GetInt32());
+        var diagnostic = Assert.Single(validation.GetProperty("diagnostics").EnumerateArray());
+        Assert.Equal("test.warning", diagnostic.GetProperty("code").GetString());
+        Assert.True(diagnostic.GetProperty("isWarning").GetBoolean());
+
+        using var missing = await _host.SendAsync(HttpMethod.Get, "/workflow-definition-versions/missing/validation", ViewPermission);
+        Assert.Equal(HttpStatusCode.NotFound, missing.StatusCode);
+    }
+
     [Theory]
     [InlineData("   ", false)]
     [InlineData("", true)]
@@ -134,5 +168,11 @@ public class SaveWorkflowDefinitionTests : IAsyncLifetime
         Assert.Equal("Invoice", draft.Name);
         Assert.Equal(1, draft.Version);
         Assert.False(draft.IsPublished);
+    }
+
+    private sealed class TestDiagnosticProvider : IWorkflowDiagnosticProvider
+    {
+        public IEnumerable<WorkflowValidationError> GetDiagnostics(WorkflowGraph graph) =>
+            [new("Review this workflow.", graph.Root.Activity.Id) { Code = "test.warning", IsWarning = true }];
     }
 }
