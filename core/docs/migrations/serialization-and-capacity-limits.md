@@ -11,3 +11,9 @@ Existing workflow definitions and persisted data using aliases within these limi
 An EF Core bookmark queue item with unreadable options is moved to the dead-letter store with reason `UnreadableOptions`. The original options remain in the dead-letter table for inspection, and the item cannot be replayed. The worker advances to other items in the same page. If the move fails, the original item stays in the active queue for a later attempt.
 
 Valid plain JSON and supported legacy typed options remain readable and replayable. No schema migration is needed. This recovery applies to EF Core's serialized options. Dapper's JSON queue and MongoDB's BSON queue have separate storage paths.
+
+## Bulk workflow definition dispatch
+
+`POST /workflow-definitions/{definitionId}/bulk-dispatch` accepts between 1 and 100 instances per request. Omitting `count` dispatches one instance. A request with a count outside this range returns HTTP 400 before any instances are dispatched. A successful response lists the instance IDs accepted for dispatch.
+
+Dispatches already accepted remain queued if the request is cancelled or a later dispatch fails. Split larger requests into batches and account for previously accepted work before retrying a partially completed request.

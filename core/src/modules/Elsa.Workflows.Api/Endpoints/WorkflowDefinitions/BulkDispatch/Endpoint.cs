@@ -18,6 +18,8 @@ internal class Endpoint(
     WorkflowDefinitionScriptAuthorizationService scriptAuthorizationService)
     : ElsaEndpoint<Request, Response>
 {
+    private const int MaxInstancesPerRequest = 100;
+
     public override void Configure()
     {
         Post("/workflow-definitions/{definitionId}/bulk-dispatch");
@@ -26,6 +28,20 @@ internal class Endpoint(
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
+        if (request.Count is < 1 or > MaxInstancesPerRequest)
+        {
+            AddError(x => x.Count, $"Count must be between 1 and {MaxInstancesPerRequest}.");
+            await Send.ErrorsAsync(cancellation: cancellationToken);
+            return;
+        }
+
+        if (request.Input != null && request.Input is not IDictionary<string, object>)
+        {
+            AddError(x => x.Input, "Input must be a dictionary.");
+            await Send.ErrorsAsync(cancellation: cancellationToken);
+            return;
+        }
+
         var definitionId = request.DefinitionId;
         var versionOptions = request.VersionOptions ?? VersionOptions.Published;
         var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(definitionId, versionOptions, cancellationToken);
@@ -43,21 +59,28 @@ internal class Endpoint(
             return;
         }
 
-        var instanceIds = new List<string>();
+        var instanceIds = new List<string>(request.Count);
+        var input = request.Input as IDictionary<string, object>;
 
         for (var i = 0; i < request.Count; i++)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var instanceId = identityGenerator.GenerateId();
-            var triggerActivityId = request.TriggerActivityId;
-            var input = (IDictionary<string, object>?)request.Input;
             var dispatchRequest = new DispatchWorkflowDefinitionRequest(workflowGraph.Workflow.Identity.Id)
             {
                 Input = input,
                 InstanceId = instanceId,
-                TriggerActivityId = triggerActivityId
+                TriggerActivityId = request.TriggerActivityId
             };
 
-            await workflowDispatcher.DispatchAsync(dispatchRequest, cancellationToken: cancellationToken);
+            var result = await workflowDispatcher.DispatchAsync(dispatchRequest, cancellationToken: cancellationToken);
+            if (!result.Succeeded)
+            {
+                AddError(result.Fault!.Message, result.Fault.Code);
+                await Send.ErrorsAsync(cancellation: cancellationToken);
+                return;
+            }
+
             instanceIds.Add(instanceId);
         }
 
