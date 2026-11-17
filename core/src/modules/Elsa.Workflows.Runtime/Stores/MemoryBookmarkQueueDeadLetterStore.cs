@@ -1,4 +1,5 @@
 using Elsa.Common.Models;
+using Elsa.Common.Multitenancy;
 using Elsa.Common.Services;
 using Elsa.Extensions;
 using Elsa.Workflows.Runtime.Entities;
@@ -11,20 +12,26 @@ namespace Elsa.Workflows.Runtime.Stores;
 
 /// <inheritdoc />
 [UsedImplicitly]
-public class MemoryBookmarkQueueDeadLetterStore(MemoryStore<BookmarkQueueDeadLetterItem> store) : IBookmarkQueueDeadLetterStore
+public class MemoryBookmarkQueueDeadLetterStore(MemoryStore<BookmarkQueueDeadLetterItem> store, ITenantAccessor? tenantAccessor) : IBookmarkQueueDeadLetterStore
 {
-    private readonly object _lock = new();
+    /// <summary>
+    /// Creates a store for a single tenant.
+    /// </summary>
+    public MemoryBookmarkQueueDeadLetterStore(MemoryStore<BookmarkQueueDeadLetterItem> store) : this(store, null)
+    {
+    }
 
     /// <inheritdoc />
     public Task SaveAsync(BookmarkQueueDeadLetterItem record, CancellationToken cancellationToken = default)
     {
-        lock (_lock)
+        lock (store.Sync)
         {
-            var existing = store.Find(x => x.OriginalQueueItemId == record.OriginalQueueItemId && x.Id != record.Id);
-            if (existing != null)
+            var owned = PrepareWrite(record);
+            var existing = FindOriginal(owned);
+            if (existing != null && existing.Id != record.Id)
                 throw new InvalidOperationException($"A bookmark queue dead-letter item for original queue item '{record.OriginalQueueItemId}' already exists.");
 
-            store.Save(Clone(record), x => x.Id);
+            store.Save(owned, x => x.Id);
         }
 
         return Task.CompletedTask;
@@ -39,34 +46,35 @@ public class MemoryBookmarkQueueDeadLetterStore(MemoryStore<BookmarkQueueDeadLet
     /// <inheritdoc />
     public Task<BookmarkQueueDeadLetterItem> AddOrGetExistingAsync(BookmarkQueueDeadLetterItem record, CancellationToken cancellationToken = default)
     {
-        lock (_lock)
+        lock (store.Sync)
         {
-            var existing = store.Find(x => x.OriginalQueueItemId == record.OriginalQueueItemId);
+            var owned = PrepareWrite(record);
+            var existing = FindOriginal(owned);
             if (existing != null)
                 return Task.FromResult(Clone(existing));
 
-            store.Add(Clone(record), x => x.Id);
-            return Task.FromResult(Clone(record));
+            store.Add(owned, x => x.Id);
+            return Task.FromResult(Clone(owned));
         }
     }
 
     /// <inheritdoc />
     public Task<IReadOnlyCollection<BookmarkQueueDeadLetterItem>> AddOrGetExistingManyAsync(IEnumerable<BookmarkQueueDeadLetterItem> records, CancellationToken cancellationToken = default)
     {
-        lock (_lock)
+        lock (store.Sync)
         {
             var results = new List<BookmarkQueueDeadLetterItem>();
 
-            foreach (var record in records)
+            foreach (var record in records.Select(PrepareWrite).ToList())
             {
-                var existing = store.Find(x => x.OriginalQueueItemId == record.OriginalQueueItemId);
+                var existing = FindOriginal(record);
                 if (existing != null)
                 {
                     results.Add(Clone(existing));
                     continue;
                 }
 
-                store.Add(Clone(record), x => x.Id);
+                store.Add(record, x => x.Id);
                 results.Add(Clone(record));
             }
 
@@ -77,9 +85,9 @@ public class MemoryBookmarkQueueDeadLetterStore(MemoryStore<BookmarkQueueDeadLet
     /// <inheritdoc />
     public Task<BookmarkQueueDeadLetterItem?> TryMarkReplayedAsync(string id, string queueItemId, DateTimeOffset replayedAt, CancellationToken cancellationToken = default)
     {
-        lock (_lock)
+        lock (store.Sync)
         {
-            var entity = store.Find(x => x.Id == id);
+            var entity = MemoryRuntimeRecordOwnership.Owned(store.Queryable, tenantAccessor).FirstOrDefault(x => x.Id == id);
             if (entity == null || !entity.CanReplay || entity.ReplayedAt != null)
                 return Task.FromResult<BookmarkQueueDeadLetterItem?>(null);
 
@@ -95,7 +103,7 @@ public class MemoryBookmarkQueueDeadLetterStore(MemoryStore<BookmarkQueueDeadLet
     public Task<BookmarkQueueDeadLetterItem?> FindAsync(BookmarkQueueDeadLetterFilter filter, CancellationToken cancellationToken = default)
     {
         BookmarkQueueDeadLetterItem? entity;
-        lock (_lock)
+        lock (store.Sync)
         {
             entity = store.Query(query => Filter(query, filter)).Select(Clone).FirstOrDefault();
         }
@@ -107,9 +115,9 @@ public class MemoryBookmarkQueueDeadLetterStore(MemoryStore<BookmarkQueueDeadLet
     public Task<Page<BookmarkQueueDeadLetterItem>> PageAsync<TOrderBy>(PageArgs pageArgs, BookmarkQueueDeadLetterItemOrder<TOrderBy> orderBy, CancellationToken cancellationToken = default)
     {
         Page<BookmarkQueueDeadLetterItem> entities;
-        lock (_lock)
+        lock (store.Sync)
         {
-            var page = store.Query(query => query.OrderBy(orderBy)).Paginate(pageArgs);
+            var page = store.Query(query => MemoryRuntimeRecordOwnership.Visible(query, tenantAccessor).OrderBy(orderBy)).Paginate(pageArgs);
             entities = page with { Items = page.Items.Select(Clone).ToList() };
         }
 
@@ -120,7 +128,7 @@ public class MemoryBookmarkQueueDeadLetterStore(MemoryStore<BookmarkQueueDeadLet
     public Task<Page<BookmarkQueueDeadLetterItem>> PageAsync<TOrderBy>(PageArgs pageArgs, BookmarkQueueDeadLetterFilter filter, BookmarkQueueDeadLetterItemOrder<TOrderBy> orderBy, CancellationToken cancellationToken = default)
     {
         Page<BookmarkQueueDeadLetterItem> entities;
-        lock (_lock)
+        lock (store.Sync)
         {
             var page = store.Query(query => Filter(query, filter).OrderBy(orderBy)).Paginate(pageArgs);
             entities = page with { Items = page.Items.Select(Clone).ToList() };
@@ -133,7 +141,7 @@ public class MemoryBookmarkQueueDeadLetterStore(MemoryStore<BookmarkQueueDeadLet
     public Task<IEnumerable<BookmarkQueueDeadLetterItem>> FindManyAsync<TOrderBy>(BookmarkQueueDeadLetterFilter filter, BookmarkQueueDeadLetterItemOrder<TOrderBy> orderBy, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
         IEnumerable<BookmarkQueueDeadLetterItem> entities;
-        lock (_lock)
+        lock (store.Sync)
         {
             entities = store.Query(query => Filter(query, filter).OrderBy(orderBy).Paginate(pageArgs)).Select(Clone).ToList();
         }
@@ -145,7 +153,7 @@ public class MemoryBookmarkQueueDeadLetterStore(MemoryStore<BookmarkQueueDeadLet
     public Task<IEnumerable<BookmarkQueueDeadLetterItem>> FindManyAsync(BookmarkQueueDeadLetterFilter filter, CancellationToken cancellationToken = default)
     {
         IEnumerable<BookmarkQueueDeadLetterItem> entities;
-        lock (_lock)
+        lock (store.Sync)
         {
             entities = store.Query(query => Filter(query, filter)).Select(Clone).ToList();
         }
@@ -156,14 +164,27 @@ public class MemoryBookmarkQueueDeadLetterStore(MemoryStore<BookmarkQueueDeadLet
     /// <inheritdoc />
     public Task<long> DeleteAsync(BookmarkQueueDeadLetterFilter filter, CancellationToken cancellationToken = default)
     {
-        lock (_lock)
+        lock (store.Sync)
         {
-            var ids = store.Query(query => Filter(query, filter)).Select(x => x.Id).ToList();
+            var ids = store.Query(query => filter.Apply(MemoryRuntimeRecordOwnership.Owned(query, tenantAccessor))).Select(x => x.Id).ToList();
             return Task.FromResult(store.DeleteMany(ids));
         }
     }
 
-    private static IQueryable<BookmarkQueueDeadLetterItem> Filter(IQueryable<BookmarkQueueDeadLetterItem> query, BookmarkQueueDeadLetterFilter filter) => filter.Apply(query);
+    private IQueryable<BookmarkQueueDeadLetterItem> Filter(IQueryable<BookmarkQueueDeadLetterItem> query, BookmarkQueueDeadLetterFilter filter) =>
+        filter.Apply(MemoryRuntimeRecordOwnership.Visible(query, tenantAccessor, filter.TenantAgnostic));
+
+    private BookmarkQueueDeadLetterItem PrepareWrite(BookmarkQueueDeadLetterItem record)
+    {
+        var copy = Clone(record);
+        copy.TenantId = MemoryRuntimeRecordOwnership.GetWriteTenant(record, tenantAccessor);
+        MemoryRuntimeRecordOwnership.DemandOwner(store.FindById(record.Id), tenantAccessor);
+        return copy;
+    }
+
+    private BookmarkQueueDeadLetterItem? FindOriginal(BookmarkQueueDeadLetterItem record) =>
+        MemoryRuntimeRecordOwnership.Owned(store.Queryable, tenantAccessor)
+            .FirstOrDefault(existing => existing.OriginalQueueItemId == record.OriginalQueueItemId);
 
     private static BookmarkQueueDeadLetterItem Clone(BookmarkQueueDeadLetterItem item)
     {
@@ -179,6 +200,7 @@ public class MemoryBookmarkQueueDeadLetterStore(MemoryStore<BookmarkQueueDeadLet
             ActivityInstanceId = item.ActivityInstanceId,
             ActivityTypeName = item.ActivityTypeName,
             Options = Clone(item.Options),
+            UnreadableOptions = item.UnreadableOptions,
             OriginalCreatedAt = item.OriginalCreatedAt,
             DeadLetteredAt = item.DeadLetteredAt,
             Reason = item.Reason,
