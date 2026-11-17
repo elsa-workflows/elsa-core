@@ -162,11 +162,13 @@ public class TenantScopedDefinitionIdsMigrationTests
 
 #if NET9_0
     [Fact]
-    public void MySqlDown_ChecksForCrossTenantDuplicatesBeforeDroppingTenantScopedIndex()
+    public void MySqlDown_ReplacesIndexesInOneAtomicAlterTable()
     {
         var down = GetDownMethod("Elsa.Persistence.EFCore.MySql");
 
-        AssertGuardPrecedesIndexDrop(down, "SIGNAL");
+        var normalizedSql = string.Join(' ', down.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+        Assert.Contains("ALTER TABLE `WorkflowDefinitions` ADD UNIQUE INDEX `IX_WorkflowDefinition_DefinitionId_Version` (`DefinitionId`, `Version`), DROP INDEX `IX_WorkflowDefinition_DefinitionId_TenantId_Version`;", normalizedSql, StringComparison.Ordinal);
+        Assert.DoesNotContain("PREPARE", down, StringComparison.Ordinal);
     }
 #endif
 

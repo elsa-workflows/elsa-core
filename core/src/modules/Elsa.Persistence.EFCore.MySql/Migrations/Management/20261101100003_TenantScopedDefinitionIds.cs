@@ -43,47 +43,13 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Management
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            // MySQL commits DDL implicitly. If two tenants share a (DefinitionId, Version), recreating the old unique
-            // index would fail after the new one is gone, so abort first. SIGNAL MESSAGE_TEXT is limited to 128 characters.
+            // MySQL 8 applies this index replacement atomically. If cross-tenant duplicates prevent
+            // building the legacy unique index, MySQL rejects the entire ALTER and retains the current index.
             migrationBuilder.Sql("""
-                SET @duplicate_keys := (
-                    SELECT GROUP_CONCAT(CONCAT('(', `DefinitionId`, ', ', `Version`, ')') SEPARATOR '; ')
-                    FROM (
-                        SELECT `DefinitionId`, `Version`
-                        FROM `WorkflowDefinitions`
-                        GROUP BY `DefinitionId`, `Version`
-                        HAVING COUNT(*) > 1
-                    ) AS Duplicates
-                );
-
-                SET @sql := IF(
-                    @duplicate_keys IS NOT NULL,
-                    CONCAT(
-                        'SIGNAL SQLSTATE ''45000'' SET MESSAGE_TEXT = ''',
-                        LEFT(REPLACE(CONCAT(
-                            'Duplicate keys. Resolve before downgrade: ',
-                            @duplicate_keys
-                        ), '''', ''), 128),
-                        ''''
-                    ),
-                    'SELECT 1'
-                );
-                PREPARE stmt FROM @sql;
-                EXECUTE stmt;
-                DEALLOCATE PREPARE stmt;
+                ALTER TABLE `WorkflowDefinitions`
+                    ADD UNIQUE INDEX `IX_WorkflowDefinition_DefinitionId_Version` (`DefinitionId`, `Version`),
+                    DROP INDEX `IX_WorkflowDefinition_DefinitionId_TenantId_Version`;
                 """);
-
-            migrationBuilder.DropIndex(
-                name: "IX_WorkflowDefinition_DefinitionId_TenantId_Version",
-                schema: _schema.Schema,
-                table: "WorkflowDefinitions");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_WorkflowDefinition_DefinitionId_Version",
-                schema: _schema.Schema,
-                table: "WorkflowDefinitions",
-                columns: new[] { "DefinitionId", "Version" },
-                unique: true);
         }
     }
 }
