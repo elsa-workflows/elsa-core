@@ -109,6 +109,13 @@ The generated or hand-maintained client project is [src/clients/Elsa.Api.Client]
 
 Hosts can use [UseJsonSerializationErrorHandler](../../src/modules/Elsa.Workflows.Api/Extensions/ApplicationBuilderExtensions.cs), which installs middleware that returns JSON error responses for serialization failures. The reference server maps it after workflow API endpoints.
 
+## Inbound workflow headers
+
+The HTTP Endpoint activity omits authentication, cookie, API-key, token, secret, and signature headers from its
+serializable `Headers` output. Activities running in the original HTTP request can read credential headers from the
+live `HttpRequest`. Keep values from the live request out of persistent workflow variables, logs and responses.
+Review access to execution records created before this change and rotate credentials confirmed to have been retained.
+
 ## Endpoint Discovery Command
 
 To quickly list routes:
