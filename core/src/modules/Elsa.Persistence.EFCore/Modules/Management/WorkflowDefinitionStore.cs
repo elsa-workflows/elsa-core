@@ -5,6 +5,7 @@ using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Common.Multitenancy;
 using Elsa.Extensions;
+using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
@@ -159,7 +160,7 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
         if (filter.TenantAgnostic)
             queryable = queryable.IgnoreQueryFilters();
 
-        var current = await queryable.OrderBy(x => x.CreatedAt).FirstOrDefaultAsync(cancellationToken);
+        var current = await queryable.WhereTenantCanWrite(dbContext).OrderBy(x => x.CreatedAt).FirstOrDefaultAsync(cancellationToken);
 
         if (current == null)
             return WorkflowDefinitionUpdateResult.NotFound();
@@ -189,7 +190,7 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
 
         if (next.Id != expectedId)
         {
-            var unmarked = await dbContext.WorkflowDefinitions
+            var unmarked = await dbContext.WorkflowDefinitions.WhereTenantCanWrite(dbContext)
                 .Where(MatchesLoadedSnapshot(expectedId, expectedVersion, expectedStringData, expectedName, expectedDescription, expectedData,
                     expectedReadonly, expectedSystem, expectedPublished, expectedTenantId))
                 .ExecuteUpdateAsync(setters => setters.SetProperty(x => x.IsLatest, false), cancellationToken);
@@ -206,7 +207,7 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
             return WorkflowDefinitionUpdateResult.Updated(next);
         }
 
-        var updated = await dbContext.WorkflowDefinitions
+        var updated = await dbContext.WorkflowDefinitions.WhereTenantCanWrite(dbContext)
             .Where(MatchesLoadedSnapshot(expectedId, expectedVersion, expectedStringData, expectedName, expectedDescription, expectedData,
                     expectedReadonly, expectedSystem, expectedPublished, expectedTenantId))
             .ExecuteUpdateAsync(

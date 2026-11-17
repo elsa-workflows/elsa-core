@@ -51,10 +51,9 @@ public class ApplyTenantIdTests
         Assert.Equal("legacy-owner", tenants[1].TenantId);
     }
 
-    [Theory(DisplayName = "Named ambient tenant stamps null/empty tenant ids and keeps '*', matching and explicit ids")]
+    [Theory(DisplayName = "Named ambient tenant stamps null and empty tenant ids and keeps its explicit id")]
     [InlineData(null, "t1")]
     [InlineData("", "t1")]
-    [InlineData("*", "*")]
     [InlineData("t1", "t1")]
     public async Task NamedAmbientTenant_StampsMissingAndKeepsExplicit(string? tenantId, string expectedTenantId)
     {
@@ -77,7 +76,6 @@ public class ApplyTenantIdTests
     [InlineData("t1", "t1")]
     [InlineData(null, "")]
     [InlineData("", "")]
-    [InlineData("*", "*")]
     public async Task NullAmbientContext_KeepsExplicitTenantAndStampsMissingWithDefault(string? tenantId, string? expectedTenantId)
     {
         var (exception, storedTenantId) = await SaveWithAmbientAsync(null, tenantId);
@@ -89,7 +87,6 @@ public class ApplyTenantIdTests
     [Theory(DisplayName = "The default tenant context stamps unassigned entities with the default tenant id")]
     [InlineData(null, "")]
     [InlineData("", "")]
-    [InlineData("*", "*")]
     public async Task DefaultTenantContext_StampsMissingWithDefaultTenant(string? tenantId, string? expectedTenantId)
     {
         var (exception, storedTenantId) = await SaveWithAmbientAsync(Tenant.DefaultTenantId, tenantId);
@@ -105,6 +102,23 @@ public class ApplyTenantIdTests
 
         Assert.IsType<InvalidOperationException>(exception);
         Assert.Null(storedTenantId);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("named")]
+    [InlineData("*")]
+    public async Task SharedRowsRequireExplicitAuthority(string? ambientTenantId)
+    {
+        var (exception, storedTenantId) = await SaveWithAmbientAsync(ambientTenantId, Tenant.AgnosticTenantId);
+        Assert.IsType<InvalidOperationException>(exception);
+        Assert.Null(storedTenantId);
+
+        using var grant = SharedTenantWriteScope.Enter<WorkflowInstance>();
+        var (hostException, sharedTenantId) = await SaveWithAmbientAsync(ambientTenantId, Tenant.AgnosticTenantId);
+        Assert.Null(hostException);
+        Assert.Equal(Tenant.AgnosticTenantId, sharedTenantId);
     }
 
     [Theory(DisplayName = "When multitenancy is disabled the entity tenant id is left untouched")]

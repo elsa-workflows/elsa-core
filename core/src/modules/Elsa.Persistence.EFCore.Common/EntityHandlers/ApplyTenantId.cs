@@ -1,6 +1,8 @@
 using Elsa.Common.Entities;
 using Elsa.Common.Multitenancy;
+using Elsa.Extensions;
 using Elsa.Tenants.Options;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.Extensions.Options;
 
@@ -12,46 +14,54 @@ namespace Elsa.Persistence.EFCore.EntityHandlers;
 public class ApplyTenantId(IOptions<TenantsOptions> tenantsOptions) : IEntitySavingHandler
 {
     /// <inheritdoc />
-    public ValueTask HandleAsync(ElsaDbContextBase dbContext, EntityEntry entry, CancellationToken cancellationToken = default)
+    public async ValueTask HandleAsync(ElsaDbContextBase dbContext, EntityEntry entry, CancellationToken cancellationToken = default)
     {
         // Only apply tenant ID if multitenancy is enabled.
         if (!tenantsOptions.Value.IsEnabled)
         {
-            return default;
+            return;
         }
 
         if (entry.Entity is not Entity entity || entity is Tenant)
         {
-            return default;
+            return;
         }
 
-        // Keep tenant-agnostic entities (marked with "*") untouched.
-        if (entity.TenantId == Tenant.AgnosticTenantId)
+        var tenantId = dbContext.TenantId.NormalizeTenantId();
+        var canWriteShared = SharedTenantWriteScope.IsGranted(entry.Metadata.ClrType);
+
+        if (entity.TenantId == Tenant.AgnosticTenantId && !canWriteShared)
+            throw new InvalidOperationException("Writing a shared record requires trusted host authority.");
+
+        if (entity.TenantId != Tenant.AgnosticTenantId)
         {
-            return default;
+            if (string.IsNullOrEmpty(entity.TenantId))
+                entity.TenantId = tenantId;
+            else if (dbContext.HasTenantContext && entity.TenantId != tenantId)
+                throw new InvalidOperationException("The record belongs to a different tenant.");
         }
 
-        // Stamp the normalized ambient tenant onto entities without an explicit tenant id.
-        if (string.IsNullOrEmpty(entity.TenantId))
-        {
-            entity.TenantId = dbContext.TenantId;
-            return default;
-        }
+        if (entry.State != EntityState.Modified)
+            return;
 
-        // Without a real tenant context there is nothing to validate against; keep the explicit tenant id.
-        if (!dbContext.HasTenantContext)
-        {
-            return default;
-        }
+        var tenantProperty = entry.Property(nameof(Entity.TenantId));
+        var originalTenant = (string?)tenantProperty.OriginalValue;
+        if (tenantProperty.Metadata.IsConcurrencyToken && originalTenant.NormalizeTenantId() == entity.TenantId.NormalizeTenantId())
+            return;
 
-        // Keep an explicit tenant id that matches the ambient tenant; null and "" are equivalent for the
-        // default tenant (mirrors Dapper's SameTenant). Unassigned ids never reach this point.
-        if (string.Equals(entity.TenantId, dbContext.TenantId, StringComparison.Ordinal))
-        {
-            return default;
-        }
+        // A detached update can lack its owner's value. Read the owner and use it in the
+        // EF concurrency predicate for the actual write.
+        var persisted = await entry.GetDatabaseValuesAsync(cancellationToken);
+        if (persisted == null)
+            return;
 
-        // Refuse to save an entity whose explicit tenant id differs from the ambient tenant.
-        throw new InvalidOperationException($"The entity tenant '{entity.TenantId}' does not match the current tenant '{dbContext.TenantId}'.");
+        var originalTenantId = persisted.GetValue<string?>(nameof(Entity.TenantId));
+        if (originalTenantId == Tenant.AgnosticTenantId && !canWriteShared)
+            throw new InvalidOperationException("Writing a shared record requires trusted host authority.");
+
+        if (originalTenantId.NormalizeTenantId() != entity.TenantId.NormalizeTenantId())
+            throw new InvalidOperationException("The record belongs to a different tenant.");
+
+        tenantProperty.OriginalValue = originalTenantId;
     }
 }

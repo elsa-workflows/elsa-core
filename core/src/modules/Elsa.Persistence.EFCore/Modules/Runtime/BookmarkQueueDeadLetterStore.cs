@@ -1,5 +1,6 @@
 using Elsa.Common.Models;
 using Elsa.Extensions;
+using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
@@ -79,7 +80,7 @@ public class EFBookmarkQueueDeadLetterStore(Store<RuntimeElsaDbContext, Bookmark
     public async Task<BookmarkQueueDeadLetterItem?> TryMarkReplayedAsync(string id, string queueItemId, DateTimeOffset replayedAt, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await store.CreateDbContextAsync(cancellationToken);
-        var query = dbContext.Set<BookmarkQueueDeadLetterItem>().Where(x => x.Id == id && x.CanReplay && x.ReplayedAt == null);
+        var query = dbContext.Set<BookmarkQueueDeadLetterItem>().WhereTenantCanWrite(dbContext).Where(x => x.Id == id && x.CanReplay && x.ReplayedAt == null);
         var entity = await query.FirstOrDefaultAsync(cancellationToken);
         if (entity == null)
             return null;

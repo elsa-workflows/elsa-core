@@ -4,6 +4,7 @@ using Elsa.Common.Codecs;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Extensions;
+using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
@@ -205,7 +206,7 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
         // SetTenantIdFilter's global query filter applies to ExecuteUpdateAsync unless
         // IgnoreQueryFilters is used. This store does not ignore it, so a tenant-B
         // caller cannot mark a tenant-A row.
-        var updated = await dbContext.WorkflowInstances
+        var updated = await dbContext.WorkflowInstances.WhereTenantCanWrite(dbContext)
             .Where(x => x.Id == workflowInstanceId && x.Status != WorkflowStatus.Finished)
             .ExecuteUpdateAsync(
                 setters => setters
@@ -231,7 +232,7 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
 
         await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
         // The tenant query filter applies to ExecuteUpdateAsync. Do not ignore it.
-        var query = dbContext.WorkflowInstances.Where(x =>
+        var query = dbContext.WorkflowInstances.WhereTenantCanWrite(dbContext).Where(x =>
             x.Id == workflowInstanceId
             && x.Status == WorkflowStatus.Running
             && x.SubStatus == expected);
