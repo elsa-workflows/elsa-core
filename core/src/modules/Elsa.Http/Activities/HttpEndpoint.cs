@@ -71,13 +71,13 @@ public class HttpEndpoint : Trigger<HttpRequest>
     /// <summary>
     /// Allow authenticated requests only.
     /// </summary>
-    [Input(Description = "Allow authenticated requests only.", Category = "Security")]
+    [Input(Description = "Require authentication and enforce the configured policy. When off, the Policy setting has no effect.", Category = "Security")]
     public Input<bool> Authorize { get; set; } = new(false);
 
     /// <summary>
-    /// Provide a policy to evaluate. If the policy fails, the request is forbidden.
+    /// The authorization policy evaluated only when Authorize is enabled.
     /// </summary>
-    [Input(Description = "Provide a policy to evaluate. If the policy fails, the request is forbidden.", Category = "Security")]
+    [Input(Description = "Optional authorization policy. Turn on Authorize to enforce this policy for starts and resumes.", Category = "Security")]
     public Input<string?> Policy { get; set; } = new(default(string?));
 
     /// <summary>

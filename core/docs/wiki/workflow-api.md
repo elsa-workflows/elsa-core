@@ -101,6 +101,12 @@ The generated or hand-maintained client project is [src/clients/Elsa.Api.Client]
 
 Hosts can use [UseJsonSerializationErrorHandler](../../src/modules/Elsa.Workflows.Api/Extensions/ApplicationBuilderExtensions.cs), which installs middleware that returns JSON error responses for serialization failures. The reference server maps it after workflow API endpoints.
 
+## HTTP workflow authorization
+
+Turn on **Authorize** in the HTTP Endpoint activity to require authentication and enforce its optional **Policy**.
+With **Authorize** off, **Policy** is ignored for starts and resumes, including in workflow definitions that already
+set only a policy. Enable **Authorize** explicitly when updating those definitions.
+
 ## Inbound workflow headers
 
 The HTTP Endpoint activity omits authentication, cookie, API-key, token, secret, and signature headers from its
