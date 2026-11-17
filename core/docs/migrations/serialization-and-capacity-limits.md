@@ -23,3 +23,9 @@ Dispatches already accepted remain queued if the request is cancelled or a later
 The HTTP Request, Flow HTTP Request, and Download File activities and the HTTP file cache downloader buffer at most 64 MiB per outbound response by default. The limit applies when the response declares a length and when the length is unknown. A response outside the limit follows the activity's existing HTTP request failure path. The HTTP client continues to apply its configured timeout across the request and response body.
 
 Set `HttpActivityOptions.MaxResponseBodySize` to a positive byte count for deployments that need a different limit. A lower limit already configured on the HTTP client takes precedence. This setting does not apply to inbound HTTP request bodies.
+
+## VNext user task invitation lookup
+
+The opt-in VNext user task repository resolves an invitation from its token hash through the existing invitation storage unit. It checks the reference against the current task before returning an invitation. New invitation writes register their lookup before committing the task. A lookup reference from an interrupted task write cannot authorize an invitation absent from the committed task.
+
+Existing VNext tasks keep their invitation records. Before enabling guest invitation verification on an upgraded deployment, use `VNextUserTaskRepository.IndexInvitationTokensAsync(tenantId, taskId)` for each retained task with outstanding invitations, or reissue those invitations. The operation can be run again safely and does not change the task revision. Invitation verification never scans stored tasks, so a legacy invitation remains unavailable until its lookup is registered. No schema migration or change to the EF Core user task provider is required.
