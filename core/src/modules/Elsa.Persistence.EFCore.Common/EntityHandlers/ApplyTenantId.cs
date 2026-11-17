@@ -18,7 +18,7 @@ public class ApplyTenantId(IOptions<TenantsOptions> tenantsOptions) : IEntitySav
         if (!tenantsOptions.Value.IsEnabled)
             return default;
 
-        if (entry.Entity is not Entity entity)
+        if (entry.Entity is not Entity entity || entity is Tenant)
             return default;
 
         // Don't touch tenant-agnostic entities (marked with "*")

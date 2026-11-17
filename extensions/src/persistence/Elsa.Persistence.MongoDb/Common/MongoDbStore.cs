@@ -484,7 +484,8 @@ public class MongoDbStore<TDocument>(IMongoCollection<TDocument> collection, ITe
 
     private IQueryable<TDocument> ApplyTenantVisibility(IQueryable<TDocument> queryable, bool tenantAgnostic, bool includeTenantAgnostic)
     {
-        if (tenantAgnostic)
+        // Tenant registry documents belong to the host.
+        if (tenantAgnostic || typeof(Tenant).IsAssignableFrom(typeof(TDocument)))
         {
             return queryable;
         }
@@ -508,7 +509,7 @@ public class MongoDbStore<TDocument>(IMongoCollection<TDocument> collection, ITe
 
     private void ApplyTenantId(TDocument document)
     {
-        if (document is not Entity tenantDocument)
+        if (document is not Entity tenantDocument || tenantDocument is Tenant)
             return;
 
         // RoleManager/UserManager stamp "" for the default tenant. Treat empty like GetTenantId
@@ -535,7 +536,7 @@ public class MongoDbStore<TDocument>(IMongoCollection<TDocument> collection, ITe
     {
         var filter = Builders<TDocument>.Filter.Where(keyFilter);
 
-        if (document is not Entity entity)
+        if (document is not Entity entity || entity is Tenant)
             return filter;
 
         var documentTenantId = entity.TenantId;
@@ -553,7 +554,7 @@ public class MongoDbStore<TDocument>(IMongoCollection<TDocument> collection, ITe
     /// </summary>
     public FilterDefinition<TDocument> ApplyTenantScope(FilterDefinition<TDocument> filter, bool tenantAgnostic = false)
     {
-        if (tenantAgnostic || !typeof(Entity).IsAssignableFrom(typeof(TDocument)))
+        if (tenantAgnostic || !typeof(Entity).IsAssignableFrom(typeof(TDocument)) || typeof(Tenant).IsAssignableFrom(typeof(TDocument)))
             return filter;
 
         var tenantId = GetTenantId();

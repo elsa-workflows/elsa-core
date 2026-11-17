@@ -111,6 +111,8 @@ You can also bootstrap with the built-in `AdminApiKeyProvider`. It accepts one e
 
 Enabling the admin API key replaces the default, application-based `DefaultApiKeyProvider`. While it is enabled, API keys issued to applications through `/identity/applications` are not accepted. Treat the admin key as a bootstrap or break-glass credential: create users, roles and applications with it, then turn it off.
 
+Tenant registry operations require both the relevant `tenants` permission and a trusted host administrator claim. The configured admin API key carries host authority. A deployment that uses a custom authentication scheme can issue `elsa:host_administrator` with the value `true` to host operators. Tenant-bound credentials and wildcard permissions inside a tenant cannot confer host authority. Tenant IDs and ownership are immutable, and the default tenant cannot be deleted through the registry API.
+
 Turning it off:
 
 - Code-first hosts: delete the `UseAdminApiKey(...)` or `UseDevelopmentAdminApiKey()` call, or switch back with `UseApiKeyAuthorization<DefaultApiKeyProvider>()`. Do not use `UseAdminApiKey("")`: it keeps the admin provider active, and that provider then rejects every API key.

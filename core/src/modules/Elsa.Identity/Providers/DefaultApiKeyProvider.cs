@@ -94,7 +94,7 @@ public class DefaultApiKeyProvider : IApiKeyProvider
         }
 
         claims.Add(new(TenantPrincipalClaims.BoundTenant, tenantId));
-        if (!string.Equals(TenantPrincipalClaims.BoundTenant, _tenantClaimType, StringComparison.Ordinal))
+        if (_tenantClaimType is not (TenantPrincipalClaims.BoundTenant or TenantPrincipalClaims.HostAdministrator))
             claims.Add(new(_tenantClaimType, tenantId));
 
         return new ApiKey(key, application.ClientId, claims);

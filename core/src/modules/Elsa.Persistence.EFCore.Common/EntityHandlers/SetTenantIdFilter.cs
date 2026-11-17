@@ -22,7 +22,8 @@ public class SetTenantIdFilter : IEntityModelCreatingHandler
     /// </remarks>
     public void Handle(ElsaDbContextBase dbContext, ModelBuilder modelBuilder, IMutableEntityType entityType)
     {
-        if (!typeof(Entity).IsAssignableFrom(entityType.ClrType))
+        // Tenant registry rows are host configuration and must be enumerated as a single registry.
+        if (!typeof(Entity).IsAssignableFrom(entityType.ClrType) || typeof(Tenant).IsAssignableFrom(entityType.ClrType))
             return;
 
         var tenantFilter = CreateTenantFilterExpression(dbContext, entityType.ClrType);
