@@ -12,8 +12,18 @@ public class DefaultTenantResolverPipelineInvoker(
     IOptions<MultitenancyOptions> options,
     ITenantService tenantService,
     IServiceProvider serviceProvider,
-    ILogger<DefaultTenantResolverPipelineInvoker> logger) : ITenantResolverPipelineInvoker
+    ILogger<DefaultTenantResolverPipelineInvoker> logger) : ITenantResolverPipelineInvoker, ITenantRequestHints
 {
+    public async Task<IReadOnlyCollection<string>> GetAsync(CancellationToken cancellationToken = default)
+    {
+        var context = new TenantResolverContext(tenantService, cancellationToken);
+        var hints = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var resolver in options.Value.TenantResolverPipelineBuilder.Build(serviceProvider).OfType<ITenantRequestHintResolver>())
+            hints.UnionWith(await resolver.GetHintsAsync(context));
+
+        return hints;
+    }
+
     public async Task<Tenant?> InvokePipelineAsync(CancellationToken cancellationToken = default)
     {
         var resolutionPipeline = options.Value.TenantResolverPipelineBuilder.Build(serviceProvider);
