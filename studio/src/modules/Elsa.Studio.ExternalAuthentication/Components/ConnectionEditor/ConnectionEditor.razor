@@ -100,7 +100,7 @@
     private readonly List<string> _validationErrors = [];
     private bool IncludesGeneral => Section is ConnectionEditorSection.All or ConnectionEditorSection.General;
     private bool IncludesProvider => Section is ConnectionEditorSection.All or ConnectionEditorSection.Provider;
-    private bool HasActiveUnsafeSettings => Adapter.Fields.Any(descriptor => DescriptorEditorState.IsUnsafeSettingActive(descriptor, Model.AdapterSettings));
+    private bool HasActiveUnsafeSettings => Adapter.Fields.Any(descriptor => DescriptorEditorState.RequiresTrustConfirmation(descriptor, Connection.AdapterSettings, Model.AdapterSettings));
 
     public async Task<bool> ValidateAsync()
     {

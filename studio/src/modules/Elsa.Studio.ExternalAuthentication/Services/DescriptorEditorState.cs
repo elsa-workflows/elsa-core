@@ -28,6 +28,16 @@ public static class DescriptorEditorState
         return true;
     }
 
+    public static bool RequiresTrustConfirmation(ConnectionFieldDescriptor field, IDictionary<string, JsonElement> previous, IDictionary<string, JsonElement> current)
+    {
+        if (!IsUnsafeSettingActive(field, previous) && !IsUnsafeSettingActive(field, current))
+            return false;
+
+        return !previous.TryGetValue(field.Name, out var previousValue) ||
+               !current.TryGetValue(field.Name, out var currentValue) ||
+               !string.Equals(previousValue.GetRawText(), currentValue.GetRawText(), StringComparison.Ordinal);
+    }
+
     public static string ToDisplayString(JsonElement value) => value.ValueKind switch
     {
         JsonValueKind.String => value.GetString() ?? string.Empty,
