@@ -38,7 +38,8 @@ public sealed class WorkflowStoreScenario(
     IWorkflowExecutionLogStore executionLogs,
     Func<Func<Task>, Task> assertUniquenessConflictAsync,
     Func<ValueTask> disposeAsync,
-    IDbContextFactory<RuntimeElsaDbContext>? runtimeDbContextFactory = null) : IAsyncDisposable
+    IDbContextFactory<RuntimeElsaDbContext>? runtimeDbContextFactory = null,
+    IDbContextFactory<ManagementElsaDbContext>? managementDbContextFactory = null) : IAsyncDisposable
 {
     public TestTenantAccessor TenantAccessor { get; } = tenantAccessor;
     public IWorkflowDefinitionStore Definitions { get; } = definitions;
@@ -48,6 +49,7 @@ public sealed class WorkflowStoreScenario(
     public IActivityExecutionStore ActivityExecutions { get; } = activityExecutions;
     public IWorkflowExecutionLogStore ExecutionLogs { get; } = executionLogs;
     public IDbContextFactory<RuntimeElsaDbContext>? RuntimeDbContextFactory { get; } = runtimeDbContextFactory;
+    public IDbContextFactory<ManagementElsaDbContext>? ManagementDbContextFactory { get; } = managementDbContextFactory;
 
     public IDisposable UseTenant(string tenantId) =>
         TenantAccessor.PushContext(tenantId == Tenant.DefaultTenantId
@@ -153,7 +155,8 @@ public sealed class WorkflowStoreScenario(
                     File.Delete(managementPath);
                     File.Delete(runtimePath);
                 },
-                scoped.GetRequiredService<IDbContextFactory<RuntimeElsaDbContext>>());
+                scoped.GetRequiredService<IDbContextFactory<RuntimeElsaDbContext>>(),
+                scoped.GetRequiredService<IDbContextFactory<ManagementElsaDbContext>>());
         }
         catch
         {
