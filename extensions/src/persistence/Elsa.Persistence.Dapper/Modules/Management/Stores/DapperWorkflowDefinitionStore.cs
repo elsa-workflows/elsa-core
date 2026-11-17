@@ -170,6 +170,74 @@ internal class DapperWorkflowDefinitionStore(Store<WorkflowDefinitionRecord> sto
     }
 
     /// <inheritdoc />
+    public async Task<bool> TryPublishAsync(WorkflowDefinition definition, Func<IReadOnlyCollection<WorkflowDefinition>, bool> matchesExpected,
+        CancellationToken cancellationToken = default)
+    {
+        using var connection = connectionProvider.GetConnection();
+        if (connection is DbConnection dbConnection)
+            await dbConnection.OpenAsync(cancellationToken);
+        else
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            connection.Open();
+        }
+
+        using var transaction = connection.BeginTransaction(IsolationLevel.Serializable);
+        var targets = new WorkflowDefinitionFilter { DefinitionId = definition.DefinitionId, VersionOptions = VersionOptions.LatestOrPublished };
+        var visibleQuery = connectionProvider.CreateQuery().From(store.TableName);
+        ApplyFilter(visibleQuery, targets);
+        store.ApplyTenantVisibility(visibleQuery);
+        var current = (await connection.QueryAsync<WorkflowDefinitionRecord>(Command(visibleQuery))).ToList();
+        if (current.Count == 0 || !matchesExpected(current.Select(Map).ToArray()))
+            return false;
+
+        var writeScopeQuery = connectionProvider.CreateQuery().Count(store.TableName);
+        ApplyFilter(writeScopeQuery, targets);
+        store.ApplyWriteTenantScope(writeScopeQuery);
+        if (await connection.ExecuteScalarAsync<long>(Command(writeScopeQuery)) != current.Count)
+            return false;
+
+        var replacing = current.SingleOrDefault(version => version.Id == definition.Id);
+        var owner = current.FirstOrDefault(version => version.IsLatest) ?? current[0];
+        if (replacing != null && (replacing.TenantId != definition.TenantId || replacing.Version != definition.Version) ||
+            replacing == null && definition.TenantId.NormalizeTenantId() != owner.TenantId.NormalizeTenantId())
+            return false;
+
+        try
+        {
+            foreach (var previous in current.Where(version => version.Id != definition.Id))
+            {
+                previous.IsLatest = false;
+                previous.IsPublished = false;
+                var update = connectionProvider.CreateQuery().Update(store.TableName, previous, store.PrimaryKey,
+                    [nameof(WorkflowDefinitionRecord.IsLatest), nameof(WorkflowDefinitionRecord.IsPublished)]);
+                if (await connection.ExecuteAsync(Command(update)) != 1)
+                    return false;
+            }
+
+            var record = Map(definition);
+            record.ToolVersion = replacing?.ToolVersion ?? owner.ToolVersion;
+            var publish = replacing == null
+                ? connectionProvider.CreateQuery().Insert(store.TableName, record)
+                : connectionProvider.CreateQuery().Update(store.TableName, record, store.PrimaryKey);
+            publish.Parameters.Add(nameof(WorkflowDefinitionRecord.BinaryData), record.BinaryData, DbType.Binary);
+            if (await connection.ExecuteAsync(Command(publish)) != 1)
+                return false;
+        }
+        catch (DbException exception) when (DapperExceptionClassifier.IsDuplicateKey(exception) || IsAbortedContention(exception))
+        {
+            return false;
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+        transaction.Commit();
+        return true;
+
+        CommandDefinition Command(ParameterizedQuery query) =>
+            new(query.Sql.ToString(), query.Parameters, transaction, cancellationToken: cancellationToken);
+    }
+
+    /// <inheritdoc />
     public async Task<bool> RestampAsync(string definitionId, int version, string declaredTenantId, CancellationToken cancellationToken = default)
     {
         var record = await store.FindAsync(query =>

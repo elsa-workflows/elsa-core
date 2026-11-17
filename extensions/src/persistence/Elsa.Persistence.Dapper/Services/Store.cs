@@ -656,7 +656,7 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantAccesso
     /// Writes and deletes match the ambient tenant only. Shared <c>*</c> rows stay visible on
     /// reads but cannot be taken over, deleted, or filter-updated by a concrete tenant.
     /// </summary>
-    private void ApplyWriteTenantScope(ParameterizedQuery query)
+    internal void ApplyWriteTenantScope(ParameterizedQuery query)
     {
         var tenantId = tenantAccessor.Tenant?.Id;
         if (string.IsNullOrEmpty(tenantId))

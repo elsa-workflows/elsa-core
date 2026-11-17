@@ -298,6 +298,41 @@ public class WorkflowDefinitionMutationAuthorizationTests : IAsyncLifetime
         Assert.Equal("first", draft.Name);
     }
 
+    [Theory]
+    [InlineData("single", false)]
+    [InlineData("inline", false)]
+    [InlineData("bulk", false)]
+    [InlineData("single", true)]
+    [InlineData("inline", true)]
+    [InlineData("bulk", true)]
+    public async Task PublicationUsesAConditionalWriteForTheSelectedVersionSet(string route, bool rejected)
+    {
+        await SeedAsync("first", "published", published: true, version: 1, isLatest: false);
+        await SeedAsync("first", "draft", version: 2);
+        _store.RejectPublication = rejected;
+
+        using var response = route switch
+        {
+            "inline" => await _host.SendAsync(HttpMethod.Post, "/workflow-definitions", Permission,
+                content: JsonContent.Create(new { model = new { definitionId = "first", name = "Changed" }, publish = true })),
+            "bulk" => await SendBulkAsync("publish", "first"),
+            _ => await _host.SendAsync(HttpMethod.Post, "/workflow-definitions/first/publish", Permission, content: JsonContent.Create(new { }))
+        };
+
+        Assert.Equal(rejected && route != "bulk" ? HttpStatusCode.Conflict : HttpStatusCode.OK, response.StatusCode);
+        if (rejected && route == "bulk")
+        {
+            using var body = await response.Content.ReadFromJsonAsync<System.Text.Json.JsonDocument>();
+            Assert.Equal("first", Assert.Single(body!.RootElement.GetProperty("skipped").EnumerateArray()).GetString());
+            Assert.Empty(body.RootElement.GetProperty("published").EnumerateArray());
+        }
+
+        var versions = (await _store.FindManyAsync(new())).ToArray();
+        Assert.Equal(2, versions.Length);
+        Assert.Equal("draft", Assert.Single(versions, version => version.IsLatest).Id);
+        Assert.Equal(rejected ? "published" : "draft", Assert.Single(versions, version => version.IsPublished).Id);
+    }
+
     private Task<HttpResponseMessage> SendBulkAsync(string operation, params string[] ids)
     {
         var (path, content) = operation switch
@@ -338,11 +373,15 @@ public class WorkflowDefinitionMutationAuthorizationTests : IAsyncLifetime
     private sealed class LatestFirstStore() : MemoryWorkflowDefinitionStore(new MemoryStore<WorkflowDefinition>()), IWorkflowDefinitionStore
     {
         public bool RejectRetraction { get; set; }
+        public bool RejectPublication { get; set; }
 
         Task<WorkflowDefinition?> IWorkflowDefinitionStore.FindAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken) =>
             FindAsync(filter, new WorkflowDefinitionOrder<int>(definition => definition.Version, OrderDirection.Descending), cancellationToken);
 
         Task<bool> IWorkflowDefinitionStore.TryRetractAsync(WorkflowDefinition expected, CancellationToken cancellationToken) =>
             RejectRetraction ? Task.FromResult(false) : TryRetractAsync(expected, cancellationToken);
+
+        Task<bool> IWorkflowDefinitionStore.TryPublishAsync(WorkflowDefinition definition, Func<IReadOnlyCollection<WorkflowDefinition>, bool> matchesExpected,
+            CancellationToken cancellationToken) => RejectPublication ? Task.FromResult(false) : TryPublishAsync(definition, matchesExpected, cancellationToken);
     }
 }

@@ -120,6 +120,25 @@ public sealed class DapperWorkflowDefinitionVersionMigrationTests
 
         runner.MigrateUp(UniqueVersionMigration);
         Assert.False(await store.TryAddAsync(duplicate));
+
+        var retainedPublication = (await store.FindAsync(new() { Id = legacy.Id }))!;
+        retainedPublication.IsPublished = true;
+        Assert.True(await store.TryPublishAsync(retainedPublication, versions => versions.Count == 1 && !versions.Single().IsPublished));
+
+        var newPublication = retainedPublication.ShallowClone();
+        newPublication.Id = "published-" + definitionId;
+        newPublication.Version = 2;
+        newPublication.StringData = "new publication";
+        Assert.True(await store.TryPublishAsync(newPublication, versions => versions.Count == 1 && versions.Single().IsPublished));
+
+        var retained = (await store.FindAsync(new() { Id = legacy.Id }))!;
+        Assert.Null(retained.TenantId);
+        Assert.False(retained.IsPublished);
+        Assert.False(retained.IsLatest);
+        var newest = (await store.FindAsync(new() { Id = newPublication.Id }))!;
+        Assert.True(newest.IsPublished);
+        Assert.True(newest.IsLatest);
+        Assert.Equal("new publication", newest.StringData);
     }
 
     private static WorkflowDefinition Definition(string id, string definitionId, string data) => new()

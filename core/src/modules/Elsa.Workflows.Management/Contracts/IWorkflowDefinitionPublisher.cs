@@ -52,6 +52,13 @@ public interface IWorkflowDefinitionPublisher
     Task<PublishWorkflowDefinitionResult> PublishAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Publishes an existing definition only while the supplied, authorized latest and published versions still match storage.
+    /// </summary>
+    /// <exception cref="Exceptions.WorkflowDefinitionEditConflictException">The authorized version set is stale or cannot be written atomically.</exception>
+    Task<PublishWorkflowDefinitionResult> PublishAsync(WorkflowDefinition definition, IReadOnlyCollection<WorkflowDefinition> expectedVersions,
+        CancellationToken cancellationToken = default) => throw new Exceptions.WorkflowDefinitionEditConflictException();
+
+    /// <summary>
     /// Retracts a workflow definition.
     /// </summary>
     /// <param name="definitionId">The ID of the workflow definition to retract.</param>

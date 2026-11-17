@@ -85,6 +85,29 @@ public sealed class DapperWorkflowDefinitionStoreCompareAndSwapTests : IDisposab
         Assert.Equal("Original", stored.Name);
     }
 
+    [Fact]
+    public async Task PublicationChangesTheAuthorizedVersionSetInOneWrite()
+    {
+        using var tenant = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+        var published = Definition("definition", "published", name: "Published", stringData: "graph-1");
+        published.IsLatest = false;
+        published.IsPublished = true;
+        var draft = Definition("definition", "draft", name: "Draft", stringData: "graph-2");
+        draft.Version = 2;
+        await _store.SaveManyAsync([published, draft]);
+        var proposed = (await _store.FindAsync(new() { Id = draft.Id }))!;
+        proposed.IsPublished = true;
+
+        Assert.False(await _store.TryPublishAsync(proposed, versions => versions.Count == 1));
+        Assert.True((await _store.FindAsync(new() { Id = published.Id }))!.IsPublished);
+        Assert.False((await _store.FindAsync(new() { Id = draft.Id }))!.IsPublished);
+        Assert.True(await _store.TryPublishAsync(proposed, versions => versions.Count == 2));
+
+        var saved = await _store.FindManyAsync(new() { DefinitionId = "definition" });
+        Assert.Equal("draft", Assert.Single(saved, version => version.IsPublished).Id);
+        Assert.Equal("draft", Assert.Single(saved, version => version.IsLatest).Id);
+    }
+
     [Fact(DisplayName = "A missing definition is NotFound")]
     public async Task TryUpdateLatestAsync_WhenNothingMatchesTheFilter_ReturnsNotFound()
     {

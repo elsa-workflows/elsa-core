@@ -262,6 +262,10 @@ public class MongoDbStore<TDocument>(IMongoCollection<TDocument> collection, ITe
         return await query(queryable).FirstOrDefaultAsync(cancellationToken);
     }
 
+    internal Task<List<TDocument>> FindManyAsync(IClientSessionHandle session,
+        Func<IQueryable<TDocument>, IQueryable<TDocument>> query, CancellationToken cancellationToken) =>
+        query(ApplyTenantVisibility(collection.AsQueryable(session), tenantAgnostic: false, includeTenantAgnostic: true)).ToListAsync(cancellationToken);
+
     /// <summary>
     /// Finds a list of documents matching the specified predicate
     /// </summary>

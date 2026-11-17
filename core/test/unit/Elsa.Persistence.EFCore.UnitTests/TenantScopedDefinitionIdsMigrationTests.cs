@@ -152,7 +152,7 @@ public class TenantScopedDefinitionIdsMigrationTests
     }
 
     [Fact]
-    public async Task RetractionChangesOnlyTheExpectedVersionsPublishedFlag()
+    public async Task PublicationAndRetractionChangeOnlyTheExpectedVersions()
     {
         await using var connection = new SqliteConnection("Data Source=:memory:");
         await connection.OpenAsync();
@@ -177,7 +177,18 @@ public class TenantScopedDefinitionIdsMigrationTests
         published.IsLatest = false;
         published.IsPublished = true;
         await store.SaveAsync(published);
-        var expected = published.ShallowClone();
+        var draft = NewDefinition("draft");
+        draft.Version = 2;
+        await store.SaveAsync(draft);
+        var expected = draft.ShallowClone();
+        expected.Name = "Published draft";
+        expected.IsPublished = true;
+
+        Assert.False(await store.TryPublishAsync(expected, versions => versions.Count == 1));
+        await using (var unchanged = await factory.CreateDbContextAsync())
+            Assert.Equal("published", await unchanged.WorkflowDefinitions.Where(x => x.IsPublished).Select(x => x.Id).SingleAsync());
+        Assert.True(await store.TryPublishAsync(expected, versions => versions.Count == 2));
+
         expected.Name = "Older name";
         var mismatched = expected.ShallowClone();
         mismatched.IsReadonly = true;
@@ -187,10 +198,11 @@ public class TenantScopedDefinitionIdsMigrationTests
         Assert.False(await store.TryRetractAsync(expected));
 
         await using var verified = await factory.CreateDbContextAsync();
-        var stored = await verified.WorkflowDefinitions.SingleAsync();
-        Assert.False(stored.IsPublished);
-        Assert.False(stored.IsLatest);
-        Assert.Equal("def", stored.Name);
+        var versions = await verified.WorkflowDefinitions.ToListAsync();
+        Assert.DoesNotContain(versions, version => version.IsPublished);
+        var stored = Assert.Single(versions, version => version.IsLatest);
+        Assert.Equal("draft", stored.Id);
+        Assert.Equal("Published draft", stored.Name);
     }
 
     [Fact]

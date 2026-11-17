@@ -16,81 +16,81 @@ public class MemoryWorkflowDefinitionStore(MemoryStore<WorkflowDefinition> store
     /// <inheritdoc />
     public Task<WorkflowDefinition?> FindAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
-        var result = store.Query(query => Filter(query, filter)).FirstOrDefault();
+        var result = Read(query => Filter(query, filter)).FirstOrDefault();
         return Task.FromResult(result);
     }
 
     /// <inheritdoc />
     public Task<WorkflowDefinition?> FindAsync<TOrderBy>(WorkflowDefinitionFilter filter, WorkflowDefinitionOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
-        var result = store.Query(query => Filter(query, filter).OrderBy(order)).FirstOrDefault();
+        var result = Read(query => Filter(query, filter).OrderBy(order)).FirstOrDefault();
         return Task.FromResult(result);
     }
 
     /// <inheritdoc />
     public Task<Page<WorkflowDefinition>> FindManyAsync(WorkflowDefinitionFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
-        var count = store.Query(query => Filter(query, filter)).LongCount();
-        var result = store.Query(query => Filter(query, filter).Paginate(pageArgs)).ToList();
+        var count = Read(query => Filter(query, filter)).LongCount();
+        var result = Read(query => Filter(query, filter).Paginate(pageArgs)).ToList();
         return Task.FromResult(Page.Of(result, count));
     }
 
     /// <inheritdoc />
     public Task<Page<WorkflowDefinition>> FindManyAsync<TOrderBy>(WorkflowDefinitionFilter filter, WorkflowDefinitionOrder<TOrderBy> order, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
-        var count = store.Query(query => Filter(query, filter).OrderBy(order)).LongCount();
-        var result = store.Query(query => Filter(query, filter).Paginate(pageArgs)).ToList();
+        var count = Read(query => Filter(query, filter).OrderBy(order)).LongCount();
+        var result = Read(query => Filter(query, filter).Paginate(pageArgs)).ToList();
         return Task.FromResult(Page.Of(result, count));
     }
 
     /// <inheritdoc />
     public Task<IEnumerable<WorkflowDefinition>> FindManyAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
-        var result = store.Query(query => Filter(query, filter)).ToList().AsEnumerable();
+        var result = Read(query => Filter(query, filter)).ToList().AsEnumerable();
         return Task.FromResult(result);
     }
 
     /// <inheritdoc />
     public Task<IEnumerable<WorkflowDefinition>> FindManyAsync<TOrderBy>(WorkflowDefinitionFilter filter, WorkflowDefinitionOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
-        var result = store.Query(query => Filter(query, filter).OrderBy(order)).ToList().AsEnumerable();
+        var result = Read(query => Filter(query, filter).OrderBy(order)).ToList().AsEnumerable();
         return Task.FromResult(result);
     }
 
     /// <inheritdoc />
     public Task<Page<WorkflowDefinitionSummary>> FindSummariesAsync(WorkflowDefinitionFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
-        var count = store.Query(query => Filter(query, filter)).LongCount();
-        var result = store.Query(query => Filter(query, filter).Paginate(pageArgs)).Select(WorkflowDefinitionSummary.FromDefinition).ToList();
+        var count = Read(query => Filter(query, filter)).LongCount();
+        var result = Read(query => Filter(query, filter).Paginate(pageArgs)).Select(WorkflowDefinitionSummary.FromDefinition).ToList();
         return Task.FromResult(Page.Of(result, count));
     }
 
     /// <inheritdoc />
     public Task<Page<WorkflowDefinitionSummary>> FindSummariesAsync<TOrderBy>(WorkflowDefinitionFilter filter, WorkflowDefinitionOrder<TOrderBy> order, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
-        var count = store.Query(query => Filter(query, filter).OrderBy(order)).LongCount();
-        var result = store.Query(query => Filter(query, filter).Paginate(pageArgs)).Select(WorkflowDefinitionSummary.FromDefinition).ToList();
+        var count = Read(query => Filter(query, filter).OrderBy(order)).LongCount();
+        var result = Read(query => Filter(query, filter).Paginate(pageArgs)).Select(WorkflowDefinitionSummary.FromDefinition).ToList();
         return Task.FromResult(Page.Of(result, count));
     }
 
     /// <inheritdoc />
     public Task<IEnumerable<WorkflowDefinitionSummary>> FindSummariesAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
-        var result = store.Query(query => Filter(query, filter)).Select(WorkflowDefinitionSummary.FromDefinition).ToList().AsEnumerable();
+        var result = Read(query => Filter(query, filter)).Select(WorkflowDefinitionSummary.FromDefinition).ToList().AsEnumerable();
         return Task.FromResult(result);
     }
 
     /// <inheritdoc />
     public Task<IEnumerable<WorkflowDefinitionSummary>> FindSummariesAsync<TOrderBy>(WorkflowDefinitionFilter filter, WorkflowDefinitionOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
-        var result = store.Query(query => Filter(query, filter).OrderBy(order)).Select(WorkflowDefinitionSummary.FromDefinition).ToList().AsEnumerable();
+        var result = Read(query => Filter(query, filter).OrderBy(order)).Select(WorkflowDefinitionSummary.FromDefinition).ToList().AsEnumerable();
         return Task.FromResult(result);
     }
 
     /// <inheritdoc />
     public Task<WorkflowDefinition?> FindLastVersionAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken)
     {
-        var result = store.Query(query => Filter(query, filter)).MaxBy(x => x.Version);
+        var result = Read(query => Filter(query, filter)).MaxBy(x => x.Version);
         return Task.FromResult(result);
     }
 
@@ -128,12 +128,52 @@ public class MemoryWorkflowDefinitionStore(MemoryStore<WorkflowDefinition> store
             var current = store.FindById(expected.Id);
             if (current == null || !current.IsPublished || current.DefinitionId != expected.DefinitionId || current.Version != expected.Version ||
                 current.TenantId != expected.TenantId || current.IsReadonly != expected.IsReadonly || current.IsSystem != expected.IsSystem ||
-                !(TenantVisibility.CanReplace(current.TenantId, CurrentTenantId) || current.TenantId == Tenant.AgnosticTenantId && SharedTenantWriteScope.IsGranted(typeof(WorkflowDefinition))))
+                !CanWrite(current.TenantId))
                 return Task.FromResult(false);
 
             var retracted = current.ShallowClone();
             retracted.IsPublished = false;
             store.Save(retracted, GetId);
+            return Task.FromResult(true);
+        }
+    }
+
+    /// <inheritdoc />
+    public Task<bool> TryPublishAsync(WorkflowDefinition definition, Func<IReadOnlyCollection<WorkflowDefinition>, bool> matchesExpected,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        lock (store.Sync)
+        {
+            var filter = new WorkflowDefinitionFilter { DefinitionId = definition.DefinitionId, VersionOptions = VersionOptions.LatestOrPublished };
+            var current = store.Query(query => Filter(query, filter)).ToList();
+            if (current.Count == 0 || current.Any(version => !CanWrite(version.TenantId)) || !matchesExpected(current))
+                return Task.FromResult(false);
+
+            var replacing = current.SingleOrDefault(version => version.Id == definition.Id);
+            if (replacing != null)
+            {
+                if (replacing.TenantId != definition.TenantId || replacing.Version != definition.Version)
+                    return Task.FromResult(false);
+            }
+            else
+            {
+                definition.TenantId ??= CurrentTenantId;
+                var versionKey = GetVersionKey(definition);
+                if (!CanWrite(definition.TenantId) || store.FindById(definition.Id) != null ||
+                    store.Find(version => GetVersionKey(version) == versionKey) != null)
+                    return Task.FromResult(false);
+            }
+
+            foreach (var previous in current.Where(version => version.Id != definition.Id))
+            {
+                var retired = previous.ShallowClone();
+                retired.IsPublished = false;
+                retired.IsLatest = false;
+                store.Save(retired, GetId);
+            }
+
+            store.Save(definition.ShallowClone(), GetId);
             return Task.FromResult(true);
         }
     }
@@ -206,14 +246,14 @@ public class MemoryWorkflowDefinitionStore(MemoryStore<WorkflowDefinition> store
     /// <inheritdoc />
     public Task<bool> AnyAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
-        var exists = store.Query(query => Filter(query, filter)).Any();
+        var exists = Read(query => Filter(query, filter)).Any();
         return Task.FromResult(exists);
     }
 
     /// <inheritdoc />
     public Task<long> CountDistinctAsync(CancellationToken cancellationToken = default)
     {
-        var count = store.Query(query => query.WhereVisibleToTenant(CurrentTenantId))
+        var count = Read(query => query.WhereVisibleToTenant(CurrentTenantId))
             .Select(x => x.DefinitionId)
             .Distinct()
             .LongCount();
@@ -223,10 +263,10 @@ public class MemoryWorkflowDefinitionStore(MemoryStore<WorkflowDefinition> store
     /// <inheritdoc />
     public Task<bool> GetIsNameUnique(string name, string? definitionId = default, CancellationToken cancellationToken = default)
     {
-        var exists = store.Any(x =>
+        var exists = Read(query => query.Where(x =>
             x.Name == name
             && x.DefinitionId != definitionId
-            && TenantVisibility.IsVisible(x.TenantId, CurrentTenantId));
+            && TenantVisibility.IsVisible(x.TenantId, CurrentTenantId))).Any();
         return Task.FromResult(!exists);
     }
 
@@ -237,7 +277,18 @@ public class MemoryWorkflowDefinitionStore(MemoryStore<WorkflowDefinition> store
     private IQueryable<WorkflowDefinition> Filter(IQueryable<WorkflowDefinition> queryable, WorkflowDefinitionFilter filter) =>
         filter.Apply(queryable.WhereVisibleToTenant(CurrentTenantId, filter.TenantAgnostic));
 
+    private IEnumerable<WorkflowDefinition> Read(Func<IQueryable<WorkflowDefinition>, IQueryable<WorkflowDefinition>> query)
+    {
+        IQueryable<WorkflowDefinition> snapshot;
+        lock (store.Sync)
+            snapshot = store.Queryable;
+        return query(snapshot);
+    }
+
     private string CurrentTenantId => tenantAccessor?.TenantId ?? Tenant.DefaultTenantId;
+
+    private bool CanWrite(string? tenantId) => TenantVisibility.CanReplace(tenantId, CurrentTenantId) ||
+        tenantId == Tenant.AgnosticTenantId && SharedTenantWriteScope.IsGranted(typeof(WorkflowDefinition));
 
     /// <remarks>
     /// Memory counterpart of the EF unique index <c>IX_WorkflowDefinition_DefinitionId_TenantId_Version</c>.
