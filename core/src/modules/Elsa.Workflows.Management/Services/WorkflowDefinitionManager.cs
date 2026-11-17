@@ -142,7 +142,7 @@ public class WorkflowDefinitionManager(
         };
         var lastVersion = await store.FindLastVersionAsync(filter, cancellationToken);
 
-        if (lastVersion is null)
+        if (lastVersion is null || lastVersion.IsLatest)
             return;
 
         lastVersion.IsLatest = true;
