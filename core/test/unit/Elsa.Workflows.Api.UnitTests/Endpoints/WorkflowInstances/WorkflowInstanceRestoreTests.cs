@@ -86,6 +86,24 @@ public class WorkflowInstanceRestoreTests : IAsyncLifetime
         Assert.Equal(0, await _instances.CountAsync(new()));
     }
 
+    [Theory]
+    [InlineData("ActivityExecutionRecords")]
+    [InlineData("WorkflowExecutionLogRecords")]
+    public async Task RestoreRefusesHistoryOwnedByAnotherTenant(string collection)
+    {
+        var archive = System.Text.Json.Nodes.JsonNode.Parse(Archive("archived"))!.AsObject();
+        archive[collection] = JsonSerializer.SerializeToNode(new[]
+        {
+            new { Id = "history", TenantId = "another-tenant", WorkflowInstanceId = "archived",
+                WorkflowDefinitionId = "definition", WorkflowDefinitionVersionId = "version-1" }
+        });
+
+        using var upload = CreateUpload(archive.ToJsonString());
+        using var response = await _host.SendAsync(HttpMethod.Post, Route, Restore, content: upload);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(0, await _instances.CountAsync(new()));
+    }
+
     [Fact]
     public async Task RestoreCreatesTerminalInstanceAndRefusesReplacement()
     {
