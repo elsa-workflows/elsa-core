@@ -9,7 +9,7 @@
 - The default tenant is `""`, not `NULL`, like the label uniqueness migration (`PerTenantLabelUniqueness`). PostgreSQL, MySQL and SQLite treat `NULL`s as distinct in a unique index, so `Up()` stamps leftover `NULL` `TenantId` values to `""` there (and on SQL Server), and `EFCoreWorkflowDefinitionStore` now stores `""` instead of `NULL` when multitenancy is off. Without this, two concurrent imports of the same new definition could both create version 1.
 - Oracle stores `''` as `NULL`, but treats rows with equal non-null columns and a `NULL` `TenantId` as duplicates in a unique index, so the index stays unique for the default tenant without stamping. SQL Server also treats `NULL`s as equal. The index has no filter.
 - On SQL Server the key is `nvarchar(450)` + `nvarchar(450)` + `int`, up to 1804 bytes, above the 1700-byte limit for a nonclustered index key. The migration succeeds with a warning, and an insert fails only when `DefinitionId` and `TenantId` together exceed about 848 characters.
-- `Down()` restores the old index. It fails while two tenants hold the same `(DefinitionId, Version)`; remove or rename one of them first. On Oracle and MySQL, where DDL commits implicitly, `Down()` checks for such duplicates before dropping the new index, so a failed downgrade leaves the unique index in place.
+- `Down()` restores the old index. It fails while two tenants hold the same `(DefinitionId, Version)`; remove or rename one of them first. Oracle checks for duplicates before dropping the new index. MySQL replaces both indexes in a single atomic `ALTER TABLE`, which leaves the tenant-scoped index in place if the old index cannot be built.
 
 ## Import
 
