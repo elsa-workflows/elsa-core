@@ -170,15 +170,7 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
         if (!matchesExpected(current))
             return WorkflowDefinitionUpdateResult.Conflict();
 
-        var expectedId = current.Id;
-        var expectedVersion = current.Version;
-        var expectedStringData = current.StringData;
-        var expectedName = current.Name;
-        var expectedDescription = current.Description;
-        var expectedReadonly = current.IsReadonly;
-        var expectedSystem = current.IsSystem;
-        var expectedPublished = current.IsPublished;
-        var expectedTenantId = current.TenantId;
+        var expected = current.ShallowClone();
         var expectedData = (string?)dbContext.Entry(current).Property("Data").CurrentValue;
 
         // Preserve shadow state while loading, then keep the callback outside change tracking.
@@ -188,11 +180,10 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
         var nextData = SerializeState(next);
         var nextUsableAsActivity = next.Options.UsableAsActivity;
 
-        if (next.Id != expectedId)
+        if (next.Id != expected.Id)
         {
             var unmarked = await dbContext.WorkflowDefinitions.WhereTenantCanWrite(dbContext)
-                .Where(MatchesLoadedSnapshot(expectedId, expectedVersion, expectedStringData, expectedName, expectedDescription, expectedData,
-                    expectedReadonly, expectedSystem, expectedPublished, expectedTenantId))
+                .Where(MatchesLoadedSnapshot(expected, expectedData))
                 .ExecuteUpdateAsync(setters => setters.SetProperty(x => x.IsLatest, false), cancellationToken);
 
             if (unmarked == 0)
@@ -208,13 +199,16 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
         }
 
         var updated = await dbContext.WorkflowDefinitions.WhereTenantCanWrite(dbContext)
-            .Where(MatchesLoadedSnapshot(expectedId, expectedVersion, expectedStringData, expectedName, expectedDescription, expectedData,
-                    expectedReadonly, expectedSystem, expectedPublished, expectedTenantId))
+            .Where(MatchesLoadedSnapshot(expected, expectedData))
             .ExecuteUpdateAsync(
                 setters => setters
                     .SetProperty(x => x.Name, next.Name)
                     .SetProperty(x => x.Description, next.Description)
                     .SetProperty(x => x.StringData, next.StringData)
+                    .SetProperty(x => x.MaterializerName, next.MaterializerName)
+                    .SetProperty(x => x.OriginalSource, next.OriginalSource)
+                    .SetProperty(x => x.ToolVersion, next.ToolVersion)
+                    .SetProperty(x => x.IsReadonly, next.IsReadonly)
                     .SetProperty(x => EF.Property<string?>(x, "Data"), nextData)
                     .SetProperty(x => EF.Property<bool?>(x, "UsableAsActivity"), nextUsableAsActivity),
                 cancellationToken);
@@ -227,33 +221,22 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
     }
 
     /// <summary>
-    /// The loaded snapshot <see cref="TryUpdateLatestAsync"/> will only overwrite: identity, the ETag-covered
-    /// graph, the serialized <c>Data</c> blob (source XML, variables, options) and the name/description columns
-    /// a metadata-only save changes. The row must still be <c>IsLatest</c> so a published→draft loser
-    /// is Conflict rather than a unique-key failure on <c>(DefinitionId, Version)</c>. Zero rows means
-    /// another writer got there first.
+    /// Compares the stored graph, metadata and access flags before applying a draft mutation.
     /// </summary>
-    private static Expression<Func<WorkflowDefinition, bool>> MatchesLoadedSnapshot(
-        string expectedId,
-        int expectedVersion,
-        string? expectedStringData,
-        string? expectedName,
-        string? expectedDescription,
-        string? expectedData,
-        bool expectedReadonly,
-        bool expectedSystem,
-        bool expectedPublished,
-        string? expectedTenantId) =>
-        x => x.Id == expectedId
-             && x.Version == expectedVersion
+    private static Expression<Func<WorkflowDefinition, bool>> MatchesLoadedSnapshot(WorkflowDefinition expected, string? expectedData) =>
+        x => x.Id == expected.Id
+             && x.Version == expected.Version
              && x.IsLatest
-             && x.StringData == expectedStringData
-             && x.Name == expectedName
-             && x.Description == expectedDescription
-             && x.IsReadonly == expectedReadonly
-             && (x.IsSystem == expectedSystem || (!expectedSystem && x.IsSystem == null!))
-             && x.IsPublished == expectedPublished
-             && x.TenantId == expectedTenantId
+             && x.StringData == expected.StringData
+             && x.Name == expected.Name
+             && x.Description == expected.Description
+             && x.MaterializerName == expected.MaterializerName
+             && x.OriginalSource == expected.OriginalSource
+             && x.ToolVersion == expected.ToolVersion
+             && x.IsReadonly == expected.IsReadonly
+             && (x.IsSystem == expected.IsSystem || (!expected.IsSystem && x.IsSystem == null!))
+             && x.IsPublished == expected.IsPublished
+             && x.TenantId == expected.TenantId
              && EF.Property<string?>(x, "Data") == expectedData;
 
     /// <inheritdoc />

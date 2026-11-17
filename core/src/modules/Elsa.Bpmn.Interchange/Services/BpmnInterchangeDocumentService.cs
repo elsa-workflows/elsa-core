@@ -334,19 +334,29 @@ public sealed class BpmnInterchangeDocumentService(
         EnsureCanWrite(existing);
         var importResult = await importer.ImportAsync(new SaveWorkflowDefinitionRequest { Model = model, Publish = false }, cancellationToken);
 
-        // The definition's final Version is only known once the importer/publisher has assigned and persisted it —
-        // see SourceVersionCustomPropertyKey's remarks for why that value, specifically, is what staleness is judged
-        // against. Neither custom property is written until it is known, so both land on this single, explicit save:
-        // if it fails or is cancelled, the definition carries neither key, which Export(WorkflowDefinition) reports
-        // honestly as "never imported" rather than as a partial import that cannot be diagnosed.
         if (importResult.Succeeded)
         {
             var persisted = importResult.WorkflowDefinition;
-            persisted.CustomProperties[SourceXmlCustomPropertyKey] = xml;
-            persisted.CustomProperties[SourceVersionCustomPropertyKey] = persisted.Version;
-            persisted.CustomProperties[SourceProcessIdCustomPropertyKey] = rootDefinition.ProcessId;
-            persisted.CustomProperties[SourceGraphHashCustomPropertyKey] = BpmnContentHash.OfGraph(persisted.StringData);
-            await store.SaveAsync(persisted, cancellationToken);
+            var snapshot = activitySerializer.Serialize(persisted);
+            var withSource = persisted.ShallowClone();
+            withSource.CustomProperties = new Dictionary<string, object>(persisted.CustomProperties)
+            {
+                [SourceXmlCustomPropertyKey] = xml,
+                [SourceVersionCustomPropertyKey] = persisted.Version,
+                [SourceProcessIdCustomPropertyKey] = rootDefinition.ProcessId,
+                [SourceGraphHashCustomPropertyKey] = BpmnContentHash.OfGraph(persisted.StringData)
+            };
+            var saved = await store.TryUpdateLatestAsync(
+                new WorkflowDefinitionFilter { Id = persisted.Id, DefinitionId = persisted.DefinitionId },
+                current => !managementOptions.Value.IsReadOnlyMode && current.IsLatest && !current.IsReadonly && !current.IsSystem &&
+                    string.Equals(activitySerializer.Serialize(current), snapshot, StringComparison.Ordinal),
+                _ => withSource,
+                cancellationToken);
+
+            if (saved.Outcome != WorkflowDefinitionUpdateOutcome.Updated)
+                throw new BpmnDocumentPreconditionFailedException("The workflow definition changed during BPMN import. Reload it before retrying.");
+
+            importResult = importResult with { WorkflowDefinition = saved.Definition! };
         }
 
         return new BpmnDocumentImportResult(importResult, result.Analysis);

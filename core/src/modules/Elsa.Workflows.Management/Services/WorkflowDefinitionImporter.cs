@@ -102,8 +102,15 @@ namespace Elsa.Workflows.Management.Services
                 return new ImportWorkflowResult(result.Succeeded, draft, result.ValidationErrors);
             }
 
-            await _workflowDefinitionPublisher.SaveDraftAsync(draft, cancellationToken);
-            return new ImportWorkflowResult(true, draft, new List<WorkflowValidationError>());
+            try
+            {
+                await _workflowDefinitionPublisher.SaveDraftAsync(draft, cancellationToken);
+                return new(true, draft, []);
+            }
+            catch (WorkflowDefinitionEditConflictException)
+            {
+                return new(false, draft, [new("The workflow definition changed or is protected.")]);
+            }
         }
 
         private async Task<ImportWorkflowResult> CreateInitialAsync(WorkflowDefinition draft, string generatedId, bool publish, CancellationToken cancellationToken)

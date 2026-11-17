@@ -8,6 +8,7 @@ using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Api.Requirements;
 using Elsa.Workflows.Api.Security;
 using Elsa.Workflows.Management;
+using Elsa.Workflows.Management.Exceptions;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Materializers;
@@ -123,22 +124,29 @@ internal class Post(
 
         PublishWorkflowDefinitionResult? result = null;
 
-        if (publish)
+        try
         {
-            result = await workflowDefinitionPublisher.PublishAsync(draft, cancellationToken);
-
-            if (!result.Succeeded)
-            {
-                foreach (var validationError in result.ValidationErrors)
-                    AddError(validationError.Message);
-
-                await Send.ErrorsAsync(400, cancellationToken);
-                return;
-            }
+            if (isNew)
+                result = await workflowDefinitionPublisher.CreateInitialAsync(draft, publish, cancellationToken);
+            else if (publish)
+                result = await workflowDefinitionPublisher.PublishAsync(draft, cancellationToken);
+            else
+                await workflowDefinitionPublisher.SaveDraftAsync(draft, cancellationToken);
         }
-        else
+        catch (InvalidOperationException ex) when (ex is WorkflowDefinitionAlreadyExistsException or WorkflowDefinitionEditConflictException)
         {
-            await workflowDefinitionPublisher.SaveDraftAsync(draft, cancellationToken);
+            AddError("The workflow definition changed or is protected.");
+            await Send.ErrorsAsync(StatusCodes.Status409Conflict, cancellationToken);
+            return;
+        }
+
+        if (result is { Succeeded: false })
+        {
+            foreach (var validationError in result.ValidationErrors)
+                AddError(validationError.Message);
+
+            await Send.ErrorsAsync(400, cancellationToken);
+            return;
         }
 
         var mappedDefinition = await linker.MapAsync(draft, cancellationToken);

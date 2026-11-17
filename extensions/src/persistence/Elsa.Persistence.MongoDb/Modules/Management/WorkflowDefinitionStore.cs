@@ -9,6 +9,7 @@ using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
 using JetBrains.Annotations;
 using MongoDB.Bson;
+using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 using MongoDB.Driver.Linq;
 using Open.Linq.AsyncExtensions;
@@ -139,109 +140,62 @@ public class MongoWorkflowDefinitionStore(MongoDbStore<WorkflowDefinition> mongo
         Func<WorkflowDefinition, WorkflowDefinition> update,
         CancellationToken cancellationToken = default)
     {
+        var candidate = await FindAsync(filter, cancellationToken);
+        if (candidate == null)
+            return WorkflowDefinitionUpdateResult.NotFound();
+
+        var snapshot = await LoadRawSnapshotAsync(candidate.Id, cancellationToken);
+        if (snapshot == null)
+            return WorkflowDefinitionUpdateResult.Conflict();
+
+        // Evaluate authorization and construct the update from the same document used in the
+        // write predicate, including fields absent in legacy rows.
+        var current = BsonSerializer.Deserialize<WorkflowDefinition>(snapshot);
+        if (current.DefinitionId != candidate.DefinitionId || current.TenantId != candidate.TenantId ||
+            !current.IsLatest || !Filter(new[] { current }.AsQueryable(), filter).Any() || !matchesExpected(current))
+        {
+            return WorkflowDefinitionUpdateResult.Conflict();
+        }
+
+        var next = update(current);
+        if (!string.Equals(next.DefinitionId, candidate.DefinitionId, StringComparison.Ordinal))
+            throw new InvalidOperationException("An atomic workflow update cannot change its logical definition.");
+
+        next.TenantId = candidate.TenantId;
         var collection = mongoDbStore.GetCollection();
-        var mongoClient = collection.Database.Client;
-        using var session = await mongoClient.StartSessionAsync(cancellationToken: cancellationToken);
+        var snapshotFilter = CreateExactSnapshotFilter(snapshot);
+
+        if (next.Id == candidate.Id)
+        {
+            // One atomic document replace also works against a standalone server.
+            var replace = await collection.ReplaceOneAsync(snapshotFilter, next,
+                new ReplaceOptions { Collation = Collation.Simple }, cancellationToken);
+            return replace.MatchedCount == 1
+                ? WorkflowDefinitionUpdateResult.Updated(next)
+                : WorkflowDefinitionUpdateResult.Conflict();
+        }
+
+        using var session = await collection.Database.Client.StartSessionAsync(cancellationToken: cancellationToken);
         session.StartTransaction(new TransactionOptions(
             readConcern: ReadConcern.Snapshot,
             readPreference: ReadPreference.Primary,
             writeConcern: WriteConcern.WMajority));
 
-        WorkflowDefinition? next = null;
-        var invokingCallback = false;
-
         try
         {
-            var current = await mongoDbStore.FindAsync(
-                session,
-                queryable => Filter(queryable, filter),
-                filter.TenantAgnostic,
-                cancellationToken);
-
-            if (current is null)
-            {
-                await AbortTransactionQuietlyAsync(session);
-                return WorkflowDefinitionUpdateResult.NotFound();
-            }
-
-            var expectedId = current.Id;
-            var expectedTenantId = current.TenantId;
-            var expectedDefinitionId = current.DefinitionId;
-            var snapshot = await LoadRawSnapshotAsync(session, expectedId, cancellationToken);
-
-            if (snapshot is null)
+            var updateDefinition = Builders<WorkflowDefinition>.Update.Set(x => x.IsLatest, false);
+            var unmarked = await collection.UpdateOneAsync(session, snapshotFilter, updateDefinition,
+                new UpdateOptions { Collation = Collation.Simple }, cancellationToken);
+            if (unmarked.MatchedCount != 1)
             {
                 await AbortTransactionQuietlyAsync(session);
                 return WorkflowDefinitionUpdateResult.Conflict();
             }
 
-            var snapshotFilter = CreateExactSnapshotFilter(snapshot);
-
-            if (!current.IsLatest)
-            {
-                await AbortTransactionQuietlyAsync(session);
-                return WorkflowDefinitionUpdateResult.Conflict();
-            }
-
-            invokingCallback = true;
-            var isExpected = matchesExpected(current);
-            invokingCallback = false;
-
-            if (!isExpected)
-            {
-                await AbortTransactionQuietlyAsync(session);
-                return WorkflowDefinitionUpdateResult.Conflict();
-            }
-
-            invokingCallback = true;
-            next = update(current);
-            invokingCallback = false;
-
-            if (!string.Equals(next.DefinitionId, expectedDefinitionId, StringComparison.Ordinal))
-            {
-                throw new InvalidOperationException("An atomic workflow update cannot change its logical definition.");
-            }
-
-            next.TenantId = expectedTenantId;
-            var replaceOptions = new ReplaceOptions { Collation = Collation.Simple };
-
-            if (next.Id == expectedId)
-            {
-                var replaceResult = await collection.ReplaceOneAsync(
-                    session,
-                    snapshotFilter,
-                    next,
-                    replaceOptions,
-                    cancellationToken);
-
-                if (replaceResult.MatchedCount != 1)
-                {
-                    await AbortTransactionQuietlyAsync(session);
-                    return WorkflowDefinitionUpdateResult.Conflict();
-                }
-            }
-            else
-            {
-                var updateDefinition = Builders<WorkflowDefinition>.Update.Set(x => x.IsLatest, false);
-                var updateOptions = new UpdateOptions { Collation = Collation.Simple };
-                var updateResult = await collection.UpdateOneAsync(
-                    session,
-                    snapshotFilter,
-                    updateDefinition,
-                    updateOptions,
-                    cancellationToken);
-
-                if (updateResult.MatchedCount != 1)
-                {
-                    await AbortTransactionQuietlyAsync(session);
-                    return WorkflowDefinitionUpdateResult.Conflict();
-                }
-
-                next.IsLatest = true;
-                await collection.InsertOneAsync(session, next, cancellationToken: cancellationToken);
-            }
+            next.IsLatest = true;
+            await collection.InsertOneAsync(session, next, cancellationToken: cancellationToken);
         }
-        catch (MongoException exception) when (!invokingCallback && IsKnownAbortedConflict(exception))
+        catch (MongoException exception) when (IsKnownAbortedConflict(exception))
         {
             await AbortTransactionQuietlyAsync(session);
             return WorkflowDefinitionUpdateResult.Conflict();
@@ -252,9 +206,9 @@ public class MongoWorkflowDefinitionStore(MongoDbStore<WorkflowDefinition> mongo
             throw;
         }
 
-        // Commit exceptions are allowed to propagate: an unknown commit result is not proof that the transaction aborted.
+        // An unknown commit result is not proof that the transaction aborted.
         await session.CommitTransactionAsync(cancellationToken);
-        return WorkflowDefinitionUpdateResult.Updated(next!);
+        return WorkflowDefinitionUpdateResult.Updated(next);
     }
 
     /// <inheritdoc />
@@ -323,12 +277,12 @@ public class MongoWorkflowDefinitionStore(MongoDbStore<WorkflowDefinition> mongo
         return queryable.OrderBy(order).Paginate(pageArgs)!;
     }
 
-    private async Task<BsonDocument?> LoadRawSnapshotAsync(IClientSessionHandle session, string id, CancellationToken cancellationToken)
+    private async Task<BsonDocument?> LoadRawSnapshotAsync(string id, CancellationToken cancellationToken)
     {
         var collection = mongoDbStore.GetCollection();
         var rawCollection = collection.Database.GetCollection<BsonDocument>(collection.CollectionNamespace.CollectionName);
         return await rawCollection
-            .Find(session, Builders<BsonDocument>.Filter.Eq("_id", id))
+            .Find(Builders<BsonDocument>.Filter.Eq("_id", id))
             .FirstOrDefaultAsync(cancellationToken);
     }
 
@@ -345,8 +299,8 @@ public class MongoWorkflowDefinitionStore(MongoDbStore<WorkflowDefinition> mongo
     }
 
     private static bool IsKnownAbortedConflict(MongoException exception) =>
-        exception is MongoCommandException { Code: 112 }
-        || exception is MongoWriteException { WriteError.Code: 112 };
+        exception is MongoCommandException { Code: 112 or 11000 }
+        || exception is MongoWriteException { WriteError.Code: 112 or 11000 };
 
     private static async Task AbortTransactionQuietlyAsync(IClientSessionHandle session)
     {
