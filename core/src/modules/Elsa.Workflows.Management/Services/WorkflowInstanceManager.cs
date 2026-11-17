@@ -143,7 +143,7 @@ public class WorkflowInstanceManager(
     public async Task<WorkflowInstance> CreateAndCommitWorkflowInstanceAsync(Workflow workflow, WorkflowInstanceOptions? options = null, CancellationToken cancellationToken = default)
     {
         var workflowInstance = CreateWorkflowInstance(workflow, options);
-        await SaveAsync(workflowInstance, cancellationToken);
+        await CreateAsync(workflowInstance, cancellationToken);
         return workflowInstance;
     }
 

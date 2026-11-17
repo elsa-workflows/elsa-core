@@ -78,7 +78,7 @@ public class LocalWorkflowClient(
         effectiveCancellationToken.ThrowIfCancellationRequested();
         var workflowInstance = CreateWorkflowInstance(workflowGraph.Workflow, request);
         effectiveCancellationToken.ThrowIfCancellationRequested();
-        await workflowInstanceManager.SaveAsync(workflowInstance, effectiveCancellationToken);
+        await workflowInstanceManager.CreateAsync(workflowInstance, effectiveCancellationToken);
         return new();
     }
 
