@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compare packed NuGet IDs with the expected consolidated 3.10 set.
+"""Compare packed NuGet IDs with the expected versioned consolidated set.
 
 Every publisher runs this same script before any push, all in packages.yml: the 3.10.0 nuget.org promote and
 the candidate-promotion Feedz and nuget.org jobs (promote_candidate_version).
@@ -7,8 +7,9 @@ The package directory arrives as:
 
     PACKAGES_DIR   directory containing the produced .nupkg files
     EXCLUDE_IDS    optional comma-separated package IDs to skip (default empty)
+    VERSION        stable package version for inventory selection (default legacy 3.10)
 
-The expected ID list is always scripts/validate_packages_id_set.txt. Empty
+The expected ID list is selected by release line. Empty
 EXCLUDE_IDS keeps that full set. A non-empty list is a reviewed, count-adjusting
 skip: it must name distinct IDs from the expected list, the remaining packages
 must not depend on an excluded ID, and the expected count is then 231 minus
@@ -32,7 +33,9 @@ PACKAGE_VERSION = re.compile(r"\.([0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z]+(\.[0-9A-Z
 # source string in ConsolidatedPackageProof.targets. Rejects 3.10.01.
 STABLE_310_PATTERN = r"3\.10\.(0|[1-9][0-9]*)"
 STABLE_310 = re.compile(STABLE_310_PATTERN)
+STABLE_311 = re.compile(r"3\.11\.(0|[1-9][0-9]*)")
 DEFAULT_EXPECTED = Path(__file__).with_name("validate_packages_id_set.txt")
+EXPECTED_311 = Path(__file__).with_name("validate_packages_id_set_311.txt")
 # Same packed entries per package as prove_consolidated_packages.CLIENTLIB_ASSETS.
 STUDIO_CONTENT = {
     "Elsa.Studio.Workflows.Designer": (
@@ -57,6 +60,14 @@ def is_stable_310(version: str) -> bool:
     return bool(STABLE_310.fullmatch(version))
 
 
+def expected_ids_file(version: str | None) -> Path:
+    if version is None or is_stable_310(version):
+        return DEFAULT_EXPECTED
+    if STABLE_311.fullmatch(version):
+        return EXPECTED_311
+    raise SystemExit(f"No consolidated package inventory for {version!r}.")
+
+
 def load_expected_ids(path: Path) -> list[str]:
     if not path.is_file():
         raise SystemExit(f"Expected ID list not found: {path}")
@@ -68,7 +79,7 @@ def load_expected_ids(path: Path) -> list[str]:
     return ids
 
 
-def packed_ids(directory: Path) -> list[str]:
+def packed_ids(directory: Path, expected_version: str | None = None) -> list[str]:
     """Return package IDs from *.nupkg names, ignoring symbol packages."""
     ids = []
     versions = set()
@@ -85,6 +96,8 @@ def packed_ids(directory: Path) -> list[str]:
         raise SystemExit("Produced packages list a package ID more than once.")
     if len(versions) > 1:
         raise SystemExit(f"Produced packages mix versions: {', '.join(sorted(versions))}.")
+    if expected_version is not None and versions != {expected_version}:
+        raise SystemExit(f"Produced package version does not match {expected_version!r}.")
     return ids
 
 
@@ -238,9 +251,10 @@ def main() -> int:
     packages = Path(packages_dir)
     if not packages.is_dir():
         raise SystemExit("PACKAGES_DIR must be a directory of packed .nupkg files.")
-    expected = load_expected_ids(DEFAULT_EXPECTED)
+    version = os.environ.get("VERSION") or None
+    expected = load_expected_ids(expected_ids_file(version))
     expected, excluded = apply_exclude_ids(packages, expected, os.environ.get("EXCLUDE_IDS"))
-    produced = packed_ids(packages)
+    produced = packed_ids(packages, version)
     errors = id_set_errors(produced, expected)
     if excluded:
         errors.extend(exclusion_dependency_errors(packages, set(excluded)))

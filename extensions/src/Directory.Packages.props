@@ -88,7 +88,7 @@
         <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4"/>
         <PackageVersion Include="Oracle.EntityFrameworkCore" Version="9.23.26200"/>
         <PackageVersion Include="System.DirectoryServices.Protocols" Version="9.0.13"/>
-        <PackageVersion Include="System.Formats.Asn1" Version="9.0.17"/>
+        <PackageVersion Include="System.Formats.Asn1" Version="9.0.21"/>
         <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="8.0.2" Condition="'$(TargetFramework)' == 'net8.0'"/>
         <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="9.0.21" Condition="'$(TargetFramework)' == 'net9.0'"/>
     </ItemGroup>
@@ -126,7 +126,7 @@
         <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.2"/>
         <PackageVersion Include="Oracle.EntityFrameworkCore" Version="10.23.26200"/>
         <PackageVersion Include="System.DirectoryServices.Protocols" Version="10.0.3"/>
-        <PackageVersion Include="System.Formats.Asn1" Version="10.0.9"/>
+        <PackageVersion Include="System.Formats.Asn1" Version="10.0.13"/>
         <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="10.0.13"/>
     </ItemGroup>
     <ItemGroup>

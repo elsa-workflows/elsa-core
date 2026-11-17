@@ -101,8 +101,8 @@ def solution_projects(root: Path) -> list[Path]:
     return projects
 
 
-# Any stable 3.10.x patch; the build's ValidateConsolidatedReleaseCandidate target enforces the same pattern.
-CANDIDATE_VERSION = re.compile(r"3\.10\.(0|[1-9][0-9]*)\Z")
+# Stable consolidated release lines also accepted by ValidateConsolidatedReleaseCandidate.
+CANDIDATE_VERSION = re.compile(r"3\.(?:10|11)\.(0|[1-9][0-9]*)\Z")
 
 
 def assembly_identity(version: str) -> str:
@@ -116,7 +116,7 @@ def validate_mode(version: str, mode: str) -> None:
     if mode == "proof":
         require(bool(PROOF_VERSION.fullmatch(version)), "Version must be 3.10.0-proof.<positive run>.<positive attempt>")
     else:
-        require(bool(CANDIDATE_VERSION.fullmatch(version)), "Candidate requires a stable 3.10.x version")
+        require(bool(CANDIDATE_VERSION.fullmatch(version)), "Candidate requires a stable 3.10.x or 3.11.x version")
 
 
 def mode_properties(mode: str, enabled: bool = True) -> list[str]:
@@ -1142,7 +1142,9 @@ def main(*, mode: str = "proof") -> None:
     args = parser.parse_args()
     validate_mode(args.version, mode)
     root = args.source_root.resolve(strict=True)
-    baseline = getattr(args, "baseline", None) or root / "scripts/integration-program/consolidated-candidate-inventory-baseline.json"
+    baseline_name = ("consolidated-3.11-candidate-inventory-baseline.json" if args.version.startswith("3.11.")
+                     else "consolidated-candidate-inventory-baseline.json")
+    baseline = getattr(args, "baseline", None) or root / "scripts/integration-program" / baseline_name
     for name in ("IsPackable", "PackageVersion", "GeneratePackageOnBuild", "TargetFramework", "TargetFrameworks", "Version", "Configuration", "ConsolidatedPackageProof", "ConsolidatedReleaseCandidate"):
         require(name not in os.environ, f"Proof refuses an inherited MSBuild override: {name}")
     output = args.output.resolve()

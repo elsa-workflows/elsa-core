@@ -9,7 +9,7 @@ on:
         type: boolean
         default: false
       publish_nuget:
-        description: Publish a release-tag package to NuGet.org for this run (requires publisher approval). Stable 3.10.0 nuget.org publishes the pinned 231-ID candidate.
+        description: Publish a release-tag package to NuGet.org for this run (requires publisher approval). 3.11 NuGet publication is only enabled through promote_candidate_version.
         required: true
         type: boolean
         default: false
@@ -29,7 +29,7 @@ on:
         type: string
         default: ''
       promote_candidate_version:
-        description: Promote the already-built candidate pinned for this version in .github/release-pins/consolidated.json (for example 3.10.1) to Feedz and nuget.org, each behind its environment approval. Main only; no rebuild, no tag. Leave empty for every other run.
+        description: Promote the already-built candidate pinned for this version in .github/release-pins/consolidated.json (for example 3.11.0) to Feedz and nuget.org, each behind its environment approval. Main only; no rebuild, no tag. Leave empty for every other run.
         required: false
         type: string
         default: ''
@@ -491,7 +491,7 @@ jobs:
     timeout-minutes: 30
     # NuGet publication requires an explicit dispatch on a release tag. Stable
     # 3.10.0 stages the pinned candidate; other tags push this run's pack.
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/') }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/') && !startsWith(github.ref, 'refs/tags/3.11.') }}
     permissions:
       contents: read
       actions: read # Stable 3.10.x reads the pinned candidate artifact; unused on other tags.
