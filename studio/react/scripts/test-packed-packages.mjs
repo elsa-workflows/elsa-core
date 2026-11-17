@@ -10,10 +10,11 @@ const args = process.argv.slice(2);
 const releasedDirectory = args.includes("--npm-feed") ? resolve(args[args.indexOf("--npm-feed") + 1]) : undefined;
 const released = releasedDirectory ? readBundle(releasedDirectory) : undefined;
 const temporary = mkdtempSync(join(tmpdir(), "elsa-react-studio-consumer-"));
-const pnpm = process.platform === "win32" ? "pnpm.cmd" : "pnpm";
+const pnpm = process.env.npm_execpath ?? (process.platform === "win32" ? "pnpm.cmd" : "pnpm");
+const pnpmIsJavaScript = /\.(?:js|cjs|mjs)$/.test(pnpm);
 function run(args, cwd) {
-  execFileSync(process.env.npm_execpath ? process.execPath : pnpm,
-    process.env.npm_execpath ? [process.env.npm_execpath, ...args] : args,
+  execFileSync(pnpmIsJavaScript ? process.execPath : pnpm,
+    pnpmIsJavaScript ? [pnpm, ...args] : args,
     { cwd, stdio: "inherit" });
 }
 
