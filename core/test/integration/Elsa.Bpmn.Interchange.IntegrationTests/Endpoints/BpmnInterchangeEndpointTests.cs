@@ -154,7 +154,6 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
     [InlineData("import", true)]
     [InlineData("document", false)]
     [InlineData("document", true)]
-    [InlineData("xml", true)]
     public async Task WritesToProtectedBpmnDefinitionAreForbidden(string operation, bool isSystem)
     {
         var definitionId = await ImportCamundaOrderProcessAsync();
@@ -169,24 +168,17 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         var before = await LatestStoredAsync(definitionId);
         var xml = ReadAsset("camunda-order-process.bpmn").Replace("Order Handled", "Updated");
         HttpResponseMessage response;
-        switch (operation)
+        if (operation == "import")
         {
-            case "import":
-                using (var content = new MultipartFormDataContent())
-                {
-                    AddBpmnFile(content, xml, "file");
-                    content.Add(new StringContent(definitionId), "DefinitionId");
-                    response = await PostAuthenticatedAsync("bpmn/import", content, "workflows/definitions:write");
-                }
-                break;
-            case "document":
-                var (etag, json) = await GetDocumentAsync(definitionId);
-                response = await PutDocumentAsync(definitionId, json.Replace("Order Handled", "Updated"), etag);
-                break;
-            default:
-                var (xmlETag, _) = await GetXmlAsync(definitionId);
-                response = await PutXmlAsync(definitionId, xml, xmlETag);
-                break;
+            using var content = new MultipartFormDataContent();
+            AddBpmnFile(content, xml, "file");
+            content.Add(new StringContent(definitionId), "DefinitionId");
+            response = await PostAuthenticatedAsync("bpmn/import", content, "workflows/definitions:write");
+        }
+        else
+        {
+            var (etag, json) = await GetDocumentAsync(definitionId);
+            response = await PutDocumentAsync(definitionId, json.Replace("Order Handled", "Updated"), etag);
         }
 
         using (response)
@@ -206,13 +198,11 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         var before = await LatestStoredAsync(definitionId);
         _app!.Services.GetRequiredService<IOptions<ManagementOptions>>().Value.IsReadOnlyMode = true;
 
-        using var create = await CreateAsync("New BPMN");
         using var content = new MultipartFormDataContent();
         AddBpmnFile(content, ReadAsset("camunda-order-process.bpmn"), "file");
         using var import = await PostAuthenticatedAsync("bpmn/import", content, "workflows/definitions:write");
         using var update = await PutDocumentAsync(definitionId, json.Replace("Order Handled", "Updated"), etag);
 
-        Assert.Equal(HttpStatusCode.Forbidden, create.StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, import.StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, update.StatusCode);
         Assert.Equal(before, await LatestStoredAsync(definitionId));

@@ -21,7 +21,7 @@
 
 ## What to do
 
-- A custom construction of `WorkflowDefinitionImporter` that uses the old constructor still compiles but is obsolete and keeps the exported version id even when another tenant uses it; use the constructor that accepts an `IWorkflowDefinitionStore`.
+- The obsolete `WorkflowDefinitionImporter` constructor uses generated version IDs for new definitions. Use the constructor that accepts an `IWorkflowDefinitionStore` to keep an exported version ID when it is available.
 - MongoDB needs no manual step. At startup it creates the unique index `DefinitionId_1_TenantId_1_Version_1` on `(DefinitionId, TenantId, Version)` first, then drops the legacy store-wide `DefinitionId_1_Version_1`. Default-tenant rows have a null `TenantId`, so they stay unique per `(DefinitionId, Version)`.
 - A MongoDB warning is logged, and the index is kept, when a store-wide unique `(DefinitionId, Version)` index under another name exists (tenants still cannot share a definition until you drop it), or when a non-unique `(DefinitionId, TenantId, Version)` index blocks the new one while the legacy index remains (drop the non-unique one and restart). If that non-unique index exists and nothing else keeps definition versions unique, startup fails with the same instruction.
 - Known limitation: a tenant should not reuse the definition id of a tenant-agnostic (`*`) CLR workflow. The unique index treats `*` as its own tenant, so a tenant that saves the same `(DefinitionId, Version)` ends up with two rows that both resolve for that tenant.
