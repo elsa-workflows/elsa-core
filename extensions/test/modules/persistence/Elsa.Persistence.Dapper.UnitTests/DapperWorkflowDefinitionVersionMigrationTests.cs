@@ -60,7 +60,7 @@ public sealed class DapperWorkflowDefinitionVersionMigrationTests
             .ConfigureRunner(builder =>
             {
                 configureProvider(builder);
-                builder.WithGlobalConnectionString(connectionString).ScanIn(typeof(Migrations.Management.V3_11).Assembly).For.Migrations();
+                builder.WithGlobalConnectionString(connectionString).ScanIn(typeof(Migrations.Management.V3_10_WorkflowDefinitionVersion).Assembly).For.Migrations();
             }).BuildServiceProvider();
         using var scope = services.CreateScope();
         var runner = scope.ServiceProvider.GetRequiredService<IMigrationRunner>();
