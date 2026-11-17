@@ -13,7 +13,8 @@ public class WorkflowUsageSearchTool(IServiceProvider serviceProvider, WorkflowG
         "Find authorized workflow definitions that reference an activity type in their serialized graph.",
         GroundingToolSchemas.WithProperties(
             ("activityType", GroundingToolSchemas.String("Activity type to find.")),
-            ("query", GroundingToolSchemas.String("Optional workflow search term."))));
+            ("query", GroundingToolSchemas.String("Optional workflow search term."))),
+        AIGroundingPermissions.DefinitionView);
 
     public override async ValueTask<AIToolResult> ExecuteAsync(AIToolExecutionContext context, CancellationToken cancellationToken = default)
     {

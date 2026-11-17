@@ -12,7 +12,8 @@ public class WorkflowInstanceActivityStateTool(IServiceProvider serviceProvider,
         GroundingToolSchemas.WithProperties(
             ("instanceId", GroundingToolSchemas.String("Workflow instance ID.")),
             ("activityId", GroundingToolSchemas.String("Activity ID.")),
-            ("activityNodeId", GroundingToolSchemas.String("Activity node ID."))));
+            ("activityNodeId", GroundingToolSchemas.String("Activity node ID."))),
+        AIGroundingPermissions.InstanceView);
 
     public override async ValueTask<AIToolResult> ExecuteAsync(AIToolExecutionContext context, CancellationToken cancellationToken = default)
     {

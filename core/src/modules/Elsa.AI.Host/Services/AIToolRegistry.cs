@@ -213,14 +213,12 @@ public class AIToolRegistry(IServiceScopeFactory scopeFactory, AIToolEnablementS
 
     private static bool HasRequiredPermissions(AIToolDefinition definition, ICollection<string> userPermissions)
     {
-        if (definition.Permissions.Count == 0)
-            return true;
+        if (definition.Permissions.Any(AIGroundingPermissions.IsGroundingPermission))
+            return AIGroundingPermissions.HasAll(userPermissions, definition.Permissions);
 
-        var grantedPermissions = userPermissions
-            .Where(x => !string.IsNullOrWhiteSpace(x))
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-        return grantedPermissions.Contains(PermissionNames.All) || definition.Permissions.All(grantedPermissions.Contains);
+        // Retain the registration contract for tools using their own permission vocabulary.
+        return userPermissions.Contains(PermissionNames.All, StringComparer.OrdinalIgnoreCase) ||
+            definition.Permissions.All(required => userPermissions.Contains(required, StringComparer.OrdinalIgnoreCase));
     }
 
     private class ScopedAITool(IServiceScope scope, IAITool inner, bool disposeInner) : IAITool
