@@ -144,11 +144,19 @@ public class MemoryWorkflowDefinitionStore(MemoryStore<WorkflowDefinition> store
 
             if (next.Id != current.Id)
             {
+                var nextVersionKey = GetVersionKey(next);
+                if (store.Find(x => GetVersionKey(x) == nextVersionKey) != null || !store.TryAdd(next, GetId))
+                    return Task.FromResult(WorkflowDefinitionUpdateResult.Conflict());
+
                 current.IsLatest = false;
                 store.Save(current, GetId);
             }
+            else
+            {
+                EnsureVersionKeyAvailable(next);
+                store.Save(next, GetId);
+            }
 
-            store.Save(next, GetId);
             return Task.FromResult(WorkflowDefinitionUpdateResult.Updated(next));
         }
     }

@@ -176,6 +176,34 @@ public class MemoryWorkflowDefinitionStoreCompareAndSwapTests
         Assert.Equal("winner-draft", stored.StringData);
     }
 
+    [Fact]
+    public async Task CreatingDraft_CannotReplaceAnOccupiedVersionId()
+    {
+        var store = new MemoryWorkflowDefinitionStore(new MemoryStore<WorkflowDefinition>());
+        var published = Definition("source", "published", "Source", "source-graph");
+        published.IsPublished = true;
+        var protectedVersion = Definition("other-definition", "occupied", "Protected", "protected-graph");
+        protectedVersion.IsReadonly = true;
+        await store.SaveAsync(published);
+        await store.SaveAsync(protectedVersion);
+
+        var result = await store.TryUpdateLatestAsync(
+            LatestOf("source"),
+            _ => true,
+            current =>
+            {
+                var draft = current.ShallowClone();
+                draft.Id = "occupied";
+                draft.Version++;
+                draft.IsPublished = false;
+                return draft;
+            });
+
+        Assert.Equal(WorkflowDefinitionUpdateOutcome.Conflict, result.Outcome);
+        Assert.Equal("published", (await store.FindAsync(LatestOf("source")))!.Id);
+        Assert.Equal("protected-graph", (await store.FindAsync(new WorkflowDefinitionFilter { Id = "occupied" }))!.StringData);
+    }
+
     private static WorkflowDefinitionFilter LatestOf(string definitionId) =>
         WorkflowDefinitionHandle.ByDefinitionId(definitionId, VersionOptions.Latest).ToFilter();
 
