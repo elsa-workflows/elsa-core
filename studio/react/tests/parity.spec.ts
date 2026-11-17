@@ -1,7 +1,7 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import type { WorkflowDefinition } from "../packages/api-client/src/types/workflow-definitions";
 
-async function editorFixture(page: Page, published = false) {
+async function editorFixture(page: Page, published = false, hasPublishedHistory = false) {
   let definition: WorkflowDefinition = { id: "version-three", definitionId: "parity", name: "Parity workflow", version: 3, isLatest: true, isPublished: published, createdAt: "2026-10-21T00:00:00Z",
     variables: [{ id: "customer", name: "Customer", typeName: "String", value: "original" }], inputs: [], outputs: [], outcomes: ["Approved"], options: {}, customProperties: {},
     root: { id: "root", nodeId: "root", type: "Elsa.Flowchart", version: 1, activities: [
@@ -34,7 +34,13 @@ async function editorFixture(page: Page, published = false) {
     } else if (path.endsWith("workflow-definitions") && request.method() === "POST") {
       definition = { ...definition, ...request.postDataJSON().model };
       json = { workflowDefinition: definition };
-    } else if (path.endsWith("workflow-definitions")) json = { items: [definition], totalCount: 1 };
+    } else if (path.endsWith("workflow-definitions/parity/dispatch")) json = { workflowInstanceId: "published-instance" };
+    else if (path.endsWith("workflow-definitions")) {
+      const items = url.searchParams.get("versionOptions") === "Published"
+        ? definition.isPublished ? [definition] : hasPublishedHistory ? [historical] : []
+        : [definition];
+      json = { items, totalCount: items.length };
+    }
     else if (path.endsWith("workflow-activation-strategies")) json = { items: [{ typeName: "ActivationStrategy", displayName: "Activation choice" }] };
     else if (path.endsWith("incident-strategies")) json = { items: [{ typeName: "IncidentStrategy", displayName: "Incident choice" }] };
     else if (path.endsWith("commit-strategies/workflows")) json = { items: [{ name: "CommitAlways", displayName: "Always commit" }] };
@@ -89,15 +95,15 @@ test("Classic light workflow controls and selected activity have sufficient cont
   await editorFixture(page, true);
   await expect(page.locator("html")).toHaveAttribute("data-elsa-theme", "classic");
 
-  const run = page.getByRole("button", { name: "Run", exact: true });
-  await expect(run).toBeVisible();
-  expect(await contrast(run, "color")).toBeGreaterThanOrEqual(4.5);
-  await run.hover();
-  expect(await contrast(run, "color")).toBeGreaterThanOrEqual(4.5);
+  const create = page.getByRole("button", { name: "New workflow", exact: true });
+  await expect(create).toBeVisible();
+  expect(await contrast(create, "color")).toBeGreaterThanOrEqual(4.5);
+  await create.hover();
+  expect(await contrast(create, "color")).toBeGreaterThanOrEqual(4.5);
   await page.keyboard.press("Tab");
-  await run.focus();
-  await expect(run).toBeFocused();
-  expect(await contrast(run, "--tw-ring-color", "--background")).toBeGreaterThanOrEqual(3);
+  await create.focus();
+  await expect(create).toBeFocused();
+  expect(await contrast(create, "--tw-ring-color", "--sidebar")).toBeGreaterThanOrEqual(3);
   const publishedBadge = page.getByRole("navigation", { name: "Breadcrumb" }).getByText("Published", { exact: true });
   expect(await contrast(publishedBadge, "color")).toBeGreaterThanOrEqual(4.5);
 
@@ -111,6 +117,18 @@ test("Classic light workflow controls and selected activity have sufficient cont
   const column = page.getByRole("columnheader", { name: "Name", exact: true });
   await expect(column).toBeVisible();
   expect(await contrast(column, "color")).toBeGreaterThanOrEqual(4.5);
+});
+
+test("a newer draft can run the workflow's published version", async ({ page }) => {
+  await editorFixture(page, false, true);
+  await expect(page.getByRole("navigation", { name: "Breadcrumb" }).getByText("Draft")).toBeVisible();
+  await page.getByRole("button", { name: "Run", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "Run Historical workflow" });
+  const dispatch = page.waitForRequest(request =>
+    request.method() === "POST" && request.url().endsWith("/workflow-definitions/parity/dispatch"));
+  await dialog.getByRole("button", { name: "Run", exact: true }).click();
+  await dispatch;
+  await expect(page.getByText("Workflow started", { exact: true })).toBeVisible();
 });
 
 test("unpublishing consumes Core's bare definition response and updates the editor", async ({ page }) => {
