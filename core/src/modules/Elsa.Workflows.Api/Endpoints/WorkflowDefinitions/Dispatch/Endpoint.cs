@@ -3,8 +3,10 @@ using Elsa.Abstractions;
 using Elsa.Common.Models;
 using Elsa.Workflows.Api.Security;
 using Elsa.Workflows.Management;
+using Elsa.Workflows.Management.Exceptions;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Requests;
+using Elsa.Workflows.Runtime.Responses;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Dispatch;
@@ -64,7 +66,17 @@ internal class Endpoint(
             Channel = request.Channel
         };
 
-        var result = await workflowDispatcher.DispatchAsync(dispatchRequest, options, cancellationToken);
+        DispatchWorkflowResponse result;
+        try
+        {
+            result = await workflowDispatcher.DispatchAsync(dispatchRequest, options, cancellationToken);
+        }
+        catch (WorkflowInstanceAlreadyExistsException)
+        {
+            AddError("The workflow instance identifier is already in use.");
+            await Send.ErrorsAsync(StatusCodes.Status409Conflict, cancellationToken);
+            return;
+        }
         
         if(!result.Succeeded)
         {

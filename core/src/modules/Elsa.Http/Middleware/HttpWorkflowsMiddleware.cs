@@ -17,6 +17,7 @@ using System.Diagnostics.CodeAnalysis;
 using Elsa.Workflows;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Exceptions;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime;
@@ -240,13 +241,31 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
         }
 
         var workflowRunner = serviceProvider.GetRequiredService<IWorkflowRunner>();
-        var result = await ExecuteWithinTimeoutAsync(async ct =>
+        try
         {
-            if (workflowInstance == null)
-                return await workflowRunner.RunAsync(workflowGraph, workflowOptions, ct);
-            return await workflowRunner.RunAsync(workflow, workflowInstance.WorkflowState, workflowOptions, ct);
-        }, bookmarkPayload.RequestTimeout, httpContext);
-        await HandleWorkflowFaultAsync(serviceProvider, httpContext, result, cancellationToken);
+            var result = await ExecuteWithinTimeoutAsync<RunWorkflowResult?>(async ct =>
+            {
+                if (workflowInstance != null)
+                    return await workflowRunner.RunAsync(workflow, workflowInstance.WorkflowState, workflowOptions, ct);
+
+                var gate = serviceProvider.GetRequiredService<IWorkflowActivationGate>();
+                await using var lease = await gate.EvaluateAsync(workflow, workflowOptions.CorrelationId, ct);
+                if (!lease.CanStart)
+                {
+                    httpContext.Response.StatusCode = StatusCodes.Status409Conflict;
+                    return null;
+                }
+
+                workflowOptions.RequireNewInstance = true;
+                return await workflowRunner.RunAsync(workflowGraph, workflowOptions, lease.GetEffectiveCancellationToken(ct));
+            }, bookmarkPayload.RequestTimeout, httpContext);
+            if (result != null)
+                await HandleWorkflowFaultAsync(serviceProvider, httpContext, result, cancellationToken);
+        }
+        catch (WorkflowInstanceAlreadyExistsException) when (workflowInstance == null && !httpContext.Response.HasStarted)
+        {
+            httpContext.Response.StatusCode = StatusCodes.Status409Conflict;
+        }
     }
 
     private async Task<T> ExecuteWithinTimeoutAsync<T>(Func<CancellationToken, Task<T>> action, TimeSpan? requestTimeout, HttpContext httpContext)

@@ -8,6 +8,12 @@ namespace Elsa.Workflows.Options;
 public class RunWorkflowOptions
 {
     public string? WorkflowInstanceId { get; set; }
+
+    /// <summary>
+    /// Require a create-only insert of the prepared workflow instance before entering execution.
+    /// Applies to a new execution or a freshly prepared pending instance.
+    /// </summary>
+    public bool RequireNewInstance { get; set; }
     public string? CorrelationId { get; set; }
     public string? BookmarkId { get; set; }
     public ActivityHandle? ActivityHandle { get; set; }
