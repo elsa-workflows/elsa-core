@@ -8,7 +8,7 @@ using JetBrains.Annotations;
 namespace Elsa.Identity.Endpoints.Applications.Create;
 
 /// <summary>
-/// An endpoint that creates a new application.
+/// Creates a new application with roles the caller is authorized to assign.
 /// </summary>
 [PublicAPI]
 internal class Create(
@@ -18,11 +18,9 @@ internal class Create(
     IApiKeyGenerator apiKeyGenerator,
     ISecretHasher secretHasher,
     IApplicationStore applicationStore,
-    IRoleStore roleStore)
+    IRoleAuthorizationService roleAuthorizationService)
     : ElsaEndpoint<Request, Response>
 {
-    private readonly IRoleStore _roleStore = roleStore;
-
     /// <inheritdoc />
     public override void Configure()
     {
@@ -33,6 +31,12 @@ internal class Create(
     /// <inheritdoc />
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
+        if (!await roleAuthorizationService.CanAssignRolesAsync(User, request.Roles, cancellationToken))
+        {
+            await Send.ForbiddenAsync(cancellationToken);
+            return;
+        }
+
         var id = identityGenerator.GenerateId();
         var clientId = await clientIdGenerator.GenerateAsync(cancellationToken);
         var clientSecret = secretGenerator.Generate();
