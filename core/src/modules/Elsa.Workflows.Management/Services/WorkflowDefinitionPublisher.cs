@@ -237,10 +237,10 @@ public class WorkflowDefinitionPublisher(
         if (definition == null!)
             return null;
 
-        if (!definition.IsPublished)
-            return definition;
-
         var draft = definition.ShallowClone();
+
+        if (!definition.IsPublished)
+            return draft;
 
         draft.Version = lastVersion?.Version + 1 ?? 1;
         draft.CreatedAt = systemClock.UtcNow;
@@ -267,30 +267,34 @@ public class WorkflowDefinitionPublisher(
             VersionOptions = VersionOptions.Latest
         }, cancellationToken);
 
-        draft.Version = draft.Id == latestVersion?.Id
-            ? latestVersion.Version
-            : draft.Id == highestVersion?.Id
-                ? highestVersion.Version
-                : highestVersion?.Version + 1 ?? 1;
+        if (latestVersion == null)
+        {
+            if (highestVersion != null)
+                throw new WorkflowDefinitionEditConflictException();
+
+            await CreateInitialAsync(draft, publish: false, cancellationToken);
+            return draft;
+        }
+
+        if (options.Value.IsReadOnlyMode || latestVersion.IsReadonly || latestVersion.IsSystem)
+            throw new WorkflowDefinitionEditConflictException();
+
+        var expectedId = latestVersion.Id;
+        var snapshot = activitySerializer.Serialize(latestVersion);
+        draft.Version = draft.Id == expectedId ? latestVersion.Version : (highestVersion?.Version ?? latestVersion.Version) + 1;
         draft.IsLatest = true;
         draft = Initialize(draft);
-
         await mediator.SendAsync(new WorkflowDefinitionDraftSaving(draft), cancellationToken);
 
-        if (latestVersion != null && latestVersion.Id != draft.Id)
-        {
-            latestVersion.IsLatest = false;
-            await workflowDefinitionStore.SaveManyAsync([latestVersion, draft], cancellationToken);
-        }
-        else
-        {
-            await workflowDefinitionStore.SaveAsync(draft, cancellationToken);
-        }
+        var result = await workflowDefinitionStore.TryUpdateLatestAsync(
+            new WorkflowDefinitionFilter { Id = expectedId, DefinitionId = definitionId },
+            current => !options.Value.IsReadOnlyMode && current.IsLatest && !current.IsReadonly && !current.IsSystem &&
+                string.Equals(snapshot, activitySerializer.Serialize(current), StringComparison.Ordinal),
+            _ => draft, cancellationToken);
+        if (result.Outcome != WorkflowDefinitionUpdateOutcome.Updated)
+            throw new WorkflowDefinitionEditConflictException();
+
         await mediator.SendAsync(new WorkflowDefinitionDraftSaved(draft), cancellationToken);
-
-        if (highestVersion is null)
-            await mediator.SendAsync(new WorkflowDefinitionCreated(definition), cancellationToken);
-
         return draft;
     }
 

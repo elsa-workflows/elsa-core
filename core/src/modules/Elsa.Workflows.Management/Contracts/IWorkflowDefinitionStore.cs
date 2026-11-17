@@ -138,7 +138,7 @@ public interface IWorkflowDefinitionStore
     /// <paramref name="update"/> to that just-loaded row and saves the result. The load, the match,
     /// the update and the save are one critical section (memory), one conditional write (EF:
     /// <c>ExecuteUpdate</c> against the loaded snapshot), one serializable transaction (Dapper) or one
-    /// snapshot-read session transaction (MongoDB). A lost race returns
+    /// atomic document replacement or transaction (MongoDB). A lost race returns
     /// <see cref="WorkflowDefinitionUpdateOutcome.Conflict"/> — it does not wait.
     /// </para>
     /// <para>
@@ -152,10 +152,9 @@ public interface IWorkflowDefinitionStore
     /// of a published version), the previously latest row is unmarked in the same step.
     /// </para>
     /// <para>
-    /// Every store in this repository implements this atomically. The MongoDB store needs a deployment
-    /// that supports transactions, such as a replica set; against a standalone server it throws
-    /// <see cref="NotSupportedException"/> without writing. A store from outside this repository must
-    /// give the same guarantee for the BPMN document <c>PUT</c> to be concurrency-safe on it.
+    /// Creating a draft of a published definition under MongoDB requires a deployment that supports
+    /// transactions, such as a replica set. In-place edits use a conditional replacement. A store from
+    /// outside this repository must give equivalent guarantees for concurrent edits.
     /// </para>
     /// </remarks>
     /// <param name="filter">Typically the latest version of one definition id.</param>
