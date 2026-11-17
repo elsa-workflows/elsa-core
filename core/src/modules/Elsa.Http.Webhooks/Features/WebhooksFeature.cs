@@ -2,7 +2,10 @@ using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Elsa.Http.Webhooks.ActivityProviders;
+using Elsa.Http.Webhooks.Options;
+using Elsa.Http.Webhooks.Services;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using WebhooksCore;
 using WebhooksCore.Options;
 
@@ -13,6 +16,7 @@ namespace Elsa.Http.Webhooks.Features;
 /// </summary>
 public class WebhooksFeature(IModule module) : FeatureBase(module)
 {
+    public Action<WebhookIngressOptions> ConfigureIngress { get; set; } = _ => { };
     public Action<WebhookSinksOptions> ConfigureSinks { get; set; } = _ => { };
     public Action<WebhookSourcesOptions> ConfigureSources { get; set; } = _ => { };
     public Action<IHttpClientBuilder> ConfigureHttpClient { get; set; } = _ => { };
@@ -68,6 +72,9 @@ public class WebhooksFeature(IModule module) : FeatureBase(module)
     /// <inheritdoc />
     public override void Apply()
     {
+        Services.Configure(ConfigureIngress);
+        Services.TryAddSingleton<IWebhookReplayStore, MemoryWebhookReplayStore>();
+        Services.AddSingleton<WebhookIngressAuthentication>();
         Services.Configure(ConfigureSinks);
         Services.Configure(ConfigureSources);
         
