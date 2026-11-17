@@ -1,4 +1,5 @@
-﻿using Elsa.Workflows.Management.Entities;
+﻿using Elsa.Common.Multitenancy;
+using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Options;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Authorization;
@@ -17,12 +18,20 @@ public record NotReadOnlyRequirement() : IAuthorizationRequirement;
 public class NotReadOnlyRequirementHandler : AuthorizationHandler<NotReadOnlyRequirement, NotReadOnlyResource>
 {
     private readonly IOptions<ManagementOptions> _managementOptions;
+    private readonly ITenantAccessor? _tenantAccessor;
 
     /// <inheritdoc />
     public NotReadOnlyRequirementHandler(
         IOptions<ManagementOptions> managementOptions)
+        : this(managementOptions, null)
+    {
+    }
+
+    /// <inheritdoc />
+    public NotReadOnlyRequirementHandler(IOptions<ManagementOptions> managementOptions, ITenantAccessor? tenantAccessor)
     {
         _managementOptions = managementOptions;
+        _tenantAccessor = tenantAccessor;
     }
 
     /// <inheritdoc />
@@ -36,6 +45,12 @@ public class NotReadOnlyRequirementHandler : AuthorizationHandler<NotReadOnlyReq
         if (resource.WorkflowDefinition != null && (resource.WorkflowDefinition.IsReadonly || resource.WorkflowDefinition.IsSystem))
         {
             context.Fail(new(this, "Workflow edit is not allowed for a readonly or system workflow."));
+        }
+
+        if (_tenantAccessor != null && resource.WorkflowDefinition is { } workflow &&
+            !TenantVisibility.CanReplace(workflow.TenantId, _tenantAccessor.TenantId))
+        {
+            context.Fail(new(this, "Workflow edit requires ownership of the workflow definition."));
         }
 
         context.Succeed(requirement);

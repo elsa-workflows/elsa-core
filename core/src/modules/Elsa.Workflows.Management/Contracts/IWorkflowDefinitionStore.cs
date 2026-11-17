@@ -145,6 +145,12 @@ public interface IWorkflowDefinitionStore
     Task<bool> TryPublishAsync(WorkflowDefinition definition, Func<IReadOnlyCollection<WorkflowDefinition>, bool> matchesExpected,
         CancellationToken cancellationToken = default) => Task.FromResult(false);
 
+    /// <summary>Checks whether the store can commit the requested deletion and promotions together.</summary>
+    bool SupportsDeletion(WorkflowDefinitionDeletionPlan plan) => false;
+
+    /// <summary>Atomically applies the deletion plan when all expected versions and write scopes still match.</summary>
+    Task<bool> TryDeleteAsync(WorkflowDefinitionDeletionPlan plan, CancellationToken cancellationToken = default) => Task.FromResult(false);
+
     /// <summary>
     /// Compare-and-swap the latest definition matching <paramref name="filter"/>.
     /// </summary>

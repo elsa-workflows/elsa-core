@@ -149,6 +149,19 @@ public class WorkflowDefinitionMutationAuthorizationTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task MutationOfASharedDefinitionRequiresOwnershipBeforeCleanup()
+    {
+        await SeedAsync("workflow", "version-1", tenantId: "*");
+        await SeedInstanceAsync("instance-1", "version-1", 1);
+
+        using var response = await _host.SendAsync(HttpMethod.Delete, "/workflow-definitions/workflow", Permission);
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        Assert.Single(await _store.FindManyAsync(new()));
+        Assert.Single(await _instances.FindManyAsync(new()));
+    }
+
+    [Fact]
     public async Task DeletingAnOlderVersionKeepsTheExistingProtectedLatestVersion()
     {
         await SeedAsync("first", "historical", version: 1, isLatest: false);
@@ -346,10 +359,11 @@ public class WorkflowDefinitionMutationAuthorizationTests : IAsyncLifetime
     }
 
     private Task SeedAsync(string definitionId, string id, bool published = false, int version = 1, bool isLatest = true,
-        bool isSystem = false, bool isReadonly = false) => _store.SaveAsync(new WorkflowDefinition
+        bool isSystem = false, bool isReadonly = false, string? tenantId = null) => _store.SaveAsync(new WorkflowDefinition
     {
         Id = id,
         DefinitionId = definitionId,
+        TenantId = tenantId,
         Name = definitionId,
         Version = version,
         IsLatest = isLatest,

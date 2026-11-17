@@ -7,6 +7,7 @@ using Elsa.Persistence.Dapper.Modules.Management.Records;
 using Elsa.Persistence.Dapper.Modules.Management.Stores;
 using Elsa.Persistence.Dapper.Services;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Serialization.Serializers;
 using FluentMigrator.Runner;
 using Microsoft.Data.Sqlite;
@@ -139,6 +140,13 @@ public sealed class DapperWorkflowDefinitionVersionMigrationTests
         Assert.True(newest.IsPublished);
         Assert.True(newest.IsLatest);
         Assert.Equal("new publication", newest.StringData);
+
+        var plan = new WorkflowDefinitionDeletionPlan([newest], [retained, newest]);
+        Assert.True(await store.TryDeleteAsync(plan));
+        Assert.Null(await store.FindAsync(new() { Id = newest.Id }));
+        var promoted = (await store.FindAsync(new() { Id = retained.Id }))!;
+        Assert.True(promoted.IsLatest);
+        Assert.Null(promoted.TenantId);
     }
 
     private static WorkflowDefinition Definition(string id, string definitionId, string data) => new()

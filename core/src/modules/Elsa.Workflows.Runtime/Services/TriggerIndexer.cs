@@ -73,24 +73,28 @@ public class TriggerIndexer : ITriggerIndexer
     /// <inheritdoc />
     public async Task DeleteTriggersAsync(TriggerFilter filter, CancellationToken cancellationToken = default)
     {
-        var triggers = (await _triggerStore.FindManyAsync(filter, cancellationToken)).ToList();
-        var workflowDefinitionVersionIds = triggers.Select(x => x.WorkflowDefinitionVersionId).Distinct().ToList();
+        var triggers = await _triggerStore.FindManyAsync(filter, cancellationToken);
 
-        foreach (var workflowDefinitionVersionId in workflowDefinitionVersionIds)
+        foreach (var group in triggers.GroupBy(trigger => trigger.WorkflowDefinitionVersionId))
         {
+            WorkflowGraph? workflowGraph;
             try
             {
-                var workflowGraph = await _workflowDefinitionService.FindWorkflowGraphAsync(workflowDefinitionVersionId, cancellationToken);
-
-                if (workflowGraph == null)
-                    continue;
-
-                await DeleteTriggersAsync(workflowGraph.Workflow, cancellationToken);
+                workflowGraph = await _workflowDefinitionService.FindWorkflowGraphAsync(group.Key, cancellationToken);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                _logger.LogWarning(ex, "Failed to load workflow graph for workflow definition version {WorkflowDefinitionVersionId}. Skipping trigger deletion for this workflow.", workflowDefinitionVersionId);
+                _logger.LogWarning(ex, "Failed to load workflow graph for workflow definition version {WorkflowDefinitionVersionId}.", group.Key);
+                throw;
             }
+
+            if (workflowGraph == null)
+                continue;
+
+            var removed = group.ToList();
+            await _triggerStore.ReplaceAsync(removed, [], cancellationToken);
+            var indexed = new IndexedWorkflowTriggers(workflowGraph.Workflow, [], removed, []);
+            await _notificationSender.SendAsync(new WorkflowTriggersIndexed(indexed), cancellationToken);
         }
     }
 
@@ -141,16 +145,6 @@ public class TriggerIndexer : ITriggerIndexer
         return await GetTriggersInternalAsync(workflow, cancellationToken).ToListAsync(cancellationToken);
     }
     
-    private async Task DeleteTriggersAsync(Workflow workflow, CancellationToken cancellationToken = default)
-    {
-        var emptyTriggerList = new List<StoredTrigger>(0);
-        var currentTriggers = await GetCurrentTriggersAsync(workflow.Identity.DefinitionId, cancellationToken).ToList();
-        var diff = Diff.For(currentTriggers, emptyTriggerList, _triggerEqualityComparer);
-        await _triggerStore.ReplaceAsync(diff.Removed, diff.Added, cancellationToken);
-        var indexedWorkflow = new IndexedWorkflowTriggers(workflow, emptyTriggerList, currentTriggers, emptyTriggerList);
-        await _notificationSender.SendAsync(new WorkflowTriggersIndexed(indexedWorkflow), cancellationToken);
-    }
-
     private async Task<IEnumerable<StoredTrigger>> GetCurrentTriggersAsync(string workflowDefinitionId, CancellationToken cancellationToken)
     {
         var filter = new TriggerFilter

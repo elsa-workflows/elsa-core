@@ -132,6 +132,14 @@ public sealed class MongoWorkflowDefinitionStoreCompareAndSwapTests : IDisposabl
         var saved = await _collection.Find(Builders<WorkflowDefinition>.Filter.Empty).ToListAsync();
         Assert.Equal("draft", Assert.Single(saved, version => version.IsPublished).Id);
         Assert.Equal("draft", Assert.Single(saved, version => version.IsLatest).Id);
+
+        var plan = new WorkflowDefinitionDeletionPlan([saved.Single(version => version.Id == draft.Id)], saved);
+        Assert.True(_store.SupportsDeletion(plan));
+        Assert.True(await _store.TryDeleteAsync(plan));
+        var promoted = await _collection.Find(Builders<WorkflowDefinition>.Filter.Empty).SingleAsync();
+        Assert.Equal("published", promoted.Id);
+        Assert.True(promoted.IsLatest);
+        Assert.False(promoted.IsPublished);
     }
 
     [Fact]
@@ -631,6 +639,11 @@ public sealed class MongoWorkflowDefinitionStoreCompareAndSwapTests : IDisposabl
         Assert.True(stored.IsLatest);
         Assert.True(stored.IsPublished);
         Assert.False(await collection.Find(x => x.Id == "new-draft").AnyAsync());
+
+        var plan = new WorkflowDefinitionDeletionPlan([stored], [stored]);
+        Assert.True(store.SupportsDeletion(plan));
+        Assert.True(await store.TryDeleteAsync(plan));
+        Assert.False(await collection.Find(x => x.Id == "latest").AnyAsync());
     }
 
     [Fact]

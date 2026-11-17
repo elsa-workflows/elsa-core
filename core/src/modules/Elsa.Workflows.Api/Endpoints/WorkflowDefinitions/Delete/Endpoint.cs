@@ -1,8 +1,11 @@
 using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Workflows.Management;
+using Elsa.Workflows.Management.Exceptions;
 using Elsa.Workflows.Management.Filters;
+using Elsa.Workflows.Management.Models;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Delete;
 
@@ -17,6 +20,8 @@ internal class Delete(IWorkflowDefinitionManager workflowDefinitionManager, IAut
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
+        await using var mutationLock = await WorkflowDefinitionMutationLock.AcquireAsync(HttpContext.RequestServices, cancellationToken);
+
         var filter = new WorkflowDefinitionFilter { DefinitionId = request.DefinitionId };
         var versions = (await store.FindManyAsync(filter, cancellationToken)).ToList();
 
@@ -26,13 +31,24 @@ internal class Delete(IWorkflowDefinitionManager workflowDefinitionManager, IAut
             return;
         }
 
-        if (!await authorizationService.CanMutateAsync(User, versions))
+        var plan = new WorkflowDefinitionDeletionPlan(versions, versions);
+        if (!await authorizationService.CanDeleteAsync(User, plan))
         {
             await Send.ForbiddenAsync(cancellationToken);
             return;
         }
 
-        var result = await workflowDefinitionManager.DeleteByDefinitionIdAsync(request.DefinitionId, cancellationToken);
+        long result;
+        try
+        {
+            result = await workflowDefinitionManager.DeleteAuthorizedAsync(plan, cancellationToken);
+        }
+        catch (WorkflowDefinitionEditConflictException)
+        {
+            AddError("The workflow definition changed or is protected.");
+            await Send.ErrorsAsync(StatusCodes.Status409Conflict, cancellationToken);
+            return;
+        }
 
         if (result == 0)
             await Send.NotFoundAsync(cancellationToken);

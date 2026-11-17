@@ -5,7 +5,10 @@ using JetBrains.Annotations;
 using Microsoft.AspNetCore.Authorization;
 using Elsa.Workflows.Api.Requirements;
 using Elsa.Workflows.Management;
+using Elsa.Workflows.Management.Exceptions;
 using Elsa.Workflows.Management.Filters;
+using Elsa.Workflows.Management.Models;
+using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.BulkDelete;
 
@@ -21,6 +24,8 @@ internal class BulkDelete(IWorkflowDefinitionManager workflowDefinitionManager, 
 
     public override async Task<Response> ExecuteAsync(Request request, CancellationToken cancellationToken)
     {
+        await using var mutationLock = await WorkflowDefinitionMutationLock.AcquireAsync(HttpContext.RequestServices, cancellationToken);
+
         var authorizationResult = await authorizationService.AuthorizeAsync(User, new NotReadOnlyResource(), AuthorizationPolicies.NotReadOnlyPolicy);
 
         if (!authorizationResult.Succeeded)
@@ -29,14 +34,23 @@ internal class BulkDelete(IWorkflowDefinitionManager workflowDefinitionManager, 
             return null!;
         }
 
-        var definitions = await store.FindManyAsync(new WorkflowDefinitionFilter { DefinitionIds = request.DefinitionIds }, cancellationToken);
-        if (!await authorizationService.CanMutateAsync(User, definitions))
+        var definitions = (await store.FindManyAsync(new WorkflowDefinitionFilter { DefinitionIds = request.DefinitionIds }, cancellationToken)).ToList();
+        var plan = new WorkflowDefinitionDeletionPlan(definitions, definitions);
+        if (!await authorizationService.CanDeleteAsync(User, plan))
         {
             await Send.ForbiddenAsync(cancellationToken);
             return null!;
         }
 
-        var count = await workflowDefinitionManager.BulkDeleteByDefinitionIdsAsync(request.DefinitionIds, cancellationToken);
-        return new Response(count);
+        try
+        {
+            return new Response(await workflowDefinitionManager.DeleteAuthorizedAsync(plan, cancellationToken));
+        }
+        catch (WorkflowDefinitionEditConflictException)
+        {
+            AddError("The workflow definitions changed or are protected.");
+            await Send.ErrorsAsync(StatusCodes.Status409Conflict, cancellationToken);
+            return null!;
+        }
     }
 }

@@ -16,7 +16,6 @@ using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Models;
 using JetBrains.Annotations;
-using Medallion.Threading;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 
@@ -28,7 +27,6 @@ internal class Post(
     IWorkflowDefinitionPublisher workflowDefinitionPublisher,
     IWorkflowDefinitionStore store,
     VariableDefinitionMapper variableDefinitionMapper,
-    IDistributedLockProvider distributedLockProvider,
     IWorkflowDefinitionLinker linker,
     IAuthorizationService authorizationService,
     WorkflowDefinitionScriptAuthorizationService scriptAuthorizationService)
@@ -52,9 +50,7 @@ internal class Post(
 
         var model = request.Model;
         var definitionId = model.DefinitionId;
-        var resourceName = $"{GetType().FullName}:{(!string.IsNullOrWhiteSpace(definitionId) ? definitionId : Guid.NewGuid().ToString())}";
-
-        await using var handle = await distributedLockProvider.AcquireLockAsync(resourceName, TimeSpan.FromMinutes(1), cancellationToken);
+        await using var mutationLock = await WorkflowDefinitionMutationLock.AcquireAsync(HttpContext.RequestServices, cancellationToken);
 
         var draft = !string.IsNullOrWhiteSpace(definitionId)
             ? await workflowDefinitionPublisher.GetDraftAsync(definitionId, VersionOptions.Latest, cancellationToken)
@@ -71,7 +67,7 @@ internal class Post(
                 draft.DefinitionId = definitionId;
         }
 
-        var authorizationResult = await authorizationService.AuthorizeAsync(User, new NotReadOnlyResource(draft), AuthorizationPolicies.NotReadOnlyPolicy);
+        var authorizationResult = await authorizationService.AuthorizeAsync(User, new NotReadOnlyResource(isNew ? null : draft), AuthorizationPolicies.NotReadOnlyPolicy);
 
         if (!authorizationResult.Succeeded)
         {
