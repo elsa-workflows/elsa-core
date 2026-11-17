@@ -43,6 +43,10 @@ under `errors.generalErrors`. The message identifies the upload (and the entry f
 malformed JSON inside a ZIP), without parser or exception details. If any selected
 file cannot be read, no definitions from that request are imported.
 
+New HTTP workflow starts use the configured workflow activation strategy and reserve the instance ID before running activities. A request that cannot start due to activation or an occupied ID receives HTTP 409. A bookmark request still resumes its selected instance. Definition dispatchers reject duplicate instance creation too. An asynchronous dispatcher may accept the request before its worker detects an occupied ID.
+
+A successfully prepared start has a stored initial execution snapshot. If execution stops before its first commit, the runtime can use its interrupted execution recovery policy. An HTTP caller should use a fresh instance ID for an intentional new execution.
+
 ## FastEndpoints Registration
 
 FastEndpoints assemblies are collected through module properties:

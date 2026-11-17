@@ -135,9 +135,6 @@ public class LocalWorkflowClient(
         });
         effectiveCancellationToken.ThrowIfCancellationRequested();
 
-        // Do not durably publish a Running/Pending row before execution. If the run is
-        // interrupted before WorkflowRunner commits its result, that row would occupy the
-        // activation scope despite the failed activation.
         return await RunInstanceAsync(workflowInstance, new()
         {
             Input = request.Input,
@@ -149,7 +146,7 @@ public class LocalWorkflowClient(
             SchedulingWorkflowInstanceId = request.SchedulingWorkflowInstanceId,
             SchedulingCallStackDepth = request.SchedulingCallStackDepth,
             IncludeWorkflowOutput = request.IncludeWorkflowOutput
-        }, effectiveCancellationToken);
+        }, requireNewInstance: true, effectiveCancellationToken);
     }
 
     private void LogActivationDenial(Workflow workflow, string? correlationId)
@@ -219,7 +216,11 @@ public class LocalWorkflowClient(
         return true;
     }
 
-    public async Task<RunWorkflowInstanceResponse> RunInstanceAsync(WorkflowInstance workflowInstance, RunWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
+    public Task<RunWorkflowInstanceResponse> RunInstanceAsync(WorkflowInstance workflowInstance, RunWorkflowInstanceRequest request, CancellationToken cancellationToken = default) =>
+        RunInstanceAsync(workflowInstance, request, requireNewInstance: false, cancellationToken);
+
+    private async Task<RunWorkflowInstanceResponse> RunInstanceAsync(WorkflowInstance workflowInstance, RunWorkflowInstanceRequest request,
+        bool requireNewInstance, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         var workflowState = workflowInstance.WorkflowState;
@@ -237,6 +238,7 @@ public class LocalWorkflowClient(
 
         var runWorkflowOptions = new RunWorkflowOptions
         {
+            RequireNewInstance = requireNewInstance,
             Input = request.Input,
             Variables = request.Variables,
             Properties = request.Properties,

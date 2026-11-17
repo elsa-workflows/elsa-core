@@ -307,6 +307,7 @@ public class WorkflowRuntimeFeature : IShellFeature
             .AddScoped<WorkflowCommitNotificationBuffer>()
             .AddScoped<IWorkflowCommitNotificationBuffer>(sp => sp.GetRequiredService<WorkflowCommitNotificationBuffer>())
             .AddScoped<INotificationSender, WorkflowCommitNotificationSender>()
+            .AddScoped<IWorkflowStartPersistence, WorkflowStartPersistence>()
             .AddScoped<IWorkflowCommitTransaction, NoopWorkflowCommitTransaction>()
             .AddScoped<DefaultCommitStateHandler>()
             // Decorator: disposes the execution cycle handle AFTER the workflow runner's terminal commit has persisted state,
