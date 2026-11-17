@@ -38,6 +38,14 @@ internal class Post(
 
     public override async Task HandleAsync(SaveWorkflowDefinitionRequest request, CancellationToken cancellationToken)
     {
+        var publish = request.Publish == true;
+        if (publish && EndpointSecurityOptions.SecurityIsEnabled &&
+            !HttpContext.GetPermissionEvaluator().HasPermission(User, Elsa.Workflows.Api.Permissions.WorkflowPermissions.Definitions, "publish"))
+        {
+            await Send.ForbiddenAsync(cancellationToken);
+            return;
+        }
+
         var model = request.Model;
         var definitionId = model.DefinitionId;
         var resourceName = $"{GetType().FullName}:{(!string.IsNullOrWhiteSpace(definitionId) ? definitionId : Guid.NewGuid().ToString())}";
@@ -98,7 +106,7 @@ internal class Post(
 
         PublishWorkflowDefinitionResult? result = null;
 
-        if (request.Publish == true)
+        if (publish)
         {
             result = await workflowDefinitionPublisher.PublishAsync(draft, cancellationToken);
 
