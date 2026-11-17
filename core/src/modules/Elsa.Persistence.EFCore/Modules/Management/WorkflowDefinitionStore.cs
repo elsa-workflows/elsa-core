@@ -160,6 +160,10 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
         var expectedStringData = current.StringData;
         var expectedName = current.Name;
         var expectedDescription = current.Description;
+        var expectedReadonly = current.IsReadonly;
+        var expectedSystem = current.IsSystem;
+        var expectedPublished = current.IsPublished;
+        var expectedTenantId = current.TenantId;
         var expectedData = (string?)dbContext.Entry(current).Property("Data").CurrentValue;
 
         // Preserve shadow state while loading, then keep the callback outside change tracking.
@@ -172,7 +176,8 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
         if (next.Id != expectedId)
         {
             var unmarked = await dbContext.WorkflowDefinitions
-                .Where(MatchesLoadedSnapshot(expectedId, expectedVersion, expectedStringData, expectedName, expectedDescription, expectedData))
+                .Where(MatchesLoadedSnapshot(expectedId, expectedVersion, expectedStringData, expectedName, expectedDescription, expectedData,
+                    expectedReadonly, expectedSystem, expectedPublished, expectedTenantId))
                 .ExecuteUpdateAsync(setters => setters.SetProperty(x => x.IsLatest, false), cancellationToken);
 
             if (unmarked == 0)
@@ -188,7 +193,8 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
         }
 
         var updated = await dbContext.WorkflowDefinitions
-            .Where(MatchesLoadedSnapshot(expectedId, expectedVersion, expectedStringData, expectedName, expectedDescription, expectedData))
+            .Where(MatchesLoadedSnapshot(expectedId, expectedVersion, expectedStringData, expectedName, expectedDescription, expectedData,
+                    expectedReadonly, expectedSystem, expectedPublished, expectedTenantId))
             .ExecuteUpdateAsync(
                 setters => setters
                     .SetProperty(x => x.Name, next.Name)
@@ -218,13 +224,21 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
         string? expectedStringData,
         string? expectedName,
         string? expectedDescription,
-        string? expectedData) =>
+        string? expectedData,
+        bool expectedReadonly,
+        bool expectedSystem,
+        bool expectedPublished,
+        string? expectedTenantId) =>
         x => x.Id == expectedId
              && x.Version == expectedVersion
              && x.IsLatest
              && x.StringData == expectedStringData
              && x.Name == expectedName
              && x.Description == expectedDescription
+             && x.IsReadonly == expectedReadonly
+             && (x.IsSystem == expectedSystem || (!expectedSystem && x.IsSystem == null!))
+             && x.IsPublished == expectedPublished
+             && x.TenantId == expectedTenantId
              && EF.Property<string?>(x, "Data") == expectedData;
 
     /// <inheritdoc />
