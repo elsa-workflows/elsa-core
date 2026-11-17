@@ -243,7 +243,7 @@ export function DataTable<T>({
           <TableHeader>
             <TableRow>
               {selection && (
-                <TableHead className="w-8 bg-muted/60">
+                <TableHead scope="col" className="w-8 bg-muted/60">
                   <Checkbox
                     checked={allSelected}
                     indeterminate={!allSelected && someSelected}
@@ -255,8 +255,9 @@ export function DataTable<T>({
               {visibleColumns.map((c) => (
                 <TableHead
                   key={c.id}
+                  scope="col"
                   className={cn(
-                    "bg-muted/60 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground",
+                    "bg-muted/60 text-xs font-semibold uppercase tracking-wider text-muted-foreground",
                     c.headerClassName,
                   )}
                   style={c.width ? { width: c.width } : undefined}

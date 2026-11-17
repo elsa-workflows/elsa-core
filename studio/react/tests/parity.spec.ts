@@ -53,6 +53,66 @@ async function choose(page: Page, panel: Locator, label: string, option: string)
   await page.getByRole("option", { name: option, exact: true }).click();
 }
 
+async function contrast(element: Locator, foreground: string, background?: string) {
+  return element.evaluate((target, { foreground, background }) => {
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = 1;
+    const context = canvas.getContext("2d")!;
+    const style = getComputedStyle(target);
+    const fill = (color: string) => {
+      context.fillStyle = color.trim();
+      context.fillRect(0, 0, 1, 1);
+    };
+    const luminance = () => {
+      const [red, green, blue] = Array.from(context.getImageData(0, 0, 1, 1).data, value => {
+        const channel = value / 255;
+        return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+      });
+      return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+    };
+    if (background) {
+      fill(style.getPropertyValue(background));
+    } else {
+      const ancestors: Element[] = [];
+      for (let element: Element | null = target; element; element = element.parentElement) ancestors.unshift(element);
+      for (const element of ancestors) fill(getComputedStyle(element).backgroundColor);
+    }
+    const adjacent = luminance();
+    fill(style.getPropertyValue(foreground));
+    const indicator = luminance();
+    return (Math.max(adjacent, indicator) + 0.05) / (Math.min(adjacent, indicator) + 0.05);
+  }, { foreground, background });
+}
+
+test("Classic light workflow controls and selected activity have sufficient contrast", async ({ page }) => {
+  await page.emulateMedia({ colorScheme: "light" });
+  await editorFixture(page, true);
+  await expect(page.locator("html")).toHaveAttribute("data-elsa-theme", "classic");
+
+  const run = page.getByRole("button", { name: "Run", exact: true });
+  await expect(run).toBeVisible();
+  expect(await contrast(run, "color")).toBeGreaterThanOrEqual(4.5);
+  await run.hover();
+  expect(await contrast(run, "color")).toBeGreaterThanOrEqual(4.5);
+  await page.keyboard.press("Tab");
+  await run.focus();
+  await expect(run).toBeFocused();
+  expect(await contrast(run, "--tw-ring-color", "--background")).toBeGreaterThanOrEqual(3);
+  const publishedBadge = page.getByRole("navigation", { name: "Breadcrumb" }).getByText("Published", { exact: true });
+  expect(await contrast(publishedBadge, "color")).toBeGreaterThanOrEqual(4.5);
+
+  const activity = page.locator('.react-flow__node[data-id="alpha"]');
+  await activity.click();
+  const selectedCard = activity.locator(".accent-rail");
+  await expect(selectedCard).toHaveClass(/\bring-primary\b/);
+  expect(await contrast(selectedCard, "--tw-ring-color", "--elsa-canvas")).toBeGreaterThanOrEqual(3);
+
+  await page.goto("/studio-preview/workflows/definitions");
+  const column = page.getByRole("columnheader", { name: "Name", exact: true });
+  await expect(column).toBeVisible();
+  expect(await contrast(column, "color")).toBeGreaterThanOrEqual(4.5);
+});
+
 test("unpublishing consumes Core's bare definition response and updates the editor", async ({ page }) => {
   const fixture = await editorFixture(page, true);
   await expect(page.getByRole("button", { name: "Run", exact: true })).toBeVisible();
