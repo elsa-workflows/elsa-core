@@ -67,8 +67,10 @@ public class ExternalRefreshPermissionTests
             Arg.Any<CancellationToken>());
     }
 
-    [Fact]
-    public async Task RefreshRetainsBoundedExternalSnapshotAndReevaluatesCurrentElsaRoles()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task RefreshRetainsExternalGrantsAndDropsStaleLocalRoleGrants(bool removeRole)
     {
         var clock = new TestClock();
         var sessionStore = new InMemoryExternalAuthenticationSessionStore(clock);
@@ -100,7 +102,8 @@ public class ExternalRefreshPermissionTests
             .Returns(_ => Task.FromResult(tenantAccessor.TenantId == "tenant-a" ? user : null));
         var roles = Substitute.For<IRoleProvider>();
         roles.FindManyAsync(Arg.Any<RoleFilter>(), Arg.Any<CancellationToken>())
-            .Returns(_ => ValueTask.FromResult<IEnumerable<Role>>(tenantAccessor.TenantId == "tenant-a" ? [role] : []));
+            .Returns(call => ValueTask.FromResult<IEnumerable<Role>>(
+                tenantAccessor.TenantId == "tenant-a" && call.Arg<RoleFilter>().Ids!.Contains(role.Id) ? [role] : []));
         var issuanceContexts = new List<TokenIssuanceContext>();
         var tokenService = Substitute.For<IElsaTokenService>();
         tokenService.IssueAccessTokenAsync(
@@ -120,7 +123,7 @@ public class ExternalRefreshPermissionTests
             SecretGenerationFingerprint = Convert.ToHexString(SHA256.HashData([])),
             Issuer = "https://issuer.example",
             SubjectHash = "subject-hash",
-            ExternalGrants = [externalGrant],
+            ExternalGrants = [externalGrant, new PermissionGrant("*", "elsa-roles", role.Id)],
             StartedAt = clock.UtcNow,
             LastRefreshedAt = clock.UtcNow,
             ExpiresAt = clock.UtcNow.AddHours(8),
@@ -130,7 +133,10 @@ public class ExternalRefreshPermissionTests
         using (tenantAccessor.PushContext(new Tenant { Id = "tenant-b", Name = "Tenant B" }))
         {
             var initial = await issuer.IssueAsync(session);
-            role.Permissions = ["workflows:manage"];
+            if (removeRole)
+                user.Roles = [];
+            else
+                role.Permissions = ["workflows:manage"];
             using var refreshToken = new SensitiveString(initial.RefreshToken);
             await issuer.RefreshAsync("studio", refreshToken);
 
@@ -139,7 +145,7 @@ public class ExternalRefreshPermissionTests
 
         Assert.Equal(2, issuanceContexts.Count);
         Assert.Equal(["*", "reports:view"], issuanceContexts[0].Permissions);
-        Assert.Equal(["workflows:manage", "reports:view"], issuanceContexts[1].Permissions);
+        Assert.Equal(removeRole ? ["reports:view"] : new[] { "workflows:manage", "reports:view" }, issuanceContexts[1].Permissions);
         Assert.DoesNotContain("*", issuanceContexts[1].Permissions);
         Assert.Equal("session-a", issuanceContexts[1].ExternalAuthenticationSessionId);
     }
