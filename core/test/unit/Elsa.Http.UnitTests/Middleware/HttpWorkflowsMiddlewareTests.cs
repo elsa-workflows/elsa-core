@@ -266,6 +266,7 @@ public class HttpWorkflowsMiddlewareTests
             .AddSingleton<IRouteTable>(new ListRouteTable([new(BookmarkPath)]))
             .AddSingleton<IStimulusHasher, FixedStimulusHasher>()
             .AddSingleton(Substitute.For<IHttpEndpointAuthorizationHandler>())
+            .AddSingleton<IWorkflowActivationGate, AllowingActivationGate>()
             .AddSingleton(workflowRunner)
             .BuildServiceProvider();
         var httpContext = new DefaultHttpContext
@@ -318,6 +319,7 @@ public class HttpWorkflowsMiddlewareTests
             .AddSingleton<IRouteTable>(new ListRouteTable([new("/workflows/instances/r2-start")]))
             .AddSingleton<IStimulusHasher, FixedStimulusHasher>()
             .AddSingleton(Substitute.For<IHttpEndpointAuthorizationHandler>())
+            .AddSingleton<IWorkflowActivationGate, AllowingActivationGate>()
             .AddSingleton(workflowRunner)
             .BuildServiceProvider();
         var httpContext = new DefaultHttpContext
@@ -886,6 +888,12 @@ public class HttpWorkflowsMiddlewareTests
 
             return query;
         }
+    }
+
+    private sealed class AllowingActivationGate : IWorkflowActivationGate
+    {
+        public Task<WorkflowActivationLease> EvaluateAsync(Workflow workflow, string? correlationId, CancellationToken cancellationToken = default) =>
+            Task.FromResult(new WorkflowActivationLease(true, null));
     }
 
     private sealed class AlwaysFallbackUnmatchedHandler : IHttpWorkflowUnmatchedHandler
