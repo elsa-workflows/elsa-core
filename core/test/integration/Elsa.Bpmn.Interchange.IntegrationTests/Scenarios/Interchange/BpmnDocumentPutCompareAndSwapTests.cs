@@ -109,6 +109,52 @@ public partial class BpmnDocumentPutCompareAndSwapTests(ITestOutputHelper testOu
         Assert.Equal(stored.StringData, after.StringData);
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task ProtectionSetDuringDocumentEditIsRetained(bool isSystem)
+    {
+        var services = new TestApplicationBuilder(testOutputHelper)
+            .ConfigureElsa(elsa => elsa.UseBpmnInterchange())
+            .Build();
+        await services.PopulateRegistriesAsync();
+
+        var store = services.GetRequiredService<IWorkflowDefinitionStore>();
+        var setup = services.GetRequiredService<BpmnInterchangeDocumentService>();
+        var source = ReadAsset("camunda-order-process.bpmn");
+        var imported = await setup.ImportAsync(source, definitionId: null, name: null, processId: null, CancellationToken.None);
+        var definitionId = imported.ImportResult.WorkflowDefinition.DefinitionId;
+        var stored = await FindLatestAsync(store, definitionId);
+        var expectedETag = BpmnDocumentETag.From(stored);
+        var document = services.GetRequiredService<BpmnXmlReader>()
+            .Read(source.Replace("Order Handled", "Updated"), new BpmnImportOptions()).Definitions;
+
+        var gate = new CompareAndSwapPauseGate();
+        var pausingStore = new PausingCompareAndSwapStore(store, gate);
+        var writer = ActivatorUtilities.CreateInstance<BpmnInterchangeDocumentService>(services, pausingStore);
+        var put = writer.ImportDocumentAsync(document, definitionId, processId: null, CancellationToken.None, expectedETag);
+        await gate.Checked.Task.WaitAsync(TimeSpan.FromSeconds(10));
+
+        try
+        {
+            var protectedDefinition = (await FindLatestAsync(store, definitionId)).ShallowClone();
+            protectedDefinition.IsSystem = isSystem;
+            protectedDefinition.IsReadonly = !isSystem;
+            await store.SaveAsync(protectedDefinition);
+        }
+        finally
+        {
+            gate.Release.TrySetResult();
+        }
+
+        await Assert.ThrowsAsync<BpmnDocumentPreconditionFailedException>(() => put);
+        var after = await FindLatestAsync(store, definitionId);
+        Assert.Equal(isSystem, after.IsSystem);
+        Assert.Equal(!isSystem, after.IsReadonly);
+        Assert.Equal(source, after.CustomProperties[BpmnInterchangeDocumentService.SourceXmlCustomPropertyKey]);
+        Assert.Equal(stored.StringData, after.StringData);
+    }
+
     [Fact(DisplayName = "A metadata save during document PUT is retained and rejects the stale document edit")]
     public async Task ImportDocumentAsync_WhenMetadataIsSavedDuringCompareAndSwap_RejectsTheStaleDocumentEdit()
     {
