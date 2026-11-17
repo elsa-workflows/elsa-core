@@ -170,6 +170,9 @@ document `PUT` leaves those properties as that save left them, since it edits th
 definition — see the next section. `POST bpmn/import` with the same `DefinitionId` is different: it is a
 whole-definition import and resets them from the document, same as it always has.
 
+BPMN creation, import and both `PUT` routes return HTTP 403 when workflow management is read-only.
+Importing over an existing definition or replacing its BPMN document also requires the target to be editable.
+
 `PUT` requires an `If-Match` request header carrying the `ETag` a prior `GET` (or `PUT`) returned:
 
 - **Missing, or the wildcard `*`** — `428 Precondition Required`. Neither says which revision the caller is
