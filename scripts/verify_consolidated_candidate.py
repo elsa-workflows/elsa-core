@@ -239,7 +239,9 @@ def sealed_packages(pin: Pin, manifest: dict) -> dict[str, str]:
         sealed[name] = row["sha256"]
     nupkgs = [name for name in sealed if name.endswith(".nupkg")]
     require(len(nupkgs) == pin.feedz_count, f"Candidate seals {len(nupkgs)} .nupkg files, expected {pin.feedz_count}.")
-    require(len(sealed) == 2 * pin.feedz_count, "Candidate seals an unexpected number of .snupkg files.")
+    symbols = {name for name in sealed if name.endswith(".snupkg")}
+    require(symbols == {f"{name[:-6]}.snupkg" for name in nupkgs},
+            "Candidate seals unexpected or missing .snupkg pairs.")
     return sealed
 
 

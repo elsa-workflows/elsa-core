@@ -37,6 +37,7 @@ REQUIRED_REF_CONDITIONS = {
     ),
     "publish_nuget": (
         "startsWith(github.ref, 'refs/tags/')",
+        "!startsWith(github.ref, 'refs/tags/3.11.')",
     ),
     "publish_npm": (
         "startsWith(github.ref, 'refs/tags/')",
@@ -59,6 +60,8 @@ GUARD_EXCLUDE_IDS = SELECTION_ENV["EXCLUDE_IDS"]
 REQUIRED_REJECTIONS = (
     ("a v-prefixed tag", "refs/tags/v3.10.0", {}),
     ("a non-release tag", "refs/tags/test-1", {}),
+    ("unsealed NuGet publication from a stable 3.11 tag", "refs/tags/3.11.0", {"nuget": True}),
+    ("unsealed NuGet publication from a noncanonical 3.11 tag", "refs/tags/03.11.0", {"nuget": True}),
     ("Feedz from a stable 3.10.x tag", "refs/tags/3.10.0", {"feedz": True}),
     ("Feedz from a later stable 3.10.x tag", "refs/tags/3.10.1", {"feedz": True}),
     ("npm from a stable 3.10.x tag", "refs/tags/3.10.0", {"npm": True}),
@@ -75,6 +78,7 @@ REQUIRED_ACCEPTANCES = (
     ("npm from a 3.10.x prerelease tag", "refs/tags/3.10.0-rc1", {"npm": True}),
     ("exclude_ids on a stable 3.10 nuget dispatch", "refs/tags/3.10.0", {"nuget": True, "exclude_ids": "Elsa"}),
     ("candidate promotion from main", "refs/heads/main", {"promote": "3.10.1"}),
+    ("3.11 candidate promotion from main", "refs/heads/main", {"promote": "3.11.0"}),
 )
 PROMOTE_STABLE_REF = "startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-')"
 TAG_3100 = "github.ref == 'refs/tags/3.10.0'"
@@ -1192,6 +1196,8 @@ def candidate_promotion_violations(source: str) -> list[str]:
             if _guard_step_extra_keys(step):
                 violations.append(f"{prefix}: {name} guard step keys must be among name, env, run, id, if, continue-on-error")
             env = step.get("env") if isinstance(step.get("env"), dict) else {}
+            if env.get("VERSION") != "${{ inputs.promote_candidate_version }}":
+                violations.append(f"{prefix}: {name} guard VERSION must come from the selected candidate version")
             expected_exclude = "${{ steps.pin.outputs.exclude_ids }}" if feed == "nuget" else None
             if env.get("EXCLUDE_IDS") != expected_exclude:
                 violations.append(

@@ -9,12 +9,9 @@ The package directory arrives as:
     EXCLUDE_IDS    optional comma-separated package IDs to skip (default empty)
     VERSION        stable package version for inventory selection (default legacy 3.10)
 
-The expected ID list is selected by release line. Empty
-EXCLUDE_IDS keeps that full set. A non-empty list is a reviewed, count-adjusting
-skip: it must name distinct IDs from the expected list, the remaining packages
-must not depend on an excluded ID, and the expected count is then 231 minus
-that many. Feedz never sets EXCLUDE_IDS. The publication-selection check rejects
-a non-empty list except on a publish_nuget dispatch for a stable 3.10 tag.
+The expected ID list is selected by release line. Empty EXCLUDE_IDS keeps the full set. An exclusion must name a
+distinct expected ID that no remaining package depends on. The pinned candidate controls NuGet.org exclusions,
+and Feedz always publishes the full admitted inventory.
 """
 
 from __future__ import annotations
@@ -244,6 +241,35 @@ def studio_content_errors(directory: Path) -> list[str]:
     return errors
 
 
+def react_preview_errors(directory: Path) -> list[str]:
+    errors = []
+    for nupkg in sorted(directory.glob("Elsa.ReactStudio*.nupkg")):
+        package_id = filename_package_id(nupkg.name)
+        if package_id is None or not (package_id == "Elsa.ReactStudio" or package_id.startswith("Elsa.ReactStudio.")):
+            continue
+        try:
+            with zipfile.ZipFile(nupkg) as archive:
+                entries = set(archive.namelist())
+                nuspecs = [name for name in entries if name.endswith(".nuspec") and "/" not in name]
+                if len(nuspecs) != 1:
+                    raise ValueError("expected one nuspec")
+                root = ET.fromstring(archive.read(nuspecs[0]))
+                metadata = next(node for node in root if _xml_local_name(node.tag) == "metadata")
+                fields = {_xml_local_name(node.tag): node for node in metadata}
+                license_element = fields.get("license")
+                tags = (fields["tags"].text or "").replace(";", " ").split()
+                if not (
+                    license_element is not None and license_element.attrib.get("type") == "file"
+                    and license_element.text == "SOURCE-NOTICE.md"
+                    and {"SOURCE-NOTICE.md", "README.md"} <= entries
+                    and "preview" in {tag.casefold() for tag in tags}
+                ):
+                    errors.append(f"React Preview package lacks required Preview metadata or source notices: {nupkg.name}.")
+        except (zipfile.BadZipFile, KeyError, StopIteration, ValueError, ET.ParseError):
+            errors.append(f"Cannot verify React Preview metadata: {nupkg.name}.")
+    return errors
+
+
 def main() -> int:
     packages_dir = os.environ.get("PACKAGES_DIR")
     if not packages_dir:
@@ -259,6 +285,8 @@ def main() -> int:
     if excluded:
         errors.extend(exclusion_dependency_errors(packages, set(excluded)))
     errors.extend(studio_content_errors(packages))
+    if version and STABLE_311.fullmatch(version):
+        errors.extend(react_preview_errors(packages))
     for error in errors:
         print(error, file=sys.stderr)
     if errors:

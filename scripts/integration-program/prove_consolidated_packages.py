@@ -106,7 +106,7 @@ CANDIDATE_VERSION = re.compile(r"3\.(?:10|11)\.(0|[1-9][0-9]*)\Z")
 
 
 def assembly_identity(version: str) -> str:
-    """Four-part assembly version for a stable 3.10.x candidate (3.10.1 -> 3.10.1.0)."""
+    """Four-part assembly version for a stable candidate (3.11.0 -> 3.11.0.0)."""
     require(bool(CANDIDATE_VERSION.fullmatch(version)) or bool(PROOF_VERSION.fullmatch(version)), "Unsupported release identity")
     return f"{version.split('-', 1)[0]}.0"
 

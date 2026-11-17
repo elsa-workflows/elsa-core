@@ -53,6 +53,31 @@ def packages(count=3, version="3.10.1"):
     return result
 
 
+class Stable311PinTests(unittest.TestCase):
+    def test_pin_binds_tooling_branch_and_inventory(self):
+        entry = {
+            **dataclasses.asdict(PIN),
+            "ancestry_branch": "release/3.11.0",
+            "tooling_sha": "d" * 40,
+            "feedz_count": 251, "nuget_count": 251, "exclude_ids": [],
+        }
+        entry.pop("version")
+        pin = verify.validate_pin_entry("3.11.0", entry)
+        run = {**good_run(), "head_sha": pin.tooling_sha, "head_branch": "main",
+               "path": ".github/workflows/prepare-consolidated-release-candidate.yml"}
+        verify.check_run(pin, run)
+        for invalid in (
+            {**entry, "ancestry_branch": "main"},
+            {**entry, "tooling_sha": ""},
+            {**entry, "feedz_count": 231, "nuget_count": 231},
+        ):
+            with self.subTest(invalid=invalid), self.assertRaises(SystemExit):
+                verify.validate_pin_entry("3.11.0", invalid)
+        for change in ({"head_sha": "e" * 40}, {"head_branch": "release/3.11.0"}, {"path": good_run()["path"]}):
+            with self.subTest(change=change), self.assertRaises(SystemExit):
+                verify.check_run(pin, {**run, **change})
+
+
 class RunAndArtifactTests(unittest.TestCase):
     def test_pinned_identity_is_accepted(self):
         verify.check_run(PIN, good_run())
