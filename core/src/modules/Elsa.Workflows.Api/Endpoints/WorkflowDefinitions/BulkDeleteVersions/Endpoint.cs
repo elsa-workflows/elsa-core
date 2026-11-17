@@ -3,8 +3,10 @@ using Elsa.Abstractions;
 using Elsa.Workflows.Api.Constants;
 using Elsa.Workflows.Api.Requirements;
 using Elsa.Workflows.Management;
+using Elsa.Workflows.Management.Filters;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.BulkDeleteVersions;
 
@@ -23,6 +25,14 @@ internal class BulkDeleteVersions(IWorkflowDefinitionManager workflowDefinitionM
         var authorizationResult = await authorizationService.AuthorizeAsync(User, new NotReadOnlyResource(), AuthorizationPolicies.NotReadOnlyPolicy);
 
         if (!authorizationResult.Succeeded)
+        {
+            await Send.ForbiddenAsync(cancellationToken);
+            return null!;
+        }
+
+        var store = HttpContext.RequestServices.GetRequiredService<IWorkflowDefinitionStore>();
+        var definitions = (await store.FindManyAsync(new WorkflowDefinitionFilter { Ids = request.Ids }, cancellationToken)).ToList();
+        if (!await authorizationService.CanDeleteVersionsAsync(User, store, definitions, cancellationToken))
         {
             await Send.ForbiddenAsync(cancellationToken);
             return null!;

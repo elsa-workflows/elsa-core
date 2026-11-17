@@ -3,8 +3,10 @@ using Elsa.Abstractions;
 using Elsa.Workflows.Api.Constants;
 using Elsa.Workflows.Api.Requirements;
 using Elsa.Workflows.Management;
+using Elsa.Workflows.Management.Filters;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.DeleteVersion;
 
@@ -28,7 +30,21 @@ internal class DeleteVersion(IWorkflowDefinitionManager workflowDefinitionManage
             return;
         }
 
-        var deleted = await workflowDefinitionManager.DeleteByIdAsync(request.Id, cancellationToken);
+        var store = HttpContext.RequestServices.GetRequiredService<IWorkflowDefinitionStore>();
+        var definition = await store.FindAsync(new WorkflowDefinitionFilter { Id = request.Id }, cancellationToken);
+        if (definition is null)
+        {
+            await Send.NotFoundAsync(cancellationToken);
+            return;
+        }
+
+        if (!await authorizationService.CanDeleteVersionsAsync(User, store, [definition], cancellationToken))
+        {
+            await Send.ForbiddenAsync(cancellationToken);
+            return;
+        }
+
+        var deleted = await workflowDefinitionManager.DeleteVersionAsync(definition, cancellationToken);
 
         if (!deleted)
             await Send.NotFoundAsync(cancellationToken);

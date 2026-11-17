@@ -4,6 +4,7 @@ using Elsa.Common.Models;
 using Elsa.Workflows.Api.Constants;
 using Elsa.Workflows.Api.Requirements;
 using Elsa.Workflows.Management;
+using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Authorization;
@@ -35,6 +36,9 @@ internal class BulkRetract(IWorkflowDefinitionStore store, IWorkflowDefinitionPu
         var notPublished = new List<string>();
         var skipped = new List<string>();
 
+        var targets = new List<(string DefinitionId, WorkflowDefinition Published)>();
+        var plannedVersionIds = new HashSet<string>();
+
         foreach (var definitionId in request.DefinitionIds)
         {
             var definitions = (await store.FindManyAsync(new WorkflowDefinitionFilter
@@ -50,18 +54,23 @@ internal class BulkRetract(IWorkflowDefinitionStore store, IWorkflowDefinitionPu
             }
 
             var published = definitions.FirstOrDefault(d => d.IsPublished);
-            if (published is null)
+            if (published is null || !plannedVersionIds.Add(published.Id))
             {
                 notPublished.Add(definitionId);
                 continue;
             }
 
-            if (published.IsReadonly)
-            {
-                skipped.Add(definitionId);
-                continue;
-            }
+            targets.Add((definitionId, published));
+        }
 
+        if (!await authorizationService.CanMutateAsync(User, targets.Select(target => target.Published)))
+        {
+            await Send.ForbiddenAsync(cancellationToken);
+            return null!;
+        }
+
+        foreach (var (definitionId, published) in targets)
+        {
             await workflowDefinitionPublisher.RetractAsync(published, cancellationToken);
             retracted.Add(definitionId);
         }

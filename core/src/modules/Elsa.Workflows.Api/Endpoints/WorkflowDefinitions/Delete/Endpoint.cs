@@ -1,8 +1,5 @@
 using Elsa.Authorization;
 using Elsa.Abstractions;
-using Elsa.Common.Models;
-using Elsa.Workflows.Api.Constants;
-using Elsa.Workflows.Api.Requirements;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Filters;
 using Microsoft.AspNetCore.Authorization;
@@ -20,23 +17,16 @@ internal class Delete(IWorkflowDefinitionManager workflowDefinitionManager, IAut
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
-        var filter = new WorkflowDefinitionFilter
-        {
-            DefinitionId = request.DefinitionId,
-            VersionOptions = VersionOptions.Latest
-        };
+        var filter = new WorkflowDefinitionFilter { DefinitionId = request.DefinitionId };
+        var versions = (await store.FindManyAsync(filter, cancellationToken)).ToList();
 
-        var definition = await store.FindAsync(filter, cancellationToken);
-
-        if (definition == null)
+        if (!versions.Any(definition => definition.IsLatest))
         {
             await Send.NotFoundAsync(cancellationToken);
             return;
         }
 
-        var authorizationResult = await authorizationService.AuthorizeAsync(User, new NotReadOnlyResource(definition), AuthorizationPolicies.NotReadOnlyPolicy);
-
-        if (!authorizationResult.Succeeded)
+        if (!await authorizationService.CanMutateAsync(User, versions))
         {
             await Send.ForbiddenAsync(cancellationToken);
             return;

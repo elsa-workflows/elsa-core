@@ -46,12 +46,18 @@ internal class BulkPublish(
         var warnings = new Dictionary<string, ICollection<string>>();
         var publishableDefinitions = new List<(string DefinitionId, WorkflowDefinition Definition)>();
 
-        var definitions = (await store.FindManyAsync(new WorkflowDefinitionFilter
+        var targets = (await store.FindManyAsync(new WorkflowDefinitionFilter
         {
             DefinitionIds = request.DefinitionIds,
-            VersionOptions = VersionOptions.Latest
-        }, cancellationToken: cancellationToken))
-            .DistinctBy(x => x.DefinitionId)
+            VersionOptions = VersionOptions.LatestOrPublished
+        }, cancellationToken: cancellationToken)).ToList();
+        if (!await authorizationService.CanMutateAsync(User, targets))
+        {
+            await Send.ForbiddenAsync(cancellationToken);
+            return null!;
+        }
+
+        var definitions = targets.Where(x => x.IsLatest).DistinctBy(x => x.DefinitionId)
             .ToDictionary(x => x.DefinitionId);
 
         foreach (var definitionId in request.DefinitionIds)
@@ -65,12 +71,6 @@ internal class BulkPublish(
             if (definition.IsPublished)
             {
                 alreadyPublished.Add(definitionId);
-                continue;
-            }
-
-            if (definition.IsReadonly)
-            {
-                skipped.Add(definitionId);
                 continue;
             }
 
