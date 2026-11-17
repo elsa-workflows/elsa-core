@@ -4,6 +4,7 @@ using Elsa.Common.Models;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Exceptions;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Management.Models;
@@ -26,6 +27,45 @@ public class WorkflowDefinitionPublisher(
     IOptions<ManagementOptions> options)
     : IWorkflowDefinitionPublisher
 {
+    /// <inheritdoc />
+    public async Task<PublishWorkflowDefinitionResult> CreateInitialAsync(WorkflowDefinition definition, bool publish, CancellationToken cancellationToken = default)
+    {
+        definition = Initialize(definition);
+        definition.Version = 1;
+        definition.IsLatest = true;
+        definition.IsPublished = publish;
+        var validationErrors = new List<WorkflowValidationError>();
+        var affectedWorkflows = new AffectedWorkflows(new List<WorkflowDefinition>());
+
+        if (publish)
+        {
+            validationErrors = await ValidateForPublicationAsync(definition, cancellationToken);
+            if (validationErrors.Count > 0 && options.Value.FailOnValidationErrors)
+                return new(false, validationErrors, affectedWorkflows);
+
+            await mediator.SendAsync(new WorkflowDefinitionPublishing(definition), cancellationToken);
+        }
+        else
+        {
+            await mediator.SendAsync(new WorkflowDefinitionDraftSaving(definition), cancellationToken);
+        }
+
+        if (!await workflowDefinitionStore.TryAddAsync(definition, cancellationToken))
+            throw new WorkflowDefinitionAlreadyExistsException();
+
+        if (publish)
+        {
+            await mediator.SendAsync(new WorkflowDefinitionPublished(definition, affectedWorkflows), cancellationToken);
+        }
+        else
+        {
+            await mediator.SendAsync(new WorkflowDefinitionDraftSaved(definition), cancellationToken);
+            await mediator.SendAsync(new WorkflowDefinitionCreated(definition), cancellationToken);
+        }
+
+        return new(true, validationErrors, affectedWorkflows);
+    }
+
     /// <inheritdoc />
     public WorkflowDefinition New(IActivity? root = null)
     {
@@ -87,8 +127,7 @@ public class WorkflowDefinitionPublisher(
     /// <inheritdoc />
     public async Task<PublishWorkflowDefinitionResult> PublishAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
     {
-        var workflowGraph = await workflowDefinitionService.MaterializeWorkflowAsync(definition, cancellationToken);
-        var validationErrors = (await workflowValidator.ValidateAsync(workflowGraph.Workflow, cancellationToken)).ToList();
+        var validationErrors = await ValidateForPublicationAsync(definition, cancellationToken);
 
         if (validationErrors.Any() && options.Value.FailOnValidationErrors)
             return new(false, validationErrors, new([]));
@@ -253,6 +292,12 @@ public class WorkflowDefinitionPublisher(
             await mediator.SendAsync(new WorkflowDefinitionCreated(definition), cancellationToken);
 
         return draft;
+    }
+
+    private async Task<List<WorkflowValidationError>> ValidateForPublicationAsync(WorkflowDefinition definition, CancellationToken cancellationToken)
+    {
+        var graph = await workflowDefinitionService.MaterializeWorkflowAsync(definition, cancellationToken);
+        return (await workflowValidator.ValidateAsync(graph.Workflow, cancellationToken)).ToList();
     }
 
     private WorkflowDefinition Initialize(WorkflowDefinition definition)

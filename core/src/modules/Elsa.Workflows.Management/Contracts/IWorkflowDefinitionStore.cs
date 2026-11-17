@@ -123,6 +123,13 @@ public interface IWorkflowDefinitionStore
     Task SaveAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Inserts the supplied version without changing any existing row. Returns false if
+    /// the version ID or definition version is already present.
+    /// </summary>
+    Task<bool> TryAddAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default) =>
+        Task.FromResult(false);
+
+    /// <summary>
     /// Compare-and-swap the latest definition matching <paramref name="filter"/>.
     /// </summary>
     /// <remarks>

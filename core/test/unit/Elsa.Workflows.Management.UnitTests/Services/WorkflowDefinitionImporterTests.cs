@@ -1,6 +1,7 @@
 using Elsa.Common.Models;
 using Elsa.Common.Serialization;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Exceptions;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Models;
@@ -25,6 +26,8 @@ public class WorkflowDefinitionImporterTests
         _publisher.GetDraftAsync(Arg.Any<string>(), Arg.Any<VersionOptions>(), Arg.Any<CancellationToken>()).Returns((WorkflowDefinition?)null);
         _publisher.NewAsync(Arg.Any<IActivity?>(), Arg.Any<CancellationToken>()).Returns(_ => new WorkflowDefinition { Id = GeneratedId });
         _publisher.SaveDraftAsync(Arg.Any<WorkflowDefinition>(), Arg.Any<CancellationToken>()).Returns(call => call.Arg<WorkflowDefinition>());
+        _publisher.CreateInitialAsync(Arg.Any<WorkflowDefinition>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(new PublishWorkflowDefinitionResult(true, [], new([]))));
     }
 
     [Fact(DisplayName = "A new import keeps the exported version id while no tenant uses it")]
@@ -77,8 +80,43 @@ public class WorkflowDefinitionImporterTests
 
         Assert.Equal(GeneratedId, result.WorkflowDefinition.Id);
         Assert.Equal(DefinitionId, result.WorkflowDefinition.DefinitionId);
-        await _publisher.Received(1).SaveDraftAsync(
-            Arg.Is<WorkflowDefinition>(draft => draft.Id == GeneratedId), Arg.Any<CancellationToken>());
+        await _publisher.Received(1).CreateInitialAsync(
+            Arg.Is<WorkflowDefinition>(draft => draft.Id == GeneratedId), false, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ImportRetriesWithGeneratedIdWhenExportedIdIsClaimedAfterLookup()
+    {
+        var attemptedIds = new List<string>();
+        _publisher.CreateInitialAsync(Arg.Any<WorkflowDefinition>(), false, Arg.Any<CancellationToken>())
+            .Returns(call =>
+            {
+                var id = call.Arg<WorkflowDefinition>().Id;
+                attemptedIds.Add(id);
+                return id == ExportedId
+                    ? Task.FromException<PublishWorkflowDefinitionResult>(new WorkflowDefinitionAlreadyExistsException())
+                    : Task.FromResult(new PublishWorkflowDefinitionResult(true, [], new([])));
+            });
+
+        var result = await CreateImporter().ImportAsync(CreateRequest());
+
+        Assert.True(result.Succeeded);
+        Assert.Equal(new[] { ExportedId, GeneratedId }, attemptedIds);
+        Assert.Equal(GeneratedId, result.WorkflowDefinition.Id);
+        await _publisher.DidNotReceive().SaveDraftAsync(Arg.Any<WorkflowDefinition>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ImportReturnsConflictWhenTheInitialDefinitionAlreadyExists()
+    {
+        _publisher.CreateInitialAsync(Arg.Any<WorkflowDefinition>(), false, Arg.Any<CancellationToken>())
+            .Returns(Task.FromException<PublishWorkflowDefinitionResult>(new WorkflowDefinitionAlreadyExistsException()));
+
+        var result = await CreateImporter().ImportAsync(CreateRequest());
+
+        Assert.False(result.Succeeded);
+        Assert.Single(result.ValidationErrors);
+        await _publisher.DidNotReceive().SaveDraftAsync(Arg.Any<WorkflowDefinition>(), Arg.Any<CancellationToken>());
     }
 
     private static SaveWorkflowDefinitionRequest CreateRequest() => new()

@@ -35,6 +35,8 @@ New HTTP workflow starts use the configured workflow activation strategy and res
 
 A successfully prepared start has a stored initial execution snapshot. If execution stops before its first commit, the runtime can use its interrupted execution recovery policy. An HTTP caller should use a fresh instance ID for an intentional new execution.
 
+New definition imports insert version 1 without replacing an existing row. They retain the exported version ID when it is available and retry with a server-generated ID if another version owns it. The definition ID stays the same. Custom workflow definition publishers and stores must implement the create-only import contract to accept new imports.
+
 ## FastEndpoints Registration
 
 FastEndpoints assemblies are collected through module properties:
