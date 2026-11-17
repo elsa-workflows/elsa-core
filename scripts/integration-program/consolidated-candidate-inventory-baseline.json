@@ -1,12 +1,12 @@
 {
   "evidence": {
     "scope": "Reviewed inventory comparison only; never relabel or reuse as candidate bytes.",
-    "source_commit": "4c272d6f769c332b6974c7f39e61029b9bcc5726",
-    "version": "3.10.0",
+    "source_commit": "8fa0678a18cda7375a608067bebd1958c519ed2a",
+    "version": "3.10.2",
     "package_count": 231,
-    "exclusion_count": 136,
+    "exclusion_count": 137,
     "issue": 8725,
-    "note": "release/3.10.0 evaluation only. This is not main's inventory; the two are not the same."
+    "note": "release/3.10.0 maintenance evaluation. The additional Elasticsearch test project stays nonpackable. The 231 package IDs are unchanged."
   },
   "exclusions": [
     {
@@ -527,6 +527,11 @@
     {
       "id": "Elsa.Persistence.Dapper.UnitTests",
       "project": "extensions/test/modules/persistence/Elsa.Persistence.Dapper.UnitTests/Elsa.Persistence.Dapper.UnitTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Persistence.Elasticsearch.UnitTests",
+      "project": "extensions/test/modules/persistence/Elsa.Persistence.Elasticsearch.UnitTests/Elsa.Persistence.Elasticsearch.UnitTests.csproj",
       "reason": "Project or inherited nonpackable setting remains active"
     },
     {
