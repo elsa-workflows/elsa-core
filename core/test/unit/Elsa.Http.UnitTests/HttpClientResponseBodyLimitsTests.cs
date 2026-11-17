@@ -55,14 +55,19 @@ public class HttpClientResponseBodyLimitsTests
         services.ConfigureHttpClientDefaults(builder => builder.ConfigurePrimaryHttpMessageHandler(() => new ResponseHandler(content)));
         if (useShell)
         {
-            new ShellFeatures.HttpFeature { HttpActivityOptions = new() { MaxResponseBodySize = 4 } }.ConfigureServices(services);
+            new ShellFeatures.HttpFeature { HttpActivityOptions = new() { MaxResponseBodySize = 4, RemoteDownloadHosts = ["example.test"] } }.ConfigureServices(services);
         }
         else
         {
             var module = services.CreateModule();
-            module.UseHttp(feature => feature.ConfigureHttpOptions = options => options.MaxResponseBodySize = 4);
+            module.UseHttp(feature => feature.ConfigureHttpOptions = options =>
+            {
+                options.MaxResponseBodySize = 4;
+                options.RemoteDownloadHosts = ["example.test"];
+            });
             module.Apply();
         }
+        services.AddHttpClient(nameof(IFileDownloader)).ConfigurePrimaryHttpMessageHandler(() => new ResponseHandler(content));
         return services.BuildServiceProvider();
     }
 
