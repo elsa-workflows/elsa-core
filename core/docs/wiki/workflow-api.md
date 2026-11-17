@@ -29,6 +29,8 @@ app.MapWorkflowsApi(routePrefix);
 
 With the default prefix, endpoint paths look like `/elsa/api/workflow-definitions`.
 
+With endpoint security enabled, saving a draft requires `workflows/definitions:write`. A save request with `publish: true` also requires `workflows/definitions:publish`. The server rejects unauthorized publication before creating or changing a draft.
+
 ## FastEndpoints Registration
 
 FastEndpoints assemblies are collected through module properties:
