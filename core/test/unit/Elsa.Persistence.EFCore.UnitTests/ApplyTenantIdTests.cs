@@ -1,6 +1,7 @@
 using Elsa.Common.Multitenancy;
 using Elsa.Extensions;
 using Elsa.Persistence.EFCore.EntityHandlers;
+using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Tenants;
 using Elsa.Persistence.EFCore.Sqlite;
 using Elsa.Tenants.Options;
