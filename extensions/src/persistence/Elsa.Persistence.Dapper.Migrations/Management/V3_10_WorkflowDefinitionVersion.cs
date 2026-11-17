@@ -8,8 +8,9 @@ namespace Elsa.Persistence.Dapper.Migrations.Management;
 /// Enforces one workflow definition version per tenant, treating both the legacy NULL
 /// and the empty tenant ID as the default tenant.
 /// </summary>
-[Migration(10006, "Elsa:Management:V3.11")]
-public sealed class V3_11 : Migration
+// Keep the same migration version on 3.10 and 3.11 so upgrades apply the index once.
+[Migration(10006, "Elsa:Management:WorkflowDefinitionVersion")]
+public sealed class V3_10_WorkflowDefinitionVersion : Migration
 {
     private const string TableName = "WorkflowDefinitions";
     private const string UniqueIndex = "UX_WorkflowDef_Tenant_Version";
