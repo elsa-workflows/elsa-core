@@ -4,6 +4,7 @@ using Elsa.Common.Multitenancy;
 using Elsa.Common.Services;
 using Elsa.Extensions;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Exceptions;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
 
@@ -140,7 +141,10 @@ public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
         lock (_sync)
         {
             ApplyCurrentTenant(instance);
-            _store.Add(Clone(instance), GetId);
+            if (!_store.TryAdd(Clone(instance), GetId))
+            {
+                throw new WorkflowInstanceAlreadyExistsException(instance.Id);
+            }
         }
         return ValueTask.CompletedTask;
     }

@@ -9,6 +9,7 @@ using Elsa.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Exceptions;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
 using JetBrains.Annotations;
@@ -136,7 +137,14 @@ internal class DapperWorkflowInstanceStore(Store<WorkflowInstanceRecord> store, 
     public async ValueTask AddAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
     {
         var record = Map(instance);
-        await store.AddAsync(record, cancellationToken);
+        try
+        {
+            await store.AddAsync(record, cancellationToken);
+        }
+        catch (System.Data.Common.DbException ex) when (DapperExceptionClassifier.IsDuplicateKey(ex))
+        {
+            throw new WorkflowInstanceAlreadyExistsException(instance.Id, ex);
+        }
     }
 
     /// <inheritdoc />

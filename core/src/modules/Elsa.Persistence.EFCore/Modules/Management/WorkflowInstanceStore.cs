@@ -7,6 +7,7 @@ using Elsa.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Exceptions;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Options;
@@ -260,7 +261,14 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
     /// <inheritdoc />
     public async ValueTask AddAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
     {
-        await _store.AddAsync(instance, OnSaveAsync, cancellationToken);
+        try
+        {
+            await _store.AddAsync(instance, OnSaveAsync, cancellationToken);
+        }
+        catch (DbUpdateException ex) when (DbExceptionClassifier.IsDuplicateKey(ex))
+        {
+            throw new WorkflowInstanceAlreadyExistsException(instance.Id, ex);
+        }
     }
 
     /// <inheritdoc />
