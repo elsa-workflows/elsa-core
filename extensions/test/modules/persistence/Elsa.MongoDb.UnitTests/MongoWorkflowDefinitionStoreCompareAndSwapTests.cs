@@ -510,7 +510,7 @@ public sealed class MongoWorkflowDefinitionStoreCompareAndSwapTests : IDisposabl
         await _collection.InsertOneAsync(conflictingVersion);
         var updateCalls = 0;
 
-        await Assert.ThrowsAsync<MongoWriteException>(() => _store.TryUpdateLatestAsync(
+        var result = await _store.TryUpdateLatestAsync(
             LatestFilter("definition"),
             _ => true,
             current =>
@@ -522,8 +522,9 @@ public sealed class MongoWorkflowDefinitionStoreCompareAndSwapTests : IDisposabl
                 draft.IsPublished = false;
                 draft.IsLatest = true;
                 return draft;
-            }));
+            });
 
+        Assert.Equal(WorkflowDefinitionUpdateOutcome.Conflict, result.Outcome);
         Assert.Equal(1, updateCalls);
         var storedPublished = await _collection.Find(x => x.Id == "published").SingleAsync();
         Assert.True(storedPublished.IsLatest, "Failed draft insertion must leave prior latest unchanged.");
@@ -532,7 +533,7 @@ public sealed class MongoWorkflowDefinitionStoreCompareAndSwapTests : IDisposabl
     }
 
     [Fact]
-    public async Task TryUpdateLatestAsync_WhenServerIsStandalone_FailsWithoutMutationOrCallbacks()
+    public async Task TryUpdateLatestAsync_WhenServerIsStandalone_CanSaveADraftButCannotSplitAPublishedVersion()
     {
         await using var container = new MongoDbBuilder().WithImage("mongo:7.0.24").Build();
         await container.StartAsync();
@@ -542,27 +543,34 @@ public sealed class MongoWorkflowDefinitionStoreCompareAndSwapTests : IDisposabl
         var store = new MongoWorkflowDefinitionStore(new MongoDbStore<WorkflowDefinition>(collection, _tenantAccessor));
         using var tenant = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
         await collection.InsertOneAsync(Definition("latest", "tenant-a"));
-        var callbackCalls = 0;
 
-        var error = await Assert.ThrowsAsync<NotSupportedException>(() => store.TryUpdateLatestAsync(
+        var edit = await store.TryUpdateLatestAsync(LatestFilter("definition"), _ => true, current =>
+        {
+            var draft = current.ShallowClone();
+            draft.StringData = "saved draft";
+            return draft;
+        });
+
+        Assert.Equal(WorkflowDefinitionUpdateOutcome.Updated, edit.Outcome);
+        await collection.UpdateOneAsync(x => x.Id == "latest", Builders<WorkflowDefinition>.Update.Set(x => x.IsPublished, true));
+
+        await Assert.ThrowsAsync<NotSupportedException>(() => store.TryUpdateLatestAsync(
             LatestFilter("definition"),
-            _ =>
-            {
-                callbackCalls++;
-                return true;
-            },
+            current => current.IsPublished,
             current =>
             {
-                callbackCalls++;
-                current.StringData = "should not be saved";
-                return current;
+                var draft = current.ShallowClone();
+                draft.Id = "new-draft";
+                draft.Version = 2;
+                draft.IsPublished = false;
+                return draft;
             }));
 
-        Assert.Equal("Standalone servers do not support transactions.", error.Message);
-        Assert.Equal(0, callbackCalls);
         var stored = await collection.Find(x => x.Id == "latest").SingleAsync();
-        Assert.Equal("initial graph", stored.StringData);
+        Assert.Equal("saved draft", stored.StringData);
         Assert.True(stored.IsLatest);
+        Assert.True(stored.IsPublished);
+        Assert.False(await collection.Find(x => x.Id == "new-draft").AnyAsync());
     }
 
     [Fact]
