@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using Elsa.Common.Entities;
 using Elsa.Common.Services;
 using Elsa.Extensions;
 using Elsa.Testing.Shared.Authorization;
@@ -7,6 +8,7 @@ using Elsa.UnitTests.Shared;
 using Elsa.Workflows.Api.Features;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Management.Options;
 using Elsa.Workflows.Management.Stores;
@@ -18,7 +20,7 @@ namespace Elsa.Workflows.Api.UnitTests.Endpoints.WorkflowDefinitions;
 public class WorkflowDefinitionMutationAuthorizationTests : IAsyncLifetime
 {
     private const string Permission = "workflows/definitions:write,workflows/definitions:delete,workflows/definitions/versions:delete,workflows/definitions/versions:revert,workflows/definitions:publish,workflows/definitions:retract";
-    private readonly MemoryWorkflowDefinitionStore _store = new(new MemoryStore<WorkflowDefinition>());
+    private readonly MemoryWorkflowDefinitionStore _store = new LatestFirstStore();
     private AuthorizationTestHost _host = null!;
     private ManagementOptions _managementOptions = null!;
 
@@ -173,6 +175,38 @@ public class WorkflowDefinitionMutationAuthorizationTests : IAsyncLifetime
     }
 
     [Theory]
+    [InlineData(false, HttpStatusCode.OK)]
+    [InlineData(true, HttpStatusCode.Forbidden)]
+    public async Task RetractTargetsThePublishedVersionWhenANewerDraftExists(bool isReadonly, HttpStatusCode expectedStatus)
+    {
+        await SeedAsync("first", "published", published: true, version: 1, isLatest: false, isReadonly: isReadonly);
+        await SeedAsync("first", "draft", version: 2);
+
+        using var response = await _host.SendAsync(HttpMethod.Post, "/workflow-definitions/first/retract", Permission,
+            content: JsonContent.Create(new { }));
+
+        Assert.Equal(expectedStatus, response.StatusCode);
+        var definitions = (await _store.FindManyAsync(new())).ToList();
+        Assert.Equal(2, definitions.Count);
+        Assert.Equal("draft", Assert.Single(definitions, definition => definition.IsLatest).Id);
+        Assert.Equal(isReadonly, Assert.Single(definitions, definition => definition.Id == "published").IsPublished);
+    }
+
+    [Fact]
+    public async Task RetractReportsAnUnpublishedDefinitionWithoutChangingItsDraft()
+    {
+        await SeedAsync("first", "draft");
+
+        using var response = await _host.SendAsync(HttpMethod.Post, "/workflow-definitions/first/retract", Permission,
+            content: JsonContent.Create(new { }));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var draft = Assert.Single(await _store.FindManyAsync(new()));
+        Assert.True(draft.IsLatest);
+        Assert.False(draft.IsPublished);
+    }
+
+    [Theory]
     [InlineData(true)]
     [InlineData(false)]
     public async Task PublishRequestsCannotUnpublishProtectedVersionOfTheSameDefinition(bool saveInline)
@@ -219,4 +253,10 @@ public class WorkflowDefinitionMutationAuthorizationTests : IAsyncLifetime
         MaterializerName = JsonWorkflowMaterializer.MaterializerName,
         StringData = """{"type":"Elsa.Sequence","activities":[]}"""
     });
+
+    private sealed class LatestFirstStore() : MemoryWorkflowDefinitionStore(new MemoryStore<WorkflowDefinition>()), IWorkflowDefinitionStore
+    {
+        Task<WorkflowDefinition?> IWorkflowDefinitionStore.FindAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken) =>
+            FindAsync(filter, new WorkflowDefinitionOrder<int>(definition => definition.Version, OrderDirection.Descending), cancellationToken);
+    }
 }
