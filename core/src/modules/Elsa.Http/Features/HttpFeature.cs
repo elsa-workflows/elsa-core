@@ -240,7 +240,8 @@ public class HttpFeature(IModule module) : FeatureBase(module)
             .AddAuthorization();
 
         // HTTP clients.
-        Services.AddHttpClient<IFileDownloader, HttpClientFileDownloader>();
+        Services.AddHttpClient<IFileDownloader, HttpClientFileDownloader>()
+            .ConfigurePrimaryHttpMessageHandler(HttpClientFileDownloader.CreateHandler);
 
         // Add selectors.
         foreach (var httpCorrelationIdSelectorType in HttpCorrelationIdSelectorTypes)

@@ -134,6 +134,7 @@ public class HttpFeature : IMiddlewareShellFeature
         services.Configure<HttpActivityOptions>(options =>
         {
             options.BasePath = HttpActivityOptions.BasePath;
+            options.RemoteDownloadHosts = HttpActivityOptions.RemoteDownloadHosts;
             options.BaseUrl = HttpActivityOptions.BaseUrl;
             options.AvailableContentTypes = HttpActivityOptions.AvailableContentTypes;
             options.WriteHttpResponseSynchronously = HttpActivityOptions.WriteHttpResponseSynchronously;
@@ -215,7 +216,8 @@ public class HttpFeature : IMiddlewareShellFeature
             .AddAuthorization();
 
         // HTTP clients.
-        services.AddHttpClient<IFileDownloader, HttpClientFileDownloader>();
+        services.AddHttpClient<IFileDownloader, HttpClientFileDownloader>()
+            .ConfigurePrimaryHttpMessageHandler(HttpClientFileDownloader.CreateHandler);
 
         // Add selectors.
         foreach (var httpCorrelationIdSelectorType in HttpCorrelationIdSelectorTypes)
