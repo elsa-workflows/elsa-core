@@ -69,10 +69,10 @@ jobs:
         run: |
           dotnet build Elsa.ReactStudio.slnf
           dotnet test studio/react/dotnet/Elsa.ReactStudio.Host.Tests/Elsa.ReactStudio.Host.Tests.csproj --logger trx --results-directory "$RUNNER_TEMP/react-studio-tests"
-      - name: Exercise History API navigation through the ASP.NET host
+      - name: Exercise the ASP.NET host across Chromium, Firefox and WebKit
         working-directory: studio/react
         run: |
-          pnpm exec playwright install --with-deps chromium
+          pnpm exec playwright install --with-deps chromium firefox webkit
           pnpm test:browser
       - name: Pack the Preview feature libraries without publishing
         run: |

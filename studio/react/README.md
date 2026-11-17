@@ -189,7 +189,7 @@ samples/weather-module/     external consumer compiled against packed packages
 | `pnpm dev` | Vite development server on port 5173; run the configuration host too. |
 | `pnpm host` | ASP.NET host on port 5201; reads the source configuration file per request. |
 | `pnpm build` | Type check and build ESM/CSS for the ASP.NET host. |
-| `pnpm test:browser` | Browser tests against the built ASP.NET host. |
+| `pnpm test:browser` | Test the built ASP.NET host in Chromium, Firefox and WebKit. Install the engines with `pnpm exec playwright install chromium firefox webkit` and select an individual engine with `--project`. |
 | `pnpm test` | Unit tests (Vitest). |
 | `pnpm lint` | ESLint. |
 | `pnpm typecheck` | Type check. |

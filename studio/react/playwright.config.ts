@@ -7,10 +7,19 @@ export default defineConfig({
   workers: 1,
   use: {
     baseURL: "http://127.0.0.1:5201",
-    browserName: "chromium",
-    launchOptions: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
-      ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH } : {},
   },
+  projects: [
+    {
+      name: "chromium",
+      use: {
+        browserName: "chromium",
+        launchOptions: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
+          ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH } : {},
+      },
+    },
+    { name: "firefox", use: { browserName: "firefox" } },
+    { name: "webkit", use: { browserName: "webkit" } },
+  ],
   webServer: [{
     command: "dotnet run --project dotnet/Elsa.ReactStudio.Server --no-build --no-restore --no-launch-profile -p:UseAppHost=false --urls http://127.0.0.1:5201",
     env: { STUDIO_CONFIG_PATH: fixture },
