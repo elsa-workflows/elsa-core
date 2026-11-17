@@ -68,14 +68,15 @@ public class BookmarkQueueDeadLetterManager(
             ActivityInstanceId = item.ActivityInstanceId,
             ActivityTypeName = item.ActivityTypeName,
             Options = item.Options,
+            UnreadableOptions = item.UnreadableOptions,
             OriginalCreatedAt = item.CreatedAt,
             DeadLetteredAt = now,
-            Reason = reason,
+            Reason = item.UnreadableOptions != null ? BookmarkQueueDeadLetterItem.UnreadableOptionsReason : reason,
             DeliveryAttempts = item.DeliveryAttempts,
             LastAttemptedAt = item.LastAttemptedAt,
             LastErrorType = exception?.GetType().FullName ?? item.LastErrorType,
             LastErrorMessage = exception?.Message ?? item.LastErrorMessage,
-            CanReplay = true
+            CanReplay = item.UnreadableOptions == null
         };
 
         return deadLetterItem;

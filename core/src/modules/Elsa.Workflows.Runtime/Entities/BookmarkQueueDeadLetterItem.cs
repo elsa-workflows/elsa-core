@@ -8,6 +8,8 @@ namespace Elsa.Workflows.Runtime.Entities;
 /// </summary>
 public class BookmarkQueueDeadLetterItem : Entity
 {
+    internal const string UnreadableOptionsReason = "UnreadableOptions";
+
     /// <summary>
     /// The ID of the original bookmark queue item.
     /// </summary>
@@ -47,6 +49,8 @@ public class BookmarkQueueDeadLetterItem : Entity
     /// Any options to apply when resuming the bookmark.
     /// </summary>
     public ResumeBookmarkOptions? Options { get; set; }
+
+    internal string? UnreadableOptions { get; set; }
 
     /// <summary>
     /// The timestamp that the original queue item was created.
