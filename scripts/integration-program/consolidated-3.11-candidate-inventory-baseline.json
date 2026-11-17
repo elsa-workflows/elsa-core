@@ -1,9 +1,9 @@
 {
   "evidence": {
-    "exclusion_count": 140,
+    "exclusion_count": 141,
     "package_count": 251,
     "scope": "Evaluated 3.11.0 inventory for review. Package bytes require the sealed candidate and consumer checks.",
-    "source_commit": "413e831b01a6d8a09ebd207468abaac199414945",
+    "source_commit": "49e06a9c64ee34d02acdd09ec934243dd8a806ce",
     "version": "3.11.0"
   },
   "exclusions": [
@@ -525,6 +525,11 @@
     {
       "id": "Elsa.Persistence.Dapper.UnitTests",
       "project": "extensions/test/modules/persistence/Elsa.Persistence.Dapper.UnitTests/Elsa.Persistence.Dapper.UnitTests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Persistence.Elasticsearch.UnitTests",
+      "project": "extensions/test/modules/persistence/Elsa.Persistence.Elasticsearch.UnitTests/Elsa.Persistence.Elasticsearch.UnitTests.csproj",
       "reason": "Project or inherited nonpackable setting remains active"
     },
     {
