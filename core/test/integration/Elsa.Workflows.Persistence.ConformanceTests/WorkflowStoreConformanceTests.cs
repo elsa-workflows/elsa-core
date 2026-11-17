@@ -52,7 +52,9 @@ public abstract class WorkflowStoreConformanceTests
         tenantA.TenantId = "tenant-a";
         var tenantB = Trigger("id-b", hash: "shared-hash");
         tenantB.TenantId = "tenant-b";
-        await scenario.Triggers.ReplaceAsync([], [tenantA, tenantB]);
+        await scenario.Triggers.ReplaceAsync([], [tenantA]);
+        using (scenario.UseTenant("tenant-b"))
+            await scenario.Triggers.ReplaceAsync([], [tenantB]);
         var bothTenants = (await scenario.Triggers.FindManyAsync(new TriggerFilter { Hash = "shared-hash", TenantAgnostic = true })).ToList();
         Assert.Equal(2, bothTenants.Count);
         Assert.Contains(bothTenants, x => x.Id == "id-a");
@@ -87,7 +89,8 @@ public abstract class WorkflowStoreConformanceTests
         using (scenario.UseTenant(Tenant.DefaultTenantId))
         {
             await scenario.Triggers.SaveAsync(Trigger("id-null", hash: "hash-null", tenantId: null));
-            await scenario.Triggers.SaveAsync(Trigger("id-named", hash: "hash-named", tenantId: "tenant-a"));
+            using (scenario.UseTenant("tenant-a"))
+                await scenario.Triggers.SaveAsync(Trigger("id-named", hash: "hash-named", tenantId: "tenant-a"));
 
             var defaultVisible = (await scenario.Triggers.FindManyAsync(new TriggerFilter())).ToList();
             Assert.Contains(defaultVisible, x => x.Id == "id-null");
@@ -205,7 +208,8 @@ public abstract class WorkflowStoreConformanceTests
         using (scenario.UseTenant(Tenant.DefaultTenantId))
         {
             await scenario.Definitions.SaveAsync(Definition("def-null", "Null", tenantId: null));
-            await scenario.Definitions.SaveAsync(Definition("def-named", "Named", "tenant-a"));
+            using (scenario.UseTenant("tenant-a"))
+                await scenario.Definitions.SaveAsync(Definition("def-named", "Named", "tenant-a"));
 
             var defaultVisible = (await scenario.Definitions.FindManyAsync(new WorkflowDefinitionFilter())).ToList();
             Assert.Contains(defaultVisible, x => x.Id == "def-null");
@@ -241,7 +245,8 @@ public abstract class WorkflowStoreConformanceTests
         using (scenario.UseTenant(Tenant.DefaultTenantId))
         {
             await scenario.Bookmarks.SaveAsync(Bookmark("bm-null", tenantId: null));
-            await scenario.Bookmarks.SaveAsync(Bookmark("bm-named", tenantId: "tenant-a"));
+            using (scenario.UseTenant("tenant-a"))
+                await scenario.Bookmarks.SaveAsync(Bookmark("bm-named", tenantId: "tenant-a"));
 
             var defaultVisible = (await scenario.Bookmarks.FindManyAsync(new BookmarkFilter())).ToList();
             Assert.Contains(defaultVisible, x => x.Id == "bm-null");
