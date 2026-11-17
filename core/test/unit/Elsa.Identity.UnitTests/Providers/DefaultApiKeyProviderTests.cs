@@ -16,6 +16,27 @@ namespace Elsa.Identity.UnitTests.Providers;
 public class DefaultApiKeyProviderTests
 {
     [Fact]
+    public async Task ContradictoryTenantIsRejectedBeforeUpdatingAConfiguredLegacyKey()
+    {
+        var accessor = new DefaultTenantAccessor();
+        var application = new Application { ClientId = "app", Name = "App", HashedApiKey = "old-hash", HashedApiKeySalt = "old-salt" };
+        var applications = new ConfigurationBasedApplicationProvider(Microsoft.Extensions.Options.Options.Create(new ApplicationsOptions { Applications = [application] }));
+        var store = Substitute.For<IApplicationStore>();
+        var hasher = Substitute.For<ISecretHasher>();
+        var parser = Substitute.For<IApiKeyParser>();
+        parser.Parse("configured-key").Returns("app");
+        var validator = new DefaultApplicationCredentialsValidator(parser, applications, store, hasher, null, accessor);
+
+        using var scope = accessor.PushContext(new Tenant { Id = "tenant-b", Name = "Tenant B" });
+
+        Assert.Null(await validator.ValidateAsync("configured-key"));
+        hasher.DidNotReceiveWithAnyArgs().VerifySecret(default!, default!, default!, out _);
+        await store.DidNotReceiveWithAnyArgs().SaveAsync(default!);
+        Assert.Null(application.TenantId);
+        Assert.Equal("old-hash", application.HashedApiKey);
+    }
+
+    [Fact]
     public async Task ConfiguredApplicationKeyBindsTenantAndResolvesRolesWithinIt()
     {
         var accessor = new DefaultTenantAccessor();
@@ -107,11 +128,11 @@ public class DefaultApiKeyProviderTests
         parser.Parse("configured-key").Returns("app");
         var hasher = Substitute.For<ISecretHasher>();
         hasher.VerifySecret("configured-key", "hash", "salt", out _).Returns(true);
-        var validator = new DefaultApplicationCredentialsValidator(parser, applications, hasher);
         var tenants = Substitute.For<ITenantService>();
         tenants.FindAsync(Tenant.DefaultTenantId, Arg.Any<CancellationToken>()).Returns(Tenant.Default);
         tenants.FindAsync("tenant-a", Arg.Any<CancellationToken>()).Returns(new Tenant { Id = "tenant-a", Name = "Tenant A" });
         tenants.FindAsync("tenant-b", Arg.Any<CancellationToken>()).Returns(new Tenant { Id = "tenant-b", Name = "Tenant B" });
+        var validator = new DefaultApplicationCredentialsValidator(parser, applications, null, hasher, null, accessor, tenants);
         return new(validator, new StoreBasedRoleProvider(roles), accessor,
             Microsoft.Extensions.Options.Options.Create(new IdentityTokenOptions()), tenants, hints);
     }
