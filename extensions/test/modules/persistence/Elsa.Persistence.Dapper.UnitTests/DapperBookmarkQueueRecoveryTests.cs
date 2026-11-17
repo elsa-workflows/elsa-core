@@ -94,27 +94,29 @@ public sealed class DapperBookmarkQueueRecoveryTests
         var activeRecords = new Store<BookmarkQueueItemRecord>(connectionProvider, tenantAccessor, "BookmarkQueueItems");
         var deadLetterRecords = new Store<BookmarkQueueDeadLetterRecord>(connectionProvider, tenantAccessor, "BookmarkQueueDeadLetterItems");
         const string unreadable = """{"input":""";
+        var serializer = new JsonPayloadSerializer(scope.ServiceProvider);
+        var readable = serializer.Serialize(new ResumeBookmarkOptions { Input = new Dictionary<string, object> { ["name"] = "Alice" } });
         using (var connection = connectionProvider.GetConnection())
         {
             var dialect = connectionProvider.Dialect;
             var table = dialect.QuoteIdentifier("BookmarkQueueItems");
             var columns = new[] { "Id", "TenantId", "BookmarkId", "CreatedAt", "SerializedOptions" }.Select(dialect.QuoteIdentifier);
             const string parameters = "@Id, @TenantId, @BookmarkId, @CreatedAt, @SerializedOptions";
-            await global::Dapper.SqlMapper.ExecuteAsync(connection, $"INSERT INTO {table} ({string.Join(", ", columns)}) VALUES ({parameters})",
-                new { Id = key, TenantId = tenantId, BookmarkId = "first", CreatedAt = DateTimeOffset.UnixEpoch, SerializedOptions = unreadable });
+            var retained = new[]
+            {
+                new { Id = key, TenantId = tenantId, BookmarkId = "first", CreatedAt = DateTimeOffset.UnixEpoch, SerializedOptions = unreadable },
+                new { Id = $"{key}-valid", TenantId = tenantId, BookmarkId = "second", CreatedAt = DateTimeOffset.UnixEpoch.AddMinutes(1), SerializedOptions = readable }
+            };
+            await global::Dapper.SqlMapper.ExecuteAsync(connection, $"INSERT INTO {table} ({string.Join(", ", columns)}) VALUES ({parameters})", retained);
         }
 
         runner.MigrateUp();
-        var serializer = new JsonPayloadSerializer(scope.ServiceProvider);
         var active = new DapperBookmarkQueueStore(activeRecords, serializer);
         var deadLetter = new DapperBookmarkQueueDeadLetterStore(deadLetterRecords, serializer);
-        await active.AddAsync(new()
-        {
-            Id = $"{key}-valid",
-            BookmarkId = "second",
-            CreatedAt = DateTimeOffset.UnixEpoch.AddMinutes(1),
-            Options = new() { Input = new Dictionary<string, object> { ["name"] = "Alice" } }
-        });
+        var retainedValid = await active.FindAsync(new BookmarkQueueFilter { Id = $"{key}-valid" });
+        Assert.NotNull(retainedValid);
+        Assert.Equal(0, retainedValid.DeliveryAttempts);
+        Assert.Equal("Alice", retainedValid.Options?.Input?["name"]);
 
         var resumer = Substitute.For<IWorkflowResumer>();
         resumer.ResumeAsync(Arg.Any<BookmarkFilter>(), Arg.Any<ResumeBookmarkOptions>(), Arg.Any<CancellationToken>())
