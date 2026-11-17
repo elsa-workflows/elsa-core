@@ -27,6 +27,7 @@ internal sealed class WorkflowInstanceTestHarness : IAsyncDisposable
     private const int RunMethodIndex = 1;
     private const int CancelMethodIndex = 4;
     private const int ImportStateMethodIndex = 7;
+    private const int RunIfPendingMethodIndex = 9;
 
     private readonly ActorSystem _actorSystem = new();
     private readonly ServiceProvider _serviceProvider;
@@ -109,6 +110,15 @@ internal sealed class WorkflowInstanceTestHarness : IAsyncDisposable
         RunMethodIndex,
         new ProtoRunWorkflowInstanceRequest { ActivityHandle = new() },
         cancellationToken);
+
+    public Task<object> RunIfPendingAsync(string? deliveryId, CancellationToken cancellationToken)
+    {
+        var request = new ProtoRunWorkflowInstanceRequest { ActivityHandle = new() };
+        if (deliveryId != null)
+            request.StartDeliveryId = deliveryId;
+
+        return RequestAsync(RunIfPendingMethodIndex, request, cancellationToken);
+    }
 
     public Task<object> CancelAsync(CancellationToken cancellationToken) => RequestAsync(CancelMethodIndex, new Empty(), cancellationToken);
 

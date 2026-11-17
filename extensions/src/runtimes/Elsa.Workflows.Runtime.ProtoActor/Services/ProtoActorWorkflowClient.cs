@@ -73,6 +73,15 @@ public class ProtoActorWorkflowClient : IWorkflowClient
     }
 
     /// <inheritdoc />
+    public async Task<RunWorkflowInstanceResponse?> RunInstanceIfPendingAsync(RunWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
+    {
+        var protoRequest = _mappers.RunWorkflowInstanceRequestMapper.Map(request);
+        var response = await _actorClient.RunIfPending(protoRequest, CreateHeaders(), cancellationToken)
+            ?? throw new InvalidOperationException("The workflow actor did not respond to the pending start.");
+        return response.Execution == null ? null : _mappers.RunWorkflowInstanceResponseMapper.Map(WorkflowInstanceId, response.Execution);
+    }
+
+    /// <inheritdoc />
     public async Task<RunWorkflowInstanceResponse> CreateAndRunInstanceAsync(CreateAndRunWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
     {
         var protoRequest = _mappers.CreateAndRunWorkflowInstanceRequestMapper.Map(WorkflowInstanceId, request);

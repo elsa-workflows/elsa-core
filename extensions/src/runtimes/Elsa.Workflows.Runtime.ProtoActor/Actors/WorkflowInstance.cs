@@ -221,6 +221,19 @@ internal class WorkflowInstance(
         });
     }
 
+    public override async Task<RunIfPendingWorkflowInstanceResponse> RunIfPending(RunWorkflowInstanceRequest request)
+    {
+        if (_isRunning)
+            return new();
+
+        var result = await RunExclusiveAsync(mappers.RunWorkflowParamsMapper.Map(request), onlyPending: true,
+            request.HasStartDeliveryId ? request.StartDeliveryId.NullIfEmpty() : null);
+        return new()
+        {
+            Execution = result != null ? mappers.RunWorkflowInstanceResponseMapper.Map(result, request.IncludeWorkflowOutput) : null
+        };
+    }
+
     private async Task<RunWorkflowResult> RunAsync(RunWorkflowOptions runWorkflowOptions)
     {
         if (_isRunning)
@@ -229,22 +242,36 @@ internal class WorkflowInstance(
             return new(null!, null!, null!, null, Journal.Empty);
         }
 
-        _isRunning = true;
-        var workflowResult = await RunInternalAsync(runWorkflowOptions);
-        _isRunning = false;
+        return (await RunExclusiveAsync(runWorkflowOptions, onlyPending: false, deliveryId: null))!;
+    }
 
-        if (_queuedRunWorkflowOptions.Count > 0)
+    private async Task<RunWorkflowResult?> RunExclusiveAsync(RunWorkflowOptions options, bool onlyPending, string? deliveryId)
+    {
+        RunWorkflowResult? result = null;
+        _isRunning = true;
+
+        try
         {
-            var nextRunOptions = _queuedRunWorkflowOptions.Dequeue();
-            return await RunAsync(nextRunOptions);
+            await EnsureStateAsync();
+            if (!onlyPending || (WorkflowState.SubStatus == WorkflowSubStatus.Pending && WorkflowStartDelivery.Matches(WorkflowState, deliveryId)))
+                result = await RunInternalAsync(options);
+        }
+        finally
+        {
+            _isRunning = false;
         }
 
-        return workflowResult;
+        if (_queuedRunWorkflowOptions.TryDequeue(out var next))
+        {
+            var nextResult = await RunAsync(next);
+            return onlyPending ? result : nextResult;
+        }
+
+        return result;
     }
 
     private async Task<RunWorkflowResult> RunInternalAsync(RunWorkflowOptions runWorkflowOptions)
     {
-        await EnsureStateAsync();
         using var executionScope = WorkflowExecutionScope.Begin(WorkflowState.Id);
         runWorkflowOptions.WorkflowInstanceId = _workflowInstanceId;
 
