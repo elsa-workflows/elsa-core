@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Sockets;
 using Elsa.Http.Options;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.Http.Services;
@@ -23,6 +24,7 @@ public class HttpClientFileDownloader : IFileDownloader
     /// <summary>
     /// Initializes the downloader with the host's remote download configuration.
     /// </summary>
+    [ActivatorUtilitiesConstructor]
     public HttpClientFileDownloader(HttpClient httpClient, IOptions<HttpActivityOptions> options)
     {
         _httpClient = httpClient;
