@@ -88,10 +88,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
                     return;
                 }
 
-                await HandleMultipleWorkflowsFoundAsync(httpContext, () => triggers.Select(x => new
-                {
-                    x.WorkflowDefinitionId
-                }), cancellationToken);
+                await HandleMultipleWorkflowsFoundAsync(httpContext, cancellationToken);
                 return;
             }
 
@@ -118,10 +115,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
                 return;
             }
 
-            await HandleMultipleWorkflowsFoundAsync(httpContext, () => bookmarks.Select(x => new
-            {
-                x.WorkflowInstanceId
-            }), cancellationToken);
+            await HandleMultipleWorkflowsFoundAsync(httpContext, cancellationToken);
             return;
         }
 
@@ -422,7 +416,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
     }
 
     [RequiresUnreferencedCode("Calls System.Text.Json.JsonSerializer.Serialize<TValue>(TValue, JsonSerializerOptions)")]
-    private async Task<bool> HandleMultipleWorkflowsFoundAsync(HttpContext httpContext, Func<IEnumerable<object>> workflowMatches, CancellationToken cancellationToken)
+    private static async Task HandleMultipleWorkflowsFoundAsync(HttpContext httpContext, CancellationToken cancellationToken)
     {
         httpContext.Response.ContentType = "application/json";
         httpContext.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
@@ -430,11 +424,10 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
         var responseContent = JsonSerializer.Serialize(new
         {
             errorMessage = "The call is ambiguous and matches multiple workflows.",
-            workflows = workflowMatches().ToArray()
+            correlationId = httpContext.TraceIdentifier
         });
 
         await httpContext.Response.WriteAsync(responseContent, cancellationToken);
-        return true;
     }
 
     private async Task<bool> HandleWorkflowFaultAsync(IServiceProvider serviceProvider, HttpContext httpContext, RunWorkflowResult workflowExecutionResult, CancellationToken cancellationToken)
