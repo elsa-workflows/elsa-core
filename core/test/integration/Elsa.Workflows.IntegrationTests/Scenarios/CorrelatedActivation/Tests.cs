@@ -65,6 +65,45 @@ public class Tests
         Assert.Equal(WorkflowSubStatus.Suspended, instance.SubStatus);
     }
 
+    [Fact]
+    public async Task ConcurrentCreateAndRun_OnlyOneOwnsTheRequestedId()
+    {
+        var services = CreateServices();
+        await services.PopulateRegistriesAsync();
+        const string id = "concurrent-start";
+        var handle = WorkflowDefinitionHandle.ByDefinitionId(nameof(AllowAlwaysConversationWorkflow), VersionOptions.Published);
+
+        async Task<bool> TryStartAsync(string correlationId)
+        {
+            await using var scope = services.CreateAsyncScope();
+            var runtime = scope.ServiceProvider.GetRequiredService<IWorkflowRuntime>();
+            var client = await runtime.CreateClientAsync(id);
+
+            try
+            {
+                await client.CreateAndRunInstanceAsync(new CreateAndRunWorkflowInstanceRequest
+                {
+                    WorkflowDefinitionHandle = handle,
+                    CorrelationId = correlationId
+                });
+                return true;
+            }
+            catch (WorkflowInstanceAlreadyExistsException)
+            {
+                return false;
+            }
+        }
+
+        var results = await Task.WhenAll(TryStartAsync("first"), TryStartAsync("second"));
+        Assert.Single(results, result => result);
+
+        await using var readScope = services.CreateAsyncScope();
+        var store = readScope.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>();
+        var instance = Assert.IsType<WorkflowInstance>(await store.FindAsync(new WorkflowInstanceFilter { Id = id }));
+        Assert.Equal(results[0] ? "first" : "second", instance.CorrelationId);
+        Assert.Equal(WorkflowSubStatus.Suspended, instance.SubStatus);
+    }
+
     [Fact(DisplayName = "Concurrent start with the same CorrelationId and CorrelatedSingleton creates one Running instance")]
     public async Task ConcurrentStart_WithCorrelatedSingleton_CreatesOneRunningInstance()
     {
