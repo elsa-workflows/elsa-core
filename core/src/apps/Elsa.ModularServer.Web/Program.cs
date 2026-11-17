@@ -96,7 +96,10 @@ builder.AddShells(shells => shells
             typeof(SqliteUserTasksPersistenceShellFeature));
     }));
 
-services.AddSingleton<PluginCatalog>();
+var enableSampleCatalog = builder.Environment.IsDevelopment() &&
+    (configuration.GetValue<bool?>("SampleCatalog:Enabled") ?? true);
+if (enableSampleCatalog)
+    services.AddSingleton<PluginCatalog>();
 services.AddHealthChecks();
 
 services.AddAuthentication();
@@ -108,7 +111,8 @@ app.MapHealthChecks("/");
 app.MapShells();
 app.UseAuthentication();
 app.UseAuthorization();
-app.MapSampleCatalog();
+if (enableSampleCatalog)
+    app.MapSampleCatalog();
 
 // Elsa.Server.Web fails fast when the Identity signing key is still a known default outside Development/Demo:
 // AddIdentityTokenOptionsValidation() registers an IStartupValidator on the host, which the generic host runs
