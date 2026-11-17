@@ -6,8 +6,9 @@ namespace Elsa.Persistence.Dapper.Migrations.Runtime;
 /// <summary>
 /// Persists bookmark delivery attempts and dead letters in the runtime database.
 /// </summary>
-[Migration(20009, "Elsa:Runtime:V3.11")]
-public sealed class V3_11 : Migration
+// Keep the same migration version on 3.10 and 3.11 so upgrades apply the schema once.
+[Migration(20009, "Elsa:Runtime:BookmarkQueueRecovery")]
+public sealed class V3_10_BookmarkQueueRecovery : Migration
 {
     private const string QueueTable = "BookmarkQueueItems";
     private const string DeadLetterTable = "BookmarkQueueDeadLetterItems";
