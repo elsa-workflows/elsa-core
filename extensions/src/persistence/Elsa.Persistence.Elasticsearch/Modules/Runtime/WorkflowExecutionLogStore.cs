@@ -101,10 +101,27 @@ public class ElasticWorkflowExecutionLogStore(ElasticStore<WorkflowExecutionLogR
 
     private static QueryDescriptor<WorkflowExecutionLogRecord> Filter(QueryDescriptor<WorkflowExecutionLogRecord> descriptor, WorkflowExecutionLogRecordFilter filter)
     {
-        if (!string.IsNullOrWhiteSpace(filter.WorkflowInstanceId)) descriptor = descriptor.Match(m => m.Field(f => f.WorkflowInstanceId).Query(filter.WorkflowInstanceId));
-        if (!string.IsNullOrWhiteSpace(filter.ActivityId)) descriptor = descriptor.Match(m => m.Field(f => f.ActivityId).Query(filter.ActivityId));
-        if (!string.IsNullOrWhiteSpace(filter.EventName)) descriptor = descriptor.Match(m => m.Field(f => f.EventName).Query(filter.EventName));
-        
-        return descriptor;
+        var filters = new List<Query>();
+        var exclusions = new List<Query>();
+
+        if (filter.Id != null)
+            filters.AddDocumentIds([filter.Id]);
+
+        filters.AddDocumentIds(filter.Ids);
+        filters.AddKeyword("workflowInstanceId", filter.WorkflowInstanceId);
+        filters.AddKeywords("workflowInstanceId", filter.WorkflowInstanceIds);
+        filters.AddKeyword("parentActivityInstanceId", filter.ParentActivityInstanceId);
+        filters.AddKeyword("activityId", filter.ActivityId);
+        filters.AddKeywords("activityId", filter.ActivityIds);
+        filters.AddKeyword("activityNodeId", filter.ActivityNodeId);
+        filters.AddKeywords("activityNodeId", filter.ActivityNodeIds);
+        filters.AddKeyword("eventName", filter.EventName);
+        filters.AddKeywords("eventName", filter.EventNames);
+        exclusions.AddKeyword("activityType", filter.ExcludeActivityType);
+        exclusions.AddKeywords("activityType", filter.ExcludeActivityTypes);
+
+        return filters.Count == 0 && exclusions.Count == 0
+            ? descriptor.MatchAll(new MatchAllQuery())
+            : descriptor.Bool(new BoolQuery { Filter = filters, MustNot = exclusions });
     }
 }

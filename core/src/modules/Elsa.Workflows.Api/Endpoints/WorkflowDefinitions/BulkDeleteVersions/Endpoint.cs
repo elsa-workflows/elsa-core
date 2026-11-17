@@ -38,7 +38,8 @@ internal class BulkDeleteVersions(IWorkflowDefinitionManager workflowDefinitionM
             return null!;
         }
 
-        var count = await workflowDefinitionManager.BulkDeleteByIdsAsync(request.Ids, cancellationToken);
+        var versionIds = definitions.Select(definition => definition.Id).Distinct().ToArray();
+        var count = versionIds.Length == 0 ? 0 : await workflowDefinitionManager.BulkDeleteByIdsAsync(versionIds, cancellationToken);
         return new Response(count);
     }
 }

@@ -28,6 +28,12 @@ The HTTP Request, Flow HTTP Request, and Download File activities and the HTTP f
 
 Set `HttpActivityOptions.MaxResponseBodySize` to a positive byte count for deployments that need a different limit. A lower limit already configured on the HTTP client takes precedence. This setting does not apply to inbound HTTP request bodies.
 
+## Elasticsearch workflow records
+
+Workflow instance and execution log queries and mutations use each document type's configured index. Instance IDs use Elasticsearch document IDs. Workflow definition IDs, version IDs, statuses, and log instance IDs use the exact-value `.keyword` fields. The default dynamic mappings already provide these fields. Deployments with custom mappings should verify those subfields before upgrading.
+
+Elasticsearch does not interpret custom `WorkflowInstanceFilter.TimestampFilters`. Requests that use them fail before any records are selected or changed. The `BeforeLastUpdated` cutoff is supported.
+
 ## VNext user task invitation lookup
 
 The opt-in VNext user task repository resolves an invitation from its token hash through the existing invitation storage unit. It checks the reference against the current task before returning an invitation. New invitation writes register their lookup before committing the task. A lookup reference from an interrupted task write cannot authorize an invitation absent from the committed task.

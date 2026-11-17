@@ -35,14 +35,15 @@ internal static class WorkflowDefinitionMutationAuthorization
         if (versions.Count == 0)
             return true;
 
-        // The manager also marks the highest surviving version of each affected definition latest.
+        // The manager marks a surviving version latest only when its flag needs to change.
         var definitionIds = versions.Select(version => version.DefinitionId).Distinct().ToList();
         var deletedIds = versions.Select(version => version.Id).ToHashSet();
         var relatedVersions = await store.FindManyAsync(new WorkflowDefinitionFilter { DefinitionIds = definitionIds }, cancellationToken);
         var survivingLatest = relatedVersions
             .Where(version => !deletedIds.Contains(version.Id))
             .GroupBy(version => version.DefinitionId)
-            .Select(group => group.MaxBy(version => version.Version)!);
+            .Select(group => group.MaxBy(version => version.Version)!)
+            .Where(version => !version.IsLatest);
 
         return await authorizationService.CanMutateAsync(user, versions.Concat(survivingLatest));
     }

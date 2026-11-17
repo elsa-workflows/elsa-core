@@ -166,10 +166,8 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
         {
             d.Refresh(true);
             d.Query(q => q.Bool(b => b
-                .Must(m => m.Match(mt => mt.Field(f => f.Id).Query(workflowInstanceId)))
-                .MustNot(mn => mn.Match(mt => mt
-                    .Field(f => f.Status)
-                    .Query(WorkflowStatus.Finished.ToString()!)))));
+                .Filter(new IdsQuery { Values = new[] { workflowInstanceId } })
+                .MustNot(new TermQuery { Field = "status.keyword", Value = WorkflowStatus.Finished.ToString() })));
 
             d.Script(s => s
                 .Source("ctx._source.status = params.status; ctx._source.subStatus = params.subStatus; ctx._source.isExecuting = params.isExecuting;")
@@ -201,7 +199,7 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
             // Default conflicts=abort throws on a version conflict. Proceed reports the document as not updated,
             // which is the compare-and-swap result for both the mark and the restore.
             d.Conflicts(Conflicts.Proceed);
-            d.Query(q => q.Bool(b => b.Must(m => m.Match(mt => mt.Field(f => f.Id).Query(workflowInstanceId)))));
+            d.Query(q => q.Ids(new IdsQuery { Values = new[] { workflowInstanceId } }));
             d.Script(s => s
                 .Source("""
                     if (ctx._source.id == params.workflowInstanceId
@@ -257,29 +255,50 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
 
     private static QueryDescriptor<WorkflowInstance> Filter(QueryDescriptor<WorkflowInstance> descriptor, WorkflowInstanceFilter filter)
     {
-        if (!string.IsNullOrWhiteSpace(filter.Id)) descriptor = descriptor.Match(m => m.Field(f => f.Id).Query(filter.Id));
-        if (!string.IsNullOrWhiteSpace(filter.DefinitionId)) descriptor = descriptor.Match(m => m.Field(f => f.DefinitionId).Query(filter.DefinitionId));
-        if (!string.IsNullOrWhiteSpace(filter.DefinitionVersionId)) descriptor = descriptor.Match(m => m.Field(f => f.DefinitionVersionId).Query(filter.DefinitionVersionId));
+        // Summaries used by deletion and the delete itself must apply the same restrictions.
+        if (filter.TimestampFilters?.Count > 0)
+            throw new NotSupportedException("Elasticsearch does not support custom workflow instance timestamp filters.");
 
-        // TODO: filter by IDs
-        // TODO: filter by DefinitionIDs
-        // TODO: filter by DefinitionVersionIDs
-        // TODO: filter by ParentWorkflowInstanceIds
-        // TODO: filter by CorrelationIDs
-        // TODO: filter by WorkflowStatuses
-        // TODO: filter by WorkflowSubStatuses
+        var filters = new List<Query>();
 
-        if (filter.Version != null) descriptor = descriptor.Match(m => m.Field(f => f.Version).Query(filter.Version.ToString()!));
-        if (!string.IsNullOrWhiteSpace(filter.CorrelationId)) descriptor = descriptor.Match(m => m.Field(f => f.CorrelationId).Query(filter.CorrelationId));
-        if (filter.WorkflowStatus != null) descriptor = descriptor.Match(m => m.Field(f => f.Status).Query(filter.WorkflowStatus.ToString()!));
-        if (filter.WorkflowSubStatus != null) descriptor = descriptor.Match(m => m.Field(f => f.SubStatus).Query(filter.WorkflowSubStatus.ToString()!));
+        if (filter.Id != null)
+            filters.AddDocumentIds([filter.Id]);
 
-        if (string.IsNullOrWhiteSpace(filter.SearchTerm))
-            return descriptor.MatchAll(new MatchAllQuery());
+        filters.AddDocumentIds(filter.Ids);
+        filters.AddKeyword("definitionId", filter.DefinitionId);
+        filters.AddKeywords("definitionId", filter.DefinitionIds);
+        filters.AddKeyword("definitionVersionId", filter.DefinitionVersionId);
+        filters.AddKeywords("definitionVersionId", filter.DefinitionVersionIds);
+        filters.AddKeywords("parentWorkflowInstanceId", filter.ParentWorkflowInstanceIds);
+        filters.AddKeyword("correlationId", filter.CorrelationId);
+        filters.AddKeywords("correlationId", filter.CorrelationIds);
+        filters.AddKeyword("status", filter.WorkflowStatus?.ToString());
+        filters.AddKeywords("status", filter.WorkflowStatuses?.Select(status => status.ToString()).ToArray());
+        filters.AddKeyword("subStatus", filter.WorkflowSubStatus?.ToString());
+        filters.AddKeywords("subStatus", filter.WorkflowSubStatuses?.Select(status => status.ToString()).ToArray());
+        filters.AddKeywords("name", filter.Names);
 
-        return descriptor
-            .QueryString(c => c
-                .Query(filter.SearchTerm));
+        if (filter.Version is { } version)
+            filters.Add(new TermQuery { Field = "version", Value = version });
+        if (filter.IsExecuting is { } isExecuting)
+            filters.Add(new TermQuery { Field = "isExecuting", Value = isExecuting });
+        if (filter.IsSystem is { } isSystem)
+            filters.Add(new TermQuery { Field = "isSystem", Value = isSystem });
+        if (filter.BeforeLastUpdated is { } beforeLastUpdated)
+            filters.Add(new DateRangeQuery { Field = "updatedAt", Lt = beforeLastUpdated.UtcDateTime });
+        if (filter.HasIncidents is { } hasIncidents)
+            filters.Add(hasIncidents
+                ? new NumberRangeQuery { Field = "incidentCount", Gt = 0 }
+                : new TermQuery { Field = "incidentCount", Value = 0 });
+        if (filter.Name is { } name)
+        {
+            var escapedName = name.Replace("\\", "\\\\").Replace("*", "\\*").Replace("?", "\\?");
+            filters.Add(new WildcardQuery { Field = "name.keyword", Value = $"*{escapedName}*", CaseInsensitive = true });
+        }
+        if (!string.IsNullOrWhiteSpace(filter.SearchTerm))
+            filters.Add(new QueryStringQuery { Query = filter.SearchTerm });
+
+        return filters.Count == 0 ? descriptor.MatchAll(new MatchAllQuery()) : descriptor.Bool(new BoolQuery { Filter = filters });
     }
 
     private static SearchRequestDescriptor<WorkflowInstance> Summarize(SearchRequestDescriptor<WorkflowInstance> descriptor)

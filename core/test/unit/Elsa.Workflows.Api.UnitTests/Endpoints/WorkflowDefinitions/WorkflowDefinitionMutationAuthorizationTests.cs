@@ -12,6 +12,7 @@ using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Management.Options;
 using Elsa.Workflows.Management.Stores;
+using Elsa.Workflows.State;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Api.UnitTests.Endpoints.WorkflowDefinitions;
@@ -21,6 +22,7 @@ public class WorkflowDefinitionMutationAuthorizationTests : IAsyncLifetime
 {
     private const string Permission = "workflows/definitions:write,workflows/definitions:delete,workflows/definitions/versions:delete,workflows/definitions/versions:revert,workflows/definitions:publish,workflows/definitions:retract";
     private readonly MemoryWorkflowDefinitionStore _store = new LatestFirstStore();
+    private readonly MemoryWorkflowInstanceStore _instances = new(new MemoryStore<WorkflowInstance>());
     private AuthorizationTestHost _host = null!;
     private ManagementOptions _managementOptions = null!;
 
@@ -32,6 +34,7 @@ public class WorkflowDefinitionMutationAuthorizationTests : IAsyncLifetime
             {
                 services.AddElsa(elsa => elsa.UseWorkflowsApi());
                 services.AddSingleton<IWorkflowDefinitionStore>(_store);
+                services.AddSingleton<IWorkflowInstanceStore>(_instances);
                 services.PostConfigure<ManagementOptions>(options => _managementOptions = options);
             });
     }
@@ -128,6 +131,36 @@ public class WorkflowDefinitionMutationAuthorizationTests : IAsyncLifetime
         var definitions = (await _store.FindManyAsync(new())).OrderBy(definition => definition.Version).ToArray();
         Assert.Equal(new[] { "v1", "v3" }, definitions.Select(definition => definition.Id));
         Assert.Equal("v3", Assert.Single(definitions, definition => definition.IsLatest).Id);
+    }
+
+    [Fact]
+    public async Task BulkVersionDeletionRemovesOnlyInstancesOfSelectedVersions()
+    {
+        await SeedAsync("workflow", "version-1", version: 1, isLatest: false);
+        await SeedAsync("workflow", "version-2", version: 2);
+        await SeedInstanceAsync("instance-1", "version-1", 1);
+        await SeedInstanceAsync("instance-2", "version-2", 2);
+
+        using var response = await _host.SendAsync(HttpMethod.Post, "/bulk-actions/delete/workflow-definitions/by-id", Permission,
+            content: JsonContent.Create(new { ids = new[] { "version-1" } }));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("instance-2", Assert.Single(await _instances.FindManyAsync(new())).Id);
+    }
+
+    [Fact]
+    public async Task DeletingAnOlderVersionKeepsTheExistingProtectedLatestVersion()
+    {
+        await SeedAsync("first", "historical", version: 1, isLatest: false);
+        await SeedAsync("first", "latest", version: 2, isReadonly: true);
+
+        using var response = await _host.SendAsync(HttpMethod.Delete, "/workflow-definition-versions/historical", Permission);
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        var latest = Assert.Single(await _store.FindManyAsync(new()));
+        Assert.Equal("latest", latest.Id);
+        Assert.True(latest.IsLatest);
+        Assert.True(latest.IsReadonly);
     }
 
     [Theory]
@@ -252,6 +285,16 @@ public class WorkflowDefinitionMutationAuthorizationTests : IAsyncLifetime
         IsReadonly = isReadonly,
         MaterializerName = JsonWorkflowMaterializer.MaterializerName,
         StringData = """{"type":"Elsa.Sequence","activities":[]}"""
+    });
+
+    private ValueTask SeedInstanceAsync(string id, string versionId, int version) => _instances.AddAsync(new WorkflowInstance
+    {
+        Id = id,
+        DefinitionId = "workflow",
+        DefinitionVersionId = versionId,
+        Version = version,
+        Status = WorkflowStatus.Finished,
+        WorkflowState = new WorkflowState { Id = id, DefinitionId = "workflow", DefinitionVersionId = versionId, DefinitionVersion = version }
     });
 
     private sealed class LatestFirstStore() : MemoryWorkflowDefinitionStore(new MemoryStore<WorkflowDefinition>()), IWorkflowDefinitionStore
