@@ -25,7 +25,7 @@ public class Endpoint(ITenantService tenantService) : ElsaEndpointWithoutRequest
         }
 
         var tenants = await tenantService.ListAsync(ct);
-        var response = new ListResponse<Tenant>(tenants.ToList());
+        var response = new ListResponse<Tenant>(tenants.Select(TenantAdministration.ToDirectoryEntry).ToList());
         var json = JsonSerializer.Serialize(response, SerializerOptions.ConfigurationJsonSerializerOptions);
         await Send.StringAsync(json, contentType: MediaTypeNames.Application.Json, cancellation: ct);
     }

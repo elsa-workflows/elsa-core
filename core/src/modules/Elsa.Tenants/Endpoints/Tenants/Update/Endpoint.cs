@@ -50,7 +50,7 @@ public class Endpoint(ITenantService tenantService, ITenantStore tenantStore) : 
         };
         await tenantStore.UpdateAsync(tenant, ct);
         await tenantService.RefreshAsync(ct);
-        await Send.OkAsync(tenant, ct);
+        await Send.OkAsync(TenantAdministration.ToDirectoryEntry(tenant), ct);
     }
 }
 

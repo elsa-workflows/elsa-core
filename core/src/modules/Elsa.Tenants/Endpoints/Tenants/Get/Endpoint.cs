@@ -30,6 +30,6 @@ public class Endpoint(ITenantService tenantService) : ElsaEndpointWithoutRequest
             return;
         }
         
-        await Send.OkAsync(tenant, ct);
+        await Send.OkAsync(TenantAdministration.ToDirectoryEntry(tenant), ct);
     }
 }
