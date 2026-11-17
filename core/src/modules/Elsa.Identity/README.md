@@ -120,6 +120,12 @@ Turning it off:
 
 New identity passwords, client secrets, and API keys are hashed with PBKDF2-SHA256 using 600,000 iterations, a per-record salt, and version metadata. Existing legacy SHA-256 hashes remain valid and are upgraded opportunistically after a successful user login or API-key validation.
 
+## Local password attempt limits
+
+The built-in credentials validator shares a failure budget across direct and broker-local sign-in. The default limits are 10 failed or concurrent attempts per tenant and username, and 100 per server-observed source address, in a one-minute window. The process tracks at most 4,096 accounts and 4,096 sources per window. After a limit is reached, the route returns its ordinary invalid-credentials response. Successful validation releases its own reservation.
+
+Configure `LocalPasswordAttemptOptions` in code-first hosts or `Identity:LocalPasswordAttempts` in shell hosts. A multi-node deployment that needs one shared budget should register a distributed `ILocalPasswordAttemptLimiter` before enabling Identity, or apply equivalent limits across both routes at a trusted ingress. Custom credentials validators and direct callers that construct the validator themselves must opt into the shared limiter or provide equivalent protection. When using a reverse proxy, configure ASP.NET Core forwarded headers to trust only the intended proxies so the server-observed source address represents the caller.
+
 ## External Authentication Compatibility
 
 External Authentication is additive to Elsa Identity:
