@@ -1,8 +1,6 @@
 using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Common.Models;
-using Elsa.Workflows.Api.Constants;
-using Elsa.Workflows.Api.Requirements;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Filters;
 using JetBrains.Annotations;
@@ -43,9 +41,7 @@ public class DeleteVersion(IWorkflowDefinitionManager workflowDefinitionManager,
             return;
         }
 
-        var authorizationResult = await authorizationService.AuthorizeAsync(User, new NotReadOnlyResource(definition), AuthorizationPolicies.NotReadOnlyPolicy);
-
-        if (!authorizationResult.Succeeded)
+        if (!await authorizationService.CanDeleteVersionsAsync(User, store, [definition], cancellationToken))
         {
             await Send.ForbiddenAsync(cancellationToken);
             return;

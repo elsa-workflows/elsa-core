@@ -5,11 +5,12 @@ using JetBrains.Annotations;
 using Microsoft.AspNetCore.Authorization;
 using Elsa.Workflows.Api.Requirements;
 using Elsa.Workflows.Management;
+using Elsa.Workflows.Management.Filters;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.BulkDelete;
 
 [UsedImplicitly]
-internal class BulkDelete(IWorkflowDefinitionManager workflowDefinitionManager, IAuthorizationService authorizationService)
+internal class BulkDelete(IWorkflowDefinitionManager workflowDefinitionManager, IAuthorizationService authorizationService, IWorkflowDefinitionStore store)
     : ElsaEndpoint<Request, Response>
 {
     public override void Configure()
@@ -23,6 +24,13 @@ internal class BulkDelete(IWorkflowDefinitionManager workflowDefinitionManager, 
         var authorizationResult = await authorizationService.AuthorizeAsync(User, new NotReadOnlyResource(), AuthorizationPolicies.NotReadOnlyPolicy);
 
         if (!authorizationResult.Succeeded)
+        {
+            await Send.ForbiddenAsync(cancellationToken);
+            return null!;
+        }
+
+        var definitions = await store.FindManyAsync(new WorkflowDefinitionFilter { DefinitionIds = request.DefinitionIds }, cancellationToken);
+        if (!await authorizationService.CanMutateAsync(User, definitions))
         {
             await Send.ForbiddenAsync(cancellationToken);
             return null!;

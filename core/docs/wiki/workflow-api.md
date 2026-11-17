@@ -82,6 +82,10 @@ Hosts map these hubs with `app.UseWorkflowsSignalRHubs()` when SignalR is enable
 
 Workflow API registers [NotReadOnlyRequirementHandler](../../src/modules/Elsa.Workflows.Api/Requirements/NotReadOnlyRequirement.cs) and the policy name in [AuthorizationPolicies](../../src/modules/Elsa.Workflows.Api/Constants/AuthorizationPolicies.cs). Mutable workflow definition endpoints use this policy to honor management read-only mode.
 
+Bulk definition deletion, version deletion, publishing and retraction check the stored definitions before starting the operation.
+If a batch would change a read-only or system definition, it returns HTTP 403 before changing any definition in the batch.
+Version deletion and revert also check any version whose latest status the operation would change.
+
 Identity and API key setup are supplied by `Elsa.Identity`; see [Identity, Tenancy, And Security](identity-tenancy-security.md).
 
 ## API Client
