@@ -97,7 +97,14 @@ public class WorkflowDefinitionManager(
     {
         if (definitionToDelete.IsPublished)
         {
-            await workflowPublisher.RetractAsync(definitionToDelete, cancellationToken);
+            try
+            {
+                await workflowPublisher.RetractAsync(definitionToDelete, cancellationToken);
+            }
+            catch (Exceptions.WorkflowDefinitionEditConflictException)
+            {
+                return false;
+            }
         }
 
         await notificationSender.SendAsync(new WorkflowDefinitionVersionDeleting(definitionToDelete), cancellationToken);

@@ -33,7 +33,7 @@ public class DeleteVersion(IWorkflowDefinitionManager workflowDefinitionManager,
             VersionOptions = VersionOptions.SpecificVersion(version)
         };
 
-        var definition = await store.FindAsync(filter, cancellationToken);
+        var definition = (await store.FindAsync(filter, cancellationToken))?.ShallowClone();
 
         if (definition == null)
         {

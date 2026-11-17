@@ -115,6 +115,16 @@ public class CachingWorkflowDefinitionStore(IWorkflowDefinitionStore decoratedSt
     }
 
     /// <inheritdoc />
+    public async Task<bool> TryRetractAsync(WorkflowDefinition expected, CancellationToken cancellationToken = default)
+    {
+        var retracted = await decoratedStore.TryRetractAsync(expected, cancellationToken);
+        if (retracted)
+            await cacheManager.TriggerTokenAsync(CacheInvalidationTokenKey, cancellationToken);
+
+        return retracted;
+    }
+
+    /// <inheritdoc />
     public async Task<WorkflowDefinitionUpdateResult> TryUpdateLatestAsync(
         WorkflowDefinitionFilter filter,
         Func<WorkflowDefinition, bool> matchesExpected,

@@ -140,6 +140,19 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
     }
 
     /// <inheritdoc />
+    public async Task<bool> TryRetractAsync(WorkflowDefinition expected, CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await store.CreateDbContextAsync(cancellationToken);
+        var updated = await dbContext.WorkflowDefinitions.WhereTenantCanWrite(dbContext)
+            .Where(x => x.Id == expected.Id && x.DefinitionId == expected.DefinitionId && x.Version == expected.Version &&
+                        x.TenantId == expected.TenantId && x.IsPublished && x.IsReadonly == expected.IsReadonly &&
+                        (x.IsSystem == expected.IsSystem || (!expected.IsSystem && x.IsSystem == null!)))
+            .ExecuteUpdateAsync(setters => setters.SetProperty(x => x.IsPublished, false), cancellationToken);
+
+        return updated == 1;
+    }
+
+    /// <inheritdoc />
     public async Task SaveManyAsync(IEnumerable<WorkflowDefinition> definitions, CancellationToken cancellationToken = default)
     {
         await store.SaveManyAsync(definitions, OnSaveAsync, cancellationToken);

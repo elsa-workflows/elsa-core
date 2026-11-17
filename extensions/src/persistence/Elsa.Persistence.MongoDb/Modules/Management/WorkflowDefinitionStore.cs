@@ -226,6 +226,22 @@ public class MongoWorkflowDefinitionStore(MongoDbStore<WorkflowDefinition> mongo
     }
 
     /// <inheritdoc />
+    public async Task<bool> TryRetractAsync(WorkflowDefinition expected, CancellationToken cancellationToken = default)
+    {
+        var builder = Builders<WorkflowDefinition>.Filter;
+        var filter = builder.Where(x => x.Id == expected.Id && x.DefinitionId == expected.DefinitionId && x.Version == expected.Version &&
+                                       x.TenantId == expected.TenantId && x.IsPublished);
+        filter &= expected.IsReadonly ? builder.Eq(x => x.IsReadonly, true) : builder.Ne(x => x.IsReadonly, true);
+        filter &= expected.IsSystem ? builder.Eq(x => x.IsSystem, true) : builder.Ne(x => x.IsSystem, true);
+
+        var update = Builders<WorkflowDefinition>.Update.Set(x => x.IsPublished, false);
+        var result = await mongoDbStore.GetCollection().UpdateOneAsync(mongoDbStore.ApplyTenantScope(filter), update,
+            new UpdateOptions { Collation = Collation.Simple }, cancellationToken);
+
+        return result.MatchedCount == 1;
+    }
+
+    /// <inheritdoc />
     public Task SaveManyAsync(IEnumerable<WorkflowDefinition> definitions, CancellationToken cancellationToken = default)
     {
         return mongoDbStore.SaveManyAsync(definitions.Select(i => i), cancellationToken);

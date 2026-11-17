@@ -120,6 +120,25 @@ public class MemoryWorkflowDefinitionStore(MemoryStore<WorkflowDefinition> store
     }
 
     /// <inheritdoc />
+    public Task<bool> TryRetractAsync(WorkflowDefinition expected, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        lock (store.Sync)
+        {
+            var current = store.FindById(expected.Id);
+            if (current == null || !current.IsPublished || current.DefinitionId != expected.DefinitionId || current.Version != expected.Version ||
+                current.TenantId != expected.TenantId || current.IsReadonly != expected.IsReadonly || current.IsSystem != expected.IsSystem ||
+                !(TenantVisibility.CanReplace(current.TenantId, CurrentTenantId) || current.TenantId == Tenant.AgnosticTenantId && SharedTenantWriteScope.IsGranted(typeof(WorkflowDefinition))))
+                return Task.FromResult(false);
+
+            var retracted = current.ShallowClone();
+            retracted.IsPublished = false;
+            store.Save(retracted, GetId);
+            return Task.FromResult(true);
+        }
+    }
+
+    /// <inheritdoc />
     public Task SaveManyAsync(IEnumerable<WorkflowDefinition> definitions, CancellationToken cancellationToken = default)
     {
         lock (store.Sync)

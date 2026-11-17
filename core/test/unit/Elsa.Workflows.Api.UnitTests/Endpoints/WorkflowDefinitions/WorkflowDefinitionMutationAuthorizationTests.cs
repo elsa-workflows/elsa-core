@@ -21,7 +21,7 @@ namespace Elsa.Workflows.Api.UnitTests.Endpoints.WorkflowDefinitions;
 public class WorkflowDefinitionMutationAuthorizationTests : IAsyncLifetime
 {
     private const string Permission = "workflows/definitions:write,workflows/definitions:delete,workflows/definitions/versions:delete,workflows/definitions/versions:revert,workflows/definitions:publish,workflows/definitions:retract";
-    private readonly MemoryWorkflowDefinitionStore _store = new LatestFirstStore();
+    private readonly LatestFirstStore _store = new();
     private readonly MemoryWorkflowInstanceStore _instances = new(new MemoryStore<WorkflowInstance>());
     private AuthorizationTestHost _host = null!;
     private ManagementOptions _managementOptions = null!;
@@ -163,6 +163,21 @@ public class WorkflowDefinitionMutationAuthorizationTests : IAsyncLifetime
         Assert.True(latest.IsReadonly);
     }
 
+    [Fact]
+    public async Task DeletingThePublishedVersionKeepsTheNewerDraft()
+    {
+        await SeedAsync("first", "published", published: true, version: 1, isLatest: false);
+        await SeedAsync("first", "draft", version: 2);
+
+        using var response = await _host.SendAsync(HttpMethod.Delete, "/workflow-definition-versions/published", Permission);
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        var draft = Assert.Single(await _store.FindManyAsync(new()));
+        Assert.Equal("draft", draft.Id);
+        Assert.True(draft.IsLatest);
+        Assert.False(draft.IsPublished);
+    }
+
     [Theory]
     [InlineData("/workflow-definition-versions/latest")]
     [InlineData("/workflow-definitions/first/version/2")]
@@ -240,6 +255,29 @@ public class WorkflowDefinitionMutationAuthorizationTests : IAsyncLifetime
     }
 
     [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task RetractionReportsAConditionalWriteConflict(bool bulk)
+    {
+        await SeedAsync("first", "published", published: true);
+        _store.RejectRetraction = true;
+
+        using var response = bulk
+            ? await SendBulkAsync("retract", "first")
+            : await _host.SendAsync(HttpMethod.Post, "/workflow-definitions/first/retract", Permission, content: JsonContent.Create(new { }));
+
+        Assert.Equal(bulk ? HttpStatusCode.OK : HttpStatusCode.Conflict, response.StatusCode);
+        if (bulk)
+        {
+            using var body = await response.Content.ReadFromJsonAsync<System.Text.Json.JsonDocument>();
+            Assert.Equal("first", Assert.Single(body!.RootElement.GetProperty("skipped").EnumerateArray()).GetString());
+            Assert.Empty(body.RootElement.GetProperty("retracted").EnumerateArray());
+        }
+
+        Assert.True(Assert.Single(await _store.FindManyAsync(new())).IsPublished);
+    }
+
+    [Theory]
     [InlineData(true)]
     [InlineData(false)]
     public async Task PublishRequestsCannotUnpublishProtectedVersionOfTheSameDefinition(bool saveInline)
@@ -299,7 +337,12 @@ public class WorkflowDefinitionMutationAuthorizationTests : IAsyncLifetime
 
     private sealed class LatestFirstStore() : MemoryWorkflowDefinitionStore(new MemoryStore<WorkflowDefinition>()), IWorkflowDefinitionStore
     {
+        public bool RejectRetraction { get; set; }
+
         Task<WorkflowDefinition?> IWorkflowDefinitionStore.FindAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken) =>
             FindAsync(filter, new WorkflowDefinitionOrder<int>(definition => definition.Version, OrderDirection.Descending), cancellationToken);
+
+        Task<bool> IWorkflowDefinitionStore.TryRetractAsync(WorkflowDefinition expected, CancellationToken cancellationToken) =>
+            RejectRetraction ? Task.FromResult(false) : TryRetractAsync(expected, cancellationToken);
     }
 }

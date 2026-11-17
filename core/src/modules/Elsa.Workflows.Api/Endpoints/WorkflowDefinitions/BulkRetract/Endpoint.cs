@@ -5,6 +5,7 @@ using Elsa.Workflows.Api.Constants;
 using Elsa.Workflows.Api.Requirements;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Exceptions;
 using Elsa.Workflows.Management.Filters;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Authorization;
@@ -60,7 +61,7 @@ internal class BulkRetract(IWorkflowDefinitionStore store, IWorkflowDefinitionPu
                 continue;
             }
 
-            targets.Add((definitionId, published));
+            targets.Add((definitionId, published.ShallowClone()));
         }
 
         if (!await authorizationService.CanMutateAsync(User, targets.Select(target => target.Published)))
@@ -71,8 +72,15 @@ internal class BulkRetract(IWorkflowDefinitionStore store, IWorkflowDefinitionPu
 
         foreach (var (definitionId, published) in targets)
         {
-            await workflowDefinitionPublisher.RetractAsync(published, cancellationToken);
-            retracted.Add(definitionId);
+            try
+            {
+                await workflowDefinitionPublisher.RetractAsync(published, cancellationToken);
+                retracted.Add(definitionId);
+            }
+            catch (WorkflowDefinitionEditConflictException)
+            {
+                skipped.Add(definitionId);
+            }
         }
 
         return new Response(retracted, notPublished, notFound, skipped);

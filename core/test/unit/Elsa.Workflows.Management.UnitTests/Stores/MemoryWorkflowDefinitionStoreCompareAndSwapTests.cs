@@ -15,6 +15,35 @@ namespace Elsa.Workflows.Management.UnitTests.Stores;
 /// </summary>
 public class MemoryWorkflowDefinitionStoreCompareAndSwapTests
 {
+    [Fact]
+    public async Task RetractionRequiresTheExpectedVersionAndChangesOnlyThePublishedFlag()
+    {
+        var store = new MemoryWorkflowDefinitionStore(new MemoryStore<WorkflowDefinition>());
+        var published = Definition("definition", "published", name: "Original", stringData: "graph");
+        published.IsLatest = false;
+        published.IsPublished = true;
+        await store.SaveAsync(published);
+
+        var expected = published.ShallowClone();
+        expected.Name = "Older name";
+        var mismatched = expected.ShallowClone();
+        mismatched.IsReadonly = true;
+
+        Assert.False(await store.TryRetractAsync(mismatched));
+        Assert.True(await store.TryRetractAsync(expected));
+        Assert.False(await store.TryRetractAsync(expected));
+        Assert.True(published.IsPublished);
+
+        var stored = Assert.Single(await store.FindManyAsync(new()));
+        Assert.False(stored.IsPublished);
+        Assert.False(stored.IsLatest);
+        Assert.Equal("Original", stored.Name);
+
+        await store.DeleteAsync(new() { Id = published.Id });
+        Assert.False(await store.TryRetractAsync(expected));
+        Assert.Empty(await store.FindManyAsync(new()));
+    }
+
     [Fact(DisplayName = "A matching latest row is updated and the callback sees that just-loaded row")]
     public async Task TryUpdateLatestAsync_WhenTheRowMatches_SavesTheUpdateBuiltFromTheLoadedRow()
     {

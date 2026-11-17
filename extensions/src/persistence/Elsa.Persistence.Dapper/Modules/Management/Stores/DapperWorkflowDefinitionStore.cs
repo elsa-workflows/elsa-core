@@ -138,6 +138,38 @@ internal class DapperWorkflowDefinitionStore(Store<WorkflowDefinitionRecord> sto
     }
 
     /// <inheritdoc />
+    public async Task<bool> TryRetractAsync(WorkflowDefinition expected, CancellationToken cancellationToken = default)
+    {
+        var update = new WorkflowDefinitionRecord { IsPublished = false };
+        var updated = await store.UpdateAsync(update, [x => x.IsPublished], query =>
+        {
+            query.Is(nameof(WorkflowDefinitionRecord.Id), expected.Id)
+                .Is(nameof(WorkflowDefinitionRecord.DefinitionId), expected.DefinitionId)
+                .Is(nameof(WorkflowDefinitionRecord.Version), expected.Version)
+                .Is(nameof(WorkflowDefinitionRecord.IsReadonly), expected.IsReadonly);
+
+            var systemColumn = query.Dialect.QuoteIdentifier(nameof(WorkflowDefinitionRecord.IsSystem));
+            query.Sql.AppendLine(expected.IsSystem ? $"and {systemColumn} = @ExpectedSystem" : $"and ({systemColumn} = @ExpectedSystem or {systemColumn} is null)");
+            query.Parameters.Add("@ExpectedSystem", expected.IsSystem);
+
+            var publishedColumn = query.Dialect.QuoteIdentifier(nameof(WorkflowDefinitionRecord.IsPublished));
+            query.Sql.AppendLine($"and {publishedColumn} = @ExpectedPublished");
+            query.Parameters.Add("@ExpectedPublished", true);
+
+            if (expected.TenantId == null)
+                query.IsNull(nameof(WorkflowDefinitionRecord.TenantId));
+            else
+            {
+                var tenantColumn = query.Dialect.QuoteIdentifier(nameof(WorkflowDefinitionRecord.TenantId));
+                query.Sql.AppendLine($"and {tenantColumn} = @ExpectedTenantId");
+                query.Parameters.Add("@ExpectedTenantId", expected.TenantId);
+            }
+        }, cancellationToken);
+
+        return updated == 1;
+    }
+
+    /// <inheritdoc />
     public async Task<bool> RestampAsync(string definitionId, int version, string declaredTenantId, CancellationToken cancellationToken = default)
     {
         var record = await store.FindAsync(query =>

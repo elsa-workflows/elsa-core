@@ -152,6 +152,48 @@ public class TenantScopedDefinitionIdsMigrationTests
     }
 
     [Fact]
+    public async Task RetractionChangesOnlyTheExpectedVersionsPublishedFlag()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var serializer = Substitute.For<IPayloadSerializer>();
+        serializer.Serialize(Arg.Any<object>()).Returns("{}");
+        await using var services = new ServiceCollection()
+            .AddLogging()
+            .AddSqliteEntityModelCreatingHandlers()
+            .AddDbContextFactory<ManagementElsaDbContext>((_, builder) => builder.UseElsaSqlite(typeof(ManagementDbContextFactory).Assembly, connection.ConnectionString).UseSqlite(connection).EnableServiceProviderCaching(false))
+            .AddScoped<EntityStore<ManagementElsaDbContext, WorkflowDefinition>>()
+            .BuildServiceProvider();
+        var factory = services.GetRequiredService<IDbContextFactory<ManagementElsaDbContext>>();
+        await using (var dbContext = await factory.CreateDbContextAsync())
+            await dbContext.Database.EnsureCreatedAsync();
+
+        using var scope = services.CreateScope();
+        var store = new EFCoreWorkflowDefinitionStore(
+            scope.ServiceProvider.GetRequiredService<EntityStore<ManagementElsaDbContext, WorkflowDefinition>>(),
+            serializer,
+            NullLogger<EFCoreWorkflowDefinitionStore>.Instance);
+        var published = NewDefinition("published");
+        published.IsLatest = false;
+        published.IsPublished = true;
+        await store.SaveAsync(published);
+        var expected = published.ShallowClone();
+        expected.Name = "Older name";
+        var mismatched = expected.ShallowClone();
+        mismatched.IsReadonly = true;
+
+        Assert.False(await store.TryRetractAsync(mismatched));
+        Assert.True(await store.TryRetractAsync(expected));
+        Assert.False(await store.TryRetractAsync(expected));
+
+        await using var verified = await factory.CreateDbContextAsync();
+        var stored = await verified.WorkflowDefinitions.SingleAsync();
+        Assert.False(stored.IsPublished);
+        Assert.False(stored.IsLatest);
+        Assert.Equal("def", stored.Name);
+    }
+
+    [Fact]
     public void OracleDown_ChecksForCrossTenantDuplicatesBeforeDroppingTenantScopedIndex()
     {
         var down = GetDownMethod("Elsa.Persistence.EFCore.Oracle");
