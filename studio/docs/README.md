@@ -88,3 +88,5 @@ import dispositions and verification are recorded in the
 ## Planned native compensation
 
 The [Native compensation authoring, inspection and recovery program](../../core/docs/compensation/README.md) is the current program entrypoint for scope, ownership and readiness. The [Studio interaction plan](specs/native-compensation/plan.md) records Studio design details within the reviewed [Elsa 3 adaptation packet](../../core/docs/specs/native-compensation/README.md). Standing owner authorization permits delivery through the remaining technical gates; these plans do not claim implementation or proof.
+
+[Workflow import limits](workflow-import-limits.md) describes the limits applied to ZIP uploads and nested archives.
