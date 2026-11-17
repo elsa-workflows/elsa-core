@@ -131,8 +131,9 @@ public class MongoWorkflowDefinitionStore(MongoDbStore<WorkflowDefinition> mongo
 
     /// <inheritdoc />
     /// <remarks>
-    /// Requires a transaction-capable MongoDB deployment, such as a replica set. Callbacks execute at most once;
-    /// infrastructure and ambiguous commit errors propagate rather than being retried or reported as conflicts.
+    /// Creating a new version requires a transaction-capable MongoDB deployment such as a replica set.
+    /// Replacing an existing version uses a single conditional document write.
+    /// Callbacks execute at most once. Infrastructure and ambiguous commit errors propagate.
     /// </remarks>
     public async Task<WorkflowDefinitionUpdateResult> TryUpdateLatestAsync(
         WorkflowDefinitionFilter filter,

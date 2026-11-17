@@ -532,7 +532,7 @@ public sealed class MongoWorkflowDefinitionStoreCompareAndSwapTests : IDisposabl
     }
 
     [Fact]
-    public async Task TryUpdateLatestAsync_WhenServerIsStandalone_FailsWithoutMutationOrCallbacks()
+    public async Task StandaloneServerUpdatesAnExistingDraftAndRequiresTransactionsToCreateAnotherVersion()
     {
         await using var container = new MongoDbBuilder().WithImage("mongo:7.0.24").Build();
         await container.StartAsync();
@@ -542,26 +542,29 @@ public sealed class MongoWorkflowDefinitionStoreCompareAndSwapTests : IDisposabl
         var store = new MongoWorkflowDefinitionStore(new MongoDbStore<WorkflowDefinition>(collection, _tenantAccessor));
         using var tenant = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
         await collection.InsertOneAsync(Definition("latest", "tenant-a"));
-        var callbackCalls = 0;
-
-        var error = await Assert.ThrowsAsync<NotSupportedException>(() => store.TryUpdateLatestAsync(
+        var updated = await store.TryUpdateLatestAsync(
             LatestFilter("definition"),
-            _ =>
-            {
-                callbackCalls++;
-                return true;
-            },
+            current => current.StringData == "initial graph",
             current =>
             {
-                callbackCalls++;
-                current.StringData = "should not be saved";
+                current.StringData = "updated graph";
+                return current;
+            });
+        Assert.Equal(WorkflowDefinitionUpdateOutcome.Updated, updated.Outcome);
+
+        await Assert.ThrowsAsync<NotSupportedException>(() => store.TryUpdateLatestAsync(
+            LatestFilter("definition"),
+            _ => true,
+            current =>
+            {
+                current.Id = "new-version";
+                current.Version++;
                 return current;
             }));
 
-        Assert.Equal("Standalone servers do not support transactions.", error.Message);
-        Assert.Equal(0, callbackCalls);
         var stored = await collection.Find(x => x.Id == "latest").SingleAsync();
-        Assert.Equal("initial graph", stored.StringData);
+        Assert.Equal("updated graph", stored.StringData);
+        Assert.False(await collection.Find(x => x.Id == "new-version").AnyAsync());
         Assert.True(stored.IsLatest);
     }
 
