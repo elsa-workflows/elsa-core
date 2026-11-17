@@ -10,20 +10,15 @@ internal static class AssemblyCatalogResponses
             package.Version,
             package.Assemblies
                 .Select(static assembly => new AssemblyDescriptorResponse(
-                    assembly.GetName().Name ?? assembly.FullName ?? "<unknown>",
-                    assembly.Location))
-                .OrderBy(static assembly => assembly.Location, StringComparer.OrdinalIgnoreCase)
-                .ThenBy(static assembly => assembly.Name, StringComparer.Ordinal)
+                    assembly.GetName().Name ?? assembly.FullName ?? "<unknown>"))
+                .OrderBy(static assembly => assembly.Name, StringComparer.Ordinal)
                 .ToArray(),
             package.AssemblyReferences
                 .Select(static candidate => new AssemblyReferenceResponse(
                     candidate.AssemblyFileName,
-                    candidate.AssemblyPath,
                     candidate.TargetFrameworkMoniker,
-                    candidate.Kind,
-                    candidate.SelectionReason))
-                .OrderBy(static reference => reference.AssemblyPath, StringComparer.OrdinalIgnoreCase)
-                .ThenBy(static reference => reference.AssemblyFileName, StringComparer.Ordinal)
+                    candidate.Kind))
+                .OrderBy(static reference => reference.AssemblyFileName, StringComparer.OrdinalIgnoreCase)
                 .ToArray());
 
     public static AssemblyCatalogNotFoundResponse MissingPackage(string packageId) =>
@@ -39,16 +34,12 @@ internal sealed record AssemblyCatalogPackageResponse(
     IReadOnlyList<AssemblyDescriptorResponse> LoadedAssemblies,
     IReadOnlyList<AssemblyReferenceResponse> SelectedAssemblyReferences);
 
-internal sealed record AssemblyDescriptorResponse(
-    string Name,
-    string Location);
+internal sealed record AssemblyDescriptorResponse(string Name);
 
 internal sealed record AssemblyReferenceResponse(
     string AssemblyFileName,
-    string AssemblyPath,
     string? TargetFrameworkMoniker,
-    string Kind,
-    string SelectionReason);
+    string Kind);
 
 internal sealed record AssemblyCatalogNotFoundResponse(
     string PackageId,

@@ -71,6 +71,9 @@ Many modules also have `ShellFeatures/*Feature.cs`. These implement CShells inte
 
 Use shell features when working on modular hosting, package discovery, or `Elsa.ModularServer.Web`. Use code-first features for normal host configuration and tests.
 
+The modular server's sample package and plugin catalog is only mapped in Development.
+Set `SampleCatalog__Enabled=false` to disable it in local development.
+
 ## Extension Method Pattern
 
 Modules expose fluent extension methods in `Extensions/ModuleExtensions.cs` or related files. The method usually calls `module.Configure<TFeature>()` and returns `IModule`:
