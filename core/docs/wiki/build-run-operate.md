@@ -143,6 +143,17 @@ Console log diagnostics endpoints include (when `Elsa.Diagnostics.ConsoleLogs` i
 
 Health checks are mapped to `/` and `/health/live` for process liveness and `/health/ready` for Elsa runtime readiness in the reference server. See [Health Checks](health-checks.md) for Kubernetes liveness/readiness recommendations and Elsa-specific runtime readiness probes.
 
+## Signed workflow links
+
+The built-in SAS token service issues links scoped to their payload type. Bookmark resume links
+apply to one bookmark on one workflow instance. Event links apply to one named event on one
+instance. Older Elsa-issued links with complete identifiers continue to work until their original
+expiry. Regenerate a link from the intended activity if its original target is incomplete.
+
+When upgrading a cluster, move public workflow-link traffic to upgraded nodes together. Older
+nodes cannot read newly issued version 2 links. Keep the deployment's ASP.NET Core Data
+Protection keys and application discriminator consistent across nodes.
+
 ## Runtime Knobs
 
 Common runtime-related options in the reference host:

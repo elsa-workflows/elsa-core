@@ -1,9 +1,11 @@
 using System.Net;
 using System.Text;
+using System.Text.Json;
 using Elsa.SasTokens.Contracts;
 using Elsa.Workflows.Api.Endpoints.Bookmarks.Resume;
 using Elsa.Workflows.Runtime;
 using FastEndpoints;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
 using NSubstitute;
 
@@ -139,17 +141,60 @@ public class ResumeEndpointSecurityTests
         await _bookmarkQueue.DidNotReceive().EnqueueAsync(Arg.Any<NewBookmarkQueueItem>(), Arg.Any<CancellationToken>());
     }
 
+    [Theory]
+    [InlineData("", "workflow", false)]
+    [InlineData("bookmark", " ", true)]
+    public async Task Request_WithIncompleteTarget_RejectsBeforeLookupOrEnqueue(string bookmarkId, string workflowId, bool queued)
+    {
+        var context = CreateHttpContext(HttpMethods.Get, $"?t=valid&async={queued}");
+        var endpoint = CreateEndpoint(context);
+        ArrangeValidToken(bookmarkId, workflowId);
+
+        await endpoint.HandleAsync(CancellationToken.None);
+
+        Assert.Equal((int)HttpStatusCode.BadRequest, context.Response.StatusCode);
+        await _workflowResumer.DidNotReceive().ResumeAsync(Arg.Any<ResumeBookmarkRequest>(), Arg.Any<CancellationToken>());
+        await _bookmarkQueue.DidNotReceive().EnqueueAsync(Arg.Any<NewBookmarkQueueItem>(), Arg.Any<CancellationToken>());
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("v1.ne.")]
+    [InlineData("v1.tl.")]
+    public void ExistingElsaLinks_AcceptOnlyTheirOwnCompletePayload(string prefix)
+    {
+        var provider = new EphemeralDataProtectionProvider();
+        var oldProtector = provider.CreateProtector("Elsa Tokens");
+        var service = new DataProtectorTokenService(provider);
+        var bookmark = new BookmarkTokenPayload("bookmark", "workflow");
+        var workflowEvent = new EventTokenPayload("event", "workflow");
+
+        string Protect(string json) => prefix + (prefix == "v1.tl."
+            ? oldProtector.ToTimeLimitedDataProtector().Protect(json, TimeSpan.FromMinutes(5))
+            : oldProtector.Protect(json));
+
+        var bookmarkLink = Protect(JsonSerializer.Serialize(bookmark));
+        var eventLink = Protect(JsonSerializer.Serialize(workflowEvent));
+        Assert.Equal(bookmark, service.DecryptToken<BookmarkTokenPayload>(bookmarkLink));
+        Assert.Equal(workflowEvent, service.DecryptToken<EventTokenPayload>(eventLink));
+        Assert.False(service.TryDecryptToken<BookmarkTokenPayload>(eventLink, out _));
+        Assert.False(service.TryDecryptToken<EventTokenPayload>(bookmarkLink, out _));
+        var ambiguousLink = Protect(JsonSerializer.Serialize(new { bookmark.BookmarkId, workflowEvent.EventName, bookmark.WorkflowInstanceId }));
+        Assert.False(service.TryDecryptToken<BookmarkTokenPayload>(ambiguousLink, out _));
+        Assert.False(service.TryDecryptToken<EventTokenPayload>(ambiguousLink, out _));
+    }
+
     private Resume CreateEndpoint(DefaultHttpContext context)
     {
         return Factory.Create<Resume>(context, _tokenService, _workflowResumer, _bookmarkQueue, _payloadSerializer, _apiSerializer);
     }
 
-    private void ArrangeValidToken()
+    private void ArrangeValidToken(string bookmarkId = "bookmark", string workflowId = "workflow")
     {
         _tokenService.TryDecryptToken<BookmarkTokenPayload>("valid", out Arg.Any<BookmarkTokenPayload>())
             .Returns(callInfo =>
             {
-                callInfo[1] = new BookmarkTokenPayload("bookmark", "workflow");
+                callInfo[1] = new BookmarkTokenPayload(bookmarkId, workflowId);
                 return true;
             });
     }
