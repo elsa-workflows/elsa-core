@@ -124,6 +124,20 @@ internal class DapperWorkflowDefinitionStore(Store<WorkflowDefinitionRecord> sto
     }
 
     /// <inheritdoc />
+    public async Task<bool> TryAddAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await store.AddAsync(Map(definition), cancellationToken);
+            return true;
+        }
+        catch (System.Data.Common.DbException ex) when (DapperExceptionClassifier.IsDuplicateKey(ex))
+        {
+            return false;
+        }
+    }
+
+    /// <inheritdoc />
     public async Task<bool> RestampAsync(string definitionId, int version, string declaredTenantId, CancellationToken cancellationToken = default)
     {
         var record = await store.FindAsync(query =>

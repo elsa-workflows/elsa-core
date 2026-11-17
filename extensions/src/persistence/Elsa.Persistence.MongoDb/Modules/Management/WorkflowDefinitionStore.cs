@@ -258,6 +258,20 @@ public class MongoWorkflowDefinitionStore(MongoDbStore<WorkflowDefinition> mongo
     }
 
     /// <inheritdoc />
+    public async Task<bool> TryAddAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await mongoDbStore.AddAsync(definition, cancellationToken);
+            return true;
+        }
+        catch (MongoWriteException ex) when (ex.WriteError.Category == ServerErrorCategory.DuplicateKey)
+        {
+            return false;
+        }
+    }
+
+    /// <inheritdoc />
     public Task SaveManyAsync(IEnumerable<WorkflowDefinition> definitions, CancellationToken cancellationToken = default)
     {
         return mongoDbStore.SaveManyAsync(definitions.Select(i => i), cancellationToken);

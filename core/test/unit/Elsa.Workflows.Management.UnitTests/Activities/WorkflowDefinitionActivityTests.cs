@@ -110,12 +110,12 @@ public class WorkflowDefinitionActivityTests
         var publisher = Substitute.For<IWorkflowDefinitionPublisher>();
         publisher.GetDraftAsync(Arg.Any<string>(), Arg.Any<VersionOptions>(), Arg.Any<CancellationToken>()).Returns((WorkflowDefinition?)null);
         publisher.NewAsync(Arg.Any<IActivity?>(), Arg.Any<CancellationToken>()).Returns(_ => new WorkflowDefinition { Id = $"generated-{++_generatedIds}", Version = 1, IsLatest = true });
-        publisher.SaveDraftAsync(Arg.Any<WorkflowDefinition>(), Arg.Any<CancellationToken>()).Returns(async call =>
+        publisher.CreateInitialAsync(Arg.Any<WorkflowDefinition>(), false, Arg.Any<CancellationToken>()).Returns(async call =>
         {
             var draft = call.Arg<WorkflowDefinition>();
             draft.TenantId = tenantId;
-            await _store.SaveAsync(draft);
-            return draft;
+            Assert.True(await _store.TryAddAsync(draft));
+            return new PublishWorkflowDefinitionResult(true, [], new([]));
         });
         var serializer = Substitute.For<IActivitySerializer>();
         serializer.Serialize(Arg.Any<IActivity>()).Returns("{}");

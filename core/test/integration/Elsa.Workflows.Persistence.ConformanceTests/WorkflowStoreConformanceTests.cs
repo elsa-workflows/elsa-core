@@ -135,6 +135,30 @@ public abstract class WorkflowStoreConformanceTests
     }
 
     [Fact]
+    public async Task DefinitionTryAddPreservesBothVersionIdentityAndTenantVersionKey()
+    {
+        await using var scenario = await CreateScenarioAsync();
+        var original = Definition("original-v1", "Original", "tenant-a", definitionId: "invoice");
+        original.IsReadonly = true;
+        Assert.True(await scenario.Definitions.TryAddAsync(original));
+        Assert.False(await scenario.Definitions.TryAddAsync(
+            Definition("different-id", "Conflicting name", "tenant-a", definitionId: "invoice")));
+
+        using (scenario.UseTenant("tenant-b"))
+        {
+            Assert.False(await scenario.Definitions.TryAddAsync(
+                Definition("original-v1", "Conflicting identity", "tenant-b", definitionId: "invoice")));
+            Assert.True(await scenario.Definitions.TryAddAsync(
+                Definition("tenant-b-v1", "Separate copy", "tenant-b", definitionId: "invoice")));
+        }
+
+        var persisted = await scenario.Definitions.FindAsync(new WorkflowDefinitionFilter { Id = "original-v1" });
+        Assert.NotNull(persisted);
+        Assert.True(persisted.IsReadonly);
+        Assert.Equal("Original", persisted.Name);
+    }
+
+    [Fact]
     public async Task DefinitionSaveManyRejectsDuplicateVersionKeysInTheBatch()
     {
         await using var scenario = await CreateScenarioAsync();

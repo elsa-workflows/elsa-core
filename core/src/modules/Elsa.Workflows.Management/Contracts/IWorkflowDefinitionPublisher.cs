@@ -13,6 +13,13 @@ namespace Elsa.Workflows.Management;
 public interface IWorkflowDefinitionPublisher
 {
     /// <summary>
+    /// Saves or publishes the first version of a new workflow definition using a create-only insert.
+    /// </summary>
+    /// <exception cref="Exceptions.WorkflowDefinitionAlreadyExistsException">The version conflicts with an existing definition.</exception>
+    Task<PublishWorkflowDefinitionResult> CreateInitialAsync(WorkflowDefinition definition, bool publish, CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException("This publisher does not support create-only import.");
+
+    /// <summary>
     /// Creates a new workflow definition.
     /// </summary>
     /// <param name="root">Optionally provide the root activity. If not specified, <see cref="Sequence" /> will be used/></param>

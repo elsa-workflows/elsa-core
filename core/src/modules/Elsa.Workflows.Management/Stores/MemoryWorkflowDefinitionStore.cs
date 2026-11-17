@@ -107,6 +107,19 @@ public class MemoryWorkflowDefinitionStore(MemoryStore<WorkflowDefinition> store
     }
 
     /// <inheritdoc />
+    public Task<bool> TryAddAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        lock (store.Sync)
+        {
+            definition.TenantId ??= CurrentTenantId;
+            var key = GetVersionKey(definition);
+            var added = store.Find(existing => GetVersionKey(existing) == key) == null && store.TryAdd(definition, GetId);
+            return Task.FromResult(added);
+        }
+    }
+
+    /// <inheritdoc />
     public Task SaveManyAsync(IEnumerable<WorkflowDefinition> definitions, CancellationToken cancellationToken = default)
     {
         lock (store.Sync)

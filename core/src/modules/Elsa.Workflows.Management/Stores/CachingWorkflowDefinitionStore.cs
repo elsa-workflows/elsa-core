@@ -105,6 +105,16 @@ public class CachingWorkflowDefinitionStore(IWorkflowDefinitionStore decoratedSt
     }
 
     /// <inheritdoc />
+    public async Task<bool> TryAddAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
+    {
+        var added = await decoratedStore.TryAddAsync(definition, cancellationToken);
+        if (added)
+            await cacheManager.TriggerTokenAsync(CacheInvalidationTokenKey, cancellationToken);
+
+        return added;
+    }
+
+    /// <inheritdoc />
     public async Task<WorkflowDefinitionUpdateResult> TryUpdateLatestAsync(
         WorkflowDefinitionFilter filter,
         Func<WorkflowDefinition, bool> matchesExpected,

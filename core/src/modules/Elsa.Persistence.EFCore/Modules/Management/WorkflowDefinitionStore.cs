@@ -125,6 +125,20 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
     }
 
     /// <inheritdoc />
+    public async Task<bool> TryAddAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await store.AddAsync(definition, OnSaveAsync, cancellationToken);
+            return true;
+        }
+        catch (DbUpdateException ex) when (DbExceptionClassifier.IsDuplicateKey(ex))
+        {
+            return false;
+        }
+    }
+
+    /// <inheritdoc />
     public async Task SaveManyAsync(IEnumerable<WorkflowDefinition> definitions, CancellationToken cancellationToken = default)
     {
         await store.SaveManyAsync(definitions, OnSaveAsync, cancellationToken);
