@@ -22,7 +22,9 @@ public class TenantsFeature : IShellFeature
     {
         services
             .AddHostedService<SetupMediatorPipelines>()
-            .AddScoped<ITenantResolverPipelineInvoker, DefaultTenantResolverPipelineInvoker>()
+            .AddScoped<DefaultTenantResolverPipelineInvoker>()
+            .AddScoped<ITenantResolverPipelineInvoker>(services => services.GetRequiredService<DefaultTenantResolverPipelineInvoker>())
+            .AddScoped<ITenantRequestHints>(services => services.GetRequiredService<DefaultTenantResolverPipelineInvoker>())
             .AddScoped<ITenantResolver, DefaultTenantResolver>();
     }
 }

@@ -116,6 +116,8 @@ Turning it off:
 - Code-first hosts: delete the `UseAdminApiKey(...)` or `UseDevelopmentAdminApiKey()` call, or switch back with `UseApiKeyAuthorization<DefaultApiKeyProvider>()`. Do not use `UseAdminApiKey("")`: it keeps the admin provider active, and that provider then rejects every API key.
 - Shell-based hosts: clear `AdminApiKey` and leave `UseDevelopmentAdminApiKey` off. This restores `DefaultApiKeyProvider`.
 
+An application API key authenticates in the tenant recorded on the application. A stored application in a named tenant needs a matching request hint, such as a tenant header enabled in the resolver pipeline, or an existing tenant context for credential lookup. A configured key can identify its tenant directly. Tenant-bound requests require a registered tenant and compatible request hints, including in deployments that otherwise allow default fallback.
+
 ## Secret Hashing
 
 New identity passwords, client secrets, and API keys are hashed with PBKDF2-SHA256 using 600,000 iterations, a per-record salt, and version metadata. Existing legacy SHA-256 hashes remain valid and are upgraded opportunistically after a successful user login or API-key validation.
