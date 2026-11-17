@@ -138,6 +138,14 @@ public interface IWorkflowDefinitionStore
         Task.FromResult(false);
 
     /// <summary>
+    /// Atomically publishes a prepared version against the latest and published versions of its definition.
+    /// All existing targets must be writable and satisfy <paramref name="matchesExpected"/> before any
+    /// change is committed. An absent proposed version is inserted only if its identity is free.
+    /// </summary>
+    Task<bool> TryPublishAsync(WorkflowDefinition definition, Func<IReadOnlyCollection<WorkflowDefinition>, bool> matchesExpected,
+        CancellationToken cancellationToken = default) => Task.FromResult(false);
+
+    /// <summary>
     /// Compare-and-swap the latest definition matching <paramref name="filter"/>.
     /// </summary>
     /// <remarks>

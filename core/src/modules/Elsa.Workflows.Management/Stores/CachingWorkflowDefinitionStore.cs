@@ -125,6 +125,17 @@ public class CachingWorkflowDefinitionStore(IWorkflowDefinitionStore decoratedSt
     }
 
     /// <inheritdoc />
+    public async Task<bool> TryPublishAsync(WorkflowDefinition definition, Func<IReadOnlyCollection<WorkflowDefinition>, bool> matchesExpected,
+        CancellationToken cancellationToken = default)
+    {
+        var published = await decoratedStore.TryPublishAsync(definition, matchesExpected, cancellationToken);
+        if (published)
+            await cacheManager.TriggerTokenAsync(CacheInvalidationTokenKey, cancellationToken);
+
+        return published;
+    }
+
+    /// <inheritdoc />
     public async Task<WorkflowDefinitionUpdateResult> TryUpdateLatestAsync(
         WorkflowDefinitionFilter filter,
         Func<WorkflowDefinition, bool> matchesExpected,

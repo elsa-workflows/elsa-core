@@ -8,6 +8,7 @@ using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Api.Requirements;
 using Elsa.Workflows.Api.Security;
 using Elsa.Workflows.Management;
+using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Exceptions;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Mappers;
@@ -78,15 +79,16 @@ internal class Post(
             return;
         }
 
+        WorkflowDefinition[] publishTargets = [];
         if (publish && !string.IsNullOrWhiteSpace(definitionId))
         {
-            var targets = await store.FindManyAsync(new WorkflowDefinitionFilter
+            publishTargets = (await store.FindManyAsync(new WorkflowDefinitionFilter
             {
                 DefinitionId = definitionId,
                 VersionOptions = VersionOptions.LatestOrPublished
-            }, cancellationToken);
+            }, cancellationToken)).Select(version => version.ShallowClone()).ToArray();
 
-            if (!await authorizationService.CanMutateAsync(User, targets))
+            if (!await authorizationService.CanMutateAsync(User, publishTargets))
             {
                 await Send.ForbiddenAsync(cancellationToken);
                 return;
@@ -129,7 +131,7 @@ internal class Post(
             if (isNew)
                 result = await workflowDefinitionPublisher.CreateInitialAsync(draft, publish, cancellationToken);
             else if (publish)
-                result = await workflowDefinitionPublisher.PublishAsync(draft, cancellationToken);
+                result = await workflowDefinitionPublisher.PublishAsync(draft, publishTargets, cancellationToken);
             else
                 await workflowDefinitionPublisher.SaveDraftAsync(draft, cancellationToken);
         }

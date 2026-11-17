@@ -3,6 +3,7 @@ using Elsa.Extensions;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Exceptions;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Management.Models;
@@ -120,19 +121,32 @@ public class WorkflowReferenceUpdater(
             {
                 var definition = updatedWorkflow.Definition;
                 var requiresPublication = initialPublicationState.GetValueOrDefault(definition.DefinitionId);
-                var targets = await workflowDefinitionStore.FindManyAsync(new WorkflowDefinitionFilter
+                var targets = (await workflowDefinitionStore.FindManyAsync(new WorkflowDefinitionFilter
                 {
                     DefinitionId = definition.DefinitionId,
                     VersionOptions = requiresPublication ? VersionOptions.LatestOrPublished : VersionOptions.Latest
-                }, cancellationToken);
+                }, cancellationToken)).Select(version => version.ShallowClone()).ToArray();
 
                 if (targets.Any(target => target.IsReadonly || target.IsSystem))
                     continue;
 
-                if (requiresPublication)
-                    await publisher.PublishAsync(definition, cancellationToken);
-                else
-                    await publisher.SaveDraftAsync(definition, cancellationToken);
+                try
+                {
+                    if (requiresPublication)
+                    {
+                        var result = await publisher.PublishAsync(definition, targets, cancellationToken);
+                        if (!result.Succeeded)
+                            continue;
+                    }
+                    else
+                    {
+                        await publisher.SaveDraftAsync(definition, cancellationToken);
+                    }
+                }
+                catch (WorkflowDefinitionEditConflictException)
+                {
+                    continue;
+                }
 
                 saved.Add(definition);
             }

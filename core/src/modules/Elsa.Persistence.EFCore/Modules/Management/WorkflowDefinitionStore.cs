@@ -1,3 +1,4 @@
+using System.Data;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 using System.Text.Json.Serialization;
@@ -150,6 +151,65 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
             .ExecuteUpdateAsync(setters => setters.SetProperty(x => x.IsPublished, false), cancellationToken);
 
         return updated == 1;
+    }
+
+    /// <inheritdoc />
+    public async Task<bool> TryPublishAsync(WorkflowDefinition definition, Func<IReadOnlyCollection<WorkflowDefinition>, bool> matchesExpected,
+        CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await store.CreateDbContextAsync(cancellationToken);
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
+        var versions = dbContext.WorkflowDefinitions.Where(version => version.DefinitionId == definition.DefinitionId && (version.IsLatest || version.IsPublished));
+        var current = await versions.AsTracking().ToListAsync(cancellationToken);
+        if (current.Count == 0 || await versions.WhereTenantCanWrite(dbContext).CountAsync(cancellationToken) != current.Count)
+            return false;
+
+        foreach (var version in current)
+            await OnLoadAsync(dbContext, version, cancellationToken);
+        if (!matchesExpected(current))
+            return false;
+
+        var replacing = current.SingleOrDefault(version => version.Id == definition.Id);
+        if (replacing != null)
+        {
+            if (replacing.TenantId != definition.TenantId || replacing.Version != definition.Version)
+                return false;
+
+            var entry = dbContext.Entry(replacing);
+            entry.CurrentValues.SetValues(definition);
+            entry.Property("Data").CurrentValue = SerializeState(definition);
+            entry.Property("UsableAsActivity").CurrentValue = definition.Options.UsableAsActivity;
+        }
+        else
+        {
+            if (definition.TenantId.NormalizeTenantId() != dbContext.TenantId.NormalizeTenantId() &&
+                !(definition.TenantId == Tenant.AgnosticTenantId && SharedTenantWriteScope.IsGranted(typeof(WorkflowDefinition))))
+                return false;
+
+            dbContext.WorkflowDefinitions.Add(definition);
+            await OnSaveAsync(dbContext, definition, cancellationToken);
+        }
+
+        foreach (var version in current.Where(version => version.Id != definition.Id))
+        {
+            version.IsPublished = false;
+            version.IsLatest = false;
+        }
+
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            return true;
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return false;
+        }
+        catch (DbUpdateException exception) when (DbExceptionClassifier.IsDuplicateKey(exception))
+        {
+            return false;
+        }
     }
 
     /// <inheritdoc />

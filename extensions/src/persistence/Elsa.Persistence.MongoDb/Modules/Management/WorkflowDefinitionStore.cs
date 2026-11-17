@@ -11,6 +11,7 @@ using JetBrains.Annotations;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
+using MongoDB.Driver.Core.Servers;
 using MongoDB.Driver.Linq;
 using Open.Linq.AsyncExtensions;
 
@@ -240,6 +241,89 @@ public class MongoWorkflowDefinitionStore(MongoDbStore<WorkflowDefinition> mongo
             new UpdateOptions { Collation = Collation.Simple }, cancellationToken);
 
         return result.MatchedCount == 1;
+    }
+
+    /// <inheritdoc />
+    public async Task<bool> TryPublishAsync(WorkflowDefinition definition, Func<IReadOnlyCollection<WorkflowDefinition>, bool> matchesExpected,
+        CancellationToken cancellationToken = default)
+    {
+        var targets = new WorkflowDefinitionFilter { DefinitionId = definition.DefinitionId, VersionOptions = VersionOptions.LatestOrPublished };
+        var observed = (await FindManyAsync(targets, cancellationToken)).ToList();
+        if (observed.Count == 0)
+            return false;
+
+        var collection = mongoDbStore.GetCollection();
+        var replaceOptions = new ReplaceOptions { Collation = Collation.Simple };
+        if (observed.Count == 1 && observed[0].Id == definition.Id)
+        {
+            var snapshot = await LoadRawSnapshotAsync(definition.Id, cancellationToken);
+            if (snapshot == null)
+                return false;
+
+            var current = BsonSerializer.Deserialize<WorkflowDefinition>(snapshot);
+            if (current.DefinitionId != definition.DefinitionId || !(current.IsLatest || current.IsPublished) ||
+                current.Version != definition.Version || current.TenantId != definition.TenantId || !matchesExpected([current]))
+                return false;
+
+            var filter = mongoDbStore.ApplyTenantScope(CreateExactSnapshotFilter(snapshot));
+            var result = await collection.ReplaceOneAsync(filter, definition, replaceOptions, cancellationToken);
+            return result.MatchedCount == 1;
+        }
+
+        if (collection.Database.Client.Cluster.Description.Servers.Any(server => server.Type == ServerType.Standalone))
+            return false;
+
+        using var session = await collection.Database.Client.StartSessionAsync(cancellationToken: cancellationToken);
+        session.StartTransaction(new TransactionOptions(readConcern: ReadConcern.Snapshot, readPreference: ReadPreference.Primary, writeConcern: WriteConcern.WMajority));
+        var readyToCommit = false;
+        try
+        {
+            var current = await mongoDbStore.FindManyAsync(session, query => Filter(query, targets), cancellationToken);
+            if (current.Count == 0 || !matchesExpected(current))
+                return false;
+
+            var replacing = current.SingleOrDefault(version => version.Id == definition.Id);
+            var owner = current.FirstOrDefault(version => version.IsLatest) ?? current[0];
+            if (replacing != null && (replacing.Version != definition.Version || replacing.TenantId != definition.TenantId) ||
+                replacing == null && definition.TenantId != owner.TenantId)
+                return false;
+
+            foreach (var previous in current.Where(version => version.Id != definition.Id))
+            {
+                var update = Builders<WorkflowDefinition>.Update.Set(version => version.IsLatest, false).Set(version => version.IsPublished, false);
+                var result = await collection.UpdateOneAsync(session, ForWrite(previous.Id), update,
+                    new UpdateOptions { Collation = Collation.Simple }, cancellationToken);
+                if (result.MatchedCount != 1)
+                    return false;
+            }
+
+            if (replacing == null)
+                await collection.InsertOneAsync(session, definition, cancellationToken: cancellationToken);
+            else
+            {
+                var result = await collection.ReplaceOneAsync(session, ForWrite(replacing.Id), definition, replaceOptions, cancellationToken);
+                if (result.MatchedCount != 1)
+                    return false;
+            }
+
+            readyToCommit = true;
+        }
+        catch (MongoException exception) when (IsKnownAbortedConflict(exception) || exception is MongoCommandException { Code: 20 })
+        {
+            return false;
+        }
+        finally
+        {
+            // An early return or exception must roll back all changes before releasing the session.
+            if (!readyToCommit)
+                await AbortTransactionQuietlyAsync(session);
+        }
+
+        await session.CommitTransactionAsync(cancellationToken);
+        return true;
+
+        FilterDefinition<WorkflowDefinition> ForWrite(string id) =>
+            mongoDbStore.ApplyTenantScope(Builders<WorkflowDefinition>.Filter.Eq(version => version.Id, id));
     }
 
     /// <inheritdoc />

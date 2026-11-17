@@ -92,7 +92,9 @@ Bulk definition deletion, version deletion, publishing and retraction check the 
 If a batch would change a read-only or system definition, it returns HTTP 403 before changing any definition in the batch.
 Version deletion and revert also check any version whose latest status the operation would change.
 Bulk version deletion removes instances of the selected versions and preserves instances of other versions.
-Publishing checks the version it would unpublish. Retraction clears the stored publication flag of the selected version and preserves a newer draft. If the authorized version disappears, is already retracted, or has different protection or ownership at write time, a single request returns HTTP 409 and bulk retraction lists its definition under `skipped`. Custom workflow definition stores implement `IWorkflowDefinitionStore.TryRetractAsync` to support the same conditional write. Automatic reference updates skip protected consumers.
+Publishing compares the authorized latest and published versions at commit time. It writes the new publication and clears the previous flags in one operation. A changed version set returns HTTP 409 for a single publish or appears under `skipped` in bulk results. Multi-version publication on MongoDB requires a transaction-capable deployment. A single-version publication also works on a standalone server.
+
+Retraction clears the stored publication flag of the selected version and preserves a newer draft. If the authorized version disappears, is already retracted, or has different protection or ownership at write time, a single request returns HTTP 409 and bulk retraction lists its definition under `skipped`. Custom workflow definition stores implement `IWorkflowDefinitionStore.TryPublishAsync` and `TryRetractAsync` to support these conditional writes. Automatic reference updates skip protected consumers.
 
 Identity and API key setup are supplied by `Elsa.Identity`; see [Identity, Tenancy, And Security](identity-tenancy-security.md).
 

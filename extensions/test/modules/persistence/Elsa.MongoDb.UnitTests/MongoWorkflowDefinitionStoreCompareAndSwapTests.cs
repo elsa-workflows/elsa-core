@@ -111,6 +111,30 @@ public sealed class MongoWorkflowDefinitionStoreCompareAndSwapTests : IDisposabl
     }
 
     [Fact]
+    public async Task PublicationChangesTheAuthorizedVersionSetInOneTransaction()
+    {
+        using var tenant = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+        var published = Definition("published", "tenant-a");
+        published.IsLatest = false;
+        published.IsPublished = true;
+        var draft = Definition("draft", "tenant-a");
+        draft.Version = 2;
+        draft.IsPublished = false;
+        await _collection.InsertManyAsync([published, draft]);
+        var proposed = draft.ShallowClone();
+        proposed.IsPublished = true;
+
+        Assert.False(await _store.TryPublishAsync(proposed, versions => versions.Count == 1));
+        Assert.True((await _collection.Find(version => version.Id == published.Id).SingleAsync()).IsPublished);
+        Assert.False((await _collection.Find(version => version.Id == draft.Id).SingleAsync()).IsPublished);
+        Assert.True(await _store.TryPublishAsync(proposed, versions => versions.Count == 2));
+
+        var saved = await _collection.Find(Builders<WorkflowDefinition>.Filter.Empty).ToListAsync();
+        Assert.Equal("draft", Assert.Single(saved, version => version.IsPublished).Id);
+        Assert.Equal("draft", Assert.Single(saved, version => version.IsLatest).Id);
+    }
+
+    [Fact]
     public async Task TryUpdateLatestAsync_WhenNothingMatchesTheFilter_ReturnsNotFound()
     {
         using var tenant = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
@@ -581,6 +605,16 @@ public sealed class MongoWorkflowDefinitionStoreCompareAndSwapTests : IDisposabl
             });
         Assert.Equal(WorkflowDefinitionUpdateOutcome.Updated, updated.Outcome);
 
+        var published = updated.Definition!.ShallowClone();
+        published.IsPublished = true;
+        Assert.True(await store.TryPublishAsync(published, versions => versions.Count == 1 && !versions.Single().IsPublished));
+
+        var multiVersion = published.ShallowClone();
+        multiVersion.Id = "new-published";
+        multiVersion.Version = 2;
+        Assert.False(await store.TryPublishAsync(multiVersion, versions => versions.Count == 1));
+        Assert.False(await collection.Find(x => x.Id == "new-published").AnyAsync());
+
         await Assert.ThrowsAsync<NotSupportedException>(() => store.TryUpdateLatestAsync(
             LatestFilter("definition"),
             _ => true,
@@ -593,6 +627,7 @@ public sealed class MongoWorkflowDefinitionStoreCompareAndSwapTests : IDisposabl
 
         var stored = await collection.Find(x => x.Id == "latest").SingleAsync();
         Assert.Equal("updated graph", stored.StringData);
+        Assert.True(stored.IsPublished);
         Assert.False(await collection.Find(x => x.Id == "new-version").AnyAsync());
         Assert.True(stored.IsLatest);
     }

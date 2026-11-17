@@ -568,7 +568,7 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantAccesso
         return await countQuery.SingleAsync<long>(connection);
     }
 
-    private void ApplyTenantFilter(ParameterizedQuery query, bool tenantAgnostic = false)
+    internal void ApplyTenantFilter(ParameterizedQuery query, bool tenantAgnostic = false)
     {
         if (tenantAgnostic)
             return;

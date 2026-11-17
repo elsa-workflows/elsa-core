@@ -67,6 +67,47 @@ public class WorkflowDefinitionPublisher(
     }
 
     /// <inheritdoc />
+    public async Task<PublishWorkflowDefinitionResult> PublishAsync(WorkflowDefinition definition,
+        IReadOnlyCollection<WorkflowDefinition> expectedVersions, CancellationToken cancellationToken = default)
+    {
+        if (expectedVersions.Count == 0 || string.IsNullOrWhiteSpace(definition.Id) || string.IsNullOrWhiteSpace(definition.DefinitionId) || definition.Version <= 0)
+            throw new WorkflowDefinitionEditConflictException();
+
+        var expected = expectedVersions.ToDictionary(version => version.Id, version => activitySerializer.Serialize(version), StringComparer.Ordinal);
+        var validationErrors = await ValidateForPublicationAsync(definition, cancellationToken);
+        if (validationErrors.Count > 0 && options.Value.FailOnValidationErrors)
+            return new(false, validationErrors, new([]));
+
+        await mediator.SendAsync(new WorkflowDefinitionPublishing(definition), cancellationToken);
+        var proposed = definition.ShallowClone();
+        proposed.IsPublished = true;
+        proposed.IsLatest = true;
+
+        if (!await workflowDefinitionStore.TryPublishAsync(proposed, MatchesExpected, cancellationToken))
+            throw new WorkflowDefinitionEditConflictException();
+
+        foreach (var previous in expectedVersions.Where(version => version.IsPublished && version.Id != proposed.Id))
+        {
+            var retracted = previous.ShallowClone();
+            retracted.IsPublished = false;
+            retracted.IsLatest = false;
+            await mediator.SendAsync(new WorkflowDefinitionVersionRetracted(retracted), cancellationToken);
+        }
+
+        definition.IsPublished = true;
+        definition.IsLatest = true;
+        definition.TenantId = proposed.TenantId;
+        var affectedWorkflows = new AffectedWorkflows(new List<WorkflowDefinition>());
+        await mediator.SendAsync(new WorkflowDefinitionPublished(definition, affectedWorkflows), cancellationToken);
+        return new(true, validationErrors, affectedWorkflows);
+
+        bool MatchesExpected(IReadOnlyCollection<WorkflowDefinition> versions) =>
+            !options.Value.IsReadOnlyMode && versions.Count == expected.Count && versions.All(version =>
+                !version.IsReadonly && !version.IsSystem && expected.TryGetValue(version.Id, out var value) &&
+                string.Equals(value, activitySerializer.Serialize(version), StringComparison.Ordinal));
+    }
+
+    /// <inheritdoc />
     public WorkflowDefinition New(IActivity? root = null)
     {
         root ??= new Sequence();
