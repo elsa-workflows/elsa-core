@@ -6,6 +6,12 @@ const definition = { id: "version", definitionId: "imported", name: "Imported wo
 
 type BpmnUpload = { xml: string; processId: FormDataEntryValue | null };
 
+declare global {
+  interface Window {
+    recordBpmnUpload: (upload: BpmnUpload) => Promise<void>;
+  }
+}
+
 async function fixture(page: Page, refusal?: { operation: "import" | "export"; code: string; data?: object }, findings = false) {
   const uploads: BpmnUpload[] = [];
   const writes: unknown[] = [];
@@ -18,8 +24,7 @@ async function fixture(page: Page, refusal?: { operation: "import" | "export"; c
       if (typeof input === "string" && new URL(input, location.href).pathname.endsWith("/bpmn/import") && form instanceof FormData) {
         const file = form.get("file");
         if (file instanceof File) {
-          const recorder = (window as Window & { recordBpmnUpload: (upload: BpmnUpload) => Promise<void> }).recordBpmnUpload;
-          await recorder({ xml: await file.text(), processId: form.get("ProcessId") });
+          await window.recordBpmnUpload({ xml: await file.text(), processId: form.get("ProcessId") });
         }
       }
       return fetch(input, init);
