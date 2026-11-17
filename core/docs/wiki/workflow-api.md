@@ -131,6 +131,25 @@ The HTTP File Response activity treats strings as literal file content. For an i
 The built-in downloader uses direct HTTPS on the default port, verifies the resolved destination at connection time,
 and rejects redirects. Configure the final URL when a download service normally redirects clients.
 
+## Authenticated webhook delivery
+
+Before enabling inbound delivery, configure a distinct base64-encoded 32-byte signing key for each existing source
+ID through `WebhookIngressOptions.SigningKeys`. The legacy unsigned request format is rejected. Send the following
+headers with a valid webhook event JSON body of at most 1 MiB.
+
+- `X-Elsa-Webhook-Source` carries the configured source ID.
+- `X-Elsa-Webhook-Delivery` carries a unique delivery ID that remains the same across retries.
+- `X-Elsa-Webhook-Timestamp` carries Unix seconds within five minutes of the collector's clock.
+- `X-Elsa-Webhook-Signature` carries the base64 HMAC-SHA256 over the source ID, delivery ID and timestamp with an LF
+  after each field, followed immediately by the exact body bytes.
+
+Source and delivery IDs may contain ASCII letters, digits, dots, underscores and hyphens. A source may deliver only
+its configured event types. The server claims the delivery before dispatch and returns HTTP 409 for an already
+claimed ID or if it cannot reserve the ID. The default replay store is bounded to one process and loses claims on
+restart. Multi-replica or restart-resilient deployments must register a shared, atomic `IWebhookReplayStore` before
+enabling sender traffic. Keep source keys in the secret store and share them only with the corresponding sender or
+authorized signing ingress.
+
 ## Endpoint Discovery Command
 
 To quickly list routes:
