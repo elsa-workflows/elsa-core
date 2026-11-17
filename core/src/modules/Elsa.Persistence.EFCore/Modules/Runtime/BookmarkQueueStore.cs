@@ -4,7 +4,6 @@ using Elsa.Workflows;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
-using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.OrderDefinitions;
 using JetBrains.Annotations;
 using Open.Linq.AsyncExtensions;
@@ -63,7 +62,7 @@ public class EFBookmarkQueueStore(Store<RuntimeElsaDbContext, BookmarkQueueItem>
 
     private ValueTask OnSaveAsync(RuntimeElsaDbContext dbContext, BookmarkQueueItem entity, CancellationToken cancellationToken)
     {
-        dbContext.Entry(entity).Property("SerializedOptions").CurrentValue = entity.Options != null ? serializer.Serialize(entity.Options) : default;
+        dbContext.Entry(entity).Property("SerializedOptions").CurrentValue = BookmarkQueueOptionsSerialization.Write(serializer, entity.Options, entity.UnreadableOptions);
         return default;
     }
 
@@ -73,7 +72,7 @@ public class EFBookmarkQueueStore(Store<RuntimeElsaDbContext, BookmarkQueueItem>
             return default;
 
         var optionsJson = dbContext.Entry(entity).Property<string>("SerializedOptions").CurrentValue;
-        entity.Options = !string.IsNullOrEmpty(optionsJson) ? serializer.Deserialize<ResumeBookmarkOptions>(optionsJson) : null;
+        (entity.Options, entity.UnreadableOptions) = BookmarkQueueOptionsSerialization.Read(serializer, optionsJson);
 
         return default;
     }

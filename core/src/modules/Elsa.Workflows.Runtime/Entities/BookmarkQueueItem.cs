@@ -44,6 +44,8 @@ public class BookmarkQueueItem : Entity
     /// </summary>
     public ResumeBookmarkOptions? Options { get; set; }
 
+    internal string? UnreadableOptions { get; set; }
+
     /// <summary>
     /// The timestamp that this entity was created.
     /// </summary>
