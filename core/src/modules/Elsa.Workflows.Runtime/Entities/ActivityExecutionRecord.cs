@@ -11,6 +11,8 @@ namespace Elsa.Workflows.Runtime.Entities;
 /// </summary>
 public partial class ActivityExecutionRecord : Entity, ILogRecord
 {
+    internal ActivityExecutionRecord Copy() => (ActivityExecutionRecord)MemberwiseClone();
+
     /// <summary>
     /// Gets or sets the workflow instance ID.
     /// </summary>

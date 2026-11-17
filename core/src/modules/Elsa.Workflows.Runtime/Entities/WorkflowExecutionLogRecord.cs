@@ -8,6 +8,8 @@ namespace Elsa.Workflows.Runtime.Entities;
 /// </summary>
 public class WorkflowExecutionLogRecord : Entity, ILogRecord
 {
+    internal WorkflowExecutionLogRecord Copy() => (WorkflowExecutionLogRecord)MemberwiseClone();
+
     /// <summary>
     /// The ID of the workflow definition.
     /// </summary>

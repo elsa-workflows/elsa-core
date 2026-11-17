@@ -80,6 +80,11 @@ public class MemoryStore<TEntity>
     public TEntity? Find(Func<TEntity, bool> predicate) => Entities.Values.Where(predicate).FirstOrDefault();
 
     /// <summary>
+    /// Finds an entity by the key used to store it.
+    /// </summary>
+    public TEntity? FindById(string id) => Entities.TryGetValue(id, out var entity) ? entity : default;
+
+    /// <summary>
     /// Finds all entities matching the specified predicate.
     /// </summary>
     /// <param name="predicate">A predicate to match.</param>
