@@ -9,7 +9,6 @@ using Elsa.Workflows;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
-using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.OrderDefinitions;
 using JetBrains.Annotations;
 
@@ -38,7 +37,7 @@ internal class DapperBookmarkQueueStore(Store<BookmarkQueueItemRecord> store, IP
     /// <inheritdoc />
     public async Task<BookmarkQueueItem?> FindAsync(BookmarkQueueFilter filter, CancellationToken cancellationToken = default)
     {
-        var record = await store.FindAsync(q => ApplyFilter(q, filter), cancellationToken);
+        var record = await store.FindAsync(q => ApplyFilter(q, filter), filter.TenantAgnostic, cancellationToken);
         return record != null ? Map(record) : null;
     }
 
@@ -104,28 +103,40 @@ internal class DapperBookmarkQueueStore(Store<BookmarkQueueItemRecord> store, IP
         {
             Id = source.Id,
             WorkflowInstanceId = source.WorkflowInstanceId,
+            CorrelationId = source.CorrelationId,
             BookmarkId = source.BookmarkId,
             StimulusHash = source.StimulusHash,
             ActivityInstanceId = source.ActivityInstanceId,
             ActivityTypeName = source.ActivityTypeName,
-            SerializedOptions = source.Options != null ? payloadSerializer.Serialize(source.Options) : null,
+            SerializedOptions = BookmarkQueueOptionsSerialization.Write(payloadSerializer, source.Options, source.UnreadableOptions),
             CreatedAt = source.CreatedAt,
+            DeliveryAttempts = source.DeliveryAttempts,
+            LastAttemptedAt = source.LastAttemptedAt,
+            LastErrorType = source.LastErrorType,
+            LastErrorMessage = source.LastErrorMessage,
             TenantId = source.TenantId
         };
     }
 
     private BookmarkQueueItem Map(BookmarkQueueItemRecord source)
     {
+        var (options, unreadable) = BookmarkQueueOptionsSerialization.Read(payloadSerializer, source.SerializedOptions);
         return new BookmarkQueueItem
         {
             Id = source.Id,
             WorkflowInstanceId = source.WorkflowInstanceId,
+            CorrelationId = source.CorrelationId,
             BookmarkId = source.BookmarkId,
             StimulusHash = source.StimulusHash,
             ActivityInstanceId = source.ActivityInstanceId,
             ActivityTypeName = source.ActivityTypeName,
-            Options = source.SerializedOptions != null ? payloadSerializer.Deserialize<ResumeBookmarkOptions>(source.SerializedOptions) : null,
+            Options = options,
+            UnreadableOptions = unreadable,
             CreatedAt = source.CreatedAt,
+            DeliveryAttempts = source.DeliveryAttempts,
+            LastAttemptedAt = source.LastAttemptedAt,
+            LastErrorType = source.LastErrorType,
+            LastErrorMessage = source.LastErrorMessage,
             TenantId = source.TenantId
         };
     }

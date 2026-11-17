@@ -3,7 +3,7 @@ using System.Text.Json;
 using Elsa.Workflows;
 using Elsa.Workflows.Runtime.Options;
 
-namespace Elsa.Persistence.EFCore.Modules.Runtime;
+namespace Elsa.Workflows.Runtime;
 
 internal static class BookmarkQueueOptionsSerialization
 {

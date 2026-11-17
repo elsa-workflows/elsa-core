@@ -2,7 +2,7 @@ using System.Data;
 using Dapper;
 using Elsa.Persistence.Dapper.Contracts;
 using Elsa.Persistence.Dapper.Dialects;
-using Elsa.Persistence.Dapper.TypeHandlers.PostgreSql;
+using Elsa.Persistence.Dapper.TypeHandlers;
 using JetBrains.Annotations;
 using Npgsql;
 
@@ -18,8 +18,6 @@ public class PostgreSqlDbConnectionProvider : IDbConnectionProvider
 
     static PostgreSqlDbConnectionProvider()
     {
-        // Last AddTypeHandler for DateTimeOffset wins. Replace the SQLite string-only
-        // handler so Npgsql DateTime values can be read back as DateTimeOffset.
         SqlMapper.AddTypeHandler(new DateTimeOffsetHandler());
     }
 

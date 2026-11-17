@@ -18,6 +18,8 @@
 
     <ItemGroup>
         <InternalsVisibleTo Include="Elsa.Persistence.EFCore" />
+        <InternalsVisibleTo Include="Elsa.Persistence.Dapper" />
+
     </ItemGroup>
 
     <ItemGroup>

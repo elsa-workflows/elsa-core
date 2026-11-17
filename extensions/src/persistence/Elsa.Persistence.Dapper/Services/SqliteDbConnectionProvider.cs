@@ -2,6 +2,7 @@ using System.Data;
 using Dapper;
 using Elsa.Persistence.Dapper.Contracts;
 using Elsa.Persistence.Dapper.Dialects;
+using Elsa.Persistence.Dapper.TypeHandlers;
 using Elsa.Persistence.Dapper.TypeHandlers.Sqlite;
 using JetBrains.Annotations;
 using Microsoft.Data.Sqlite;
