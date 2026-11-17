@@ -103,7 +103,7 @@ Workflow API registers [NotReadOnlyRequirementHandler](../../src/modules/Elsa.Wo
 Bulk definition deletion, version deletion, publishing and retraction check the stored definitions before starting the operation.
 If a batch would change a read-only or system definition, it returns HTTP 403 before changing any definition in the batch.
 Version deletion and revert also check any version whose latest status the operation would change.
-Publishing checks the version it would unpublish. Automatic reference updates skip protected consumers.
+Publishing checks the version it would unpublish. Retraction operates on the published version and preserves a newer draft. Automatic reference updates skip protected consumers.
 
 Identity and API key setup are supplied by `Elsa.Identity`; see [Identity, Tenancy, And Security](identity-tenancy-security.md).
 

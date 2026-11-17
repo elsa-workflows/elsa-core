@@ -29,7 +29,8 @@ internal class Retract(IWorkflowDefinitionStore store, IWorkflowDefinitionPublis
             VersionOptions = VersionOptions.LatestOrPublished
         };
 
-        var definition = await store.FindAsync(filter, cancellationToken);
+        var versions = (await store.FindManyAsync(filter, cancellationToken)).ToList();
+        var definition = versions.FirstOrDefault(version => version.IsPublished) ?? versions.FirstOrDefault();
 
         if (definition == null)
         {
