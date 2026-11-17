@@ -33,7 +33,7 @@ namespace Elsa.Workflows.Management.Services
         /// <summary>
         /// Initializes a new instance of the <see cref="WorkflowDefinitionImporter"/> class.
         /// </summary>
-        [Obsolete("Use the constructor that accepts an IWorkflowDefinitionStore. This overload keeps the imported version id even when another tenant already uses it.")]
+        [Obsolete("Use the constructor that accepts an IWorkflowDefinitionStore. This overload always generates a version id for a new workflow.")]
         public WorkflowDefinitionImporter(
             IActivitySerializer serializer,
             IWorkflowDefinitionPublisher workflowDefinitionPublisher,
@@ -65,10 +65,8 @@ namespace Elsa.Workflows.Management.Services
                 if (!string.IsNullOrWhiteSpace(definitionId))
                     draft.DefinitionId = definitionId;
                 
-                if (!string.IsNullOrWhiteSpace(model.Id))
-                    draft.Id = _workflowDefinitionStore != null
-                        ? await _workflowDefinitionStore.ResolveVersionIdAsync(model.Id, draft.Id, cancellationToken)
-                        : model.Id;
+                if (_workflowDefinitionStore != null)
+                    draft.Id = await _workflowDefinitionStore.ResolveVersionIdAsync(model.Id, draft.Id, cancellationToken);
             }
 
             // Update the draft with the received model.
