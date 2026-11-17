@@ -114,6 +114,7 @@ app.UseAuthorization();
 if (enableSampleCatalog)
     app.MapSampleCatalog();
 
+await SecretsStartupValidation.ValidateConfiguredShellsAsync(app.Services);
 app.Run();
 
 static ResourceBuilder CreateOpenTelemetryResource(string serviceName, string? serviceVersion)

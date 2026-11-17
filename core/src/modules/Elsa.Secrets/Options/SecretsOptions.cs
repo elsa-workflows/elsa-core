@@ -7,4 +7,7 @@ public class SecretsOptions
     public string ConfigurationSectionName { get; set; } = "Elsa:Secrets";
     public string? RepositoryFilePath { get; set; }
     public byte[]? EncryptionKey { get; set; }
+
+    /// <summary>Older keys available for decryption during an operator-controlled migration. Never used to encrypt.</summary>
+    public ICollection<byte[]> PreviousEncryptionKeys { get; set; } = [];
 }
