@@ -91,8 +91,7 @@ public class BookmarkQueueProcessor(
         try
         {
             await deadLetterManager.DeadLetterAsync(item, BookmarkQueueDeadLetterItem.UnreadableOptionsReason, cancellationToken: cancellationToken);
-            await store.DeleteAsync(item.Id, cancellationToken);
-            return false;
+            return await store.DeleteAsync(new BookmarkQueueFilter { Id = item.Id }, cancellationToken) == 0;
         }
         catch (Exception exception) when (exception is not OperationCanceledException and not OutOfMemoryException and not StackOverflowException)
         {

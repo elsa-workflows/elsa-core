@@ -6,11 +6,11 @@ Workflow JSON accepts registered type aliases and supported compound and legacy 
 
 Existing workflow definitions and persisted data using aliases within these limits require no changes. If archived data contains a larger alias, convert it to a shorter registered alias before importing it. Newly generated aliases use the same limits on the read and write paths.
 
-## EF Core bookmark queue options
+## EF Core and Dapper bookmark queue options
 
-An EF Core bookmark queue item with unreadable options is moved to the dead-letter store with reason `UnreadableOptions`. The original options remain in the dead-letter table for inspection, and the item cannot be replayed. The worker advances to other items in the same page. If the move fails, the original item stays in the active queue for a later attempt.
+A bookmark queue item with unreadable options is moved to the dead-letter store with reason `UnreadableOptions`. The original options remain in the dead-letter table for inspection, and the item cannot be replayed. The worker advances to other items in the same page. If the move fails, the original item stays in the active queue for a later attempt.
 
-Valid plain JSON and supported legacy typed options remain readable and replayable. No schema migration is needed. This recovery applies to EF Core's serialized options. Dapper's JSON queue and MongoDB's BSON queue have separate storage paths.
+Valid plain JSON and supported legacy typed options remain readable and replayable. EF Core requires no schema migration. Dapper requires runtime migration `20009`, which adds delivery-attempt columns and durable dead-letter storage. Apply it before starting the upgraded queue worker. Existing queued options are preserved. Dead letters held in the older in-memory Dapper store remain process-local. MongoDB uses a separate BSON queue.
 
 ## Bulk workflow definition dispatch
 
