@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using Elsa.Common.Multitenancy;
 using Elsa.Common.Services;
 using Elsa.Identity.Constants;
 using Elsa.Identity.Entities;
@@ -22,6 +23,24 @@ public class IdentityTokenOptionsTokenUseTests
             new MutableSystemClock(),
             Microsoft.Extensions.Options.Options.Create(new IdentityTokenOptions())))
         .BuildServiceProvider();
+
+    [Fact]
+    public async Task LegacyAccessTokenIsBoundToItsTenantClaim()
+    {
+        const string legacyClaimType = "legacy_tenant_id";
+        var options = new IdentityTokenOptions { SigningKey = IdentityTokenTestConstants.SigningKey, TenantIdClaimsType = legacyClaimType };
+        var jwtBearerOptions = new JwtBearerOptions();
+        options.ConfigureJwtBearerOptions(jwtBearerOptions);
+
+        var result = await ValidateTokenUseAsync(jwtBearerOptions, TokenUse.Access, [new Claim(legacyClaimType, "tenant-a")]);
+        var resultWithoutTenant = await ValidateTokenUseAsync(jwtBearerOptions, TokenUse.Access);
+        var resultWithConflict = await ValidateTokenUseAsync(jwtBearerOptions, TokenUse.Access,
+            [new Claim(legacyClaimType, "tenant-a"), new Claim(legacyClaimType, "tenant-b")]);
+
+        Assert.Equal("tenant-a", result.Principal?.FindFirst(TenantPrincipalClaims.BoundTenant)?.Value);
+        Assert.Equal(Tenant.DefaultTenantId, resultWithoutTenant.Principal?.FindFirst(TenantPrincipalClaims.BoundTenant)?.Value);
+        Assert.NotNull(resultWithConflict.Failure);
+    }
 
     [Fact]
     public async Task AccessTokenSchemeRejectsRefreshToken()
@@ -127,13 +146,13 @@ public class IdentityTokenOptionsTokenUseTests
         return await ValidateTokenUseAsync(jwtBearerOptions, actualTokenUse);
     }
 
-    public static async Task<AuthenticateResult> ValidateTokenUseAsync(JwtBearerOptions jwtBearerOptions, string? actualTokenUse)
+    public static async Task<AuthenticateResult> ValidateTokenUseAsync(JwtBearerOptions jwtBearerOptions, string? actualTokenUse, IEnumerable<Claim>? additionalClaims = null)
     {
         var identityOptions = new IdentityTokenOptions
         {
             SigningKey = IdentityTokenTestConstants.SigningKey
         };
-        var principal = ValidateToken(CreateToken(identityOptions, actualTokenUse), jwtBearerOptions.TokenValidationParameters, out var securityToken);
+        var principal = ValidateToken(CreateToken(identityOptions, actualTokenUse, additionalClaims), jwtBearerOptions.TokenValidationParameters, out var securityToken);
         var context = new TokenValidatedContext(
             new DefaultHttpContext { RequestServices = RequestServices },
             new AuthenticationScheme(JwtBearerDefaults.AuthenticationScheme, null, typeof(JwtBearerHandler)),
@@ -148,7 +167,7 @@ public class IdentityTokenOptionsTokenUseTests
         return context.Result ?? AuthenticateResult.Success(new AuthenticationTicket(principal, JwtBearerDefaults.AuthenticationScheme));
     }
 
-    private static string CreateToken(IdentityTokenOptions options, string? tokenUse)
+    private static string CreateToken(IdentityTokenOptions options, string? tokenUse, IEnumerable<Claim>? additionalClaims)
     {
         var now = DateTime.UtcNow;
         var credentials = new SigningCredentials(options.CreateSecurityKey(), SecurityAlgorithms.HmacSha256);
@@ -159,6 +178,8 @@ public class IdentityTokenOptionsTokenUseTests
 
         if (tokenUse != null)
             claims.Add(new Claim(TokenUse.ClaimType, tokenUse));
+        if (additionalClaims != null)
+            claims.AddRange(additionalClaims);
 
         var token = new JwtSecurityToken(
             issuer: options.Issuer,
