@@ -1,3 +1,5 @@
+using Elsa.Api.Client.Extensions;
+using Elsa.Api.Client.Options;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.Extensions;
 using Elsa.Studio.ExternalAuthentication.Client;
@@ -13,6 +15,9 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddExternalAuthenticationModule(this IServiceCollection services, BackendApiConfig backendApiConfig)
     {
+        var brokerClientOptions = new ElsaClientBuilderOptions();
+        backendApiConfig.ConfigureHttpClientBuilder?.Invoke(brokerClientOptions);
+
         return services
             .AddScoped<IFeature, Feature>()
             .AddScoped<ISecurityMenuContributor, ExternalAuthenticationSecurityMenuContributor>()
@@ -23,6 +28,7 @@ public static class ServiceCollectionExtensions
             .AddRemoteApi<IExternalIdentityLinkManagementApi>(backendApiConfig)
             .AddRemoteApi<IExternalAuthenticationOperationsApi>(backendApiConfig)
             .AddRemoteApi<ILoginMethodsApi>(backendApiConfig)
-            .AddRemoteApi<IExternalAuthenticationBrokerApi>(backendApiConfig);
+            // Register the broker's named client without the Studio bearer handler. Refresh and sign-in use this client to acquire their tokens.
+            .AddApi<IExternalAuthenticationBrokerApi>(brokerClientOptions);
     }
 }
