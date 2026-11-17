@@ -18,6 +18,10 @@ Valid plain JSON and supported legacy typed options remain readable and replayab
 
 Dispatches already accepted remain queued if the request is cancelled or a later dispatch fails. Split larger requests into batches and account for previously accepted work before retrying a partially completed request.
 
+## Workflow runtime clients
+
+`IWorkflowRuntime.CreateClientAsync()` allocates an instance ID to the returned client. Create a fresh client for each independent start. A second create on the same client is rejected once its instance exists. Use `RunInstanceAsync` on a client bound to an existing instance to continue that instance.
+
 ## Outbound HTTP response bodies
 
 The HTTP Request, Flow HTTP Request, and Download File activities and the HTTP file cache downloader buffer at most 64 MiB per outbound response by default. The limit applies when the response declares a length and when the length is unknown. A response outside the limit follows the activity's existing HTTP request failure path. The HTTP client continues to apply its configured timeout across the request and response body.

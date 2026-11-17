@@ -94,23 +94,24 @@ public class WorkflowInstanceDeletionTests(App app) : AppComponentTest(app)
     public async Task BulkDeleteMixedInstances_ShouldDeleteAll()
     {
         // Arrange - Create 2 running and 2 finished workflow instances
-        var workflowClient = await WorkflowRuntime.CreateClientAsync();
-
         // Start 2 running instances
         var runningId1 = await StartRunningWorkflowAsync();
         var runningId2 = await StartRunningWorkflowAsync();
 
         // Start 2 finished instances
-        var finishedResult1 = await workflowClient.CreateAndRunInstanceAsync(new()
+        var firstFinishedClient = await WorkflowRuntime.CreateClientAsync();
+        var finishedResult1 = await firstFinishedClient.CreateAndRunInstanceAsync(new()
         {
             WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionId(CompletingWorkflow.DefinitionId, VersionOptions.Published)
         });
-        var finishedResult2 = await workflowClient.CreateAndRunInstanceAsync(new()
+        var secondFinishedClient = await WorkflowRuntime.CreateClientAsync();
+        var finishedResult2 = await secondFinishedClient.CreateAndRunInstanceAsync(new()
         {
             WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionId(CompletingWorkflow.DefinitionId, VersionOptions.Published)
         });
 
         var allInstanceIds = new[] { runningId1, runningId2, finishedResult1.WorkflowInstanceId, finishedResult2.WorkflowInstanceId };
+        Assert.Equal(4, allInstanceIds.Distinct().Count());
 
         // Act - Bulk delete all instances
         var bulkDeleteClient = WorkflowServer.CreateApiClient<IWorkflowInstancesApi>();
