@@ -6,6 +6,7 @@ using Elsa.Persistence.EFCore.Modules.Management;
 using Elsa.Persistence.EFCore.Modules.Tenants;
 using Elsa.Persistence.EFCore.Sqlite;
 using Elsa.Tenants.Options;
+using Elsa.Workflows.Management.Entities;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
