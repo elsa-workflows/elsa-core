@@ -64,6 +64,23 @@ public class WorkflowDefinitionImporterTests
         await _store.DidNotReceive().AnyAsync(Arg.Any<WorkflowDefinitionFilter>(), Arg.Any<CancellationToken>());
     }
 
+    [Fact]
+    public async Task ImportWithoutStoreKeepsGeneratedIdRatherThanOverwritingExistingVersion()
+    {
+        var serializer = Substitute.For<IActivitySerializer>();
+        serializer.Serialize(Arg.Any<IActivity>()).Returns("{}");
+#pragma warning disable CS0618 // Verify the compatibility constructor as called by existing applications.
+        var importer = new WorkflowDefinitionImporter(serializer, _publisher, CreateVariableMapper());
+#pragma warning restore CS0618
+
+        var result = await importer.ImportAsync(CreateRequest());
+
+        Assert.Equal(GeneratedId, result.WorkflowDefinition.Id);
+        Assert.Equal(DefinitionId, result.WorkflowDefinition.DefinitionId);
+        await _publisher.Received(1).SaveDraftAsync(
+            Arg.Is<WorkflowDefinition>(draft => draft.Id == GeneratedId), Arg.Any<CancellationToken>());
+    }
+
     private static SaveWorkflowDefinitionRequest CreateRequest() => new()
     {
         Model = new WorkflowDefinitionModel { Id = ExportedId, DefinitionId = DefinitionId, Name = "Imported" },
@@ -74,10 +91,11 @@ public class WorkflowDefinitionImporterTests
     {
         var serializer = Substitute.For<IActivitySerializer>();
         serializer.Serialize(Arg.Any<IActivity>()).Returns("{}");
-        var variableMapper = new VariableDefinitionMapper(
-            SerializationTypeRegistry.CreateDefault(),
-            Substitute.For<IServiceScopeFactory>(),
-            NullLogger<VariableDefinitionMapper>.Instance);
-        return new WorkflowDefinitionImporter(serializer, _publisher, variableMapper, _store);
+        return new WorkflowDefinitionImporter(serializer, _publisher, CreateVariableMapper(), _store);
     }
+
+    private static VariableDefinitionMapper CreateVariableMapper() => new(
+        SerializationTypeRegistry.CreateDefault(),
+        Substitute.For<IServiceScopeFactory>(),
+        NullLogger<VariableDefinitionMapper>.Instance);
 }
