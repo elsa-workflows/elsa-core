@@ -221,7 +221,7 @@ export function WorkflowInstancesListPage() {
         hideable: true, header: _t("Finished"), sortKey: "Finished", cell: (r) => <Timestamp value={r.finishedAt} /> },
       {
         id: "actions",
-        header: "",
+        header: <span className="sr-only">{_t("Actions")}</span>,
         width: "3rem",
         className: "text-right",
         cell: (r) => <InstanceRowActions instance={r} helpers={helpers} onCancel={handleCancel} onDelete={handleDelete} />,
@@ -294,7 +294,7 @@ export function WorkflowInstancesListPage() {
         rowKey={(r) => r.id}
         isLoading={list.isLoading}
         emptyMessage={_t("No workflow instances match the current filters.")}
-        selection={canDelete || canCancel ? { selected, onChange: setSelected } : undefined}
+        selection={canDelete || canCancel ? { selected, onChange: setSelected, rowLabel: r => r.id } : undefined}
         sort={sort}
         onSortChange={onSortChange}
         paging={{ page, pageSize, totalCount, onChange: (p, size) => url.set({ page: p, pageSize: size }) }}

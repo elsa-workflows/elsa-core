@@ -131,6 +131,25 @@ test("a newer draft can run the workflow's published version", async ({ page }) 
   await expect(page.getByText("Workflow started", { exact: true })).toBeVisible();
 });
 
+test("workflow forms and lists expose named controls and one main landmark", async ({ page }) => {
+  await editorFixture(page);
+  await expect(page.getByRole("main")).toHaveCount(1);
+  const invalidMenuChildren = page.locator('[data-slot="sidebar-menu"] > :not(li), [data-slot="sidebar-menu-sub"] > :not(li)');
+  await expect(invalidMenuChildren).toHaveCount(0);
+  const properties = page.getByRole("tabpanel", { name: "Properties", exact: true });
+  await expect(properties.getByRole("textbox", { name: "Name *", exact: true })).toHaveValue("Parity workflow");
+  await expect(properties.getByRole("textbox", { name: "Description", exact: true })).toBeVisible();
+  for (const name of ["Activation strategy", "Incident strategy", "Log persistence strategy", "Commit strategy"]) {
+    await expect(properties.getByRole("combobox", { name, exact: true })).toBeVisible();
+  }
+  await page.goto("/studio-preview/workflows/definitions");
+  await expect(page.getByRole("columnheader", { name: "Actions", exact: true })).toBeVisible();
+  await expect(page.getByRole("checkbox", { name: "Select Parity workflow", exact: true })).toBeVisible();
+  await expect(page.getByRole("combobox", { name: "Rows per page", exact: true })).toBeVisible();
+  await page.goto("/studio-preview/workflows/instances");
+  await expect(page.getByRole("combobox", { name: "Incidents", exact: true })).toBeVisible();
+});
+
 test("unpublishing consumes Core's bare definition response and updates the editor", async ({ page }) => {
   const fixture = await editorFixture(page, true);
   await expect(page.getByRole("button", { name: "Run", exact: true })).toBeVisible();

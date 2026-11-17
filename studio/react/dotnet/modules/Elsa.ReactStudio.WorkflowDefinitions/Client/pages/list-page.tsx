@@ -203,7 +203,7 @@ export function WorkflowDefinitionsListPage() {
     { id: "created", header: _t("Created"), sortKey: "Created", hideable: true, cell: (d) => <Timestamp value={d.createdAt} relative /> },
     {
       id: "actions",
-      header: "",
+      header: <span className="sr-only">{_t("Actions")}</span>,
       width: "3rem",
       cell: (d) => {
         const rowReadOnly = listReadOnly || d.isReadonly || !canWrite;
@@ -337,7 +337,7 @@ export function WorkflowDefinitionsListPage() {
         rowKey={(d) => d.definitionId}
         isLoading={latest.isFetching}
         emptyMessage={search ? _t("No workflows match your search.") : _t("No workflow definitions yet. Create one to get started.")}
-        selection={{ selected, onChange: setSelected }}
+        selection={{ selected, onChange: setSelected, rowLabel: d => d.name || d.definitionId }}
         sort={sort}
         onSortChange={(s) => url.set({ orderBy: s.key, orderDirection: s.direction })}
         paging={{ page, pageSize, totalCount: latest.data?.totalCount ?? 0, onChange: (p, ps) => url.set({ page: p, pageSize: ps }) }}
