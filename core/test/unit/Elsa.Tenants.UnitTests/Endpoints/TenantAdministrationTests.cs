@@ -1,4 +1,6 @@
 using System.Security.Claims;
+using System.Text;
+using System.Text.Json;
 using Elsa.Common.Multitenancy;
 using Elsa.Tenants.Endpoints.Tenants.Add;
 using Elsa.Tenants.Endpoints.Tenants.Update;
@@ -6,6 +8,7 @@ using Elsa.UnitTests.Shared;
 using Elsa.Workflows;
 using FastEndpoints;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 using NSubstitute;
 using AddEndpoint = Elsa.Tenants.Endpoints.Tenants.Add.Endpoint;
 using DeleteEndpoint = Elsa.Tenants.Endpoints.Tenants.Delete.Endpoint;
@@ -70,6 +73,47 @@ public class TenantAdministrationTests
         await _store.Received(1).UpdateAsync(Arg.Is<Tenant>(tenant => tenant.Id == "tenant-a" && tenant.Name == "Updated A" && tenant.TenantId == null));
         await _store.Received(1).UpdateAsync(Arg.Is<Tenant>(tenant => tenant.Id == Tenant.DefaultTenantId && tenant.Name == "Updated default" && tenant.TenantId == null));
         await _tenants.Received(2).RefreshAsync();
+    }
+
+    [Fact]
+    public async Task DirectoryResponsesOmitTenantConfigurationAndMetadataUpdatesKeepIt()
+    {
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+            { ["Storage:ConnectionString"] = "stored-secret-marker" }).Build();
+        var tenant = new Tenant { Id = "tenant-a", Name = "Tenant A", Configuration = configuration };
+        _store.FindAsync("tenant-a").Returns(tenant);
+        _tenants.FindAsync("tenant-a").Returns(tenant);
+        _tenants.ListAsync(Arg.Any<CancellationToken>()).Returns(new[] { tenant });
+        void Configure(DefaultHttpContext context) => ConfigureContext(context, HostActor(), "tenant-a");
+
+        var add = Factory.Create<AddEndpoint>(Configure, _tenants, _ids, _store);
+        var get = Factory.Create<GetEndpoint>(Configure, _tenants);
+        var list = Factory.Create<ListEndpoint>(Configure, _tenants);
+        var update = Factory.Create<UpdateEndpoint>(Configure, _tenants, _store);
+
+        await add.HandleAsync(new NewTenant
+        {
+            Id = "tenant-b",
+            Name = "Tenant B",
+            Configuration = JsonSerializer.SerializeToElement(new { Storage = new { ConnectionString = "new-secret-marker" } })
+        }, CancellationToken.None);
+        await get.HandleAsync(CancellationToken.None);
+        await list.HandleAsync(CancellationToken.None);
+        await update.HandleAsync(new UpdatedTenant { Name = "Renamed" }, CancellationToken.None);
+
+        foreach (var context in new[] { add.HttpContext, get.HttpContext, list.HttpContext, update.HttpContext })
+        {
+            Assert.Equal(StatusCodes.Status200OK, context.Response.StatusCode);
+            var response = Encoding.UTF8.GetString(((MemoryStream)context.Response.Body).ToArray());
+            Assert.Contains("\"name\":", response, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("\"configuration\":{}", response, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("secret-marker", response, StringComparison.Ordinal);
+            Assert.DoesNotContain("connectionString", response, StringComparison.OrdinalIgnoreCase);
+        }
+
+        await _store.Received(1).AddAsync(Arg.Is<Tenant>(value => value.Id == "tenant-b" && value.Configuration["Storage:ConnectionString"] == "new-secret-marker"));
+        await _store.Received(1).UpdateAsync(Arg.Is<Tenant>(value => value.Id == "tenant-a" && value.Configuration["Storage:ConnectionString"] == "stored-secret-marker"));
+        Assert.Equal("stored-secret-marker", tenant.Configuration["Storage:ConnectionString"]);
     }
 
     [Fact]

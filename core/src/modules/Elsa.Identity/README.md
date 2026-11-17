@@ -113,6 +113,8 @@ Enabling the admin API key replaces the default, application-based `DefaultApiKe
 
 Tenant registry operations require both the relevant `tenants` permission and a trusted host administrator claim. The configured admin API key carries host authority. A deployment that uses a custom authentication scheme can issue `elsa:host_administrator` with the value `true` to host operators. Tenant-bound credentials and wildcard permissions inside a tenant cannot confer host authority. Tenant IDs and ownership are immutable, and the default tenant cannot be deleted through the registry API.
 
+Tenant API responses contain directory metadata and an empty configuration object. Configuration supplied in create and update requests is write-only. Omit configuration during a metadata update to preserve the stored values, or supply an explicit configuration object to replace them.
+
 Turning it off:
 
 - Code-first hosts: delete the `UseAdminApiKey(...)` or `UseDevelopmentAdminApiKey()` call, or switch back with `UseApiKeyAuthorization<DefaultApiKeyProvider>()`. Do not use `UseAdminApiKey("")`: it keeps the admin provider active, and that provider then rejects every API key.

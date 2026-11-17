@@ -14,4 +14,11 @@ internal static class TenantAdministration
     public static IDisposable? BeginHostScope(IServiceProvider services) => services.GetService<ITenantAccessor>()?.PushContext(null);
 
     public static string NormalizeRouteId(string id) => id == "-" ? Tenant.DefaultTenantId : id;
+
+    public static Tenant ToDirectoryEntry(Tenant tenant) => new()
+    {
+        Id = tenant.Id,
+        TenantId = tenant.TenantId,
+        Name = tenant.Name
+    };
 }

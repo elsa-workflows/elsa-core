@@ -41,7 +41,7 @@ public class Endpoint(ITenantService tenantService, IIdentityGenerator identityG
         };
         await tenantStore.AddAsync(tenant, ct);
         await tenantService.RefreshAsync(ct);
-        await Send.OkAsync(tenant, ct);
+        await Send.OkAsync(TenantAdministration.ToDirectoryEntry(tenant), ct);
     }
 }
 
