@@ -9,3 +9,9 @@ MySQL bulk upserts match only the key selected by the caller. If another unique 
 With multitenancy enabled, records marked `TenantId = "*"` are visible across tenants. Writing or deleting them requires a trusted host operation. The default tenant and a missing tenant context confer no shared write authority. Host workflow provisioning, runtime pause persistence, and session revocation enter an entity-specific `SharedTenantWriteScope` when persisting these records. Custom host provisioning code can enter the same scope around its shared writes.
 
 Existing rows stay readable and the upgrade requires no schema migration. Application code that manages shared records should enter the scope from a trusted host entry point after validating the operation, then dispose it after the write.
+
+## Dapper workflow definition versions
+
+Management migration 10006 makes each workflow definition version unique within its tenant. A legacy NULL tenant ID and an empty tenant ID both denote the default tenant and share the same index key. Migration leaves the stored tenant values unchanged.
+
+If existing rows conflict, the migration reports a tenant, definition, version, and row count before creating the index. Review the conflicting rows, back them up, and resolve their version identities before retrying. The migration deletes no workflow definitions. Downgrade removes its index and any computed key it added.
