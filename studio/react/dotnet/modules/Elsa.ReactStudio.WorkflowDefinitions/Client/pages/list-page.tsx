@@ -21,7 +21,7 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from "@elsa-workflows/react-studio-ui/tooltip";
 import { DataTable, type DataTableColumn, type SortState } from "@elsa-workflows/react-studio-ui/common/data-table";
 import { useConfirm } from "@elsa-workflows/react-studio-ui/common/confirm-dialog";
-import { describeError } from "@elsa-workflows/react-studio-ui/common/error-alert";
+import { describeError, ErrorAlert } from "@elsa-workflows/react-studio-ui/common/error-alert";
 import { PageHeader } from "@elsa-workflows/react-studio-ui/common/page-header";
 import { SearchInput } from "@elsa-workflows/react-studio-ui/common/search-input";
 import { FilterChips } from "@elsa-workflows/react-studio-ui/common/filter-chips";
@@ -308,7 +308,15 @@ export function WorkflowDefinitionsListPage() {
         )}
       </PageHeader>
 
-      <DataTable
+      {latest.error && (
+        <div className="space-y-2">
+          <ErrorAlert error={latest.error} title={_t("Could not load workflow definitions from {{value0}}", { value0: client.http.baseUrl })} />
+          <Button variant="outline" disabled={latest.isFetching} onClick={() => void latest.refetch()}>
+            {_t("Retry")}
+          </Button>
+        </div>
+      )}
+      {(!latest.error || latest.data) && <DataTable
         columnsStorageKey="workflow-definitions"
         toolbar={
           <>
@@ -334,7 +342,7 @@ export function WorkflowDefinitionsListPage() {
         onSortChange={(s) => url.set({ orderBy: s.key, orderDirection: s.direction })}
         paging={{ page, pageSize, totalCount: latest.data?.totalCount ?? 0, onChange: (p, ps) => url.set({ page: p, pageSize: ps }) }}
         onRowClick={(d) => router.push(href(WorkflowDefinitionRoutes.edit, { definitionId: d.definitionId }))}
-      />
+      />}
 
       {bpmnImportOpen && <BpmnImportDialog onClose={() => setBpmnImportOpen(false)} onImported={result => { setBpmnImportOpen(false); void latest.refetch(); router.push(href(WorkflowDefinitionRoutes.edit, { definitionId: result.definitionId })); }} />}
       {bpmnExportId && <BpmnExportDialog definitionId={bpmnExportId} onClose={() => setBpmnExportId(undefined)} />}

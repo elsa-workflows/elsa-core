@@ -16,7 +16,8 @@ export function useWorkflowDefinitions(args: ListWorkflowDefinitionsArgs, option
   const scope = useQueryScope();
   return useQuery({
     queryKey: definitionKeys.list(scope, args),
-    queryFn: ({ signal }) => client.workflowDefinitions.list(args, signal),
+    queryFn: ({ signal }) => client.workflowDefinitions.list(args, AbortSignal.any([signal, AbortSignal.timeout(15_000)])),
+    retry: false,
     placeholderData: (prev) => prev,
     enabled: options.enabled ?? true,
   });

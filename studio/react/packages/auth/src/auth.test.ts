@@ -44,6 +44,18 @@ describe("shared authentication", () => {
     }));
   });
 
+  it("ends a rejected session when no refresh credential was issued", async () => {
+    const url = "https://a.example.invalid/api";
+    writeTokens(encodeURIComponent(url), { accessToken: token("Alice") });
+    const strategy = createAuthStrategy(identity, server(url));
+    await strategy.initialize();
+    expect(strategy.getSnapshot().status).toBe("authenticated");
+
+    expect(await strategy.tryRefresh()).toBe(false);
+    expect(await strategy.getAuthHeaders()).toEqual({});
+    expect(strategy.getSnapshot().status).toBe("unauthenticated");
+  });
+
   it("shares an in-flight refresh across concurrent API requests", async () => {
     const url = "https://a.example.invalid/api";
     writeTokens(encodeURIComponent(url), { accessToken: "expired", refreshToken: "refresh-a" });

@@ -262,6 +262,7 @@
   "Could not load user tasks": "Gebruikerstaken konden niet worden geladen",
   "Could not load variables": "Variabelen konden niet worden geladen",
   "Could not load workflow activity versions": "Werkstroomactiviteitsversies konden niet worden geladen",
+  "Could not load workflow definitions from {{value0}}": "Werkstroomdefinities konden niet worden geladen vanaf {{value0}}",
   "Could not load workflow instance": "Werkstroominstantie kon niet worden geladen",
   "Could not load workflow instances": "Werkstroominstanties konden niet worden geladen",
   "Could not load workflow metrics": "Werkstroomstatistieken konden niet worden geladen",

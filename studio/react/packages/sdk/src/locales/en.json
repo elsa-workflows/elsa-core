@@ -262,6 +262,7 @@
   "Could not load user tasks": "Could not load user tasks",
   "Could not load variables": "Could not load variables",
   "Could not load workflow activity versions": "Could not load workflow activity versions",
+  "Could not load workflow definitions from {{value0}}": "Could not load workflow definitions from {{value0}}",
   "Could not load workflow instance": "Could not load workflow instance",
   "Could not load workflow instances": "Could not load workflow instances",
   "Could not load workflow metrics": "Could not load workflow metrics",
