@@ -46,11 +46,12 @@ public class DefaultUserCredentialsValidator : IUserCredentialsValidator
     {
         var user = await _userProvider.FindByNameAsync(username, cancellationToken);
 
-        if (user == null)
+        if (user == null || string.IsNullOrEmpty(user.HashedPassword) || string.IsNullOrEmpty(user.HashedPasswordSalt))
+        {
+            // Use the configured password hashing cost for accounts without verifiable local credentials.
+            _ = _secretHasher.HashSecret(password);
             return null;
-
-        if (string.IsNullOrEmpty(user.HashedPassword) || string.IsNullOrEmpty(user.HashedPasswordSalt))
-            return null;
+        }
 
         var isValidPassword = _secretHasher.VerifySecret(password, user.HashedPassword, user.HashedPasswordSalt, out var needsRehash);
 
