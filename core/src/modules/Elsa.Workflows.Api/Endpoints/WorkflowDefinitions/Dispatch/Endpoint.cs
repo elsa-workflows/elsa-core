@@ -8,6 +8,7 @@ using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.Runtime.Responses;
 using JetBrains.Annotations;
+using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Dispatch;
 
