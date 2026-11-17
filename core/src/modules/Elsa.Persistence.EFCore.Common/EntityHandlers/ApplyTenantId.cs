@@ -46,11 +46,11 @@ public class ApplyTenantId(IOptions<TenantsOptions> tenantsOptions) : IEntitySav
 
         var tenantProperty = entry.Property(nameof(Entity.TenantId));
         var originalTenant = (string?)tenantProperty.OriginalValue;
-        if (tenantProperty.Metadata.IsConcurrencyToken && originalTenant.NormalizeTenantId() == entity.TenantId.NormalizeTenantId())
+        if (tenantProperty.Metadata.IsConcurrencyToken && !string.IsNullOrEmpty(originalTenant) && originalTenant == entity.TenantId)
             return;
 
-        // A detached update can lack its owner's value. Read the owner and use it in the
-        // EF concurrency predicate for the actual write.
+        // Default-tenant rows can store NULL or an empty string. A detached snapshot does
+        // not distinguish them, but the EF concurrency predicate needs the stored value.
         var persisted = await entry.GetDatabaseValuesAsync(cancellationToken);
         if (persisted == null)
             return;
