@@ -105,6 +105,30 @@ public class WorkflowDefinitionMutationAuthorizationTests : IAsyncLifetime
     }
 
     [Theory]
+    [InlineData("by-id")]
+    [InlineData("by-version")]
+    [InlineData("bulk")]
+    public async Task DeletingOneWorkflowVersionPreservesOtherVersions(string route)
+    {
+        await SeedAsync("first", "v1", version: 1, isLatest: false);
+        await SeedAsync("first", "v2", version: 2, isLatest: false);
+        await SeedAsync("first", "v3", version: 3);
+
+        using var response = route switch
+        {
+            "by-id" => await _host.SendAsync(HttpMethod.Delete, "/workflow-definition-versions/v2", Permission),
+            "by-version" => await _host.SendAsync(HttpMethod.Delete, "/workflow-definitions/first/version/2", Permission),
+            _ => await _host.SendAsync(HttpMethod.Post, "/bulk-actions/delete/workflow-definitions/by-id", Permission,
+                content: JsonContent.Create(new { ids = new[] { "v2" } }))
+        };
+
+        Assert.Equal(route == "by-id" ? HttpStatusCode.NoContent : HttpStatusCode.OK, response.StatusCode);
+        var definitions = (await _store.FindManyAsync(new())).OrderBy(definition => definition.Version).ToArray();
+        Assert.Equal(new[] { "v1", "v3" }, definitions.Select(definition => definition.Id));
+        Assert.Equal("v3", Assert.Single(definitions, definition => definition.IsLatest).Id);
+    }
+
+    [Theory]
     [InlineData("/workflow-definition-versions/latest")]
     [InlineData("/workflow-definitions/first/version/2")]
     public async Task VersionDeletionCannotPromoteProtectedHistoricalVersion(string path)
