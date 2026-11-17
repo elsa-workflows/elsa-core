@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using AspNetCore.Authentication.ApiKey;
 using Elsa;
+using Elsa.Common.Multitenancy;
 using Elsa.Identity.Models;
 using Elsa.Identity.Options;
 using Microsoft.Extensions.Options;
@@ -53,6 +54,7 @@ public class AdminApiKeyProvider(IOptions<AdminApiKeyOptions> options) : IApiKey
             claims = permissions.Select(permission => new Claim(PermissionNames.ClaimType, permission)).ToList();
         }
 
+        claims.Add(new(TenantPrincipalClaims.HostAdministrator, "true", ClaimValueTypes.Boolean));
         var apiKey = new ApiKey(key, apiKeyOptions.OwnerName, claims);
         return Task.FromResult<IApiKey>(apiKey)!;
     }

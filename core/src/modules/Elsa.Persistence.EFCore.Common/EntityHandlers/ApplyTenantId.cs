@@ -20,7 +20,7 @@ public class ApplyTenantId(IOptions<TenantsOptions> tenantsOptions) : IEntitySav
             return default;
         }
 
-        if (entry.Entity is not Entity entity)
+        if (entry.Entity is not Entity entity || entity is Tenant)
         {
             return default;
         }

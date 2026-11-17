@@ -103,10 +103,9 @@ public class DefaultTenantService(
         try
         {
             await using var scope = scopeFactory.CreateAsyncScope();
-            var tenantsProvider = scope.ServiceProvider.GetRequiredService<ITenantsProvider>();
             var currentTenants = await GetInitializedTenantsDictionaryAsync(cancellationToken);
             var currentTenantIds = currentTenants.Keys.ToArray();
-            var tenantsFromProvider = (await tenantsProvider.ListAsync(cancellationToken)).ToList();
+            var tenantsFromProvider = await ReadRegistryAsync(scope.ServiceProvider, cancellationToken);
             var newTenants = tenantsFromProvider.Count == 0
                 ? new Dictionary<string, Tenant> { [Tenant.DefaultTenantId] = Tenant.Default }
                 : tenantsFromProvider.ToDictionary(x => x.Id.EmptyIfNull());
@@ -171,8 +170,7 @@ public class DefaultTenantService(
             if (_initialized) // Double-check locking
                 return _tenantsDictionary!;
 
-            var tenantsProvider = _serviceScope.ServiceProvider.GetRequiredService<ITenantsProvider>();
-            var tenants = (await tenantsProvider.ListAsync(cancellationToken)).ToList();
+            var tenants = await ReadRegistryAsync(_serviceScope.ServiceProvider, cancellationToken);
             if (tenants.Count == 0)
                 tenants = [Tenant.Default];
 
@@ -205,6 +203,14 @@ public class DefaultTenantService(
         {
             _initializationLock.Release();
         }
+    }
+
+    private async Task<List<Tenant>> ReadRegistryAsync(IServiceProvider services, CancellationToken cancellationToken)
+    {
+        // Request-driven refresh and first lookup must see the same complete registry as host startup.
+        using var hostContext = tenantAccessor.PushContext(null);
+        var provider = services.GetRequiredService<ITenantsProvider>();
+        return (await provider.ListAsync(cancellationToken)).ToList();
     }
 
     // The provider may return new instances on every call, so only a different tenant ID, name or configuration counts as a change.

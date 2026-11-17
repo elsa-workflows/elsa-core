@@ -14,6 +14,12 @@ public class Endpoint(ITenantService tenantService) : ElsaEndpointWithoutRequest
 
     public override async Task HandleAsync(CancellationToken ct)
     {
+        if (!TenantAdministration.HasHostAuthority(User))
+        {
+            await Send.ForbiddenAsync(ct);
+            return;
+        }
+
         await tenantService.RefreshAsync(ct);
         await Send.OkAsync(cancellation: ct);
     }

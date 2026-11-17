@@ -67,10 +67,11 @@ public sealed class DefaultElsaTokenService(ISystemClock systemClock, IOptions<I
             new(JwtRegisteredClaimNames.Sub, context.User.Id),
             new(JwtRegisteredClaimNames.Name, context.User.Name)
         };
-        claims.AddRange(context.AdditionalClaims.Where(claim => claim.Type != TenantPrincipalClaims.BoundTenant));
+        claims.AddRange(context.AdditionalClaims.Where(claim => claim.Type is not (TenantPrincipalClaims.BoundTenant or TenantPrincipalClaims.HostAdministrator)));
         claims.Add(new(TenantPrincipalClaims.BoundTenant, context.User.TenantId.NormalizeTenantId()));
 
-        if (!string.IsNullOrWhiteSpace(context.User.TenantId))
+        if (!string.IsNullOrWhiteSpace(context.User.TenantId) &&
+            tokenOptions.TenantIdClaimsType is not (TenantPrincipalClaims.BoundTenant or TenantPrincipalClaims.HostAdministrator))
             claims.Add(new Claim(tokenOptions.TenantIdClaimsType, context.User.TenantId));
 
         if (!string.IsNullOrWhiteSpace(context.ExternalAuthenticationSessionId))

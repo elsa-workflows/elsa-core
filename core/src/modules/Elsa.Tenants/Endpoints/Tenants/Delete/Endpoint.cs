@@ -1,6 +1,7 @@
 using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Common.Multitenancy;
+using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Tenants.Endpoints.Tenants.Delete;
 
@@ -14,7 +15,21 @@ public class Endpoint(ITenantService tenantService, ITenantStore store) : ElsaEn
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        var id = Route<string>("id")!;
+        if (!TenantAdministration.HasHostAuthority(User))
+        {
+            await Send.ForbiddenAsync(ct);
+            return;
+        }
+
+        var id = TenantAdministration.NormalizeRouteId(Route<string>("id")!);
+        if (id == Tenant.DefaultTenantId)
+        {
+            AddError("The default tenant cannot be deleted.");
+            await Send.ErrorsAsync(StatusCodes.Status400BadRequest, ct);
+            return;
+        }
+
+        using var hostScope = TenantAdministration.BeginHostScope(HttpContext.RequestServices);
         var found = await store.DeleteAsync(id, ct);
         
         if (!found)

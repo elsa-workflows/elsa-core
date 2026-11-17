@@ -3,6 +3,7 @@ using System.Text.Json;
 using Elsa.Abstractions;
 using Elsa.Common.Multitenancy;
 using Elsa.Common.Serialization;
+using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Tenants.Endpoints.Tenants.Update;
 
@@ -16,19 +17,37 @@ public class Endpoint(ITenantService tenantService, ITenantStore tenantStore) : 
 
     public override async Task HandleAsync(UpdatedTenant req, CancellationToken ct)
     {
-        var id = Route<string>("id")!;
-        if (id == "-") id = string.Empty;
-        var tenant = await tenantStore.FindAsync(id, ct);
+        if (!TenantAdministration.HasHostAuthority(User))
+        {
+            await Send.ForbiddenAsync(ct);
+            return;
+        }
+
+        var id = TenantAdministration.NormalizeRouteId(Route<string>("id")!);
+        using var hostScope = TenantAdministration.BeginHostScope(HttpContext.RequestServices);
+        var existing = await tenantStore.FindAsync(id, ct);
         
-        if (tenant == null)
+        if (existing == null)
         {
             await Send.NotFoundAsync(ct);
             return;
         }
         
-        tenant.TenantId = req.TenantId;
-        tenant.Name = req.Name.Trim();
-        tenant.Configuration = Serializers.DeserializeConfiguration(req.Configuration);
+        if (req.TenantId is not null && !string.Equals(req.TenantId.NormalizeTenantId(), existing.TenantId.NormalizeTenantId(), StringComparison.Ordinal) ||
+            !string.IsNullOrEmpty(req.Id) && !string.Equals(TenantAdministration.NormalizeRouteId(req.Id), id, StringComparison.Ordinal))
+        {
+            AddError("Tenant identifiers and ownership cannot be changed.");
+            await Send.ErrorsAsync(StatusCodes.Status400BadRequest, ct);
+            return;
+        }
+
+        var tenant = new Tenant
+        {
+            Id = existing.Id,
+            TenantId = existing.TenantId,
+            Name = req.Name.Trim(),
+            Configuration = req.Configuration is null ? existing.Configuration : Serializers.DeserializeConfiguration(req.Configuration)
+        };
         await tenantStore.UpdateAsync(tenant, ct);
         await tenantService.RefreshAsync(ct);
         await Send.OkAsync(tenant, ct);
