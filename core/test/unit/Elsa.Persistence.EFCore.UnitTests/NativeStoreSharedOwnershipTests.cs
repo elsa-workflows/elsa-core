@@ -7,6 +7,7 @@ public sealed class NativeStoreSharedOwnershipTests
 {
     private const string PostgreSqlConnectionVariable = "ELSA_EF_OWNERSHIP_POSTGRES_TEST_CONNECTION";
     private const string SqlServerConnectionVariable = "ELSA_EF_OWNERSHIP_SQLSERVER_TEST_CONNECTION";
+    private const string OracleConnectionVariable = "ELSA_EF_OWNERSHIP_ORACLE_TEST_CONNECTION";
 
     [NativePostgreSqlFact]
     public async Task PostgreSqlRequiresExplicitHostAuthorityForSharedRows()
@@ -21,6 +22,15 @@ public sealed class NativeStoreSharedOwnershipTests
     {
         var connectionString = Environment.GetEnvironmentVariable(SqlServerConnectionVariable)!;
         await using var scenario = await OwnershipStoreScenario.CreateAsync("named", true, builder => builder.UseSqlServer(connectionString),
+            () => ValueTask.CompletedTask);
+        await VerifyOwnershipAsync(scenario);
+    }
+
+    [NativeOracleFact]
+    public async Task OracleRequiresExplicitHostAuthorityForSharedRows()
+    {
+        var connectionString = Environment.GetEnvironmentVariable(OracleConnectionVariable)!;
+        await using var scenario = await OwnershipStoreScenario.CreateAsync("named", true, builder => builder.UseOracle(connectionString),
             () => ValueTask.CompletedTask);
         await VerifyOwnershipAsync(scenario);
     }
@@ -58,6 +68,15 @@ public sealed class NativeStoreSharedOwnershipTests
         {
             if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(PostgreSqlConnectionVariable)))
                 Skip = $"Set {PostgreSqlConnectionVariable} to a disposable PostgreSQL server.";
+        }
+    }
+
+    public sealed class NativeOracleFactAttribute : FactAttribute
+    {
+        public NativeOracleFactAttribute()
+        {
+            if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(OracleConnectionVariable)))
+                Skip = $"Set {OracleConnectionVariable} to a disposable Oracle schema.";
         }
     }
 }
