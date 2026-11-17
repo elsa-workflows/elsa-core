@@ -71,6 +71,22 @@ public sealed class DapperWorkflowDefinitionStoreTests : IDisposable
     }
 
     [Fact]
+    public async Task TryAddAsync_PersistsTextDefinitionAndDoesNotReplaceExistingRow()
+    {
+        var initial = Definition();
+        Assert.Null(initial.BinaryData);
+        Assert.True(await _store.TryAddAsync(initial));
+
+        var replacement = Definition();
+        replacement.StringData = "replacement";
+        Assert.False(await _store.TryAddAsync(replacement));
+
+        var stored = Assert.IsType<WorkflowDefinition>(await _store.FindAsync(Filter()));
+        Assert.Equal(initial.StringData, stored.StringData);
+        Assert.Null(stored.BinaryData);
+    }
+
+    [Fact]
     public async Task OptionalTenantAccessorUsesDefaultTenantAndExcludesOtherTenants()
     {
         await _store.SaveAsync(Definition());
