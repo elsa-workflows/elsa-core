@@ -5,6 +5,7 @@ import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium, expect } from "@playwright/test";
 
+import { assertViteUsesHardenedGlobTooling } from "./build-glob-tooling.mjs";
 import { readBundle } from "./npm-release.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
@@ -80,9 +81,10 @@ try {
   }
   const client = join(generated, "Module/Client");
   const manifest = JSON.parse(readFileSync(join(client, "package.json"), "utf8"));
-  manifest.pnpm = { overrides: dependencies };
+  manifest.pnpm.overrides = { ...manifest.pnpm.overrides, ...dependencies };
   writeFileSync(join(client, "package.json"), JSON.stringify(manifest));
   npm(["install"], client);
+  assertViteUsesHardenedGlobTooling(client);
   npm(["run", "build"], client);
   const localFeed = join(temporary, "feed");
   mkdirSync(localFeed);

@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
+import { copyBuildGlobTooling } from "./build-glob-tooling.mjs";
 
 const args = process.argv.slice(2);
 const usage = "node scripts/create-module.mjs OUTPUT [--name Weather] [--company Acme] [--studio-version 3.11.0] [--npm-version 3.11.0]";
@@ -46,4 +47,5 @@ function copy(directory, relative = "") {
   }
 }
 copy(template);
+copyBuildGlobTooling(join(output, "Module/Client"));
 console.log(`Created ${replacements.__PACKAGE_ID__} in ${output}`);
