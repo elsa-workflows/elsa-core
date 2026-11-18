@@ -118,6 +118,8 @@ public class WorkflowInstanceWriteConcurrencyTests(PostgreSqlStoreSaveManyFixtur
                 {
                     await store.SaveManyAsync([Instance(independentId, "independent")])
                         .AsTask().WaitAsync(TimeSpan.FromSeconds(10));
+                    var independent = await store.FindAsync(new WorkflowInstanceFilter { Id = independentId });
+                    Assert.Equal("independent", independent?.WorkflowState.Name);
                 }
                 Assert.False(update.IsCompleted);
             }

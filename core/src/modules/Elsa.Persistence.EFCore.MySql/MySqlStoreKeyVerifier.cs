@@ -12,6 +12,8 @@ internal static class MySqlStoreKeyVerifier
             FROM information_schema.statistics k
             JOIN information_schema.columns c USING (table_schema, table_name, column_name)
             WHERE k.table_schema = DATABASE() AND k.table_name = {table.Name} AND k.index_name = 'PRIMARY'
+              AND (@@lower_case_table_names <> 0 OR
+                   (BINARY k.table_schema = BINARY DATABASE() AND BINARY k.table_name = BINARY {table.Name}))
               AND k.column_name = {column} AND k.sub_part IS NULL AND c.data_type = 'varchar'
               AND c.character_maximum_length >= {maximumIdLength}
               AND c.collation_name IN ('utf8mb4_0900_ai_ci', 'utf8mb4_general_ci', 'utf8mb4_unicode_ci', 'utf8mb4_bin')
