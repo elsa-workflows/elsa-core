@@ -27,6 +27,7 @@ internal class WorkflowInstance(
     private CancellationTokenSource _linkedTokenSource = null!;
     private CancellationToken _linkedCancellationToken;
     private readonly Queue<RunWorkflowOptions> _queuedRunWorkflowOptions = new();
+    private Task<RunIfPendingWorkflowInstanceResponse>? _pendingStart;
     private bool _isRunning;
 
 
@@ -223,8 +224,20 @@ internal class WorkflowInstance(
 
     public override Task RunIfPending(RunWorkflowInstanceRequest request, Action<RunIfPendingWorkflowInstanceResponse> respond, Action<string> onError)
     {
-        Context.ReenterAfter(RunIfPending(request), completedTask =>
+        if (_pendingStart is { IsCompleted: false } pendingStart)
         {
+            // Recheck this delivery after the preceding request finishes. Its ownership may differ.
+            Context.ReenterAfter(pendingStart, _ => RunIfPending(request, respond, onError));
+            return Task.CompletedTask;
+        }
+
+        var start = RunIfPending(request);
+        _pendingStart = start;
+        Context.ReenterAfter(start, completedTask =>
+        {
+            if (ReferenceEquals(_pendingStart, completedTask))
+                _pendingStart = null;
+
             if (completedTask.IsCompletedSuccessfully)
                 respond(completedTask.Result);
             else
