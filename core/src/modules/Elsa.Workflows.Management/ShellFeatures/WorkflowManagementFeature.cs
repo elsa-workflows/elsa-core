@@ -131,8 +131,7 @@ public class WorkflowManagementFeature : IShellFeature
             .AddNotificationHandler<RefreshActivityRegistry>()
             .AddNotificationHandler<UpdateConsumingWorkflows>()
             .AddNotificationHandler<ValidateWorkflow>()
-            .AddNotificationHandler<ValidateOutputConverters>()
-            .AddNotificationHandler<ValidateWorkflowDiagnostics>();
+            .AddNotificationHandler<ValidateOutputConverters>();
 
         // Register built-in activities from the Workflows and WorkflowManagement assemblies.
         services

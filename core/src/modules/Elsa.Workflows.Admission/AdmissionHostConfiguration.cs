@@ -139,6 +139,10 @@ public sealed class AdmissionHostConfiguration
         {
             DemandAudited(handler.GetType());
         }
+        foreach (var provider in services.GetServices<IWorkflowDiagnosticProvider>())
+        {
+            DemandAudited(provider.GetType());
+        }
         var materializers = services.GetRequiredService<IMaterializerRegistry>();
         if (materializers.GetMaterializer(JsonWorkflowMaterializer.MaterializerName)?.GetType() != typeof(JsonWorkflowMaterializer))
         {

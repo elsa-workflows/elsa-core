@@ -8,6 +8,9 @@ using Elsa.Tenants;
 using Elsa.Workflows;
 using Elsa.Workflows.Admission;
 using Elsa.Workflows.Admission.WorkerProcess;
+using Elsa.Workflows.Management;
+using Elsa.Workflows.Management.Models;
+using Elsa.Workflows.Models;
 using Elsa.Workflows.Pipelines.ActivityExecution;
 using Elsa.Workflows.Pipelines.WorkflowExecution;
 using Elsa.Workflows.Runtime;
@@ -86,6 +89,18 @@ public sealed class AdmissionRuntimeHostPolicyTests(PostgreSqlConnectionsFixture
                 await ObserveAsync(caseId, nameof(UnsupportedContributorRejectsBeforeConstructorAndCallback), caseId,
                     new() { ["validationAttempts"] = 1, ["constructorCalls"] = counters.Constructors,
                         ["callbackCalls"] = counters.Callbacks, ["activityEffects"] = probe.Count("activityEffects") });
+            });
+    }
+
+    [Fact]
+    public async Task UnauditedDiagnosticProviderRejectsHostBeforeRunningDiagnostics()
+    {
+        var provider = new UnreviewedDiagnosticProvider();
+        await RejectHostAsync(services => services.AddSingleton<IWorkflowDiagnosticProvider>(provider),
+            "The actual admission preparation/notification chain contains an unaudited service.", _ =>
+            {
+                Assert.Equal(0, provider.Calls);
+                return Task.CompletedTask;
             });
     }
 
@@ -301,6 +316,17 @@ public sealed class AdmissionRuntimeHostPolicyTests(PostgreSqlConnectionsFixture
     {
         public override IReadOnlyList<Endpoint> Endpoints { get; } = [route];
         public override IChangeToken GetChangeToken() => NullChangeToken.Singleton;
+    }
+
+    private sealed class UnreviewedDiagnosticProvider : IWorkflowDiagnosticProvider
+    {
+        public int Calls { get; private set; }
+
+        public IEnumerable<WorkflowValidationError> GetDiagnostics(WorkflowGraph graph)
+        {
+            Calls++;
+            return [];
+        }
     }
 
     private sealed class ContributionCounters
