@@ -53,10 +53,12 @@ records the outcome and limits. This does not import donor code, implement SDK v
 or close the epic.
 
 The task owner removed the employer-clearance requirement on 2026-10-20 and
-explicitly authorized the import and adaptation. The donor contains no license file;
-the import receipt records this without inventing a donor MIT grant or changing
-copyright attribution. The original donor tree and all 14 commits are retained in
-the import merge. The remote main tip matched the planned 2026-10-19 09:00
+authorized the import and adaptation. The import receipt records the donor tree
+at that time. On 2026-11-18 Cristina confirmed MIT licensing of her contributions
+in the imported snapshot, including distribution with Elsa. The original donor
+tree and all 14 commits are retained in the import merge. [Grant](https://github.com/elsa-workflows/elsa-core/issues/8842#issuecomment-6972813169)
+
+The remote main tip matched the planned 2026-10-19 09:00
 Europe/Amsterdam snapshot; no post-snapshot commits existed at import time.
 Source archival and the redirect follow independent import review and merge.
 

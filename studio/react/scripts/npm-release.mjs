@@ -13,6 +13,7 @@ export function validateVersion(version) {
 }
 
 export function readBundle(directory, expectedSource) {
+  const sourceNotice = readFileSync(new URL("../SOURCE-NOTICE.md", import.meta.url), "utf8");
   const bundle = JSON.parse(readFileSync(join(directory, "release.json"), "utf8"));
   validateVersion(bundle.version);
   if (!/^[a-f0-9]{40}$/.test(bundle.source) || (expectedSource && bundle.source !== expectedSource))
@@ -36,7 +37,7 @@ export function readBundle(directory, expectedSource) {
       }
     }
     const notice = execFileSync("tar", ["-xOf", file, "package/SOURCE-NOTICE.md"], { encoding: "utf8" });
-    if (!notice.includes("no license file")) throw new Error(`Missing source notice: ${item.name}`);
+    if (notice !== sourceNotice) throw new Error(`Source notice differs from the release source: ${item.name}`);
     const entries = new Set(execFileSync("tar", ["-tf", file], { encoding: "utf8" }).trim().split("\n"));
     for (const target of Object.values(manifest.exports)) {
       if (typeof target === "string" && target.endsWith(".css") && !entries.has(`package/${target.replace(/^\.\//, "")}`))

@@ -1,5 +1,5 @@
 import { execSync } from "node:child_process";
-import { readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { copyFileSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 // Production dependencies only: build tools are not redistributed with the SPA.
@@ -33,4 +33,5 @@ for (const [license, entries] of Object.entries(report)) {
 if (packages === 0) throw new Error("No production dependency licenses were scanned");
 // The vendored shadcn stylesheet carries its MIT notice in the distributed CSS.
 writeFileSync("dist/THIRD-PARTY-NOTICES.txt", notices.join("\n\n" + "=".repeat(72) + "\n\n"));
+copyFileSync("SOURCE-NOTICE.md", "dist/SOURCE-NOTICE.md");
 console.log(`Verified ${packages} production dependency licenses and retained their notices`);

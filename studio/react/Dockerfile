@@ -38,6 +38,7 @@ LABEL org.opencontainers.image.title="Elsa React Studio Preview" \
 WORKDIR /app
 ENV ASPNETCORE_HTTP_PORTS=8080
 COPY --from=build /output .
+COPY --from=assets /frontend/SOURCE-NOTICE.md /app/SOURCE-NOTICE.md
 USER $APP_UID
 EXPOSE 8080
 ENTRYPOINT ["dotnet", "Elsa.ReactStudio.Server.dll"]
