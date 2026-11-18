@@ -7,7 +7,22 @@
     "manifest_sha256": "c20fc5eee0d579055c1fd045f93cf7ef3b24468ed066c3dc124c9d1192e77d6e",
     "feedz_count": 231,
     "nuget_count": 230,
-    "exclude_ids": ["Elsa.Platform.Integration"],
+    "exclude_ids": [
+      "Elsa.Platform.Integration"
+    ],
+    "ancestry_branch": "release/3.10.0"
+  },
+  "3.10.2": {
+    "run_id": 44327700906,
+    "artifact_id": 14443296246,
+    "source_sha": "76700bad5435ab08db5815866f5640101f6d1e25",
+    "archive_sha256": "d98710394c97360458f3eeb0149f7d6bd24a5c255efdff2c686ccb283fb29c20",
+    "manifest_sha256": "5795984ecc4739e8573cf8cdcd831955ae599e10e6410f3e5dedd894ceab6e31",
+    "feedz_count": 231,
+    "nuget_count": 230,
+    "exclude_ids": [
+      "Elsa.Platform.Integration"
+    ],
     "ancestry_branch": "release/3.10.0"
   }
 }
