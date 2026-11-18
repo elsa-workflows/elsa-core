@@ -21,7 +21,9 @@ public class WorkflowInstanceWriteConcurrencyTests(PostgreSqlStoreSaveManyFixtur
     [InlineData(true, false)]
     [InlineData(true, true)]
     [InlineData(false, false, true)]
-    public async Task ConcurrentSaves_PreserveRowsAndAllowIndependentPostgresWrites(bool sqlite, bool existing, bool caseInsensitive = false)
+    [InlineData(true, false, true)]
+    [InlineData(false, false, false, true)]
+    public async Task ConcurrentSaves_PreserveRowsAndAllowIndependentPostgresWrites(bool sqlite, bool existing, bool caseInsensitive = false, bool boundedKey = false)
     {
         var codec = new PausingCodec();
         var services = new ServiceCollection();
@@ -30,10 +32,10 @@ public class WorkflowInstanceWriteConcurrencyTests(PostgreSqlStoreSaveManyFixtur
         var module = services.CreateModule();
         var sqliteFile = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.db");
         var connectionString = fixture.ConnectionString;
-        if (caseInsensitive)
+        if ((caseInsensitive || boundedKey) && !sqlite)
         {
             // This disposable fixture database has a different physical collation from the EF model.
-            const string databaseName = "case_insensitive_instance_ids";
+            var databaseName = boundedKey ? "bounded_instance_ids" : "case_insensitive_instance_ids";
             await using var admin = new NpgsqlConnection(connectionString);
             await admin.OpenAsync();
             await using var create = new NpgsqlCommand($"CREATE DATABASE {databaseName}", admin);
@@ -60,17 +62,34 @@ public class WorkflowInstanceWriteConcurrencyTests(PostgreSqlStoreSaveManyFixtur
             await using var scope = provider.CreateAsyncScope();
             var factory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<ManagementElsaDbContext>>();
             await using var db = await factory.CreateDbContextAsync();
-            await db.Database.MigrateAsync();
-            if (caseInsensitive)
+            if (sqlite && caseInsensitive)
+            {
+                // Change the physical ID comparison without telling the EF model.
+                var script = db.Database.GenerateCreateScript();
+                const string idColumn = "\"Id\" TEXT NOT NULL";
+                Assert.Contains(idColumn, script);
+                await db.Database.ExecuteSqlRawAsync(script.Replace(idColumn, "\"Id\" TEXT COLLATE NOCASE NOT NULL"));
+            }
+            else
+            {
+                await db.Database.MigrateAsync();
+            }
+            if (caseInsensitive && !sqlite)
             {
                 await db.Database.ExecuteSqlRawAsync("""
                     CREATE COLLATION instance_id_ci (provider = icu, locale = 'und-u-ks-level2', deterministic = false);
                     ALTER TABLE "Elsa"."WorkflowInstances" ALTER COLUMN "Id" TYPE text COLLATE instance_id_ci;
                     """);
             }
+            if (boundedKey)
+            {
+                await db.Database.ExecuteSqlRawAsync("""
+                    ALTER TABLE "Elsa"."WorkflowInstances" ALTER COLUMN "Id" TYPE varchar(41);
+                    """);
+            }
             var store = scope.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>();
             var id = $"instance-{Guid.NewGuid():N}";
-            var overlappingId = caseInsensitive ? id.ToUpperInvariant() : id;
+            var overlappingId = caseInsensitive ? id.ToUpperInvariant() : boundedKey ? id + " " : id;
             if (existing)
             {
                 await store.SaveAsync(Instance(id, "initial"));
@@ -88,8 +107,8 @@ public class WorkflowInstanceWriteConcurrencyTests(PostgreSqlStoreSaveManyFixtur
                 await Assert.ThrowsAnyAsync<OperationCanceledException>(() => store.SaveManyAsync(
                     [Instance(independentId, "unused"), Instance(overlappingId, "overlap")], cancellation.Token).AsTask());
 
-                update = store.SaveAsync(Instance(id, "second")).AsTask();
-                if (sqlite || caseInsensitive)
+                update = store.SaveAsync(Instance(caseInsensitive ? overlappingId : id, "second")).AsTask();
+                if (sqlite || caseInsensitive || boundedKey)
                 {
                     using var timeout = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
                     await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
@@ -114,7 +133,7 @@ public class WorkflowInstanceWriteConcurrencyTests(PostgreSqlStoreSaveManyFixtur
 
             var saved = await store.FindAsync(new WorkflowInstanceFilter { Id = id });
             Assert.Equal("second", saved?.WorkflowState.Name);
-            Assert.Equal(1, await db.WorkflowInstances.CountAsync(x => x.Id == id));
+            Assert.Equal(1, await db.WorkflowInstances.CountAsync(x => x.Id == id || x.Id == overlappingId));
         }
         finally
         {

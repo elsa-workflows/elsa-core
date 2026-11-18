@@ -114,7 +114,7 @@ internal sealed class StoreWriteLock
                     JOIN pg_catalog.pg_collation c ON c.oid = i.indcollation[0]
                     WHERE i.indrelid = pg_catalog.to_regclass({relation}) AND i.indisprimary AND i.indnkeyatts = 1
                       AND a.attname = {column} AND a.atttypid IN ('pg_catalog.text'::regtype, 'pg_catalog.varchar'::regtype)
-                      AND op.opcnamespace = 'pg_catalog'::regnamespace AND op.opcname = 'text_ops'
+                      AND a.atttypmod = -1 AND op.opcnamespace = 'pg_catalog'::regnamespace AND op.opcname = 'text_ops'
                       AND a.attcollation = i.indcollation[0] AND c.collisdeterministic
                 ) AS "Value"
                 """).SingleAsync(cancellationToken);
