@@ -47,6 +47,9 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+        env:
+          # The verifier links the selected SDK's NuGet assemblies and targets .NET 10.
+          DOTNET_INSTALL_DIR: ${{ runner.temp }}/dotnet-10
         with:
           dotnet-version: |
             8.0.x
