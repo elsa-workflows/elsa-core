@@ -164,7 +164,9 @@ public class MemoryWorkflowDefinitionStore(MemoryStore<WorkflowDefinition> store
             if (promoteDraft && (current.Count != 2 || replacing == null || replacing.IsLatest || replacing.IsPublished || replacing.IsReadonly ||
                                  replacing.IsSystem || current.Any(version => version.TenantId != replacing.TenantId) ||
                                  !definition.IsLatest || definition.IsPublished))
+            {
                 return Task.FromResult(false);
+            }
 
             if (replacing != null)
             {
@@ -184,7 +186,9 @@ public class MemoryWorkflowDefinitionStore(MemoryStore<WorkflowDefinition> store
             {
                 var retired = previous.ShallowClone();
                 if (!promoteDraft)
+                {
                     retired.IsPublished = false;
+                }
                 retired.IsLatest = false;
                 store.Save(retired, GetId);
             }

@@ -188,7 +188,9 @@ public class TenantScopedDefinitionIdsMigrationTests
 
         Assert.False(await store.TryPromoteExistingDraftAsync(expected, versions => versions.Count == 1));
         await using (var unchangedDrafts = await factory.CreateDbContextAsync())
+        {
             Assert.Equal(published.Id, await unchangedDrafts.WorkflowDefinitions.Where(version => version.IsLatest).Select(version => version.Id).SingleAsync());
+        }
         Assert.True(await store.TryPromoteExistingDraftAsync(expected, versions => versions.Count == 2));
         await using (var promotedDrafts = await factory.CreateDbContextAsync())
         {

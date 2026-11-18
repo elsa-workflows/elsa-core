@@ -183,7 +183,9 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
         if (promoteDraft && (current.Count != 2 || replacing == null || replacing.IsLatest || replacing.IsPublished || replacing.IsReadonly ||
                              replacing.IsSystem || current.Any(version => version.TenantId != replacing.TenantId) ||
                              !definition.IsLatest || definition.IsPublished))
+        {
             return false;
+        }
 
         if (replacing != null)
         {
@@ -208,7 +210,9 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
         foreach (var version in current.Where(version => version.Id != definition.Id))
         {
             if (!promoteDraft)
+            {
                 version.IsPublished = false;
+            }
             version.IsLatest = false;
         }
 
