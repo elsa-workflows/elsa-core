@@ -91,9 +91,17 @@ public class TriggerIndexer : ITriggerIndexer
                 }
 
                 var removed = group.ToList();
-                await _triggerStore.ReplaceAsync(removed, [], cancellationToken);
                 var indexed = new IndexedWorkflowTriggers(workflowGraph.Workflow, [], removed, []);
-                await _notificationSender.SendAsync(new WorkflowTriggersIndexed(indexed), cancellationToken);
+                var notification = new WorkflowTriggersIndexed(indexed);
+
+                // Keep the removal payload available for retry if required cleanup fails.
+                if (filter.RequireCompleteCleanup)
+                    await _notificationSender.SendAsync(notification, cancellationToken);
+
+                await _triggerStore.ReplaceAsync(removed, [], cancellationToken);
+
+                if (!filter.RequireCompleteCleanup)
+                    await _notificationSender.SendAsync(notification, cancellationToken);
             }
             catch (Exception ex) when (!filter.RequireCompleteCleanup && ex is not OperationCanceledException)
             {
