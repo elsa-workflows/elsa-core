@@ -300,7 +300,7 @@ public class MongoWorkflowDefinitionStore(MongoDbStore<WorkflowDefinition> mongo
 
             var replacing = current.SingleOrDefault(version => version.Id == definition.Id);
             if (promoteDraft && (current.Count != 2 || replacing == null || replacing.IsLatest || replacing.IsPublished || replacing.IsReadonly ||
-                                 replacing.IsSystem || current.Any(version => version.TenantId != replacing.TenantId) ||
+                                 replacing.IsSystem || current.Any(version => version.TenantId.NormalizeTenantId() != replacing.TenantId.NormalizeTenantId()) ||
                                  !definition.IsLatest || definition.IsPublished))
             {
                 return false;

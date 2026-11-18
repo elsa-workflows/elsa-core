@@ -8,6 +8,7 @@ using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Notifications;
 using Elsa.Workflows.Management.Services;
+using Elsa.Workflows.Management.Stores;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 using Xunit.Abstractions;
@@ -144,22 +145,36 @@ public class Tests
         Assert.Single(definitions, x => x.IsLatest);
     }
 
-    [Fact]
-    public async Task SaveDraftAsync_ShouldPreserveHighestVersionWhenPromotingNonLatestDraft()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task SaveDraftAsync_ShouldPreserveHighestVersionWhenPromotingNonLatestDraft(bool useCache)
     {
         const string definitionId = "test-definition";
-        var store = _services.GetRequiredService<IWorkflowDefinitionStore>();
-        var publisher = _services.GetRequiredService<IWorkflowDefinitionPublisher>();
+        var services = useCache
+            ? new TestApplicationBuilder(_services.GetRequiredService<ITestOutputHelper>())
+                .ConfigureElsa(elsa => elsa.UseWorkflowManagement(management => management.UseCache()))
+                .Build()
+            : _services;
+        var store = services.GetRequiredService<IWorkflowDefinitionStore>();
+        var publisher = services.GetRequiredService<IWorkflowDefinitionPublisher>();
+        if (useCache)
+        {
+            Assert.IsType<CachingWorkflowDefinitionStore>(store);
+        }
         var published = CreateDefinition("v1", definitionId, 1, true);
         published.IsPublished = true;
         await store.SaveManyAsync([
             published,
             CreateDefinition("v2", definitionId, 2, false)
         ]);
+        var latestFilter = new WorkflowDefinitionFilter { DefinitionId = definitionId, VersionOptions = VersionOptions.Latest };
+        Assert.Equal("v1", (await store.FindAsync(latestFilter))?.Id);
         var highestDraft = await publisher.GetDraftAsync(definitionId, VersionOptions.SpecificVersion(2));
 
         var savedDraft = await publisher.SaveDraftAsync(highestDraft!);
 
+        Assert.Equal("v2", (await store.FindAsync(latestFilter))?.Id);
         var definitions = (await store.FindManyAsync(new WorkflowDefinitionFilter { DefinitionId = definitionId })).ToList();
         Assert.Equal(2, definitions.Count);
         Assert.Equal("v2", savedDraft.Id);

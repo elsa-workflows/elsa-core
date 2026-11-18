@@ -205,7 +205,7 @@ internal class DapperWorkflowDefinitionStore(Store<WorkflowDefinitionRecord> sto
             ApplyFilter(draftQuery, new WorkflowDefinitionFilter { DefinitionId = definition.DefinitionId, Id = definition.Id });
             store.ApplyTenantFilter(draftQuery);
             var draft = await connection.QuerySingleOrDefaultAsync<WorkflowDefinitionRecord>(Command(draftQuery));
-            if (current.Count != 1 || draft == null || draft.TenantId != current[0].TenantId ||
+            if (current.Count != 1 || draft == null || draft.TenantId.NormalizeTenantId() != current[0].TenantId.NormalizeTenantId() ||
                 draft.TenantId == Tenant.AgnosticTenantId && !SharedTenantWriteScope.IsGranted(typeof(WorkflowDefinition)) ||
                 draft.IsLatest || draft.IsPublished || draft.IsReadonly || draft.IsSystem ||
                 !definition.IsLatest || definition.IsPublished)
