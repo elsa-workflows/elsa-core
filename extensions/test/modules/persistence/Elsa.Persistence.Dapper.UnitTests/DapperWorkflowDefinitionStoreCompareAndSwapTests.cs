@@ -118,6 +118,31 @@ public sealed class DapperWorkflowDefinitionStoreCompareAndSwapTests : IDisposab
         Assert.Equal("draft", Assert.Single(saved, version => version.IsLatest).Id);
     }
 
+    [Fact]
+    public async Task PromotionPreservesLegacyDefaultTenantIdentifiers()
+    {
+        var published = Definition("definition", "published", name: "Published", stringData: "graph-1");
+        published.IsPublished = true;
+        var draft = Definition("definition", "draft", name: "Draft", stringData: "graph-2");
+        draft.Version = 2;
+        draft.IsLatest = false;
+        await _store.SaveManyAsync([published, draft]);
+        using var connection = new SqliteConnection($"Data Source={_databasePath};Pooling=False");
+        await connection.OpenAsync();
+        await connection.ExecuteAsync("update WorkflowDefinitions set TenantId = '' where Id = 'published';");
+        await connection.ExecuteAsync("update WorkflowDefinitions set TenantId = null where Id = 'draft';");
+
+        var proposed = (await _store.FindAsync(new() { Id = draft.Id }))!;
+        proposed.IsLatest = true;
+        Assert.True(await _store.TryPromoteExistingDraftAsync(proposed, versions => versions.Count == 2));
+
+        var saved = (await _store.FindManyAsync(new() { DefinitionId = "definition" })).ToList();
+        Assert.Equal(published.Id, Assert.Single(saved, version => version.IsPublished).Id);
+        Assert.Equal(draft.Id, Assert.Single(saved, version => version.IsLatest).Id);
+        var tenantIds = (await connection.QueryAsync<string?>("select TenantId from WorkflowDefinitions order by Id;")).ToArray();
+        Assert.Equal(new string?[] { null, "" }, tenantIds);
+    }
+
     [Fact(DisplayName = "A missing definition is NotFound")]
     public async Task TryUpdateLatestAsync_WhenNothingMatchesTheFilter_ReturnsNotFound()
     {

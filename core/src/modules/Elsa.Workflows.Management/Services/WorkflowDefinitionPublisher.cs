@@ -1,6 +1,7 @@
 using Elsa.Common;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
+using Elsa.Common.Multitenancy;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management.Entities;
@@ -363,7 +364,7 @@ public class WorkflowDefinitionPublisher(
         WorkflowDefinition latestVersion, string latestSnapshot, CancellationToken cancellationToken)
     {
         if (existingDraft.IsLatest || existingDraft.IsPublished || existingDraft.IsReadonly || existingDraft.IsSystem ||
-            existingDraft.TenantId != latestVersion.TenantId)
+            existingDraft.TenantId.NormalizeTenantId() != latestVersion.TenantId.NormalizeTenantId())
         {
             throw new WorkflowDefinitionEditConflictException();
         }

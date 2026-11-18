@@ -77,36 +77,28 @@ public class TriggerIndexer : ITriggerIndexer
 
         foreach (var group in triggers.GroupBy(trigger => trigger.WorkflowDefinitionVersionId))
         {
-            WorkflowGraph? workflowGraph;
             try
             {
-                workflowGraph = await _workflowDefinitionService.FindWorkflowGraphAsync(group.Key, cancellationToken);
-            }
-            catch (Exception ex) when (ex is not OperationCanceledException)
-            {
-                _logger.LogWarning(ex, "Failed to load workflow graph for workflow definition version {WorkflowDefinitionVersionId}.", group.Key);
-                if (filter.RequireCompleteCleanup)
+                var workflowGraph = await _workflowDefinitionService.FindWorkflowGraphAsync(group.Key, cancellationToken);
+                if (workflowGraph == null)
                 {
-                    throw;
+                    if (filter.RequireCompleteCleanup)
+                    {
+                        throw new InvalidOperationException("The workflow graph is unavailable for trigger cleanup.");
+                    }
+
+                    continue;
                 }
 
-                continue;
+                var removed = group.ToList();
+                await _triggerStore.ReplaceAsync(removed, [], cancellationToken);
+                var indexed = new IndexedWorkflowTriggers(workflowGraph.Workflow, [], removed, []);
+                await _notificationSender.SendAsync(new WorkflowTriggersIndexed(indexed), cancellationToken);
             }
-
-            if (workflowGraph == null)
+            catch (Exception ex) when (!filter.RequireCompleteCleanup && ex is not OperationCanceledException)
             {
-                if (filter.RequireCompleteCleanup)
-                {
-                    throw new InvalidOperationException("The workflow graph is unavailable for trigger cleanup.");
-                }
-
-                continue;
+                _logger.LogWarning(ex, "Failed to clean up triggers for workflow definition version {WorkflowDefinitionVersionId}.", group.Key);
             }
-
-            var removed = group.ToList();
-            await _triggerStore.ReplaceAsync(removed, [], cancellationToken);
-            var indexed = new IndexedWorkflowTriggers(workflowGraph.Workflow, [], removed, []);
-            await _notificationSender.SendAsync(new WorkflowTriggersIndexed(indexed), cancellationToken);
         }
     }
 
