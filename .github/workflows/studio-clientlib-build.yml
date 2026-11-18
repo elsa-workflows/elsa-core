@@ -12,6 +12,7 @@ on:
       - 'scripts/integration-program/build_studio_clientlibs.sh'
       - 'scripts/integration-program/consolidated-build/studio-bpmn-generator-layout.patch'
       - 'scripts/integration-program/consolidated-build/studio-clientlib-lockfiles/**'
+      - 'studio/react/vendor/picomatch-build/**'
       - 'studio/test/browser/DesignerHover/**'
       - 'studio/test/browser/BpmnDesigner/**'
       # host.spec.ts runs the Blazor host's designer shim, which is hand-written rather than built from a ClientLib.

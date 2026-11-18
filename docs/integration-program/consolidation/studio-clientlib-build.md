@@ -47,3 +47,8 @@ package install reported four Designer dependency advisories
 (three moderate, one high); the .NET restore reported `NU1902` for
 `Microsoft.Build.Tasks.Git 10.0.103`. Those warnings did not fail this proof
 and require separate dependency review before release.
+
+The reviewed locks that depend on Picomatch use the hardened [build matcher](../../../studio/react/vendor/picomatch-build/README.md).
+The ClientLib script packs the local MIT-licensed source, and npm verifies its
+integrity against the lock before installation. The archive is build tooling and
+does not ship in the Studio browser bundles.

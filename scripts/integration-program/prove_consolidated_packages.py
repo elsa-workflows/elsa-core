@@ -401,7 +401,9 @@ def build_clientlibs(root: Path, output: Path) -> dict:
     for project, _ in libs.values():
         tracked = run(["git", "ls-files", "--", f"{project}/ClientLib"], root).splitlines()
         inputs.update(tracked)
-    inputs.update(run(["git", "ls-files", "--", "scripts/integration-program/consolidated-build/studio-clientlib-lockfiles"], root).splitlines())
+    inputs.update(run(["git", "ls-files", "--",
+                       "scripts/integration-program/consolidated-build/studio-clientlib-lockfiles",
+                       "studio/react/vendor/picomatch-build"], root).splitlines())
     input_hashes = {path: hashlib.sha256((root / path).read_bytes()).hexdigest() for path in sorted(inputs)}
     run(["bash", str(script), str(root)], root, timeout=1200, log=output / "studio-clientlibs.log")
     assets = []
