@@ -73,7 +73,11 @@ jobs:
         working-directory: studio/react
         run: |
           # Regional Ubuntu mirrors can spend most of the job downloading WebKit dependencies.
-          sudo sed -i -E 's@https?://([a-z0-9-]+\.)*archive\.ubuntu\.com/ubuntu@https://archive.ubuntu.com/ubuntu@g' /etc/apt/sources.list.d/ubuntu.sources
+          sudo sed -i -E \
+            -e 's@^URIs: mirror\+file:/etc/apt/apt-mirrors\.txt[[:blank:]]*$@URIs: https://archive.ubuntu.com/ubuntu/@' \
+            -e 's@^URIs: https?://([a-z0-9-]+\.)*archive\.ubuntu\.com/ubuntu/?[[:blank:]]*$@URIs: https://archive.ubuntu.com/ubuntu/@' \
+            /etc/apt/sources.list.d/ubuntu.sources
+          grep -Fx 'URIs: https://archive.ubuntu.com/ubuntu/' /etc/apt/sources.list.d/ubuntu.sources
           pnpm exec playwright install --with-deps chromium firefox webkit
           pnpm test:browser
       - name: Pack the Preview feature libraries without publishing
