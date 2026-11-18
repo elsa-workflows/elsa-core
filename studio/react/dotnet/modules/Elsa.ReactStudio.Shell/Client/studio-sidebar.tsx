@@ -135,31 +135,29 @@ export function StudioSidebar() {
                   const childActive = hasActiveChild(item, pathname);
                   if (item.children?.length) {
                     return (
-                      <Collapsible key={item.id} defaultOpen={childActive || item.id === "workflows"} className="group/collapsible">
-                        <SidebarMenuItem>
-                          <CollapsibleTrigger render={<SidebarMenuButton tooltip={item.label} className={cn("h-9 group/menu-button", childActive && "text-foreground")} />}>
-                            <IconTile item={item} active={childActive && collapsed} />
-                            <span className="font-medium">{item.label}</span>
-                            <ChevronRight className="ml-auto size-4 text-muted-foreground transition-transform duration-200 group-data-[panel-open]/collapsible:rotate-90" />
-                          </CollapsibleTrigger>
-                          <CollapsibleContent>
-                            <SidebarMenuSub className="mx-3 mt-0.5 gap-0.5 border-l-2 border-sidebar-border/80 px-0 pl-2">
-                              {item.children.map((child) => {
-                                const childIsActive = isActive(child, pathname);
-                                return (
-                                  <SidebarMenuSubItem key={child.id} className="relative">
-                                    {childIsActive && <span className="absolute -left-[10px] top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full bg-primary" aria-hidden />}
-                                    <SidebarMenuSubButton isActive={childIsActive} render={<Link href={child.href ?? "#"} />} className={cn("h-8 transition-colors", childIsActive && "bg-primary/10 font-medium text-foreground hover:bg-primary/15")}>
-                                      {child.icon && <child.icon className={cn(childIsActive ? "!text-primary" : "!text-muted-foreground")} />}
-                                      <span>{child.label}</span>
-                                      {child.badge && <child.badge />}
-                                    </SidebarMenuSubButton>
-                                  </SidebarMenuSubItem>
-                                );
-                              })}
-                            </SidebarMenuSub>
-                          </CollapsibleContent>
-                        </SidebarMenuItem>
+                      <Collapsible key={item.id} render={<SidebarMenuItem />} defaultOpen={childActive || item.id === "workflows"} className="group/collapsible">
+                        <CollapsibleTrigger render={<SidebarMenuButton tooltip={item.label} className={cn("h-9 group/menu-button", childActive && "text-foreground")} />}>
+                          <IconTile item={item} active={childActive && collapsed} />
+                          <span className="font-medium">{item.label}</span>
+                          <ChevronRight className="ml-auto size-4 text-muted-foreground transition-transform duration-200 group-data-[panel-open]/collapsible:rotate-90" />
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <SidebarMenuSub className="mx-3 mt-0.5 gap-0.5 border-l-2 border-sidebar-border/80 px-0 pl-2">
+                            {item.children.map((child) => {
+                              const childIsActive = isActive(child, pathname);
+                              return (
+                                <SidebarMenuSubItem key={child.id} className="relative">
+                                  {childIsActive && <span className="absolute -left-[10px] top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full bg-primary" aria-hidden />}
+                                  <SidebarMenuSubButton isActive={childIsActive} render={<Link href={child.href ?? "#"} />} className={cn("h-8 transition-colors", childIsActive && "bg-primary/10 font-medium text-foreground hover:bg-primary/15")}>
+                                    {child.icon && <child.icon className={cn(childIsActive ? "!text-primary" : "!text-muted-foreground")} />}
+                                    <span>{child.label}</span>
+                                    {child.badge && <child.badge />}
+                                  </SidebarMenuSubButton>
+                                </SidebarMenuSubItem>
+                              );
+                            })}
+                          </SidebarMenuSub>
+                        </CollapsibleContent>
                       </Collapsible>
                     );
                   }

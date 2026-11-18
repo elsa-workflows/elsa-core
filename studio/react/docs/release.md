@@ -33,7 +33,8 @@ The same manual workflow builds the SDK, UI, API-client and auth packages, stage
 public tarballs and records their integrity plus the source commit in `release.json`.
 Workspace manifests stay private and unchanged. Release tarballs carry the source
 notice, Preview description, canonical repository metadata and exact internal
-versions; they contain no `workspace:` references. No donor license grant is invented.
+versions. They contain no `workspace:` references. The source notice includes
+Cristina Mudura's attribution, MIT terms and confirmation. [Source notice](../SOURCE-NOTICE.md)
 
 From `studio/react`, after building the workspace packages:
 

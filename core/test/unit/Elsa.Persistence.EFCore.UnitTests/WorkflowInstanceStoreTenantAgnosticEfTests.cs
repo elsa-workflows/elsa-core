@@ -69,6 +69,7 @@ public class WorkflowInstanceStoreTenantAgnosticEfTests
                     });
                 }
 
+                using var grant = SharedTenantWriteScope.Enter<WorkflowInstance>();
                 await dbContext.SaveChangesAsync();
             }
 
@@ -92,6 +93,7 @@ public class WorkflowInstanceStoreTenantAgnosticEfTests
             var remaining = await store.FindManyAsync(new() { TenantAgnostic = true });
             var remainingIds = remaining.Select(x => x.Id).ToList();
             Assert.Contains("i-default", remainingIds);
+            Assert.Contains("i-star", remainingIds);
             Assert.Contains("i-t2", remainingIds);
             Assert.DoesNotContain("i-t1", remainingIds);
         }
@@ -137,6 +139,7 @@ public class WorkflowInstanceStoreTenantAgnosticEfTests
                     });
                 }
 
+                using var grant = SharedTenantWriteScope.Enter<WorkflowInstance>();
                 await dbContext.SaveChangesAsync();
             }
 
@@ -245,7 +248,7 @@ public class WorkflowInstanceStoreTenantAgnosticEfTests
                 });
 
                 var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => dbContext.SaveChangesAsync());
-                Assert.Contains("t2", exception.Message);
+                Assert.Equal("The record belongs to a different tenant.", exception.Message);
             }
         }
         finally

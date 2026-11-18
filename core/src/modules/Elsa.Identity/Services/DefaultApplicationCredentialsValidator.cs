@@ -1,3 +1,4 @@
+using Elsa.Common.Multitenancy;
 using Elsa.Extensions;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Entities;
@@ -16,6 +17,8 @@ public class DefaultApplicationCredentialsValidator : IApplicationCredentialsVal
     private readonly IApplicationStore? _applicationStore;
     private readonly ISecretHasher _secretHasher;
     private readonly ILogger<DefaultApplicationCredentialsValidator> _logger;
+    private readonly ITenantAccessor? _tenantAccessor;
+    private readonly ITenantService? _tenantService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DefaultApplicationCredentialsValidator"/> class.
@@ -42,6 +45,20 @@ public class DefaultApplicationCredentialsValidator : IApplicationCredentialsVal
         _secretHasher = secretHasher;
         _logger = logger ?? NullLogger<DefaultApplicationCredentialsValidator>.Instance;
     }
+
+    /// <summary>Initializes the host-managed validator with the verified application tenant scope.</summary>
+    public DefaultApplicationCredentialsValidator(
+        IApiKeyParser apiKeyParser,
+        IApplicationProvider applicationProvider,
+        IApplicationStore? applicationStore,
+        ISecretHasher secretHasher,
+        ILogger<DefaultApplicationCredentialsValidator>? logger,
+        ITenantAccessor tenantAccessor,
+        ITenantService? tenantService = null) : this(apiKeyParser, applicationProvider, applicationStore, secretHasher, logger)
+    {
+        _tenantAccessor = tenantAccessor;
+        _tenantService = tenantService;
+    }
     
     /// <inheritdoc />
     public async ValueTask<Application?> ValidateAsync(string apiKey, CancellationToken cancellationToken = default)
@@ -54,7 +71,24 @@ public class DefaultApplicationCredentialsValidator : IApplicationCredentialsVal
         
         if(application == null)
             return null;
-        
+
+        var tenantId = application.TenantId.NormalizeTenantId();
+        var ambientTenant = _tenantAccessor?.Tenant;
+        if (tenantId == Tenant.AgnosticTenantId || ambientTenant is not null && !string.Equals(ambientTenant.Id, tenantId, StringComparison.Ordinal))
+            return null;
+
+        var credentialTenant = ambientTenant;
+        if (_tenantAccessor is not null && credentialTenant is null)
+        {
+            credentialTenant = _tenantService is not null
+                ? await _tenantService.FindAsync(tenantId, cancellationToken)
+                : tenantId == Tenant.DefaultTenantId ? Tenant.Default : null;
+            if (credentialTenant is null)
+                return null;
+        }
+
+        // Legacy hash upgrades write to the application store and must use the same tenant as validation.
+        using var credentialScope = _tenantAccessor?.PushContext(credentialTenant);
         var isValidApiKey = _secretHasher.VerifySecret(apiKey, application.HashedApiKey, application.HashedApiKeySalt, out var needsRehash);
 
         if (!isValidApiKey)

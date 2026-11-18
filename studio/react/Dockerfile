@@ -5,6 +5,7 @@ RUN --mount=type=secret,id=build-ca \
     if [ -f /run/secrets/build-ca ]; then export NODE_EXTRA_CA_CERTS=/run/secrets/build-ca; fi; \
     npm install --global pnpm@10.33.0
 COPY studio/react/package.json studio/react/pnpm-lock.yaml studio/react/pnpm-workspace.yaml ./
+COPY studio/react/vendor/picomatch-build ./vendor/picomatch-build/
 COPY studio/react/packages ./packages/
 COPY studio/react/dotnet/modules ./dotnet/modules/
 RUN --mount=type=secret,id=build-ca \
@@ -38,6 +39,7 @@ LABEL org.opencontainers.image.title="Elsa React Studio Preview" \
 WORKDIR /app
 ENV ASPNETCORE_HTTP_PORTS=8080
 COPY --from=build /output .
+COPY --from=assets /frontend/SOURCE-NOTICE.md /app/SOURCE-NOTICE.md
 USER $APP_UID
 EXPOSE 8080
 ENTRYPOINT ["dotnet", "Elsa.ReactStudio.Server.dll"]

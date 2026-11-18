@@ -81,6 +81,7 @@ class Pin:
     nuget_count: int
     exclude_ids: tuple[str, ...]
     ancestry_branch: str
+    tooling_sha: str | None = None
 
     @property
     def artifact_name(self) -> str:
@@ -94,9 +95,10 @@ def _is_positive_int(value: object) -> bool:
 def validate_pin_entry(version: str, entry: object) -> Pin:
     """Check one pin entry field by field and return it; every problem is a SystemExit naming the field."""
     require(isinstance(entry, dict), f"Pin entry for {version} must be an object.")
-    missing = [field for field in PIN_FIELDS if field not in entry]
+    fields = (*PIN_FIELDS, "tooling_sha") if version.startswith("3.11.") else PIN_FIELDS
+    missing = [field for field in fields if field not in entry]
     require(not missing, f"Pin entry for {version} is missing: {', '.join(missing)}.")
-    unknown = sorted(set(entry) - set(PIN_FIELDS))
+    unknown = sorted(set(entry) - set(fields))
     require(not unknown, f"Pin entry for {version} has unknown fields: {', '.join(unknown)}.")
     for field in ("run_id", "artifact_id", "feedz_count", "nuget_count"):
         require(_is_positive_int(entry[field]), f"Pin {version}.{field} must be a positive integer.")
@@ -112,6 +114,16 @@ def validate_pin_entry(version: str, entry: object) -> Pin:
     require(isinstance(entry["ancestry_branch"], str) and BRANCH.fullmatch(entry["ancestry_branch"])
             and ".." not in entry["ancestry_branch"],
             f"Pin {version}.ancestry_branch must be a branch name.")
+    if version.startswith("3.11."):
+        from validate_packages_id_set import STABLE_311, expected_ids_file, load_expected_ids
+        require(STABLE_311.fullmatch(version), f"Pin version {version} must be a canonical stable 3.11 version.")
+        require(entry["ancestry_branch"] == "release/3.11.0",
+                f"Pin {version} must name the release/3.11.0 source line.")
+        require(isinstance(entry["tooling_sha"], str) and HEX40.fullmatch(entry["tooling_sha"]),
+                f"Pin {version}.tooling_sha must be 40 lowercase hex characters.")
+        expected = load_expected_ids(expected_ids_file(version))
+        require(entry["feedz_count"] == len(expected) and entry["nuget_count"] == len(expected) and not exclude,
+                f"Pin {version} must use the full reviewed 3.11 inventory on both feeds, with no exclusions.")
     require(entry["nuget_count"] == entry["feedz_count"] - len(exclude),
             f"Pin {version}.nuget_count must be feedz_count minus the number of exclude_ids.")
     require(entry["run_id"] not in FORBIDDEN_RUNS and entry["artifact_id"] not in FORBIDDEN_ARTIFACTS
@@ -120,7 +132,7 @@ def validate_pin_entry(version: str, entry: object) -> Pin:
     return Pin(version=version, run_id=entry["run_id"], artifact_id=entry["artifact_id"], source_sha=entry["source_sha"],
                archive_sha256=entry["archive_sha256"], manifest_sha256=entry["manifest_sha256"],
                feedz_count=entry["feedz_count"], nuget_count=entry["nuget_count"],
-               exclude_ids=tuple(exclude), ancestry_branch=entry["ancestry_branch"])
+               exclude_ids=tuple(exclude), ancestry_branch=entry["ancestry_branch"], tooling_sha=entry.get("tooling_sha"))
 
 
 def load_pin(version: str, pin_file: Path = PIN_FILE) -> Pin:
@@ -161,6 +173,10 @@ def check_run_head(pin: Pin, head_sha: object, head_branch: object, where: str) 
     ancestry check instead.
     """
     require(head_sha not in FORBIDDEN_SOURCES, f"{where} names the 3.10.0 source commit {head_sha}.")
+    if pin.tooling_sha is not None:
+        require(head_branch == "main" and head_sha == pin.tooling_sha,
+                f"{where} does not match the pinned main tooling commit.")
+        return
     require(head_sha == pin.source_sha or (head_branch == "main" and isinstance(head_sha, str) and HEX40.fullmatch(head_sha)),
             f"{where} {head_sha!r} is neither the pinned source {pin.source_sha} nor a commit run from main.")
 
@@ -170,7 +186,8 @@ def check_run(pin: Pin, run: dict) -> None:
     require(run.get("run_attempt") == 1, "Candidate run attempt is not attempt 1.")
     check_run_head(pin, run.get("head_sha"), run.get("head_branch"), "Candidate run head_sha")
     require(run.get("conclusion") == "success" and run.get("status") == "completed", "Candidate run did not succeed.")
-    require(run.get("event") == "workflow_dispatch" and run.get("path") in PRODUCER_WORKFLOWS,
+    producer_paths = {".github/workflows/prepare-consolidated-release-candidate.yml"} if pin.tooling_sha else PRODUCER_WORKFLOWS
+    require(run.get("event") == "workflow_dispatch" and run.get("path") in producer_paths,
             "Candidate run was not produced by a consolidated candidate workflow.")
 
 
@@ -223,7 +240,9 @@ def sealed_packages(pin: Pin, manifest: dict) -> dict[str, str]:
         sealed[name] = row["sha256"]
     nupkgs = [name for name in sealed if name.endswith(".nupkg")]
     require(len(nupkgs) == pin.feedz_count, f"Candidate seals {len(nupkgs)} .nupkg files, expected {pin.feedz_count}.")
-    require(len(sealed) == 2 * pin.feedz_count, "Candidate seals an unexpected number of .snupkg files.")
+    symbols = {name for name in sealed if name.endswith(".snupkg")}
+    require(symbols == {f"{name[:-6]}.snupkg" for name in nupkgs},
+            "Candidate seals unexpected or missing .snupkg pairs.")
     return sealed
 
 

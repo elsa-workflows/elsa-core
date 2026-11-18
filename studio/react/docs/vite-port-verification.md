@@ -2,8 +2,9 @@
 
 The original tree remains at the immutable import commit. This adaptation replaces
 the Next shell with Vite, History API routing and an ASP.NET configuration/asset host.
-The donor license observation is recorded in the source receipt; this port does not
-assert a donor MIT grant. Production dependency licenses and notices are checked
+The source receipt records the donor tree at import. Cristina subsequently granted
+MIT rights for her contributions in that tree. [Source notice](../SOURCE-NOTICE.md)
+Production dependency licenses and notices are checked
 separately by `scripts/dependency-licenses.mjs` during every frontend build.
 
 | Behavior | Evidence |

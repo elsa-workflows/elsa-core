@@ -22,6 +22,7 @@
       "core/src/modules/Elsa.Expressions.Python/Elsa.Expressions.Python.csproj",
       "core/src/modules/Elsa.Expressions/Elsa.Expressions.csproj",
       "core/src/modules/Elsa.Hosting.Management/Elsa.Hosting.Management.csproj",
+      "core/src/modules/Elsa.Http.Webhooks/Elsa.Http.Webhooks.csproj",
       "core/src/modules/Elsa.Http/Elsa.Http.csproj",
       "core/src/modules/Elsa.Identity/Elsa.Identity.csproj",
       "core/src/modules/Elsa.KeyValues/Elsa.KeyValues.csproj",
@@ -102,6 +103,7 @@
       "extensions/test/modules/persistence/Elsa.Dapper.UnitTests/Elsa.Dapper.UnitTests.csproj",
       "extensions/test/modules/persistence/Elsa.MongoDb.UnitTests/Elsa.MongoDb.UnitTests.csproj",
       "extensions/test/modules/persistence/Elsa.Persistence.Dapper.UnitTests/Elsa.Persistence.Dapper.UnitTests.csproj",
+      "extensions/test/modules/persistence/Elsa.Persistence.Elasticsearch.UnitTests/Elsa.Persistence.Elasticsearch.UnitTests.csproj",
       "extensions/test/workbench/Elsa.TestServer.Web/Elsa.TestServer.Web.csproj"
     ]
   }

@@ -68,11 +68,10 @@ services.AddNuplane(nuplaneConfiguration, nuplane =>
     nuplane.OnPackagesChanged<MyPackageObserver>();
 });
 
-services.AddSingleton<NuplaneAssemblyProvider>();
+services.AddSingleton<ModularFeatureAssemblyProvider>();
 
 builder.AddShells(shells => shells
-    .WithHostAssemblies()
-    .WithAssemblyProvider<NuplaneAssemblyProvider>()
+    .WithAssemblyProvider<ModularFeatureAssemblyProvider>()
     .WithConfigurationProvider(configuration)
     .WithWebRouting(options => options.EnablePathRouting = true)
     .WithAuthenticationAndAuthorization()
@@ -96,11 +95,19 @@ builder.AddShells(shells => shells
             typeof(SqliteUserTasksPersistenceShellFeature));
     }));
 
-services.AddSingleton<PluginCatalog>();
+var enableSampleCatalog = builder.Environment.IsDevelopment() &&
+    (configuration.GetValue<bool?>("SampleCatalog:Enabled") ?? true);
+if (enableSampleCatalog)
+    services.AddSingleton<PluginCatalog>();
 services.AddHealthChecks();
 
 services.AddAuthentication();
 services.AddAuthorization();
+
+// Nuplane loads the initial package catalog in StartAsync. Validate after it and before
+// ASP.NET Core's web server starts. Sequential startup preserves both ordering requirements.
+services.AddHostedService<IdentityTokenStartupValidation>();
+services.PostConfigure<HostOptions>(options => options.ServicesStartConcurrently = false);
 
 var app = builder.Build();
 
@@ -108,15 +115,8 @@ app.MapHealthChecks("/");
 app.MapShells();
 app.UseAuthentication();
 app.UseAuthorization();
-app.MapSampleCatalog();
-
-// Elsa.Server.Web fails fast when the Identity signing key is still a known default outside Development/Demo:
-// AddIdentityTokenOptionsValidation() registers an IStartupValidator on the host, which the generic host runs
-// while starting. This host registers the same validation into each shell collection, and CShells builds shell
-// providers lazily on the first request, so the placeholder booted in Production and failed as a 500 on the
-// first login (issue #9106). Validate the configured shells up front, without activating them, so the same
-// OptionsValidationException aborts the boot before the server listens.
-await IdentityTokenStartupValidation.ValidateConfiguredShellsAsync(app.Services);
+if (enableSampleCatalog)
+    app.MapSampleCatalog();
 
 app.Run();
 

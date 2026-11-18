@@ -1,5 +1,5 @@
-import { execFileSync } from "node:child_process";
-import { readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { execSync } from "node:child_process";
+import { copyFileSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 // Production dependencies only: build tools are not redistributed with the SPA.
@@ -12,12 +12,9 @@ const upstreamNotices = new Map([
   ["@uiw/react-codemirror@4.25.12", "uiw-codemirror.txt"],
   ["react-remove-scroll-bar@2.3.8", "react-remove-scroll-bar.txt"],
 ]);
-const pnpm = process.platform === "win32" ? "pnpm.cmd" : "pnpm";
-const args = ["licenses", "list", "--prod", "--json"];
-// pnpm supplies its JS entrypoint in scripts, including on Windows where a .cmd
-// shim cannot be launched directly by execFileSync.
-const report = JSON.parse(execFileSync(process.env.npm_execpath ? process.execPath : pnpm,
-  process.env.npm_execpath ? [process.env.npm_execpath, ...args] : args, { encoding: "utf8" }));
+// Package scripts put the active pnpm on PATH. A standalone pnpm executable is
+// a native binary, so it must not be passed to Node as a JavaScript entry point.
+const report = JSON.parse(execSync("pnpm licenses list --prod --json", { encoding: "utf8" }));
 const notices = [];
 let packages = 0;
 for (const [license, entries] of Object.entries(report)) {
@@ -36,4 +33,5 @@ for (const [license, entries] of Object.entries(report)) {
 if (packages === 0) throw new Error("No production dependency licenses were scanned");
 // The vendored shadcn stylesheet carries its MIT notice in the distributed CSS.
 writeFileSync("dist/THIRD-PARTY-NOTICES.txt", notices.join("\n\n" + "=".repeat(72) + "\n\n"));
+copyFileSync("SOURCE-NOTICE.md", "dist/SOURCE-NOTICE.md");
 console.log(`Verified ${packages} production dependency licenses and retained their notices`);

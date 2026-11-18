@@ -15,7 +15,8 @@ public class WorkflowsSearchTool(IServiceProvider serviceProvider, WorkflowGroun
             ("name", GroundingToolSchemas.String("Workflow name.")),
             ("definitionId", GroundingToolSchemas.String("Logical workflow definition ID.")),
             ("version", GroundingToolSchemas.Integer("Specific workflow version.")),
-            ("published", GroundingToolSchemas.Boolean("Search the published version instead of the latest version."))));
+            ("published", GroundingToolSchemas.Boolean("Search the published version instead of the latest version."))),
+        AIGroundingPermissions.DefinitionView);
 
     public override async ValueTask<AIToolResult> ExecuteAsync(AIToolExecutionContext context, CancellationToken cancellationToken = default)
     {

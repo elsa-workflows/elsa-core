@@ -23,6 +23,7 @@ public class RunWorkflowInstanceRequestMapper(ActivityHandleMapper activityHandl
             Input = source?.Input?.SerializeInput(),
             Properties = source?.Properties?.SerializeProperties(),
             IncludeWorkflowOutput = source?.IncludeWorkflowOutput ?? false,
+            StartDeliveryId = source?.StartDeliveryId.EmptyIfNull(),
         };
     }
 
@@ -39,6 +40,7 @@ public class RunWorkflowInstanceRequestMapper(ActivityHandleMapper activityHandl
             Input = source.Input?.DeserializeInput(),
             Properties = source.Properties?.DeserializeProperties(),
             IncludeWorkflowOutput = source.IncludeWorkflowOutput,
+            StartDeliveryId = source.HasStartDeliveryId ? source.StartDeliveryId.NullIfEmpty() : null,
         };
     }
 }

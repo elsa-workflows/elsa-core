@@ -3,6 +3,7 @@ using Elsa.Persistence.EFCore.Modules.Management;
 using Elsa.Persistence.EFCore.Sqlite;
 using Elsa.Workflows;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Models;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -152,6 +153,84 @@ public class TenantScopedDefinitionIdsMigrationTests
     }
 
     [Fact]
+    public async Task PublicationAndRetractionChangeOnlyTheExpectedVersions()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var serializer = Substitute.For<IPayloadSerializer>();
+        serializer.Serialize(Arg.Any<object>()).Returns("{}");
+        await using var services = new ServiceCollection()
+            .AddLogging()
+            .AddSqliteEntityModelCreatingHandlers()
+            .AddDbContextFactory<ManagementElsaDbContext>((_, builder) => builder.UseElsaSqlite(typeof(ManagementDbContextFactory).Assembly, connection.ConnectionString).UseSqlite(connection).EnableServiceProviderCaching(false))
+            .AddScoped<EntityStore<ManagementElsaDbContext, WorkflowDefinition>>()
+            .BuildServiceProvider();
+        var factory = services.GetRequiredService<IDbContextFactory<ManagementElsaDbContext>>();
+        await using (var dbContext = await factory.CreateDbContextAsync())
+            await dbContext.Database.EnsureCreatedAsync();
+
+        using var scope = services.CreateScope();
+        var store = new EFCoreWorkflowDefinitionStore(
+            scope.ServiceProvider.GetRequiredService<EntityStore<ManagementElsaDbContext, WorkflowDefinition>>(),
+            serializer,
+            NullLogger<EFCoreWorkflowDefinitionStore>.Instance);
+        var published = NewDefinition("published");
+        published.IsLatest = true;
+        published.IsPublished = true;
+        await store.SaveAsync(published);
+        var draft = NewDefinition("draft");
+        draft.Version = 2;
+        draft.IsLatest = false;
+        await store.SaveAsync(draft);
+        var expected = draft.ShallowClone();
+        expected.Name = "Published draft";
+        expected.IsLatest = true;
+
+        Assert.False(await store.TryPromoteExistingDraftAsync(expected, versions => versions.Count == 1));
+        await using (var unchangedDrafts = await factory.CreateDbContextAsync())
+        {
+            Assert.Equal(published.Id, await unchangedDrafts.WorkflowDefinitions.Where(version => version.IsLatest).Select(version => version.Id).SingleAsync());
+        }
+        Assert.True(await store.TryPromoteExistingDraftAsync(expected, versions => versions.Count == 2));
+        await using (var promotedDrafts = await factory.CreateDbContextAsync())
+        {
+            var saved = await promotedDrafts.WorkflowDefinitions.ToListAsync();
+            Assert.Equal(published.Id, Assert.Single(saved, version => version.IsPublished).Id);
+            Assert.Equal(draft.Id, Assert.Single(saved, version => version.IsLatest).Id);
+        }
+
+        expected.IsPublished = true;
+
+        Assert.False(await store.TryPublishAsync(expected, versions => versions.Count == 1));
+        await using (var unchanged = await factory.CreateDbContextAsync())
+            Assert.Equal("published", await unchanged.WorkflowDefinitions.Where(x => x.IsPublished).Select(x => x.Id).SingleAsync());
+        Assert.True(await store.TryPublishAsync(expected, versions => versions.Count == 2));
+
+        expected.Name = "Older name";
+        var mismatched = expected.ShallowClone();
+        mismatched.IsReadonly = true;
+
+        Assert.False(await store.TryRetractAsync(mismatched));
+        Assert.True(await store.TryRetractAsync(expected));
+        Assert.False(await store.TryRetractAsync(expected));
+
+        await using var verified = await factory.CreateDbContextAsync();
+        var versions = await verified.WorkflowDefinitions.ToListAsync();
+        Assert.DoesNotContain(versions, version => version.IsPublished);
+        var stored = Assert.Single(versions, version => version.IsLatest);
+        Assert.Equal("draft", stored.Id);
+        Assert.Equal("Published draft", stored.Name);
+
+        var plan = new WorkflowDefinitionDeletionPlan([stored], versions);
+        Assert.True(await store.TryDeleteAsync(plan));
+        await using var afterDeletion = await factory.CreateDbContextAsync();
+        var promoted = await afterDeletion.WorkflowDefinitions.SingleAsync();
+        Assert.Equal("published", promoted.Id);
+        Assert.True(promoted.IsLatest);
+        Assert.False(promoted.IsPublished);
+    }
+
+    [Fact]
     public void OracleDown_ChecksForCrossTenantDuplicatesBeforeDroppingTenantScopedIndex()
     {
         var down = GetDownMethod("Elsa.Persistence.EFCore.Oracle");
@@ -162,11 +241,13 @@ public class TenantScopedDefinitionIdsMigrationTests
 
 #if NET9_0
     [Fact]
-    public void MySqlDown_ChecksForCrossTenantDuplicatesBeforeDroppingTenantScopedIndex()
+    public void MySqlDown_ReplacesIndexesInOneAtomicAlterTable()
     {
         var down = GetDownMethod("Elsa.Persistence.EFCore.MySql");
 
-        AssertGuardPrecedesIndexDrop(down, "SIGNAL");
+        var normalizedSql = string.Join(' ', down.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+        Assert.Contains("ALTER TABLE `WorkflowDefinitions` ADD UNIQUE INDEX `IX_WorkflowDefinition_DefinitionId_Version` (`DefinitionId`, `Version`), DROP INDEX `IX_WorkflowDefinition_DefinitionId_TenantId_Version`;", normalizedSql, StringComparison.Ordinal);
+        Assert.DoesNotContain("PREPARE", down, StringComparison.Ordinal);
     }
 #endif
 

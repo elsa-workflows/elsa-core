@@ -25,6 +25,7 @@ public class SkipIfInstanceExistsTests
 {
     private const string InstanceId = "child-1";
     private const string DefinitionVersionId = "version-1";
+    private const string DeliveryId = "outbox-delivery";
 
     private readonly Mock<IWorkflowInstanceManager> _instanceManager = new();
     private readonly Mock<IWorkflowDefinitionService> _definitionService = new();
@@ -66,11 +67,27 @@ public class SkipIfInstanceExistsTests
     {
         SetupExistingInstance(WorkflowSubStatus.Pending);
 
-        var response = await CreateDispatcher().DispatchAsync(CreateRequest(skipIfInstanceExists: true));
+        var request = CreateRequest(skipIfInstanceExists: true);
+        request.TriggerActivityId = "changed-trigger";
+        var response = await CreateDispatcher().DispatchAsync(request);
 
         Assert.True(response.Succeeded);
         _instanceManager.Verify(x => x.CreateAndCommitWorkflowInstanceAsync(It.IsAny<Workflow>(), It.IsAny<WorkflowInstanceOptions?>(), It.IsAny<CancellationToken>()), Times.Never);
-        _sendEndpoint.Verify(x => x.Send(It.Is<DispatchWorkflowDefinition>(m => m.InstanceId == InstanceId && m.IsExistingInstance), It.IsAny<CancellationToken>()), Times.Once);
+        _sendEndpoint.Verify(x => x.Send(It.Is<DispatchWorkflowDefinition>(m => m.InstanceId == InstanceId && m.IsExistingInstance &&
+            m.TriggerActivityId == "original-trigger" && m.StartDeliveryId == DeliveryId), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("another-delivery")]
+    public async Task DispatcherLeavesPendingInstanceOwnedByAnotherDeliveryAlone(string? owner)
+    {
+        SetupExistingInstance(WorkflowSubStatus.Pending, owner);
+
+        var response = await CreateDispatcher().DispatchAsync(CreateRequest(skipIfInstanceExists: true));
+
+        Assert.True(response.Succeeded);
+        _sendEndpoint.Verify(x => x.Send(It.IsAny<DispatchWorkflowDefinition>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -188,14 +205,19 @@ public class SkipIfInstanceExistsTests
 
     private DispatchWorkflowRequestConsumer CreateConsumer() => new(_definitionService.Object, _runtime.Object, NullLogger<DispatchWorkflowRequestConsumer>.Instance);
 
-    private void SetupExistingInstance(WorkflowSubStatus subStatus)
+    private void SetupExistingInstance(WorkflowSubStatus subStatus, string? deliveryId = DeliveryId)
     {
+        var state = new WorkflowState();
+        if (deliveryId != null)
+            state.Properties[WorkflowStartDelivery.IdProperty] = deliveryId;
+
+        state.Properties[WorkflowStartDelivery.TriggerActivityProperty] = "original-trigger";
         _instanceManager.Setup(x => x.FindByIdAsync(InstanceId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new WorkflowInstance { Id = InstanceId, WorkflowState = new WorkflowState(), SubStatus = subStatus });
+            .ReturnsAsync(new WorkflowInstance { Id = InstanceId, DefinitionVersionId = DefinitionVersionId, WorkflowState = state, SubStatus = subStatus });
     }
 
     private static DispatchWorkflowDefinitionRequest CreateRequest(bool skipIfInstanceExists) =>
-        new(DefinitionVersionId) { InstanceId = InstanceId, SkipIfInstanceExists = skipIfInstanceExists };
+        new(DefinitionVersionId) { InstanceId = InstanceId, StartDeliveryId = DeliveryId, SkipIfInstanceExists = skipIfInstanceExists };
 
     private static ConsumeContext<DispatchWorkflowDefinition> CreateContext(bool skipIfInstanceExists)
     {

@@ -16,6 +16,7 @@ using System.Diagnostics.CodeAnalysis;
 using Elsa.Workflows;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Exceptions;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime;
@@ -86,10 +87,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
 
             if (triggers.Count > 1)
             {
-                await HandleMultipleWorkflowsFoundAsync(httpContext, () => triggers.Select(x => new
-                {
-                    x.WorkflowDefinitionId
-                }), cancellationToken);
+                await HandleMultipleWorkflowsFoundAsync(httpContext, cancellationToken);
                 return;
             }
 
@@ -106,10 +104,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
 
         if (bookmarks.Count > 1)
         {
-            await HandleMultipleWorkflowsFoundAsync(httpContext, () => bookmarks.Select(x => new
-            {
-                x.WorkflowInstanceId
-            }), cancellationToken);
+            await HandleMultipleWorkflowsFoundAsync(httpContext, cancellationToken);
             return;
         }
 
@@ -224,13 +219,31 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
         }
 
         var workflowRunner = serviceProvider.GetRequiredService<IWorkflowRunner>();
-        var result = await ExecuteWithinTimeoutAsync(async ct =>
+        try
         {
-            if (workflowInstance == null)
-                return await workflowRunner.RunAsync(workflowGraph, workflowOptions, ct);
-            return await workflowRunner.RunAsync(workflow, workflowInstance.WorkflowState, workflowOptions, ct);
-        }, bookmarkPayload.RequestTimeout, httpContext);
-        await HandleWorkflowFaultAsync(serviceProvider, httpContext, result, cancellationToken);
+            var result = await ExecuteWithinTimeoutAsync<RunWorkflowResult?>(async ct =>
+            {
+                if (workflowInstance != null)
+                    return await workflowRunner.RunAsync(workflow, workflowInstance.WorkflowState, workflowOptions, ct);
+
+                var gate = serviceProvider.GetRequiredService<IWorkflowActivationGate>();
+                await using var lease = await gate.EvaluateAsync(workflow, workflowOptions.CorrelationId, ct);
+                if (!lease.CanStart)
+                {
+                    httpContext.Response.StatusCode = StatusCodes.Status409Conflict;
+                    return null;
+                }
+
+                workflowOptions.RequireNewInstance = true;
+                return await workflowRunner.RunAsync(workflowGraph, workflowOptions, lease.GetEffectiveCancellationToken(ct));
+            }, bookmarkPayload.RequestTimeout, httpContext);
+            if (result != null)
+                await HandleWorkflowFaultAsync(serviceProvider, httpContext, result, cancellationToken);
+        }
+        catch (WorkflowInstanceAlreadyExistsException) when (workflowInstance == null && !httpContext.Response.HasStarted)
+        {
+            httpContext.Response.StatusCode = StatusCodes.Status409Conflict;
+        }
     }
 
     private async Task<T> ExecuteWithinTimeoutAsync<T>(Func<CancellationToken, Task<T>> action, TimeSpan? requestTimeout, HttpContext httpContext)
@@ -383,7 +396,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
     }
 
     [RequiresUnreferencedCode("Calls System.Text.Json.JsonSerializer.Serialize<TValue>(TValue, JsonSerializerOptions)")]
-    private async Task<bool> HandleMultipleWorkflowsFoundAsync(HttpContext httpContext, Func<IEnumerable<object>> workflowMatches, CancellationToken cancellationToken)
+    private static async Task HandleMultipleWorkflowsFoundAsync(HttpContext httpContext, CancellationToken cancellationToken)
     {
         httpContext.Response.ContentType = "application/json";
         httpContext.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
@@ -391,11 +404,10 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
         var responseContent = JsonSerializer.Serialize(new
         {
             errorMessage = "The call is ambiguous and matches multiple workflows.",
-            workflows = workflowMatches().ToArray()
+            correlationId = httpContext.TraceIdentifier
         });
 
         await httpContext.Response.WriteAsync(responseContent, cancellationToken);
-        return true;
     }
 
     private async Task<bool> HandleWorkflowFaultAsync(IServiceProvider serviceProvider, HttpContext httpContext, RunWorkflowResult workflowExecutionResult, CancellationToken cancellationToken)

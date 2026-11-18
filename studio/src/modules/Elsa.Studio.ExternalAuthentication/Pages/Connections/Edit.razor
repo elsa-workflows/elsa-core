@@ -468,10 +468,11 @@ else
     private bool EditorReadOnly => IsNew ? !_canCreate : !_canUpdate || _connection?.IsConfigurationOwned == true;
     private bool DraftWorkspaceIsValid =>
         _model is not null &&
+        _connection is not null &&
         _adapter is not null &&
         !string.IsNullOrWhiteSpace(_model.DisplayName) &&
         !string.IsNullOrWhiteSpace(_model.Key) &&
-        (!_adapter.Fields.Any(descriptor => DescriptorEditorState.IsUnsafeSettingActive(descriptor, _model.AdapterSettings)) ||
+        (!_adapter.Fields.Any(descriptor => DescriptorEditorState.RequiresTrustConfirmation(descriptor, _connection.AdapterSettings, _model.AdapterSettings)) ||
          _canConfigureUnsafeSettings && _model.ConfirmUnsafeSettings);
     private bool WorkspaceIsValid =>
         DraftWorkspaceIsValid &&

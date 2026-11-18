@@ -15,6 +15,7 @@ on:
       - 'scripts/integration-program/VerifyPackageSymbolPair/**'
       - 'scripts/integration-program/build_studio_clientlibs.sh'
       - 'scripts/integration-program/consolidated-build/studio-clientlib-lockfiles/**'
+      - 'studio/react/vendor/picomatch-build/**'
       - 'build/**'
       - 'core/src/**/*.csproj'
       - 'extensions/src/**/*.csproj'

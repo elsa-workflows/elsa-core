@@ -22,7 +22,9 @@ bpmn_shared="$studio/modules/Elsa.Studio.Bpmn/ClientLib"
 # The bpmn-js and X6 designers bundle the shared rules, so each is built only where they and it exist.
 bpmn_js="$studio/modules/Elsa.Studio.Bpmn.BpmnJs"
 bpmn_x6="$studio/modules/Elsa.Studio.Bpmn.X6"
-locks="$(cd "$(dirname "${BASH_SOURCE[0]}")/consolidated-build/studio-clientlib-lockfiles" && pwd -P)"
+script_directory="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+locks="$script_directory/consolidated-build/studio-clientlib-lockfiles"
+glob_matcher="$script_directory/../../studio/react/vendor/picomatch-build"
 
 for package in "$designer/ClientLib/package.json" "$dom/ClientLib/package.json"; do
     if [[ ! -f "$package" ]]; then
@@ -64,6 +66,36 @@ for entry in "${clientlibs[@]}"; do
         fi
     else
         cp "$reviewed_lock" "$checkout_lock"
+    fi
+
+    matcher_archive="$(node -p 'require(process.argv[1]).packages["node_modules/picomatch"]?.resolved ?? ""' "$reviewed_lock")"
+    if [[ "$matcher_archive" == file:.cache/elsa-workflows-picomatch-build-*.tgz ]]; then
+        # Verify the archive built from this checkout even when npm has a warm cache.
+        matcher_cache="$clientlib/.cache"
+        mkdir -p "$matcher_cache"
+        packed="$(
+            set -e
+            pack_source="$(mktemp -d "$matcher_cache/glob-matcher.XXXXXX")"
+            trap 'rm -rf -- "$pack_source"' EXIT
+            cp -R "$glob_matcher/." "$pack_source/"
+            # npm pack records file modes in the archive, and checkout umasks can differ.
+            find "$pack_source" -type f -exec chmod 0644 {} +
+            npm pack "$pack_source" --ignore-scripts --pack-destination "$matcher_cache" --silent
+        )"
+        if [[ "$matcher_archive" != "file:.cache/$packed" ]]; then
+            echo "Studio glob matcher version does not match the reviewed lock: $reviewed_lock" >&2
+            exit 1
+        fi
+        node - "$reviewed_lock" "$matcher_cache/$packed" <<'NODE'
+const { createHash } = require("node:crypto");
+const { readFileSync } = require("node:fs");
+const [lock, archive] = process.argv.slice(2);
+const expected = require(lock).packages["node_modules/picomatch"].integrity;
+const actual = "sha512-" + createHash("sha512").update(readFileSync(archive)).digest("base64");
+if (actual !== expected) {
+  throw new Error(`Studio glob matcher archive differs from the reviewed lock: ${lock}`);
+}
+NODE
     fi
 done
 

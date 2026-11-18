@@ -5,8 +5,10 @@ using Elsa.Testing.Shared;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
+using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Notifications;
 using Elsa.Workflows.Management.Services;
+using Elsa.Workflows.Management.Stores;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 using Xunit.Abstractions;
@@ -143,26 +145,44 @@ public class Tests
         Assert.Single(definitions, x => x.IsLatest);
     }
 
-    [Fact]
-    public async Task SaveDraftAsync_ShouldPreserveHighestVersionWhenPromotingNonLatestDraft()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task SaveDraftAsync_ShouldPreserveHighestVersionWhenPromotingNonLatestDraft(bool useCache)
     {
         const string definitionId = "test-definition";
-        var store = _services.GetRequiredService<IWorkflowDefinitionStore>();
-        var publisher = _services.GetRequiredService<IWorkflowDefinitionPublisher>();
+        var services = useCache
+            ? new TestApplicationBuilder(_services.GetRequiredService<ITestOutputHelper>())
+                .ConfigureElsa(elsa => elsa.UseWorkflowManagement(management => management.UseCache()))
+                .Build()
+            : _services;
+        var store = services.GetRequiredService<IWorkflowDefinitionStore>();
+        var publisher = services.GetRequiredService<IWorkflowDefinitionPublisher>();
+        if (useCache)
+        {
+            Assert.IsType<CachingWorkflowDefinitionStore>(store);
+        }
+        var published = CreateDefinition("v1", definitionId, 1, true);
+        published.IsPublished = true;
         await store.SaveManyAsync([
-            CreateDefinition("v1", definitionId, 1, true),
+            published,
             CreateDefinition("v2", definitionId, 2, false)
         ]);
+        var latestFilter = new WorkflowDefinitionFilter { DefinitionId = definitionId, VersionOptions = VersionOptions.Latest };
+        Assert.Equal("v1", (await store.FindAsync(latestFilter))?.Id);
         var highestDraft = await publisher.GetDraftAsync(definitionId, VersionOptions.SpecificVersion(2));
 
         var savedDraft = await publisher.SaveDraftAsync(highestDraft!);
 
+        Assert.Equal("v2", (await store.FindAsync(latestFilter))?.Id);
         var definitions = (await store.FindManyAsync(new WorkflowDefinitionFilter { DefinitionId = definitionId })).ToList();
         Assert.Equal(2, definitions.Count);
         Assert.Equal("v2", savedDraft.Id);
         Assert.Equal(2, savedDraft.Version);
+        Assert.True(definitions.Single(x => x.Id == "v1").IsPublished);
         Assert.False(definitions.Single(x => x.Id == "v1").IsLatest);
         Assert.True(definitions.Single(x => x.Id == "v2").IsLatest);
+        Assert.False(definitions.Single(x => x.Id == "v2").IsPublished);
         Assert.Single(definitions, x => x.IsLatest);
     }
 
@@ -323,7 +343,7 @@ public class Tests
             );
 
         store.FindAsync(
-                Arg.Is<WorkflowDefinitionFilter>(x => x.VersionOptions!.Value.IsLatest),
+                Arg.Is<WorkflowDefinitionFilter>(x => x.VersionOptions.HasValue && x.VersionOptions.Value.IsLatest),
                 Arg.Any<CancellationToken>()
             )
             .Returns(_ =>
@@ -335,13 +355,26 @@ public class Tests
                 )
             );
 
-        store.SaveManyAsync(
-                Arg.Any<IEnumerable<WorkflowDefinition>>(),
+        store.FindAsync(
+                Arg.Is<WorkflowDefinitionFilter>(x => x.Id != null),
+                Arg.Any<CancellationToken>()
+            )
+            .Returns(callInfo => Task.FromResult(
+                persisted.TryGetValue(callInfo.Arg<WorkflowDefinitionFilter>().Id!, out var saved) ? Clone(saved) : null));
+
+        store.TryUpdateLatestAsync(
+                Arg.Any<WorkflowDefinitionFilter>(),
+                Arg.Any<Func<WorkflowDefinition, bool>>(),
+                Arg.Any<Func<WorkflowDefinition, WorkflowDefinition>>(),
                 Arg.Any<CancellationToken>()
             )
             .Returns(callInfo =>
             {
-                var definitions = callInfo.Arg<IEnumerable<WorkflowDefinition>>().ToList();
+                var previous = Clone(persisted["v1"]);
+                Assert.True(callInfo.Arg<Func<WorkflowDefinition, bool>>()(previous));
+                var replacement = callInfo.Arg<Func<WorkflowDefinition, WorkflowDefinition>>()(previous);
+                previous.IsLatest = false;
+                WorkflowDefinition[] definitions = [previous, replacement];
 
                 var snapshot = persisted.ToDictionary(
                     x => x.Key,
@@ -383,7 +416,7 @@ public class Tests
                     throw;
                 }
 
-                return Task.CompletedTask;
+                return Task.FromResult(WorkflowDefinitionUpdateResult.Updated(replacement));
             });
 
         return store;

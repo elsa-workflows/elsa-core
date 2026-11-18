@@ -282,12 +282,14 @@ class CandidateContractsTests(unittest.TestCase):
     def test_candidate_and_proof_versions_are_distinct(self):
         packages.validate_mode("3.10.0", "candidate")
         packages.validate_mode("3.10.1", "candidate")
+        packages.validate_mode("3.11.0", "candidate")
+        packages.validate_mode("3.11.1", "candidate")
         packages.validate_mode("3.10.0-proof.1.1", "proof")
         self.assertEqual("3.10.0.0", packages.assembly_identity("3.10.0"))
         self.assertEqual("3.10.1.0", packages.assembly_identity("3.10.1"))
         packages.validate_mode("3.10.2", "candidate")
         self.assertEqual("3.10.2.0", packages.assembly_identity("3.10.2"))
-        for mode, versions in (("candidate", ("3.10.0-proof.1.1", "3.10.0-rc1", "3.10.01", "3.11.0", "3.9.0", "1.0.1")),
+        for mode, versions in (("candidate", ("3.10.0-proof.1.1", "3.10.0-rc1", "3.10.01", "3.11.01", "3.11.0-preview.1", "3.9.0", "1.0.1")),
                                ("proof", ("3.10.0", "3.10.1", "3.10.2", "3.10.0-proof.0.1", "3.10.0-proof.1.0"))):
             for version in versions:
                 with self.subTest(mode=mode, version=version), self.assertRaises(ValueError):
@@ -313,7 +315,7 @@ class CandidateContractsTests(unittest.TestCase):
         self.assertEqual("Restore;PrepareForBuild;Pack;GenerateNuspec", target.get("BeforeTargets"))
         errors = [node.get("Condition") for node in target.findall("Error")]
         self.assertIn("'$(ConsolidatedPackageProof)' == 'true'", errors)
-        self.assertIn("'$(Version)' != '$(PackageVersion)' or '$(Configuration)' != 'Release' or !$([System.Text.RegularExpressions.Regex]::IsMatch('$(Version)', '^3\\.10\\.(0|[1-9][0-9]*)$'))", errors)
+        self.assertIn("'$(Version)' != '$(PackageVersion)' or '$(Configuration)' != 'Release' or !$([System.Text.RegularExpressions.Regex]::IsMatch('$(Version)', '^(3\\.10\\.(0|[1-9][0-9]*)|3\\.11\\.(0|[1-9][0-9]*))$'))", errors)
         build = (ROOT / "build/Build.cs").read_text()
         for start, end in (("RestoreSettings", "CompileSettings"), ("CompileSettings", "PackSettings"), ("PackSettings", "TestProjects")):
             section = build.split(start, 1)[1].split(end, 1)[0]

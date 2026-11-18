@@ -4,6 +4,7 @@ import { studioUrl } from "@elsa-workflows/react-studio-sdk/navigation";
 import type { AuthConfig } from "@elsa-workflows/react-studio-sdk/config";
 import { readTokens, writeTokens } from "../storage.js";
 import { BaseAuthStrategy, isJwtExpired, userFromJwt, type PasswordCredentials } from "../types.js";
+import { joinAuthEndpoint } from "./url.js";
 
 /**
  * Elsa's External Authentication broker (`Elsa.ExternalAuthentication` module).
@@ -55,7 +56,7 @@ export class ElsaExternalAuthStrategy extends BaseAuthStrategy {
   }
 
   private url(path: string) {
-    return `${this.apiBaseUrl.replace(/\/+$/, "")}/${path.replace(/^\/+/, "")}`;
+    return joinAuthEndpoint(this.apiBaseUrl, path);
   }
 
   private redirectUri() {

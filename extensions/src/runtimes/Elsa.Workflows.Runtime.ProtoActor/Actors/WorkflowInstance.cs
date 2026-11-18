@@ -1,5 +1,6 @@
 using Elsa.Extensions;
 using Elsa.Workflows.Management;
+using Elsa.Workflows.Management.Exceptions;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Options;
 using Elsa.Workflows.Models;
@@ -26,6 +27,7 @@ internal class WorkflowInstance(
     private CancellationTokenSource _linkedTokenSource = null!;
     private CancellationToken _linkedCancellationToken;
     private readonly Queue<RunWorkflowOptions> _queuedRunWorkflowOptions = new();
+    private Task<RunIfPendingWorkflowInstanceResponse>? _pendingStart;
     private bool _isRunning;
 
 
@@ -60,8 +62,8 @@ internal class WorkflowInstance(
     {
         Context.ReenterAfter(CreateAsync(request), result =>
         {
-            if (result.IsFaulted)
-                onError(result.Exception.Message);
+            if (!result.IsCompletedSuccessfully)
+                onError(WorkflowInstanceRpcErrors.FromCreateFailure(result));
             else
                 respond(new());
         });
@@ -95,8 +97,8 @@ internal class WorkflowInstance(
     {
         Context.ReenterAfter(CreateAndRunAsync(request), async completedTask =>
         {
-            if (completedTask.IsFaulted)
-                onError(completedTask.Exception.Message);
+            if (!completedTask.IsCompletedSuccessfully)
+                onError(WorkflowInstanceRpcErrors.FromCreateFailure(completedTask));
             else
             {
                 var result = await completedTask;
@@ -108,17 +110,14 @@ internal class WorkflowInstance(
 
     private async Task CreateAsync(CreateWorkflowInstanceRequest request)
     {
-        if (_workflowInstanceId != null)
-        {
-            // If a workflow instance ID is already set, this is the cluster trying to repeat this call because it was too slow.
-            // This happens when debugging and the debugger is paused for a long time, for example.
-            if (_workflowInstanceId == request.WorkflowInstanceId || request.WorkflowInstanceId == null)
-                return;
+        var workflowInstanceId = GetWorkflowInstanceId();
+        if (!string.IsNullOrEmpty(request.WorkflowInstanceId) && request.WorkflowInstanceId != workflowInstanceId)
+            throw new InvalidOperationException("The workflow instance identifier must match the actor identity.");
 
-            throw new InvalidOperationException($"Attempted to create a new workflow instance with ID {request.WorkflowInstanceId} while an instance with ID {_workflowInstanceId} is already running.");
-        }
+        if (HasState())
+            throw new WorkflowInstanceAlreadyExistsException(workflowInstanceId);
 
-        await CreateNewWorkflowInstanceAsync(request, Context.CancellationToken);
+        await CreateNewWorkflowInstanceAsync(request, workflowInstanceId, Context.CancellationToken);
     }
 
     private async Task<RunWorkflowInstanceResponse> CreateAndRunAsync(CreateAndRunWorkflowInstanceRequest request)
@@ -212,13 +211,52 @@ internal class WorkflowInstance(
         WorkflowState = workflowState;
     }
 
-    public override Task<InstanceExistsResponse> InstanceExists()
+    public override async Task<InstanceExistsResponse> InstanceExists()
     {
-        var exists = _workflowInstanceId != null;
-        return Task.FromResult(new InstanceExistsResponse
+        var workflowInstanceId = GetWorkflowInstanceId();
+        await using var scope = scopeFactory.CreateAsyncScope();
+        var workflowInstanceManager = scope.ServiceProvider.GetRequiredService<IWorkflowInstanceManager>();
+        return new()
         {
-            Exists = exists
+            Exists = await workflowInstanceManager.ExistsAsync(workflowInstanceId, Context.CancellationToken)
+        };
+    }
+
+    public override Task RunIfPending(RunWorkflowInstanceRequest request, Action<RunIfPendingWorkflowInstanceResponse> respond, Action<string> onError)
+    {
+        if (_pendingStart is { IsCompleted: false } pendingStart)
+        {
+            // Recheck this delivery after the preceding request finishes. Its ownership may differ.
+            Context.ReenterAfter(pendingStart, _ => RunIfPending(request, respond, onError));
+            return Task.CompletedTask;
+        }
+
+        var start = RunIfPending(request);
+        _pendingStart = start;
+        Context.ReenterAfter(start, completedTask =>
+        {
+            if (ReferenceEquals(_pendingStart, completedTask))
+                _pendingStart = null;
+
+            if (completedTask.IsCompletedSuccessfully)
+                respond(completedTask.Result);
+            else
+                onError(completedTask.Exception?.Message ?? "The workflow start was canceled.");
         });
+        return Task.CompletedTask;
+    }
+
+    public override async Task<RunIfPendingWorkflowInstanceResponse> RunIfPending(RunWorkflowInstanceRequest request)
+    {
+        if (_isRunning)
+            return new();
+
+        var result = await RunExclusiveAsync(mappers.RunWorkflowParamsMapper.Map(request), onlyPending: true,
+            request.HasStartDeliveryId ? request.StartDeliveryId.NullIfEmpty() : null);
+        return new()
+        {
+            Execution = result != null ? mappers.RunWorkflowInstanceResponseMapper.Map(result, request.IncludeWorkflowOutput) : null
+        };
     }
 
     private async Task<RunWorkflowResult> RunAsync(RunWorkflowOptions runWorkflowOptions)
@@ -229,22 +267,36 @@ internal class WorkflowInstance(
             return new(null!, null!, null!, null, Journal.Empty);
         }
 
-        _isRunning = true;
-        var workflowResult = await RunInternalAsync(runWorkflowOptions);
-        _isRunning = false;
+        return (await RunExclusiveAsync(runWorkflowOptions, onlyPending: false, deliveryId: null))!;
+    }
 
-        if (_queuedRunWorkflowOptions.Count > 0)
+    private async Task<RunWorkflowResult?> RunExclusiveAsync(RunWorkflowOptions options, bool onlyPending, string? deliveryId)
+    {
+        RunWorkflowResult? result = null;
+        _isRunning = true;
+
+        try
         {
-            var nextRunOptions = _queuedRunWorkflowOptions.Dequeue();
-            return await RunAsync(nextRunOptions);
+            await EnsureStateAsync();
+            if (!onlyPending || (WorkflowState.SubStatus == WorkflowSubStatus.Pending && WorkflowStartDelivery.Matches(WorkflowState, deliveryId)))
+                result = await RunInternalAsync(options);
+        }
+        finally
+        {
+            _isRunning = false;
         }
 
-        return workflowResult;
+        if (_queuedRunWorkflowOptions.TryDequeue(out var next))
+        {
+            var nextResult = await RunAsync(next);
+            return onlyPending ? result : nextResult;
+        }
+
+        return result;
     }
 
     private async Task<RunWorkflowResult> RunInternalAsync(RunWorkflowOptions runWorkflowOptions)
     {
-        await EnsureStateAsync();
         using var executionScope = WorkflowExecutionScope.Begin(WorkflowState.Id);
         runWorkflowOptions.WorkflowInstanceId = _workflowInstanceId;
 
@@ -286,22 +338,20 @@ internal class WorkflowInstance(
         if (_workflowInstanceId != null)
             return _workflowInstanceId;
 
-        // Parse the cluster identity to get the workflow instance ID.
         var clusterIdentity = Context.ClusterIdentity()!.Identity;
-        _workflowInstanceId = clusterIdentity.Split('-').Last();
+        _workflowInstanceId = Elsa.Extensions.ClusterExtensions.GetWorkflowInstanceId(clusterIdentity);
 
         return _workflowInstanceId;
     }
     
 
-    private async Task CreateNewWorkflowInstanceAsync(CreateWorkflowInstanceRequest request, CancellationToken cancellationToken)
+    private async Task CreateNewWorkflowInstanceAsync(CreateWorkflowInstanceRequest request, string workflowInstanceId, CancellationToken cancellationToken)
     {
         var workflowDefinitionHandle = mappers.WorkflowDefinitionHandleMapper.Map(request.WorkflowDefinitionHandle);
-        var workflowInstanceId = request.WorkflowInstanceId;
         var workflowGraph = await FindWorkflowGraphAsync(workflowDefinitionHandle, cancellationToken);
         var workflowInstanceOptions = new WorkflowInstanceOptions
         {
-            WorkflowInstanceId = workflowInstanceId.NullIfEmpty(),
+            WorkflowInstanceId = workflowInstanceId,
             CorrelationId = request.CorrelationId.NullIfEmpty(),
             Input = request.Input.DeserializeInput(),
             Properties = request.Properties.DeserializeProperties(),

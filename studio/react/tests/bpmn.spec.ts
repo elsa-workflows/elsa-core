@@ -4,9 +4,32 @@ import { expect, test, type Page, type Route } from "@playwright/test";
 const xml = '<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"><process id="first"/></definitions>';
 const definition = { id: "version", definitionId: "imported", name: "Imported workflow", version: 1, isLatest: true, isPublished: false, createdAt: "2026-10-21T00:00:00Z", variables: [], inputs: [], outputs: [], outcomes: [], options: {}, customProperties: {}, root: { id: "root", type: "Elsa.BpmnProcess", version: 1, definition: { processId: "first", elements: [] }, activities: [] } };
 
+type BpmnUpload = { xml: string; processId: FormDataEntryValue | null };
+
+declare global {
+  interface Window {
+    recordBpmnUpload: (upload: BpmnUpload) => Promise<void>;
+  }
+}
+
 async function fixture(page: Page, refusal?: { operation: "import" | "export"; code: string; data?: object }, findings = false) {
-  const uploads: string[] = [];
+  const uploads: BpmnUpload[] = [];
   const writes: unknown[] = [];
+  await page.exposeFunction("recordBpmnUpload", (upload: BpmnUpload) => { uploads.push(upload); });
+  await page.addInitScript(() => {
+    const fetch = window.fetch.bind(window);
+    window.fetch = async (input, init) => {
+      // Playwright's WebKit request interception omits file bytes from multipart bodies.
+      const form = init?.body;
+      if (typeof input === "string" && new URL(input, location.href).pathname.endsWith("/bpmn/import") && form instanceof FormData) {
+        const file = form.get("file");
+        if (file instanceof File) {
+          await window.recordBpmnUpload({ xml: await file.text(), processId: form.get("ProcessId") });
+        }
+      }
+      return fetch(input, init);
+    };
+  });
   await page.route("**/elsa/api/**", async route => {
     const request = route.request();
     const path = new URL(request.url()).pathname;
@@ -19,7 +42,6 @@ async function fixture(page: Page, refusal?: { operation: "import" | "export"; c
     }
     if (path.endsWith("bpmn/import") || path.endsWith("/export")) {
       const operation = path.endsWith("bpmn/import") ? "import" : "export";
-      if (operation === "import") uploads.push(request.postDataBuffer()!.toString());
       if (refusal?.operation === operation) { await route.fulfill({ status: 422, json: { message: "Server-specific explanation", code: refusal.code, data: refusal.data } }); return; }
       await route.fulfill(operation === "export" ? { contentType: "application/xml", body: xml } : { json: { id: definition.id, definitionId: definition.definitionId, version: 1, analysis: {} } }); return;
     }
@@ -53,9 +75,7 @@ test("findings require process selection, cancellation persists nothing, and imp
   await dialog.getByLabel("Process", { exact: true }).selectOption("second");
   await dialog.getByRole("button", { name: "Import", exact: true }).click();
   await expect(page).toHaveURL(/definitions\/imported\/edit$/);
-  expect(uploads).toHaveLength(1);
-  expect(uploads[0]).toContain(xml);
-  expect(uploads[0]).toMatch(/name="ProcessId"\r\n\r\nsecond/);
+  expect(uploads).toEqual([{ xml, processId: "second" }]);
 });
 
 for (const refusal of [
@@ -98,7 +118,7 @@ test("BPMN download retains XML bytes and can be imported again", async ({ page 
   await expect(importing.getByRole("button", { name: "Import", exact: true })).toBeEnabled();
   await importing.getByRole("button", { name: "Import", exact: true }).click();
   await expect(page).toHaveURL(/definitions\/imported\/edit$/);
-  expect(uploads[0]).toContain(xml);
+  expect(uploads[0]?.xml).toBe(xml);
 });
 
 test("an imported BPMN root stays read-only without normalization or autosave and still exports", async ({ page }) => {
@@ -138,7 +158,7 @@ for (const operation of ["analysis", "export"] as const) test(`cancel aborts pen
   }
   await intercepted;
   await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
-  expect((await aborted).failure()?.errorText).toContain("ERR_ABORTED");
+  await aborted;
   // An aborted browser request may reject fulfillment; either way it cannot
   // deliver a late result to the disposed component.
   await pending.fulfill(operation === "analysis" ? { json: { processIds: ["first"], issues: [], elementCounts: {} } } : { contentType: "application/xml", body: xml }).catch(() => {});

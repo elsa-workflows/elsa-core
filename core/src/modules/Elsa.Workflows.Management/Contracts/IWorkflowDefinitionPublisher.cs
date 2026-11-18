@@ -13,6 +13,13 @@ namespace Elsa.Workflows.Management;
 public interface IWorkflowDefinitionPublisher
 {
     /// <summary>
+    /// Saves or publishes the first version of a new workflow definition using a create-only insert.
+    /// </summary>
+    /// <exception cref="Exceptions.WorkflowDefinitionAlreadyExistsException">The version conflicts with an existing definition.</exception>
+    Task<PublishWorkflowDefinitionResult> CreateInitialAsync(WorkflowDefinition definition, bool publish, CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException("This publisher does not support create-only import.");
+
+    /// <summary>
     /// Creates a new workflow definition.
     /// </summary>
     /// <param name="root">Optionally provide the root activity. If not specified, <see cref="Sequence" /> will be used/></param>
@@ -43,6 +50,13 @@ public interface IWorkflowDefinitionPublisher
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The published workflow definition.</returns>
     Task<PublishWorkflowDefinitionResult> PublishAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Publishes an existing definition only while the supplied, authorized latest and published versions still match storage.
+    /// </summary>
+    /// <exception cref="Exceptions.WorkflowDefinitionEditConflictException">The authorized version set is stale or cannot be written atomically.</exception>
+    Task<PublishWorkflowDefinitionResult> PublishAsync(WorkflowDefinition definition, IReadOnlyCollection<WorkflowDefinition> expectedVersions,
+        CancellationToken cancellationToken) => throw new Exceptions.WorkflowDefinitionEditConflictException();
 
     /// <summary>
     /// Retracts a workflow definition.

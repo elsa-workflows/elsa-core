@@ -40,6 +40,7 @@ public class ManagementOptions
     /// on the publish result. This allows publishing workflows that intentionally leave required properties
     /// blank (for example, an empty Cron expression used to disable a trigger). In 3.6.x and 3.7.x this
     /// defaulted to <c>false</c> (opt-in); as of 3.8.0 it defaults to <c>true</c> (opt-out).
+    /// Diagnostics with <see cref="WorkflowValidationError.IsWarning"/> allow publishing in either mode.
     /// </summary>
     public bool FailOnValidationErrors { get; set; } = true;
 }

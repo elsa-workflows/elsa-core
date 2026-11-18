@@ -1,4 +1,5 @@
 ﻿using Elsa.Abstractions;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime;
 using JetBrains.Annotations;
 
@@ -17,6 +18,8 @@ internal class Reload(IWorkflowDefinitionsReloader workflowDefinitionsReloader) 
 
     public override async Task HandleAsync(CancellationToken cancellationToken)
     {
+        await using var mutationLock = await WorkflowDefinitionMutationLock.AcquireAsync(HttpContext.RequestServices, cancellationToken);
+
         await ReloadWorkflowDefinitionsAsync(cancellationToken);
         await Send.OkAsync(cancellation: cancellationToken);
     }

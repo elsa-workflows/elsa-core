@@ -240,6 +240,7 @@
       "extensions/test/modules/persistence/Elsa.Dapper.UnitTests/Elsa.Dapper.UnitTests.csproj",
       "extensions/test/modules/persistence/Elsa.MongoDb.UnitTests/Elsa.MongoDb.UnitTests.csproj",
       "extensions/test/modules/persistence/Elsa.Persistence.Dapper.UnitTests/Elsa.Persistence.Dapper.UnitTests.csproj",
+      "extensions/test/modules/persistence/Elsa.Persistence.Elasticsearch.UnitTests/Elsa.Persistence.Elasticsearch.UnitTests.csproj",
       "extensions/test/modules/runtimes/Elsa.Workflows.Runtime.ProtoActor.UnitTests/Elsa.Workflows.Runtime.ProtoActor.UnitTests.csproj",
       "extensions/test/modules/scheduling/Elsa.Scheduling.Hangfire.UnitTests/Elsa.Scheduling.Hangfire.UnitTests.csproj",
       "extensions/test/modules/scheduling/Elsa.Scheduling.Quartz.ComponentTests/Elsa.Scheduling.Quartz.ComponentTests.csproj",

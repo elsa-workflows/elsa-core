@@ -44,6 +44,7 @@ export function InstanceFilters({
       <MultiSelect label={_t("Status")} value={value.statuses} onChange={(statuses) => onChange({ statuses })} options={STATUS_OPTIONS.map(option => ({ ...option, label: _t(option.label) }))} />
       <MultiSelect label={_t("Sub-status")} value={value.subStatuses} onChange={(subStatuses) => onChange({ subStatuses })} options={SUB_STATUS_OPTIONS.map(option => ({ ...option, label: _t(option.label) }))} />
       <SimpleSelect
+        aria-label={_t("Incidents")}
         size="sm"
         className="w-44"
         value={value.hasIncidents}

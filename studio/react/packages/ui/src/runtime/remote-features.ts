@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { useElsaClient, useQueryScope } from "@elsa-workflows/react-studio-api-client/react";
 import { useAuth } from "@elsa-workflows/react-studio-auth";
+import { ApiError } from "@elsa-workflows/react-studio-api-client/http";
 import type { FeatureDescriptor } from "@elsa-workflows/react-studio-api-client/types/descriptors";
 
 /**
@@ -37,11 +38,17 @@ export function useRemoteFeatures() {
   const { status } = useAuth();
   const query = useQuery({
     queryKey: [scope, "features", "installed"],
-    queryFn: ({ signal }) => client.descriptors.installedFeatures(signal),
+    queryFn: ({ signal }) => client.descriptors.installedFeatures(AbortSignal.any([signal, AbortSignal.timeout(15_000)])),
     enabled: status === "authenticated",
     staleTime: 5 * 60_000,
     retry: false,
   });
   const catalog = useMemo(() => new RemoteFeatureCatalog(query.data?.items ?? []), [query.data]);
-  return { catalog, isLoading: query.isLoading, isError: query.isError, isResolved: query.isSuccess || query.isError };
+  return {
+    catalog,
+    isLoading: query.isLoading,
+    isError: query.isError,
+    isResolved: query.isSuccess || query.isError,
+    legacyWithoutCatalog: query.error instanceof ApiError && query.error.status === 404,
+  };
 }

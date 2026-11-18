@@ -3,6 +3,7 @@ import { translate } from "@elsa-workflows/react-studio-sdk/localization";
 import type { AuthConfig } from "@elsa-workflows/react-studio-sdk/config";
 import { readTokens, writeTokens } from "../storage.js";
 import { BaseAuthStrategy, isJwtExpired, userFromJwt, type PasswordCredentials } from "../types.js";
+import { joinAuthEndpoint } from "./url.js";
 
 interface LoginResponse {
   isAuthenticated: boolean;
@@ -33,7 +34,7 @@ export class ElsaIdentityAuthStrategy extends BaseAuthStrategy {
   }
 
   private url(path: string) {
-    return `${this.apiBaseUrl.replace(/\/+$/, "")}/${path.replace(/^\/+/, "")}`;
+    return joinAuthEndpoint(this.apiBaseUrl, path);
   }
 
   async initialize() {
@@ -69,11 +70,16 @@ export class ElsaIdentityAuthStrategy extends BaseAuthStrategy {
 
   private async doRefresh(): Promise<boolean> {
     const tokens = readTokens(this.scope);
-    if (!tokens?.refreshToken) return false;
+    if (!tokens?.refreshToken) {
+      writeTokens(this.scope, undefined);
+      this.setSnapshot({ status: "unauthenticated" });
+      return false;
+    }
     try {
       const res = await fetch(this.url(this.options.refreshPath), {
         method: "POST",
         headers: { Authorization: `Bearer ${tokens.refreshToken}`, Accept: "application/json" },
+        signal: AbortSignal.timeout(15_000),
       });
       if (!res.ok) throw new Error(translate("refresh failed ({{value0}})", { value0: res.status }));
       const data = (await res.json()) as LoginResponse;

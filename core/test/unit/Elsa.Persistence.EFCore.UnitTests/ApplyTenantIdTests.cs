@@ -3,6 +3,7 @@ using Elsa.Extensions;
 using Elsa.Persistence.EFCore.EntityHandlers;
 using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Management;
+using Elsa.Persistence.EFCore.Modules.Tenants;
 using Elsa.Persistence.EFCore.Sqlite;
 using Elsa.Tenants.Options;
 using Elsa.Workflows.Management.Entities;
@@ -19,10 +20,40 @@ namespace Elsa.Persistence.EFCore.UnitTests;
 /// </summary>
 public class ApplyTenantIdTests
 {
-    [Theory(DisplayName = "Named ambient tenant stamps null/empty tenant ids and keeps '*', matching and explicit ids")]
+    [Fact]
+    public async Task TenantRegistryRowsStayHostScopedWhenAccessedFromATenant()
+    {
+        var accessor = new DefaultTenantAccessor();
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        await using var services = new ServiceCollection()
+            .AddLogging()
+            .AddSingleton<ITenantAccessor>(accessor)
+            .Configure<TenantsOptions>(options => options.IsEnabled = true)
+            .AddScoped<IEntitySavingHandler, ApplyTenantId>()
+            .AddScoped<IEntityModelCreatingHandler, SetTenantIdFilter>()
+            .AddSqliteEntityModelCreatingHandlers()
+            .AddDbContextFactory<TenantsElsaDbContext>((_, builder) => builder.UseSqlite(connection))
+            .Decorate<IDbContextFactory<TenantsElsaDbContext>, TenantAwareDbContextFactory<TenantsElsaDbContext>>()
+            .BuildServiceProvider();
+        var factory = services.GetRequiredService<IDbContextFactory<TenantsElsaDbContext>>();
+        var store = new EFCoreTenantStore(new EntityStore<TenantsElsaDbContext, Tenant>(factory, services));
+        using var scope = accessor.PushContext(new Tenant { Id = "tenant-a", Name = "Tenant A" });
+        await using (var database = await factory.CreateDbContextAsync())
+            await database.Database.EnsureCreatedAsync();
+
+        await store.AddAsync(new Tenant { Id = Tenant.DefaultTenantId, Name = "Default" });
+        await store.AddAsync(new Tenant { Id = "tenant-b", Name = "Tenant B", TenantId = "legacy-owner" });
+
+        var tenants = (await store.ListAsync()).OrderBy(tenant => tenant.Id).ToArray();
+        Assert.Equal(new[] { "", "tenant-b" }, tenants.Select(tenant => tenant.Id));
+        Assert.Null(tenants[0].TenantId);
+        Assert.Equal("legacy-owner", tenants[1].TenantId);
+    }
+
+    [Theory(DisplayName = "Named ambient tenant stamps null and empty tenant ids and keeps its explicit id")]
     [InlineData(null, "t1")]
     [InlineData("", "t1")]
-    [InlineData("*", "*")]
     [InlineData("t1", "t1")]
     public async Task NamedAmbientTenant_StampsMissingAndKeepsExplicit(string? tenantId, string expectedTenantId)
     {
@@ -45,7 +76,6 @@ public class ApplyTenantIdTests
     [InlineData("t1", "t1")]
     [InlineData(null, "")]
     [InlineData("", "")]
-    [InlineData("*", "*")]
     public async Task NullAmbientContext_KeepsExplicitTenantAndStampsMissingWithDefault(string? tenantId, string? expectedTenantId)
     {
         var (exception, storedTenantId) = await SaveWithAmbientAsync(null, tenantId);
@@ -57,7 +87,6 @@ public class ApplyTenantIdTests
     [Theory(DisplayName = "The default tenant context stamps unassigned entities with the default tenant id")]
     [InlineData(null, "")]
     [InlineData("", "")]
-    [InlineData("*", "*")]
     public async Task DefaultTenantContext_StampsMissingWithDefaultTenant(string? tenantId, string? expectedTenantId)
     {
         var (exception, storedTenantId) = await SaveWithAmbientAsync(Tenant.DefaultTenantId, tenantId);
@@ -73,6 +102,23 @@ public class ApplyTenantIdTests
 
         Assert.IsType<InvalidOperationException>(exception);
         Assert.Null(storedTenantId);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("named")]
+    [InlineData("*")]
+    public async Task SharedRowsRequireExplicitAuthority(string? ambientTenantId)
+    {
+        var (exception, storedTenantId) = await SaveWithAmbientAsync(ambientTenantId, Tenant.AgnosticTenantId);
+        Assert.IsType<InvalidOperationException>(exception);
+        Assert.Null(storedTenantId);
+
+        using var grant = SharedTenantWriteScope.Enter<WorkflowInstance>();
+        var (hostException, sharedTenantId) = await SaveWithAmbientAsync(ambientTenantId, Tenant.AgnosticTenantId);
+        Assert.Null(hostException);
+        Assert.Equal(Tenant.AgnosticTenantId, sharedTenantId);
     }
 
     [Theory(DisplayName = "When multitenancy is disabled the entity tenant id is left untouched")]

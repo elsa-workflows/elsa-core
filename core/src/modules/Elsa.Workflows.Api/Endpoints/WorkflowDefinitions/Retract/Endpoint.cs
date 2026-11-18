@@ -5,9 +5,11 @@ using Elsa.Workflows.Api.Constants;
 using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Api.Requirements;
 using Elsa.Workflows.Management;
+using Elsa.Workflows.Management.Exceptions;
 using Elsa.Workflows.Management.Filters;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Retract;
 
@@ -23,13 +25,16 @@ internal class Retract(IWorkflowDefinitionStore store, IWorkflowDefinitionPublis
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
+        await using var mutationLock = await WorkflowDefinitionMutationLock.AcquireAsync(HttpContext.RequestServices, cancellationToken);
+
         var filter = new WorkflowDefinitionFilter
         {
             DefinitionId = request.DefinitionId,
             VersionOptions = VersionOptions.LatestOrPublished
         };
 
-        var definition = await store.FindAsync(filter, cancellationToken);
+        var versions = (await store.FindManyAsync(filter, cancellationToken)).ToList();
+        var definition = (versions.FirstOrDefault(version => version.IsPublished) ?? versions.FirstOrDefault())?.ShallowClone();
 
         if (definition == null)
         {
@@ -52,7 +57,17 @@ internal class Retract(IWorkflowDefinitionStore store, IWorkflowDefinitionPublis
             return;
         }
 
-        await workflowDefinitionPublisher.RetractAsync(definition, cancellationToken);
+        try
+        {
+            await workflowDefinitionPublisher.RetractAsync(definition, cancellationToken);
+        }
+        catch (WorkflowDefinitionEditConflictException)
+        {
+            AddError("The workflow definition changed or is protected.");
+            await Send.ErrorsAsync(StatusCodes.Status409Conflict, cancellationToken);
+            return;
+        }
+
         var response = await linker.MapAsync(definition, cancellationToken);
         await Send.OkAsync(response, cancellationToken);
     }

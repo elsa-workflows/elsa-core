@@ -12,17 +12,21 @@ using Elsa.Bpmn.Interchange.Binding;
 using Elsa.Bpmn.Interchange.Endpoints.Bpmn.Document;
 using Elsa.Bpmn.Interchange.Exceptions;
 using Elsa.Common;
+using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Notifications;
+using Elsa.Workflows.Management.Options;
 using Elsa.Workflows.Models;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Bpmn.Interchange.Services;
 
@@ -113,8 +117,26 @@ public sealed class BpmnInterchangeDocumentService(
     IActivitySerializer activitySerializer,
     IIdentityGenerator identityGenerator,
     ISystemClock systemClock,
-    IMediator mediator)
+    IMediator mediator,
+    IOptions<ManagementOptions> managementOptions)
 {
+    /// <summary>Creates a BPMN interchange service using the default management options.</summary>
+    public BpmnInterchangeDocumentService(
+        BpmnXmlReader reader,
+        BpmnXmlWriter writer,
+        BpmnWorkBinder binder,
+        IWorkflowDefinitionImporter importer,
+        IWorkflowDefinitionStore store,
+        VariableDefinitionMapper variableDefinitionMapper,
+        IActivitySerializer activitySerializer,
+        IIdentityGenerator identityGenerator,
+        ISystemClock systemClock,
+        IMediator mediator)
+        : this(reader, writer, binder, importer, store, variableDefinitionMapper, activitySerializer, identityGenerator, systemClock,
+            mediator, Options.Create(new ManagementOptions()))
+    {
+    }
+
     /// <summary>The workflow definition custom property the original BPMN XML is carried under, for <see cref="Export(WorkflowDefinition)"/>.</summary>
     public const string SourceXmlCustomPropertyKey = "Bpmn:SourceXml";
 
@@ -386,24 +408,50 @@ public sealed class BpmnInterchangeDocumentService(
             return await PersistDocumentEditAsync(xml, definitionId!, process, rootDefinition, result.Analysis, expectedETag, cancellationToken);
         }
 
+        WorkflowDefinition? existing = null;
+        if (!string.IsNullOrWhiteSpace(definitionId))
+        {
+            var filter = new WorkflowDefinitionFilter { DefinitionId = definitionId, VersionOptions = VersionOptions.Latest };
+            var order = new WorkflowDefinitionOrder<int>(definition => definition.Version, OrderDirection.Descending);
+            existing = await store.FindAsync(filter, order, cancellationToken)
+                ?? await store.FindLastVersionAsync(new WorkflowDefinitionFilter { DefinitionId = definitionId }, cancellationToken);
+        }
+
+        EnsureCanWrite(existing);
         var importResult = await importer.ImportAsync(new SaveWorkflowDefinitionRequest { Model = model, Publish = false }, cancellationToken);
 
-        // The definition's final Version is only known once the importer/publisher has assigned and persisted it —
-        // see SourceVersionCustomPropertyKey's remarks for why that value, specifically, is what staleness is judged
-        // against. Neither custom property is written until it is known, so both land on this single, explicit save:
-        // if it fails or is cancelled, the definition carries neither key, which Export(WorkflowDefinition) reports
-        // honestly as "never imported" rather than as a partial import that cannot be diagnosed.
         if (importResult.Succeeded)
         {
             var persisted = importResult.WorkflowDefinition;
-            persisted.CustomProperties[SourceXmlCustomPropertyKey] = xml;
-            persisted.CustomProperties[SourceVersionCustomPropertyKey] = persisted.Version;
-            persisted.CustomProperties[SourceProcessIdCustomPropertyKey] = rootDefinition.ProcessId;
-            persisted.CustomProperties[SourceGraphHashCustomPropertyKey] = BpmnContentHash.OfGraph(persisted.StringData);
-            await store.SaveAsync(persisted, cancellationToken);
+            var snapshot = activitySerializer.Serialize(persisted);
+            var withSource = persisted.ShallowClone();
+            withSource.CustomProperties = new Dictionary<string, object>(persisted.CustomProperties)
+            {
+                [SourceXmlCustomPropertyKey] = xml,
+                [SourceVersionCustomPropertyKey] = persisted.Version,
+                [SourceProcessIdCustomPropertyKey] = rootDefinition.ProcessId,
+                [SourceGraphHashCustomPropertyKey] = BpmnContentHash.OfGraph(persisted.StringData)
+            };
+            var saved = await store.TryUpdateLatestAsync(
+                new WorkflowDefinitionFilter { Id = persisted.Id, DefinitionId = persisted.DefinitionId },
+                current => !managementOptions.Value.IsReadOnlyMode && current.IsLatest && !current.IsReadonly && !current.IsSystem &&
+                    string.Equals(activitySerializer.Serialize(current), snapshot, StringComparison.Ordinal),
+                _ => withSource,
+                cancellationToken);
+
+            if (saved.Outcome != WorkflowDefinitionUpdateOutcome.Updated)
+                throw new BpmnDocumentPreconditionFailedException("The workflow definition changed during BPMN import. Reload it before retrying.");
+
+            importResult = importResult with { WorkflowDefinition = saved.Definition! };
         }
 
         return new BpmnDocumentImportResult(importResult, result.Analysis) { UnboundElementIds = UnboundElementIdsOf(process) };
+    }
+
+    private void EnsureCanWrite(WorkflowDefinition? definition)
+    {
+        if (managementOptions.Value.IsReadOnlyMode || definition is { IsReadonly: true } or { IsSystem: true })
+            throw new BpmnWriteForbiddenException();
     }
 
     /// <summary>
@@ -432,6 +480,8 @@ public sealed class BpmnInterchangeDocumentService(
                 $"Workflow definition '{definitionId}' does not exist, so its BPMN document cannot be edited.");
         }
 
+        EnsureCanWrite(current);
+
         if (expectedETag is not null && !string.Equals(BpmnDocumentETag.From(current), expectedETag, StringComparison.Ordinal))
         {
             throw new BpmnDocumentPreconditionFailedException(
@@ -447,6 +497,8 @@ public sealed class BpmnInterchangeDocumentService(
         var result = await store.TryUpdateLatestAsync(
             filter,
             loaded => loaded.IsLatest
+                      && !loaded.IsReadonly
+                      && !loaded.IsSystem
                       && string.Equals(activitySerializer.Serialize((object)loaded), expectedDefinitionSnapshot, StringComparison.Ordinal)
                       && (expectedETag is null || string.Equals(BpmnDocumentETag.From(loaded), expectedETag, StringComparison.Ordinal)),
             _ => draft,

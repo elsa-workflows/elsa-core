@@ -17,6 +17,30 @@ namespace Elsa.Common.UnitTests.Multitenancy;
 public class DefaultTenantServiceTests
 {
     [Fact]
+    public async Task TenantOriginatedRefreshReadsTheCompleteHostRegistry()
+    {
+        var accessor = new DefaultTenantAccessor();
+        var tenantA = new Tenant { Id = "tenant-a", Name = "Tenant A" };
+        var tenantB = new Tenant { Id = "tenant-b", Name = "Tenant B" };
+        var hostRegistry = new List<Tenant> { Tenant.Default, tenantA, tenantB };
+        var (tenantService, services) = await CreateTenantServiceAsync(hostRegistry,
+            tenantsFactory: () => accessor.Tenant is null ? hostRegistry : [tenantA]);
+        await using var provider = services;
+        using var scope = accessor.PushContext(tenantA);
+
+        await tenantService.RefreshAsync();
+
+        Assert.Equal(new[] { "", "tenant-a", "tenant-b" }, (await tenantService.ListAsync()).Select(tenant => tenant.Id).Order());
+        Assert.Same(tenantA, accessor.Tenant);
+
+        hostRegistry.Remove(tenantB);
+        await tenantService.RefreshAsync();
+
+        Assert.Null(await tenantService.FindAsync("tenant-b"));
+        Assert.Same(tenantA, await tenantService.FindAsync("tenant-a"));
+    }
+
+    [Fact]
     public async Task ActivateTenantsAsync_WhenProviderReturnsEmpty_ActivatesDefaultTenant()
     {
         // Arrange - provider returns no tenants

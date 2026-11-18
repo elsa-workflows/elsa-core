@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text.Json;
+using Elsa.Authorization;
 using Elsa.Common;
 using Elsa.Common.Multitenancy;
 using Elsa.Common.Services;
@@ -9,6 +10,7 @@ using Elsa.ExternalAuthentication.Contracts;
 using Elsa.ExternalAuthentication.Features;
 using Elsa.ExternalAuthentication.Models;
 using Elsa.ExternalAuthentication.Notifications;
+using Elsa.ExternalAuthentication.Permissions;
 using Elsa.ExternalAuthentication.Policies;
 using Elsa.ExternalAuthentication.Services;
 using Elsa.Identity.Contracts;
@@ -35,6 +37,7 @@ public partial class ExternalIdentityLinkTests : IAsyncLifetime
     private TestConnectionRegistry _connections = null!;
     private INotificationSender _notifications = null!;
     private bool _wasSecurityEnabled;
+    private string _actorPermission = PermissionNames.All;
 
     protected HttpClient Client => _client!;
 
@@ -62,7 +65,14 @@ public partial class ExternalIdentityLinkTests : IAsyncLifetime
         builder.Services.AddSingleton<InMemoryExternalIdentityProvisionerState>();
         builder.Services.AddScoped<IUserStore, MemoryUserStore>();
         builder.Services.AddScoped<IUserProvider, StoreBasedUserProvider>();
-        builder.Services.AddSingleton<IRoleProvider>(Substitute.For<IRoleProvider>());
+        var roles = Substitute.For<IRoleProvider>();
+        roles.FindManyAsync(Arg.Any<Elsa.Identity.Models.RoleFilter>(), Arg.Any<CancellationToken>())
+            .Returns(call => ValueTask.FromResult<IEnumerable<Role>>(call.Arg<Elsa.Identity.Models.RoleFilter>().Ids?.Contains("admin") == true
+                ? [new Role { Id = "admin", Name = "Administrator", Permissions = [PermissionNames.All] }]
+                : []));
+        builder.Services.AddSingleton(roles);
+        builder.Services.AddSingleton<IPermissionEvaluator, PermissionEvaluator>();
+        builder.Services.AddScoped<IRoleAuthorizationService, RoleAuthorizationService>();
         builder.Services.AddScoped<InMemoryExternalIdentityProvisioner>();
         builder.Services.AddScoped<IExternalIdentityProvisioner>(services => services.GetRequiredService<InMemoryExternalIdentityProvisioner>());
         builder.Services.AddScoped<IExternalIdentityLinkManagementStore>(services => services.GetRequiredService<InMemoryExternalIdentityProvisioner>());
@@ -77,7 +87,7 @@ public partial class ExternalIdentityLinkTests : IAsyncLifetime
         _app = builder.Build();
         _app.Use(async (context, next) =>
         {
-            context.User = new ClaimsPrincipal(new ClaimsIdentity([new Claim(PermissionNames.ClaimType, PermissionNames.All), new Claim("sub", "admin")], "test"));
+            context.User = new ClaimsPrincipal(new ClaimsIdentity([new Claim(PermissionNames.ClaimType, _actorPermission), new Claim("sub", "admin")], "test"));
             await next(context);
         });
         _app.UseAuthorization();
@@ -99,6 +109,26 @@ public partial class ExternalIdentityLinkTests : IAsyncLifetime
             await _app.StopAsync();
             await _app.DisposeAsync();
         }
+    }
+
+    [Fact]
+    public async Task LinkManagerMayChangeOnlyLinksForUsersWhosePermissionsTheyHold()
+    {
+        await SeedUserAsync("privileged-user", "Privileged user", "tenant-a", ["admin"]);
+        var privileged = await (await PrelinkAsync("privileged-subject", "privileged-user")).Content.ReadFromJsonAsync<LinkDocument>();
+        var ordinary = await (await PrelinkAsync("ordinary-subject", "user-a")).Content.ReadFromJsonAsync<LinkDocument>();
+        Assert.NotNull(privileged);
+        Assert.NotNull(ordinary);
+
+        _actorPermission = $"{ExternalAuthenticationResourcePermissions.IdentityLinks}:{CoreVerbs.Write}";
+        Assert.Equal(HttpStatusCode.NotFound, (await PrelinkAsync("new-subject", "privileged-user")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await ReplaceAsync(ordinary.Id, "replacement-subject", "privileged-user")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await ReplaceAsync(privileged.Id, "replacement-subject", "user-a")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await Client.DeleteAsync($"/external-authentication/identity-links/{privileged.Id}")).StatusCode);
+        Assert.Equal(HttpStatusCode.Created, (await ReplaceAsync(ordinary.Id, "replacement-subject", "user-c")).StatusCode);
+
+        _actorPermission = PermissionNames.All;
+        Assert.Equal(HttpStatusCode.Created, (await ReplaceAsync(privileged.Id, "privileged-recovery", "privileged-user")).StatusCode);
     }
 
     [Fact]
@@ -333,10 +363,10 @@ public partial class ExternalIdentityLinkTests : IAsyncLifetime
     private async Task<HttpResponseMessage> PrelinkAsync(string subject, string userId = "user-a") => await _client!.PostAsJsonAsync("/external-authentication/identity-links", new { userId, connectionKey = "contoso", issuer = "https://issuer.example/", subject });
     private async Task<HttpResponseMessage> ReplaceAsync(string linkId, string subject, string userId = "user-a", string connectionKey = "contoso", string issuer = "https://issuer.example/") => await _client!.PostAsJsonAsync($"/external-authentication/identity-links/{linkId}/replace", new { userId, connectionKey, issuer, subject });
 
-    protected async Task SeedUserAsync(string id, string name, string tenantId)
+    protected async Task SeedUserAsync(string id, string name, string tenantId, ICollection<string>? roles = null)
     {
         await using var scope = _app!.Services.CreateAsyncScope();
-        await scope.ServiceProvider.GetRequiredService<IUserStore>().SaveAsync(new User { Id = id, Name = name, TenantId = tenantId });
+        await scope.ServiceProvider.GetRequiredService<IUserStore>().SaveAsync(new User { Id = id, Name = name, TenantId = tenantId, Roles = roles ?? [] });
     }
 
     private static IReadOnlyDictionary<string, IReadOnlyCollection<string>> EmptyClaims { get; } = new Dictionary<string, IReadOnlyCollection<string>>();

@@ -7,6 +7,7 @@ using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
+using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Providers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -290,7 +291,7 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
 
                 if (indexTriggers && storedDefinition.IsPublished)
                 {
-                    await _triggerIndexer.IndexTriggersAsync(storedDefinition, cancellationToken);
+                    await IndexProvidedTriggersAsync(storedDefinition, cancellationToken);
                 }
 
                 continue;
@@ -413,8 +414,16 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         return await result.OnSuccessAsync(async workflowDefinition =>
         {
             if (indexTriggers && workflowDefinition.IsPublished)
-                await _triggerIndexer.IndexTriggersAsync(workflowDefinition, cancellationToken);
+                await IndexProvidedTriggersAsync(workflowDefinition, cancellationToken);
         });
+    }
+
+    private async Task IndexProvidedTriggersAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken)
+    {
+        using var grant = workflowDefinition.TenantId == Tenant.AgnosticTenantId
+            ? SharedTenantWriteScope.Enter<StoredTrigger>()
+            : null;
+        await _triggerIndexer.IndexTriggersAsync(workflowDefinition, cancellationToken);
     }
 
     private async Task AssignIdentities(Workflow workflow, CancellationToken cancellationToken)
@@ -561,7 +570,8 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
             throw new Exception($"Unable to update WorkflowDefinition with ids {string.Join(',', duplicates)} multiple times.");
         }
 
-        await _workflowDefinitionStore.SaveManyAsync(workflowDefinitionsToSave, cancellationToken);
+        using (workflowTenantId == Tenant.AgnosticTenantId ? SharedTenantWriteScope.Enter<WorkflowDefinition>() : null)
+            await _workflowDefinitionStore.SaveManyAsync(workflowDefinitionsToSave, cancellationToken);
         return workflowDefinition;
 
         // GetPersistedStates replays these rules to predict the stored IsLatest and IsPublished; keep both in sync.

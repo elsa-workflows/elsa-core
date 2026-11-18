@@ -31,7 +31,7 @@ CANONICAL_310 = re.compile(STABLE_310_PATTERN + r"(-[0-9A-Za-z]+(\.[0-9A-Za-z]+)
 # Only these branches upload a Pages artifact that deploy_coverage can deploy.
 COVERAGE_REFS = ("refs/heads/main", "refs/heads/release/3.6.1")
 PROMOTE_REF = "refs/heads/main"
-PROMOTE_VERSION = re.compile(r"[0-9]+\.[0-9]+\.[0-9]+")
+PROMOTE_VERSION = re.compile(r"3\.(?:10|11)\.(?:0|[1-9][0-9]*)")
 PROMOTE_TARGETS = ("all", "feedz", "nuget")
 
 
@@ -77,6 +77,8 @@ def selection_errors(
         # Stable 3.10.x Feedz is owned only by the candidate promotion mode of packages.yml.
         # nuget.org still accepts any release-version tag, including stable 3.10.x.
         major, minor = (int(part) for part in tag.split(".")[:2])
+        if (major, minor) == (3, 11) and nuget:
+            errors.append("3.11 NuGet publication requires a sealed candidate on the protected promotion path.")
         feedz_from_tag = (major, minor) == (3, 10)
         if feedz_from_tag and not tag.startswith("3.10."):
             # NuGet would normalize 03.10.0 to 3.10.0, and the Feedz job matches the literal 3.10. prefix.

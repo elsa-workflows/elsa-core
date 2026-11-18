@@ -63,7 +63,7 @@ public class TenantAwareDrainTests : IAsyncDisposable
         Assert.Equal(DrainResult.DeadlineExceeded, outcome.OverallResult);
         var instanceId = Assert.Single(outcome.ForceCancelledInstanceIds);
         var instance = await FindAsync(tenant, instanceId);
-        var reasons = string.Join(", ", await ListInterruptedReasonsAsync(instanceId));
+        var reasons = string.Join(", ", await ListInterruptedReasonsAsync(tenant, instanceId));
         Assert.Equal(
             (WorkflowStatus.Running, WorkflowSubStatus.Interrupted, tenantId, WorkflowInterruptedPayload.ReasonDeadlineBreach),
             (instance?.Status, instance?.SubStatus, instance?.TenantId, reasons));
@@ -93,9 +93,9 @@ public class TenantAwareDrainTests : IAsyncDisposable
         return await scope.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>().FindAsync(new WorkflowInstanceFilter { Id = instanceId });
     }
 
-    private async Task<string[]> ListInterruptedReasonsAsync(string instanceId)
+    private async Task<string[]> ListInterruptedReasonsAsync(Tenant tenant, string instanceId)
     {
-        using var scope = _services.CreateScope();
+        await using var scope = _services.GetRequiredService<ITenantScopeFactory>().CreateScope(tenant);
         var records = await scope.ServiceProvider.GetRequiredService<IWorkflowExecutionLogStore>().FindManyAsync(
             new WorkflowExecutionLogRecordFilter { WorkflowInstanceId = instanceId, EventName = WorkflowInterruptedPayload.WorkflowInterruptedEventName },
             PageArgs.All);

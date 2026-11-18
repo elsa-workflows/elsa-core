@@ -1,7 +1,10 @@
 using Elsa.Common.Models;
+using Elsa.Mediator;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Exceptions;
 using Elsa.Workflows.Management.Filters;
+using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Notifications;
 
 namespace Elsa.Workflows.Management.Services;
@@ -12,6 +15,31 @@ public class WorkflowDefinitionManager(
     INotificationSender notificationSender,
     IWorkflowDefinitionPublisher workflowPublisher) : IWorkflowDefinitionManager
 {
+    /// <inheritdoc />
+    public async Task<long> DeleteAuthorizedAsync(WorkflowDefinitionDeletionPlan plan, CancellationToken cancellationToken = default)
+    {
+        if (!plan.IsComplete)
+            throw new WorkflowDefinitionEditConflictException();
+        if (plan.Deleted.Count == 0)
+            return 0;
+
+        var current = (await store.FindManyAsync(new WorkflowDefinitionFilter { DefinitionIds = plan.DefinitionIds }, cancellationToken)).ToArray();
+        if (!plan.Matches(current) || !store.SupportsDeletion(plan) || plan.Deleted.Concat(plan.Promoted).Any(version => version.IsReadonly || version.IsSystem))
+            throw new WorkflowDefinitionEditConflictException();
+
+        // Keep the definition rows available for retry until dependent cleanup has succeeded.
+        var ids = plan.Deleted.Select(version => version.Id).ToArray();
+        await notificationSender.SendAsync(new WorkflowDefinitionVersionsDeleting(ids)
+        {
+            RequireCompleteTriggerCleanup = true
+        }, NotificationStrategy.Sequential, cancellationToken);
+        if (!await store.TryDeleteAsync(plan, cancellationToken))
+            throw new WorkflowDefinitionEditConflictException();
+
+        await notificationSender.SendAsync(new WorkflowDefinitionVersionsDeleted(ids) { DefinitionIds = plan.DefinitionIds }, cancellationToken);
+        return ids.Length;
+    }
+
     /// <inheritdoc />
     public async Task<long> DeleteByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken = default)
     {
@@ -97,7 +125,14 @@ public class WorkflowDefinitionManager(
     {
         if (definitionToDelete.IsPublished)
         {
-            await workflowPublisher.RetractAsync(definitionToDelete, cancellationToken);
+            try
+            {
+                await workflowPublisher.RetractAsync(definitionToDelete, cancellationToken);
+            }
+            catch (WorkflowDefinitionEditConflictException)
+            {
+                return false;
+            }
         }
 
         await notificationSender.SendAsync(new WorkflowDefinitionVersionDeleting(definitionToDelete), cancellationToken);
@@ -142,7 +177,7 @@ public class WorkflowDefinitionManager(
         };
         var lastVersion = await store.FindLastVersionAsync(filter, cancellationToken);
 
-        if (lastVersion is null)
+        if (lastVersion is null || lastVersion.IsLatest)
             return;
 
         lastVersion.IsLatest = true;

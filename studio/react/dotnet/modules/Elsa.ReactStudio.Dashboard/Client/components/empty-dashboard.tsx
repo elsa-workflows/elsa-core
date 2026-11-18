@@ -38,7 +38,7 @@ export function EmptyDashboard() {
       {shortcuts.length > 0 && (
         <div className="grid gap-3 sm:grid-cols-2">
           {shortcuts.map((s) => (
-            <Link key={s.href} href={s.href} className="block rounded-xl outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
+            <Link key={s.href} href={s.href} className="block rounded-xl outline-none focus-visible:ring-3 focus-visible:ring-ring">
               <Card size="sm" className="group/shortcut h-full flex-row items-center gap-3 px-4 transition-colors hover:bg-muted/50">
                 <s.icon className="size-5 shrink-0 text-muted-foreground" aria-hidden />
                 <div className="min-w-0 flex-1">

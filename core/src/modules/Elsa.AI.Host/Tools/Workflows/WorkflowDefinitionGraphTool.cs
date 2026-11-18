@@ -13,7 +13,8 @@ public class WorkflowDefinitionGraphTool(IServiceProvider serviceProvider, Workf
             ("id", GroundingToolSchemas.String("Workflow definition version ID.")),
             ("versionId", GroundingToolSchemas.String("Workflow definition version ID.")),
             ("definitionId", GroundingToolSchemas.String("Logical workflow definition ID.")),
-            ("version", GroundingToolSchemas.Integer("Specific workflow version."))));
+            ("version", GroundingToolSchemas.Integer("Specific workflow version."))),
+        AIGroundingPermissions.DefinitionView);
 
     public override async ValueTask<AIToolResult> ExecuteAsync(AIToolExecutionContext context, CancellationToken cancellationToken = default)
     {

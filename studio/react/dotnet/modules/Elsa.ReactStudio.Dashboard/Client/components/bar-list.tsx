@@ -50,7 +50,7 @@ export function BarList({ rows, className, color = "var(--status-success)" }: { 
         return (
           <li key={r.label} title={r.hint}>
             {r.href ? (
-              <Link href={r.href} className="block rounded-md outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring/50">
+              <Link href={r.href} className="block rounded-md outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring">
                 {bar}
               </Link>
             ) : (

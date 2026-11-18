@@ -1,4 +1,5 @@
 using Elsa.Common.Multitenancy;
+using Elsa.Workflows.Runtime.Stores;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Caching.Memory;
 
@@ -26,6 +27,7 @@ public class CachingHttpWorkflowLookupService(
             var cachingOptions = cache.CachingOptions.Value;
             entry.SetSlidingExpiration(cachingOptions.CacheDuration);
             entry.AddExpirationToken(cache.GetToken(cacheManager.GetTriggerChangeTokenKey(bookmarkHash)));
+            entry.AddExpirationToken(cache.GetToken(CachingTriggerStore.RequiredRemovalCacheInvalidationTokenKey));
 
             var result = await decoratedService.FindWorkflowAsync(bookmarkHash, cancellationToken);
 

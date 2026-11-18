@@ -5,6 +5,7 @@ import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium, expect } from "@playwright/test";
 
+import { assertViteUsesHardenedGlobTooling, writeBuildGlobOverrides } from "./build-glob-tooling.mjs";
 import { readBundle } from "./npm-release.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
@@ -20,11 +21,12 @@ const temporary = mkdtempSync(join(tmpdir(), "elsa-react-module-template-"));
 const generated = join(temporary, "sample");
 const env = { ...process.env, NUGET_PACKAGES: join(temporary, "nuget-cache") };
 for (const key of Object.keys(env)) if (key.startsWith("STUDIO_")) delete env[key];
-const pnpm = process.platform === "win32" ? "pnpm.cmd" : "pnpm";
+const pnpm = process.env.npm_execpath ?? (process.platform === "win32" ? "pnpm.cmd" : "pnpm");
+const pnpmIsJavaScript = /\.(?:js|cjs|mjs)$/.test(pnpm);
 function run(command, parameters, cwd) { execFileSync(command, parameters, { cwd, env, stdio: "inherit" }); }
 function npm(parameters, cwd) {
-  run(process.env.npm_execpath ? process.execPath : pnpm,
-    process.env.npm_execpath ? [process.env.npm_execpath, ...parameters] : parameters, cwd);
+  run(pnpmIsJavaScript ? process.execPath : pnpm,
+    pnpmIsJavaScript ? [pnpm, ...parameters] : parameters, cwd);
 }
 const xml = value => value.replaceAll("&", "&amp;").replaceAll('"', "&quot;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 let browser;
@@ -78,10 +80,9 @@ try {
     dependencies[manifest.name] = `file:${join(npmFeed, archive)}`;
   }
   const client = join(generated, "Module/Client");
-  const manifest = JSON.parse(readFileSync(join(client, "package.json"), "utf8"));
-  manifest.pnpm = { overrides: dependencies };
-  writeFileSync(join(client, "package.json"), JSON.stringify(manifest));
+  writeBuildGlobOverrides(client, dependencies);
   npm(["install"], client);
+  assertViteUsesHardenedGlobTooling(client);
   npm(["run", "build"], client);
   const localFeed = join(temporary, "feed");
   mkdirSync(localFeed);

@@ -13,6 +13,11 @@ public class RunWorkflowInstanceRequest
     /// The ID of the activity that triggered the workflow instance, if any.
     /// </summary>
     public string? TriggerActivityId { get; set; }
+
+    /// <summary>
+    /// When running a pending start, the delivery ID recorded by the producer.
+    /// </summary>
+    public string? StartDeliveryId { get; set; }
     
     /// <summary>
     /// The ID of the bookmark that triggered the workflow instance, if any.

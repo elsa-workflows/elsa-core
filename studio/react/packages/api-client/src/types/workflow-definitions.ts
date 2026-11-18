@@ -88,6 +88,7 @@ export interface SaveWorkflowDefinitionResponse {
   alreadyPublished?: boolean;
   consumingWorkflowCount?: number;
   validationErrors?: string[];
+  validationWarnings?: string[];
 }
 
 export interface ListWorkflowDefinitionsArgs {

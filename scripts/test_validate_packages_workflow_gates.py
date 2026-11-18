@@ -12,7 +12,7 @@ import validate_packages_workflow_gates as gates
 
 NUGET_IF = (
     "if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_nuget"
-    " && startsWith(github.ref, 'refs/tags/') }}"
+    " && startsWith(github.ref, 'refs/tags/') && !startsWith(github.ref, 'refs/tags/3.11.') }}"
 )
 COVERAGE_REFS_IF = "github.ref == 'refs/heads/main' || github.ref == 'refs/heads/release/3.6.1') }}"
 SELECTION_RUN = "        run: python3 scripts/validate_packages_publication_selection.py\n"
@@ -153,14 +153,14 @@ OTHER_BYPASSES = (
     ),
     (
         "nuget publisher sets EXCLUDE_IDS at job level",
-        "    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/') }}\n    permissions:\n",
-        "    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/') }}\n    env:\n      EXCLUDE_IDS: Elsa.Studio.Workflows.Designer\n    permissions:\n",
+        "    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/') && !startsWith(github.ref, 'refs/tags/3.11.') }}\n    permissions:\n",
+        "    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/') && !startsWith(github.ref, 'refs/tags/3.11.') }}\n    env:\n      EXCLUDE_IDS: Elsa.Studio.Workflows.Designer\n    permissions:\n",
         "publish_nuget must not set EXCLUDE_IDS at job level",
     ),
     (
         "packages.yml sets EXCLUDE_IDS at workflow level",
-        "  base_version: '3.10.0'\n",
-        "  base_version: '3.10.0'\n  EXCLUDE_IDS: Elsa.Studio.Workflows.Designer\n",
+        "\nenv:\n  base_version:",
+        "\nenv:\n  EXCLUDE_IDS: Elsa.Studio.Workflows.Designer\n  base_version:",
         "packages.yml must not set EXCLUDE_IDS at workflow level",
     ),
     (
@@ -171,8 +171,8 @@ OTHER_BYPASSES = (
     ),
     (
         "workflow-level env exposes the NuGet key to every job",
-        "  base_version: '3.10.0'\n",
-        "  base_version: '3.10.0'\n  NUGET_KEY: ${{ secrets.NUGET_API_KEY }}\n",
+        "\nenv:\n  base_version:",
+        "\nenv:\n  NUGET_KEY: ${{ secrets.NUGET_API_KEY }}\n  base_version:",
         "the workflow outside its jobs references secrets.NUGET*",
     ),
     (

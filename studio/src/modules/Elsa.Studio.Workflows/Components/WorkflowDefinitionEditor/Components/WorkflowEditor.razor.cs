@@ -730,6 +730,9 @@ public partial class WorkflowEditor : WorkflowEditorComponentBase, INotification
             else
                 UserMessageService.ShowSnackbarTextMessage(Localizer["Workflow published"], Severity.Success);
 
+            if (response.ValidationWarnings is { Count: > 0 } warnings)
+                UserMessageService.ShowSnackbarTextMessage(string.Join(Environment.NewLine, warnings), Severity.Warning);
+
             if (response.ConsumingWorkflowCount > 0)
             {
                 UserMessageService.ShowSnackbarTextMessage(Localizer["{0} consuming workflow(s) updated", response.ConsumingWorkflowCount], Severity.Success);

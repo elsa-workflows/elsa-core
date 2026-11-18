@@ -81,7 +81,9 @@ public abstract class WorkflowStoreConformanceTests
 
         Assert.Null(await scenario.Triggers.FindAsync(new TriggerFilter { Id = "id-b" }));
 
-        var deleted = await scenario.Triggers.DeleteManyAsync(new TriggerFilter());
+        long deleted;
+        using (SharedTenantWriteScope.Enter<StoredTrigger>())
+            deleted = await scenario.Triggers.DeleteManyAsync(new TriggerFilter());
         var remaining = (await scenario.Triggers.FindManyAsync(new TriggerFilter { TenantAgnostic = true })).ToList();
         Assert.Equal(2, deleted);
         Assert.Equal("id-b", Assert.Single(remaining).Id);
@@ -135,6 +137,30 @@ public abstract class WorkflowStoreConformanceTests
     }
 
     [Fact]
+    public async Task DefinitionTryAddPreservesBothVersionIdentityAndTenantVersionKey()
+    {
+        await using var scenario = await CreateScenarioAsync();
+        var original = Definition("original-v1", "Original", "tenant-a", definitionId: "invoice");
+        original.IsReadonly = true;
+        Assert.True(await scenario.Definitions.TryAddAsync(original));
+        Assert.False(await scenario.Definitions.TryAddAsync(
+            Definition("different-id", "Conflicting name", "tenant-a", definitionId: "invoice")));
+
+        using (scenario.UseTenant("tenant-b"))
+        {
+            Assert.False(await scenario.Definitions.TryAddAsync(
+                Definition("original-v1", "Conflicting identity", "tenant-b", definitionId: "invoice")));
+            Assert.True(await scenario.Definitions.TryAddAsync(
+                Definition("tenant-b-v1", "Separate copy", "tenant-b", definitionId: "invoice")));
+        }
+
+        var persisted = await scenario.Definitions.FindAsync(new WorkflowDefinitionFilter { Id = "original-v1" });
+        Assert.NotNull(persisted);
+        Assert.True(persisted.IsReadonly);
+        Assert.Equal("Original", persisted.Name);
+    }
+
+    [Fact]
     public async Task DefinitionSaveManyRejectsDuplicateVersionKeysInTheBatch()
     {
         await using var scenario = await CreateScenarioAsync();
@@ -175,7 +201,9 @@ public abstract class WorkflowStoreConformanceTests
         Assert.False(await scenario.Definitions.AnyAsync(new WorkflowDefinitionFilter { Id = "def-b" }));
         Assert.Equal(2, await scenario.Definitions.CountDistinctAsync());
 
-        var deleted = await scenario.Definitions.DeleteAsync(new WorkflowDefinitionFilter());
+        long deleted;
+        using (SharedTenantWriteScope.Enter<WorkflowDefinition>())
+            deleted = await scenario.Definitions.DeleteAsync(new WorkflowDefinitionFilter());
         var remaining = (await scenario.Definitions.FindManyAsync(new WorkflowDefinitionFilter { TenantAgnostic = true })).ToList();
         Assert.Equal(2, deleted);
         Assert.Equal("def-b", Assert.Single(remaining).Id);
@@ -211,7 +239,9 @@ public abstract class WorkflowStoreConformanceTests
 
         Assert.Null(await scenario.Bookmarks.FindAsync(new BookmarkFilter { BookmarkId = "bm-b" }));
 
-        var deleted = await scenario.Bookmarks.DeleteAsync(new BookmarkFilter());
+        long deleted;
+        using (SharedTenantWriteScope.Enter<StoredBookmark>())
+            deleted = await scenario.Bookmarks.DeleteAsync(new BookmarkFilter());
         var remaining = (await scenario.Bookmarks.FindManyAsync(new BookmarkFilter { TenantAgnostic = true })).ToList();
         Assert.Equal(2, deleted);
         Assert.Equal("bm-b", Assert.Single(remaining).Id);
@@ -509,7 +539,8 @@ public abstract class WorkflowStoreConformanceTests
         await scenario.Triggers.SaveAsync(Trigger("id-a", hash: "hash-a", tenantId: "tenant-a"));
         using (scenario.UseTenant("tenant-b"))
             await scenario.Triggers.SaveAsync(Trigger("id-b", hash: "hash-b", tenantId: "tenant-b"));
-        await scenario.Triggers.SaveAsync(Trigger("id-star", hash: "hash-star", tenantId: Tenant.AgnosticTenantId));
+        using (SharedTenantWriteScope.Enter<StoredTrigger>())
+            await scenario.Triggers.SaveAsync(Trigger("id-star", hash: "hash-star", tenantId: Tenant.AgnosticTenantId));
     }
 
     private static async Task SeedMixedDefinitionsAsync(WorkflowStoreScenario scenario)
@@ -517,7 +548,8 @@ public abstract class WorkflowStoreConformanceTests
         await scenario.Definitions.SaveAsync(Definition("def-a", "A", "tenant-a"));
         using (scenario.UseTenant("tenant-b"))
             await scenario.Definitions.SaveAsync(Definition("def-b", "B", "tenant-b"));
-        await scenario.Definitions.SaveAsync(Definition("def-star", "Star", Tenant.AgnosticTenantId));
+        using (SharedTenantWriteScope.Enter<WorkflowDefinition>())
+            await scenario.Definitions.SaveAsync(Definition("def-star", "Star", Tenant.AgnosticTenantId));
     }
 
     private static async Task SeedMixedBookmarksAsync(WorkflowStoreScenario scenario)
@@ -525,7 +557,8 @@ public abstract class WorkflowStoreConformanceTests
         await scenario.Bookmarks.SaveAsync(Bookmark("bm-a", tenantId: "tenant-a"));
         using (scenario.UseTenant("tenant-b"))
             await scenario.Bookmarks.SaveAsync(Bookmark("bm-b", tenantId: "tenant-b"));
-        await scenario.Bookmarks.SaveAsync(Bookmark("bm-star", tenantId: Tenant.AgnosticTenantId));
+        using (SharedTenantWriteScope.Enter<StoredBookmark>())
+            await scenario.Bookmarks.SaveAsync(Bookmark("bm-star", tenantId: Tenant.AgnosticTenantId));
     }
 
     private static StoredTrigger Trigger(

@@ -4,7 +4,7 @@ import react from "eslint-plugin-react";
 import hooks from "eslint-plugin-react-hooks";
 
 export default defineConfig([
-  globalIgnores(["dist/**", "packages/*/dist/**", "docs/api/**", "node_modules/**", "dotnet/**/bin/**", "dotnet/**/obj/**", "dotnet/**/wwwroot/**", "module-assets/**", "test-results/**", "playwright-report/**"]),
+  globalIgnores(["dist/**", "vendor/picomatch-build/**", "packages/*/dist/**", "docs/api/**", "node_modules/**", "dotnet/**/bin/**", "dotnet/**/obj/**", "dotnet/**/wwwroot/**", "module-assets/**", "test-results/**", "playwright-report/**"]),
   ...tseslint.configs.recommended,
   {
     files: ["src/**/*.{ts,tsx}", "packages/*/src/**/*.{ts,tsx}", "samples/**/*.{ts,tsx}", "dotnet/modules/*/Client/**/*.{ts,tsx}"],

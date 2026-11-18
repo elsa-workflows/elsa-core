@@ -88,7 +88,8 @@ public class ShellTenantsFeatureQueryFilterTests : IAsyncLifetime
             CreateInstance("i-agnostic", Tenant.AgnosticTenantId),
             CreateInstance("i-default", Tenant.DefaultTenantId),
             CreateInstance("i-null", "placeholder"));
-        await dbContext.SaveChangesAsync();
+        using (SharedTenantWriteScope.Enter<WorkflowInstance>())
+            await dbContext.SaveChangesAsync();
 
         // Rows written before tenancy was enabled have no tenant ID.
         await dbContext.WorkflowInstances

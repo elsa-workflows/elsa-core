@@ -159,8 +159,10 @@ internal sealed class DeleteIdentityLink(ExternalIdentityLinkManagementService m
 
     public override async Task HandleAsync(CancellationToken cancellationToken)
     {
-        var deleted = await management.UnlinkAsync(tenantAccessor.TenantId, Route<string>("linkId")!, User, cancellationToken);
-        HttpContext.Response.StatusCode = deleted ? StatusCodes.Status204NoContent : StatusCodes.Status404NotFound;
+        if (await management.UnlinkAsync(tenantAccessor.TenantId, Route<string>("linkId")!, User, cancellationToken))
+            await Send.NoContentAsync(cancellationToken);
+        else
+            await Send.NotFoundAsync(cancellationToken);
     }
 }
 

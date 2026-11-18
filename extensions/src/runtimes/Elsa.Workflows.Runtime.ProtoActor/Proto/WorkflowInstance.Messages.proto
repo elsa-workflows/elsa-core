@@ -64,6 +64,7 @@ message RunWorkflowInstanceRequest{
   optional Properties properties = 4;
   optional string TriggerActivityId = 5;
   bool IncludeWorkflowOutput = 6;
+  optional string StartDeliveryId = 7;
 }
 
 message RunWorkflowInstanceResponse {
@@ -71,6 +72,10 @@ message RunWorkflowInstanceResponse {
   WorkflowSubStatus SubStatus = 2;
   repeated ActivityIncident Incidents = 3;
   optional Output output = 4;
+}
+
+message RunIfPendingWorkflowInstanceResponse {
+  RunWorkflowInstanceResponse Execution = 1;
 }
 
 message CreateAndRunWorkflowInstanceRequest{

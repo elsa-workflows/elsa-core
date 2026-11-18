@@ -1,8 +1,6 @@
 using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Common.Models;
-using Elsa.Workflows.Api.Constants;
-using Elsa.Workflows.Api.Requirements;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
@@ -23,6 +21,8 @@ internal class RevertVersion(IWorkflowDefinitionManager workflowDefinitionManage
 
     public override async Task HandleAsync(CancellationToken cancellationToken)
     {
+        await using var mutationLock = await WorkflowDefinitionMutationLock.AcquireAsync(HttpContext.RequestServices, cancellationToken);
+
         var definitionId = Route<string>("definitionId")!;
         var version = Route<int>("version");
 
@@ -40,9 +40,9 @@ internal class RevertVersion(IWorkflowDefinitionManager workflowDefinitionManage
             return;
         }
 
-        var authorizationResult = await authorizationService.AuthorizeAsync(User, new NotReadOnlyResource(definition), AuthorizationPolicies.NotReadOnlyPolicy);
-
-        if (!authorizationResult.Succeeded)
+        var latest = await store.FindAsync(new WorkflowDefinitionFilter { DefinitionId = definitionId, VersionOptions = VersionOptions.Latest }, cancellationToken);
+        var targets = latest is not null && latest.Id != definition.Id ? new[] { definition, latest } : [definition];
+        if (!await authorizationService.CanMutateAsync(User, targets))
         {
             await Send.ForbiddenAsync(cancellationToken);
             return;

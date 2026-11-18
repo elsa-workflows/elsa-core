@@ -37,6 +37,8 @@ internal sealed class Put(IWorkflowDefinitionStore store, BpmnInterchangeDocumen
     /// <inheritdoc />
     public override async Task HandleAsync(CancellationToken cancellationToken)
     {
+        await using var mutationLock = await WorkflowDefinitionMutationLock.AcquireAsync(HttpContext.RequestServices, cancellationToken);
+
         var definitionId = Route<string>("definitionId")!;
         var filter = WorkflowDefinitionHandle.ByDefinitionId(definitionId, VersionOptions.Latest).ToFilter();
         var definition = await store.FindAsync(filter, cancellationToken);
@@ -44,6 +46,12 @@ internal sealed class Put(IWorkflowDefinitionStore store, BpmnInterchangeDocumen
         if (definition == null)
         {
             await Send.NotFoundAsync(cancellationToken);
+            return;
+        }
+
+        if (!HttpContext.OwnsWorkflowDefinition(definition))
+        {
+            await Send.ForbiddenAsync(cancellationToken);
             return;
         }
 

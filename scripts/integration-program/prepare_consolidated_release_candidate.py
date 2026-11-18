@@ -101,6 +101,10 @@ def tfms_for_condition(condition: str | None) -> frozenset[str]:
     text = (condition or "").strip()
     if not text:
         return frozenset(CANDIDATE_TFMS)
+    # The consolidated floor matrix covers net8/9/10. A distinct netstandard-only
+    # declaration neither satisfies nor conflicts with any of those required floors.
+    if text == "$(TargetFramework.StartsWith('netstandard'))":
+        return frozenset()
     equals = tuple(TFM_EQ.findall(text))
     unequals = tuple(TFM_NE.findall(text))
     packages.require(bool(equals or unequals), f"Unrecognized package condition: {text}")
@@ -112,26 +116,26 @@ def tfms_for_condition(condition: str | None) -> frozenset[str]:
     return frozenset(allowed)
 
 
-def iter_conditioned_items(root: ET.Element, tag: str):
+def iter_conditioned_items(root: ET.Element, tag: str, watched: dict):
     for group in root.iter():
         if local_name(group.tag) != "ItemGroup":
             continue
-        group_tfms = tfms_for_condition(group.get("Condition"))
-        for item in list(group):
-            if local_name(item.tag) != tag:
+        for item in group:
+            if local_name(item.tag) != tag or item.get("Include") not in watched:
                 continue
-            yield item, group_tfms & tfms_for_condition(item.get("Condition"))
+            yield item, tfms_for_condition(group.get("Condition")) & tfms_for_condition(item.get("Condition"))
 
 
 def resolve_cpm_versions(path: Path, wanted: dict[str, dict[str, str]]) -> dict[str, dict[str, str]]:
     resolved: dict[str, dict[str, str]] = {}
-    for item, tfms in iter_conditioned_items(ET.fromstring(path.read_text(encoding="utf-8")), "PackageVersion"):
+    for item, tfms in iter_conditioned_items(ET.fromstring(path.read_text(encoding="utf-8")), "PackageVersion", wanted):
         package_id = item.get("Include")
         version = item.get("Version")
         if package_id not in wanted:
             continue
         packages.require(bool(version), f"{path.name} PackageVersion {package_id} is missing Version")
-        packages.require(bool(tfms), f"{path.name} PackageVersion {package_id} {version} applies to no candidate TFM")
+        if not tfms:
+            continue
         bucket = resolved.setdefault(package_id, {})
         for tfm in tfms:
             if tfm in bucket and bucket[tfm] != version:
@@ -156,7 +160,7 @@ def require_dropins_net8_overrides(root: Path) -> None:
     path = root / DROPINS_PROJECT
     packages.require(path.is_file(), f"Candidate source is missing {DROPINS_PROJECT}")
     found: dict[str, str] = {}
-    for item, tfms in iter_conditioned_items(ET.fromstring(path.read_text(encoding="utf-8")), "PackageReference"):
+    for item, tfms in iter_conditioned_items(ET.fromstring(path.read_text(encoding="utf-8")), "PackageReference", DROPINS_NET8_OVERRIDE):
         package_id = item.get("Include")
         override = item.get("VersionOverride")
         if package_id not in DROPINS_NET8_OVERRIDE or not override:

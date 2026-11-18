@@ -15,6 +15,7 @@ def require(condition: bool, detail: object) -> None:
 
 def verify(directory: Path, version: str) -> None:
     root = Path(__file__).resolve().parents[1]
+    source_notice = (root / "SOURCE-NOTICE.md").read_bytes()
     modules = {module["packageId"] for module in json.loads((root / "module-catalog.json").read_text())}
     expected = modules | {"Elsa.ReactStudio", "Elsa.ReactStudio.Host"}
     packages = list(directory.glob("*.nupkg"))
@@ -31,7 +32,7 @@ def verify(directory: Path, version: str) -> None:
             require("Preview" in metadata["tags"].text.replace(";", " ").split(), (identity, "Preview package tag"))
             require(metadata["license"].attrib["type"] == "file", identity)
             require(metadata["license"].text == "SOURCE-NOTICE.md", identity)
-            require("no license file" in package.read("SOURCE-NOTICE.md").decode(), identity)
+            require(package.read("SOURCE-NOTICE.md") == source_notice, (identity, "source notice"))
             require(metadata["readme"].text == "README.md" and "README.md" in names, identity)
             for framework in ("net8.0", "net9.0", "net10.0"):
                 assembly = package.read(f"lib/{framework}/{identity}.dll")
@@ -41,7 +42,7 @@ def verify(directory: Path, version: str) -> None:
                         require(f"ReactStudio.Module/{asset}".encode() in assembly, (identity, framework, asset))
                         require(f"staticwebassets/{asset}" in names, (identity, "static web asset", asset))
                 if identity == "Elsa.ReactStudio.Host":
-                    for resource in ("index.html", "shared-imports.json", "THIRD-PARTY-NOTICES.txt"):
+                    for resource in ("index.html", "shared-imports.json", "SOURCE-NOTICE.md", "THIRD-PARTY-NOTICES.txt"):
                         require(f"ReactStudio/{resource}".encode() in assembly, (identity, framework, resource))
             for dependency in document.iter():
                 if dependency.tag.rsplit("}", 1)[-1] == "dependency" and dependency.attrib["id"] in expected:

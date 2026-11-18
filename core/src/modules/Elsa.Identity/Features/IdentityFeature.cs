@@ -7,6 +7,7 @@ using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Entities;
+using Elsa.Identity.Extensions;
 using Elsa.Identity.Multitenancy;
 using Elsa.Identity.HostedServices;
 using Elsa.Identity.Options;
@@ -182,6 +183,7 @@ public class IdentityFeature : FeatureBase
         // The identity stores are tenant-scoped, so a host that never enables multitenancy still needs an
         // accessor. TryAdd leaves an existing registration -- notably MultitenancyFeature's -- untouched.
         Services.TryAddSingleton<ITenantAccessor, DefaultTenantAccessor>();
+        Services.AddLocalPasswordAttemptLimiter();
         Services.AddMemoryCache();
         Services.Configure<PermissionStampOptions>(_ => { });
         Services.AddHostedService<StoredPermissionValidator>();

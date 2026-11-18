@@ -250,7 +250,7 @@ function JournalRow({
           }
         }}
         className={cn(
-          "flex cursor-pointer items-center gap-1.5 py-1 pr-3 text-sm outline-none hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/50",
+          "flex cursor-pointer items-center gap-1.5 py-1 pr-3 text-sm outline-none hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
           selected && "bg-primary/5 ring-1 ring-inset ring-primary/30",
         )}
         style={{ paddingLeft: `${0.5 + depth * 0.875}rem` }}
