@@ -248,6 +248,34 @@ test("rejected credentials stay on the sign-in page", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toHaveCount(0);
 });
 
+test("a workflow instances 401 without a refresh token returns to sign-in and recovers", async ({ page }) => {
+  await installStudioBackend(page);
+  await page.route("**/elsa/api/identity/login", route =>
+    route.fulfill({ json: { isAuthenticated: true, accessToken: jwt("admin") } }));
+  let sessionRejected = false;
+  await page.route(/\/elsa\/api\/workflow-instances(?:\?|$)/, route =>
+    sessionRejected ? route.fulfill({ status: 401, json: { title: "Session expired" } })
+      : route.fulfill({ json: emptyPaged() }));
+
+  await page.goto("/studio-preview/");
+  await signIn(page);
+  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+  sessionRejected = true;
+  await Promise.all([
+    page.waitForResponse(response => response.status() === 401 && /\/elsa\/api\/workflow-instances(?:\?|$)/.test(response.url())),
+    page.goto("/studio-preview/workflows/instances"),
+  ]);
+  await expect(page).toHaveURL(/\/studio-preview\/login(?:\?|$)/);
+  await expect(page.getByRole("button", { name: "Sign in", exact: true })).toBeVisible();
+
+  sessionRejected = false;
+  await signIn(page);
+  await expect(page).not.toHaveURL(/\/studio-preview\/login(?:\?|$)/);
+  await page.goto("/studio-preview/workflows/instances");
+  await expect(page.getByRole("heading", { name: "Workflow instances", exact: true })).toBeVisible();
+  await expect(page.getByText("No workflow instances match the current filters.")).toBeVisible();
+});
+
 test("sign-in, list, create, edit, save, publish, run, journal and settings", async ({ page }) => {
   test.setTimeout(60_000);
   const { saves } = await installStudioBackend(page);

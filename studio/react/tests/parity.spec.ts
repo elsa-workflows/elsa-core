@@ -4,7 +4,7 @@ import type { WorkflowDefinition } from "../packages/api-client/src/types/workfl
 async function editorFixture(page: Page, published = false, hasPublishedHistory = false) {
   let definition: WorkflowDefinition = { id: "version-three", definitionId: "parity", name: "Parity workflow", version: 3, isLatest: true, isPublished: published, createdAt: "2026-10-21T00:00:00Z",
     variables: [{ id: "customer", name: "Customer", typeName: "String", value: "original" }], inputs: [], outputs: [], outcomes: ["Approved"], options: {}, customProperties: {},
-    root: { id: "root", nodeId: "root", type: "Elsa.Flowchart", version: 1, activities: [
+    root: { id: "root", nodeId: "root", type: "Elsa.Flowchart", version: 1, start: "alpha", activities: [
       { id: "alpha", nodeId: "root:alpha", type: "Elsa.WriteLine", version: 1, name: "Alpha1", metadata: { designer: { position: { x: 0, y: 0 } } } },
       { id: "beta", nodeId: "root:beta", type: "Elsa.WriteLine", version: 1, name: "Beta1", metadata: { designer: { position: { x: 280, y: 0 } } } },
     ], connections: [{ source: { activity: "alpha", port: "Done" }, target: { activity: "beta", port: "In" } }] } };
@@ -106,6 +106,10 @@ test("Classic light workflow controls and selected activity have sufficient cont
   expect(await contrast(create, "--tw-ring-color", "--sidebar")).toBeGreaterThanOrEqual(3);
   const publishedBadge = page.getByRole("navigation", { name: "Breadcrumb" }).getByText("Published", { exact: true });
   expect(await contrast(publishedBadge, "color")).toBeGreaterThanOrEqual(4.5);
+
+  const issues = page.getByRole("button", { name: "Issues", exact: true });
+  await expect(issues).toHaveText("No issues");
+  expect(await contrast(issues, "color")).toBeGreaterThanOrEqual(4.5);
 
   const activity = page.locator('.react-flow__node[data-id="alpha"]');
   await activity.click();
