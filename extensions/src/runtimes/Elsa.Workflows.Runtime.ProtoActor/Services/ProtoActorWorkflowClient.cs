@@ -122,8 +122,7 @@ public class ProtoActorWorkflowClient : IWorkflowClient
     /// <inheritdoc />
     public Task<bool> InstanceExistsAsync(CancellationToken cancellationToken = default)
     {
-        // Ask the instance store, not the grain: the proto InstanceExists RPC only inspects in-memory
-        // create state, and sending that message would activate the actor.
+        // Check existence without activating the actor.
         if (_workflowInstanceManager is null)
         {
             throw new InvalidOperationException("InstanceExistsAsync requires the constructor that accepts IWorkflowInstanceManager.");

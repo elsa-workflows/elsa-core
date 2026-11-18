@@ -32,6 +32,7 @@ internal sealed class WorkflowInstanceTestHarness : IAsyncDisposable
     private const int CreateAndRunMethodIndex = 2;
     private const int CancelMethodIndex = 4;
     private const int ImportStateMethodIndex = 7;
+    private const int InstanceExistsMethodIndex = 8;
     private const int RunIfPendingMethodIndex = 9;
 
     private readonly ActorSystem _actorSystem = new();
@@ -156,6 +157,9 @@ internal sealed class WorkflowInstanceTestHarness : IAsyncDisposable
     }
 
     public Task<object> CancelAsync(CancellationToken cancellationToken) => RequestAsync(CancelMethodIndex, new Empty(), cancellationToken);
+
+    public Task<object> InstanceExistsAsync(CancellationToken cancellationToken) =>
+        RequestAsync(InstanceExistsMethodIndex, new Empty(), cancellationToken);
 
     public async ValueTask DisposeAsync()
     {

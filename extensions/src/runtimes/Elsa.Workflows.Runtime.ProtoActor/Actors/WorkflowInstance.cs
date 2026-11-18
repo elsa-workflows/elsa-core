@@ -210,13 +210,15 @@ internal class WorkflowInstance(
         WorkflowState = workflowState;
     }
 
-    public override Task<InstanceExistsResponse> InstanceExists()
+    public override async Task<InstanceExistsResponse> InstanceExists()
     {
-        var exists = _workflowInstanceId != null;
-        return Task.FromResult(new InstanceExistsResponse
+        var workflowInstanceId = GetWorkflowInstanceId();
+        await using var scope = scopeFactory.CreateAsyncScope();
+        var workflowInstanceManager = scope.ServiceProvider.GetRequiredService<IWorkflowInstanceManager>();
+        return new()
         {
-            Exists = exists
-        });
+            Exists = await workflowInstanceManager.ExistsAsync(workflowInstanceId, Context.CancellationToken)
+        };
     }
 
     public override async Task<RunIfPendingWorkflowInstanceResponse> RunIfPending(RunWorkflowInstanceRequest request)

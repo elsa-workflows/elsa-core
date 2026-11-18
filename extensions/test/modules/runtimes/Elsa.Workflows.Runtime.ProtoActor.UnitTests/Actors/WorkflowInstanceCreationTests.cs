@@ -82,6 +82,32 @@ public class WorkflowInstanceCreationTests
             It.Is<RunWorkflowOptions>(options => options.WorkflowInstanceId == InstanceId), It.IsAny<CancellationToken>()), Times.Once());
     }
 
+    [Fact]
+    public async Task FailedCreationDoesNotChangeInstanceExistence()
+    {
+        await using var harness = new WorkflowInstanceTestHarness(instanceId: InstanceId);
+        harness.WorkflowInstanceManager
+            .Setup(x => x.CreateAndCommitWorkflowInstanceAsync(It.IsAny<Workflow>(), It.IsAny<WorkflowInstanceOptions>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("Reservation failed."));
+
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        Assert.IsType<GrainErrorResponse>(await harness.CreateAsync(timeout.Token));
+        var response = Assert.IsType<InstanceExistsResponse>(await harness.InstanceExistsAsync(timeout.Token));
+        Assert.False(response.Exists);
+        harness.WorkflowInstanceManager.Verify(x => x.ExistsAsync(InstanceId, It.IsAny<CancellationToken>()), Times.Once());
+    }
+
+    [Fact]
+    public async Task ColdActorReportsExistenceUsingFullIdentifier()
+    {
+        await using var harness = new WorkflowInstanceTestHarness(instanceId: InstanceId);
+        harness.WorkflowInstanceManager.Setup(x => x.ExistsAsync(InstanceId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        var response = Assert.IsType<InstanceExistsResponse>(await harness.InstanceExistsAsync(timeout.Token));
+        Assert.True(response.Exists);
+    }
+
     private static void AssertConflict(object response)
     {
         var error = Assert.IsType<GrainErrorResponse>(response);
