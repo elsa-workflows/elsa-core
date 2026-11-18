@@ -18,6 +18,8 @@ public class CachingTriggerStore(ITriggerStore decoratedStore, ICacheManager cac
     /// </summary>
     public static readonly string CacheInvalidationTokenKey = typeof(CachingTriggerStore).FullName!;
 
+    internal const string RequiredRemovalCacheInvalidationTokenKey = "Elsa.Workflows.Runtime.RequiredTriggerRemoval";
+
     /// <inheritdoc />
     public async ValueTask SaveAsync(StoredTrigger record, CancellationToken cancellationToken = default)
     {
@@ -61,15 +63,8 @@ public class CachingTriggerStore(ITriggerStore decoratedStore, ICacheManager cac
     /// <inheritdoc />
     public async ValueTask ReplaceAsync(IEnumerable<StoredTrigger> removed, IEnumerable<StoredTrigger> added, CancellationToken cancellationToken = default)
     {
-        try
-        {
-            await decoratedStore.ReplaceAsync(removed, added, cancellationToken);
-        }
-        finally
-        {
-            // Discard reads that saw the old index while the store was changing.
-            await cacheManager.TriggerTokenAsync(CacheInvalidationTokenKey);
-        }
+        await cacheManager.TriggerTokenAsync(CacheInvalidationTokenKey, cancellationToken);
+        await decoratedStore.ReplaceAsync(removed, added, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -88,6 +83,7 @@ public class CachingTriggerStore(ITriggerStore decoratedStore, ICacheManager cac
         {
             var invalidationRequestToken = cacheManager.GetToken(CacheInvalidationTokenKey);
             entry.AddExpirationToken(invalidationRequestToken);
+            entry.AddExpirationToken(cacheManager.GetToken(RequiredRemovalCacheInvalidationTokenKey));
             entry.SetAbsoluteExpiration(cacheManager.CachingOptions.Value.CacheDuration);
             return await factory();
         });
