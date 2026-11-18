@@ -100,7 +100,9 @@ New writes always use the current key.
 Resolve `SecretKeyRotation` in a private maintenance process using the same repository and tenant configuration
 as the server. Activate each tenant scope that owns encrypted records, including the default or shared scope
 where applicable. Run `ReencryptAsync()` to validate and count old-key envelopes without writing. Then run
-`ReencryptAsync(dryRun: false)` with exclusive repository access. This preserves retained version metadata,
+`ReencryptAsync(dryRun: false)` with exclusive repository access. For a shared EF Core record, the trusted
+maintenance process must also hold `SharedTenantWriteScope.Enter<Secret>()` around the write pass. Dispose
+the scope before returning to normal tenant operations. Rotation preserves retained version metadata,
 including status, expiry and managed ownership. If interrupted, keep the previous key active and rerun the same
 operation. Writes are committed per secret, so an interrupted run may contain envelopes under both keys.
 
