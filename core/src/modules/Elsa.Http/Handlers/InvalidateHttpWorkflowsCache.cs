@@ -25,6 +25,7 @@ public class InvalidateHttpWorkflowsCache(
     INotificationHandler<WorkflowDefinitionVersionDeleted>,
     INotificationHandler<WorkflowDefinitionVersionsDeleted>,
     INotificationHandler<WorkflowTriggersIndexed>,
+    INotificationHandler<RequiredWorkflowTriggerRecordsRemoved>,
     INotificationHandler<WorkflowDefinitionsReloaded>
 {
     /// <inheritdoc />
@@ -84,14 +85,9 @@ public class InvalidateHttpWorkflowsCache(
     /// <inheritdoc />
     public async Task HandleAsync(WorkflowTriggersIndexed notification, CancellationToken cancellationToken)
     {
-        var hashes = new List<string>();
-        hashes.AddRange(notification.IndexedWorkflowTriggers.RemovedTriggers.Select(x => x.Hash)!);
-        hashes.AddRange(notification.IndexedWorkflowTriggers.AddedTriggers.Select(x => x.Hash)!);
-
-        foreach (string hash in hashes)
-            await httpWorkflowsCacheManager.EvictTriggerAsync(hash, cancellationToken);
-
-        await InvalidateCacheAsync(notification.IndexedWorkflowTriggers.Workflow.Identity.DefinitionId);
+        var indexed = notification.IndexedWorkflowTriggers;
+        await InvalidateIndexedTriggerHashesAsync(indexed.RemovedTriggers.Concat(indexed.AddedTriggers), cancellationToken);
+        await InvalidateCacheAsync(indexed.Workflow.Identity.DefinitionId);
     }
 
     /// <inheritdoc />
@@ -99,6 +95,19 @@ public class InvalidateHttpWorkflowsCache(
     {
         foreach (var reloadedWorkflowDefinition in notification.ReloadedWorkflowDefinitions) 
             await InvalidateCacheAsync(reloadedWorkflowDefinition.DefinitionId);
+    }
+
+    Task INotificationHandler<RequiredWorkflowTriggerRecordsRemoved>.HandleAsync(RequiredWorkflowTriggerRecordsRemoved notification, CancellationToken cancellationToken)
+    {
+        return InvalidateIndexedTriggerHashesAsync(notification.Triggers, cancellationToken);
+    }
+
+    private async Task InvalidateIndexedTriggerHashesAsync(IEnumerable<StoredTrigger> triggers, CancellationToken cancellationToken)
+    {
+        foreach (var hash in triggers.Select(trigger => trigger.Hash).OfType<string>().Distinct())
+        {
+            await httpWorkflowsCacheManager.EvictTriggerAsync(hash, cancellationToken);
+        }
     }
 
     private async Task InvalidateCacheAsync(string workflowDefinitionId)

@@ -135,7 +135,9 @@ public class Tests
                 Attempts++;
 
                 if (Attempts == 1)
+                {
                     throw new InvalidOperationException("Notification failed.");
+                }
             }
 
             return Task.CompletedTask;

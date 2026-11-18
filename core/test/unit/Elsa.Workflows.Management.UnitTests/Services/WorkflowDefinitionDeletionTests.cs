@@ -1,3 +1,4 @@
+using Elsa.Mediator;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Exceptions;
@@ -42,6 +43,7 @@ public class WorkflowDefinitionDeletionTests
         await Assert.ThrowsAsync<WorkflowDefinitionEditConflictException>(() => manager.DeleteAuthorizedAsync(plan));
 
         await notifications.DidNotReceive().SendAsync(Arg.Any<INotification>(), Arg.Any<CancellationToken>());
+        await notifications.DidNotReceive().SendAsync(Arg.Any<INotification>(), Arg.Any<IEventPublishingStrategy>(), Arg.Any<CancellationToken>());
         await store.DidNotReceive().TryDeleteAsync(plan, Arg.Any<CancellationToken>());
     }
 
@@ -55,7 +57,7 @@ public class WorkflowDefinitionDeletionTests
         store.SupportsDeletion(plan).Returns(true);
         store.TryDeleteAsync(plan, Arg.Any<CancellationToken>()).Returns(Task.FromResult(true));
         var notifications = Substitute.For<INotificationSender>();
-        notifications.SendAsync(Arg.Any<WorkflowDefinitionVersionsDeleting>(), Arg.Any<CancellationToken>())
+        notifications.SendAsync(Arg.Any<WorkflowDefinitionVersionsDeleting>(), NotificationStrategy.Sequential, Arg.Any<CancellationToken>())
             .Returns(Task.FromException(new InvalidOperationException("Cleanup failed.")), Task.CompletedTask);
         var manager = new WorkflowDefinitionManager(store, notifications, Substitute.For<IWorkflowDefinitionPublisher>());
 

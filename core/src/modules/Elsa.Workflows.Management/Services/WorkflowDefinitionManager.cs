@@ -1,4 +1,5 @@
 using Elsa.Common.Models;
+using Elsa.Mediator;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Exceptions;
@@ -31,7 +32,7 @@ public class WorkflowDefinitionManager(
         await notificationSender.SendAsync(new WorkflowDefinitionVersionsDeleting(ids)
         {
             RequireCompleteTriggerCleanup = true
-        }, cancellationToken);
+        }, NotificationStrategy.Sequential, cancellationToken);
         if (!await store.TryDeleteAsync(plan, cancellationToken))
             throw new WorkflowDefinitionEditConflictException();
 

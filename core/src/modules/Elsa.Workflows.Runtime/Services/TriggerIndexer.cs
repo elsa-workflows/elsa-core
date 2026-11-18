@@ -2,6 +2,7 @@ using System.Runtime.CompilerServices;
 using Elsa.Common.DistributedHosting;
 using Elsa.Expressions.Contracts;
 using Elsa.Extensions;
+using Elsa.Mediator;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Helpers;
@@ -94,14 +95,18 @@ public class TriggerIndexer : ITriggerIndexer
                 var indexed = new IndexedWorkflowTriggers(workflowGraph.Workflow, [], removed, []);
                 var notification = new WorkflowTriggersIndexed(indexed);
 
-                // Keep the removal payload available for retry if required cleanup fails.
                 if (filter.RequireCompleteCleanup)
+                {
+                    // Keep the removal payload available for retry if required cleanup fails.
+                    await _notificationSender.SendAsync(notification, NotificationStrategy.Sequential, cancellationToken);
+                    await _triggerStore.ReplaceAsync(removed, [], cancellationToken);
+                    await _notificationSender.SendAsync(new RequiredWorkflowTriggerRecordsRemoved(removed), NotificationStrategy.Sequential, cancellationToken);
+                }
+                else
+                {
+                    await _triggerStore.ReplaceAsync(removed, [], cancellationToken);
                     await _notificationSender.SendAsync(notification, cancellationToken);
-
-                await _triggerStore.ReplaceAsync(removed, [], cancellationToken);
-
-                if (!filter.RequireCompleteCleanup)
-                    await _notificationSender.SendAsync(notification, cancellationToken);
+                }
             }
             catch (Exception ex) when (!filter.RequireCompleteCleanup && ex is not OperationCanceledException)
             {
