@@ -89,7 +89,8 @@ dotnet build /Users/sipke/.codex/worktrees/ae40/elsa-studio/src/modules/Elsa.Stu
 
 For a hosted production deployment with the Elsa Secrets feature, supply a new random key from external
 configuration before starting the service. For ModularServer the default shell setting is
-`CShells__Shells__Default__Features__Secrets__EncryptionKey`, with a base64 value. Configure each enabled shell.
+`CShells__Shells__Default__Features__Secrets__EncryptionKey`, with a base64 value. Configure each shell that
+uses Secrets, including shells that enable it through a feature dependency.
 The sample key is rejected in Production.
 
 For retained encrypted data, rehearse against a restored backup first. Stop all writers to the repository,

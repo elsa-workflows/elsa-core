@@ -68,11 +68,10 @@ services.AddNuplane(nuplaneConfiguration, nuplane =>
     nuplane.OnPackagesChanged<MyPackageObserver>();
 });
 
-services.AddSingleton<NuplaneAssemblyProvider>();
+services.AddSingleton<ModularFeatureAssemblyProvider>();
 
 builder.AddShells(shells => shells
-    .WithHostAssemblies()
-    .WithAssemblyProvider<NuplaneAssemblyProvider>()
+    .WithAssemblyProvider<ModularFeatureAssemblyProvider>()
     .WithConfigurationProvider(configuration)
     .WithWebRouting(options => options.EnablePathRouting = true)
     .WithAuthenticationAndAuthorization()
@@ -119,7 +118,7 @@ if (enableSampleCatalog)
 // while starting. This host registers the same validation into each shell collection, and CShells builds shell
 // providers lazily on the first request, so the placeholder booted in Production and failed as a 500 on the
 // first login (issue #9106). Validate the configured shells up front, without activating them, so the same
-// OptionsValidationException aborts the boot before the server listens.
+// OptionsValidationException aborts the boot before the server listens. Check Secrets encryption in the same pass.
 await IdentityTokenStartupValidation.ValidateConfiguredShellsAsync(app.Services);
 
 app.Run();

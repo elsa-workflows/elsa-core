@@ -1,5 +1,6 @@
 using CShells;
 using CShells.Configuration;
+using CShells.Features;
 using CShells.Lifecycle;
 using Elsa.Extensions;
 using Elsa.Identity.Options;
@@ -10,7 +11,7 @@ using Microsoft.Extensions.Options;
 namespace Elsa.ModularServer.Web;
 
 /// <summary>
-/// Validates the identity token options of every configured shell before the host starts listening.
+/// Validates the identity signing and Secrets encryption options of every configured shell before the host starts listening.
 /// </summary>
 /// <remarks>
 /// Elsa.Server.Web fails its own startup when the signing key is still a known default outside Development/Demo,
@@ -24,26 +25,15 @@ namespace Elsa.ModularServer.Web;
 /// <para>
 /// This validation runs before the server accepts traffic, without activating any shell or running shell
 /// initializers: it reads each shell blueprint, composes its <see cref="ShellSettings"/> (pure configuration, no
-/// provider built), reads <c>Identity</c> through the same <see cref="ShellConfiguration"/> the shell feature binds
-/// from, and applies the module's <see cref="ValidateIdentityTokenOptions"/> - the exact validator, rules and
-/// Development/Demo leniency the shell would run. Shells that do not enable the identity features are skipped,
-/// mirroring the fact that the shell container would never register those options. Any invalid options throw the
-/// same <see cref="OptionsValidationException"/> the shell container produces when resolving them.
+/// provider built) and resolves the effective features, including dependencies. For active Identity and Secrets
+/// features it reads the same <see cref="ShellConfiguration"/> as the feature and runs the module's own validator,
+/// with the same Development/Demo leniency. Invalid options throw <see cref="OptionsValidationException"/>.
 /// </para>
 /// </remarks>
 internal static class IdentityTokenStartupValidation
 {
-    /// <summary>The feature that registers <see cref="IdentityTokenOptions"/> in a shell container.</summary>
-    private const string IdentityFeatureName = "Identity";
-
     /// <summary>
-    /// Enabling this feature pulls <see cref="IdentityFeatureName"/> in through its declared dependency, so the
-    /// identity options are registered in the shell as well.
-    /// </summary>
-    private const string DefaultAuthenticationFeatureName = "DefaultAuthentication";
-
-    /// <summary>
-    /// Validates the identity token options configured for every shell the blueprint provider lists.
+    /// Validates enabled Identity and Secrets options for every shell the blueprint provider lists.
     /// </summary>
     /// <remarks>
     /// The first shell with invalid options throws, aborting the host before it listens - the same behavior
@@ -53,6 +43,10 @@ internal static class IdentityTokenStartupValidation
     {
         var registry = rootServices.GetRequiredService<IShellRegistry>();
         var rootConfiguration = rootServices.GetRequiredService<IConfiguration>();
+        var assemblyProvider = rootServices.GetRequiredService<ModularFeatureAssemblyProvider>();
+        var assemblies = await assemblyProvider.GetAssembliesAsync(rootServices, cancellationToken);
+        var features = FeatureDiscovery.DiscoverFeatures(assemblies).ToDictionary(feature => feature.Id, StringComparer.OrdinalIgnoreCase);
+        var dependencyResolver = new FeatureDependencyResolver();
 
         // Resolve the module's own validator the way a shell does: through DI, with the host environment injected,
         // so known-default keys keep working in Development/Demo.
@@ -76,11 +70,13 @@ internal static class IdentityTokenStartupValidation
 
                 var settings = await blueprint.Blueprint.ComposeAsync(cancellationToken);
 
-                if (RegistersIdentityTokenOptions(settings))
+                // Match shell activation: unknown optional features are skipped, and dependencies are effective features.
+                var enabledFeatures = dependencyResolver.GetOrderedFeatures(settings.EnabledFeatures.Where(features.ContainsKey), features);
+
+                if (enabledFeatures.Contains("Identity", StringComparer.OrdinalIgnoreCase))
                     ValidateOptions(validator, settings, rootConfiguration);
 
-                if (settings.EnabledFeatures.Any(feature => Matches(feature, "Secrets")) &&
-                    !settings.DisabledFeatures.Any(feature => Matches(feature, "Secrets")))
+                if (enabledFeatures.Contains("Secrets", StringComparer.OrdinalIgnoreCase))
                 {
                     var secretsOptions = new SecretsOptions();
                     new ShellConfiguration(settings, rootConfiguration).GetSection("Secrets").Bind(secretsOptions);
@@ -93,13 +89,6 @@ internal static class IdentityTokenStartupValidation
             cursor = page.NextCursor;
         } while (cursor is not null);
     }
-
-    private static bool RegistersIdentityTokenOptions(ShellSettings settings) =>
-        settings.EnabledFeatures.Any(x => Matches(x, IdentityFeatureName) || Matches(x, DefaultAuthenticationFeatureName))
-        && !settings.DisabledFeatures.Any(x => Matches(x, IdentityFeatureName));
-
-    private static bool Matches(string featureName, string key) =>
-        string.Equals(featureName, key, StringComparison.OrdinalIgnoreCase);
 
     private static void ValidateOptions(ValidateIdentityTokenOptions validator, ShellSettings settings, IConfiguration rootConfiguration)
     {
