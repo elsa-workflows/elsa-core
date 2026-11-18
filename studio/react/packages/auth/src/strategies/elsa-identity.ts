@@ -3,6 +3,7 @@ import { translate } from "@elsa-workflows/react-studio-sdk/localization";
 import type { AuthConfig } from "@elsa-workflows/react-studio-sdk/config";
 import { readTokens, writeTokens } from "../storage.js";
 import { BaseAuthStrategy, isJwtExpired, userFromJwt, type PasswordCredentials } from "../types.js";
+import { joinAuthEndpoint } from "./url.js";
 
 interface LoginResponse {
   isAuthenticated: boolean;
@@ -33,7 +34,7 @@ export class ElsaIdentityAuthStrategy extends BaseAuthStrategy {
   }
 
   private url(path: string) {
-    return `${this.apiBaseUrl.replace(/\/+$/, "")}/${path.replace(/^\/+/, "")}`;
+    return joinAuthEndpoint(this.apiBaseUrl, path);
   }
 
   async initialize() {

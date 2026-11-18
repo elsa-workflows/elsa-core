@@ -3,7 +3,6 @@
 
 const {
   REGEX_BACKSLASH,
-  REGEX_REMOVE_BACKSLASH,
   REGEX_SPECIAL_CHARS,
   REGEX_SPECIAL_CHARS_GLOBAL
 } = require('./constants');
@@ -28,9 +27,41 @@ exports.isWindows = () => {
 };
 
 exports.removeBackslashes = str => {
-  return str.replace(REGEX_REMOVE_BACKSLASH, match => {
-    return match === '\\' ? '' : match;
-  });
+  const output = [];
+  const lineBreaks = /[\n\r\u2028\u2029]/g;
+  const isLineBreak = /[\n\r\u2028\u2029]/;
+  let lineEnd = -1;
+  let bracketEnd = 0;
+
+  for (let index = 0; index < str.length; index++) {
+    const character = str[index];
+    if (character === '[') {
+      if (lineEnd < index) {
+        lineBreaks.lastIndex = index + 1;
+        const nextBreak = lineBreaks.exec(str);
+        lineEnd = nextBreak ? nextBreak.index : str.length;
+      }
+
+      // Match the first closing bracket with a non-backslash predecessor.
+      // Keep the search cursor across openings so each character is examined once.
+      bracketEnd = Math.max(bracketEnd, index + 2);
+      while (bracketEnd < str.length && (str[bracketEnd] !== ']' || str[bracketEnd - 1] === '\\')) {
+        bracketEnd++;
+      }
+
+      if (bracketEnd < str.length && bracketEnd <= lineEnd + 1) {
+        output.push(str.slice(index, bracketEnd + 1));
+        index = bracketEnd;
+        continue;
+      }
+    }
+
+    if (character !== '\\' || index + 1 === str.length || isLineBreak.test(str[index + 1])) {
+      output.push(character);
+    }
+  }
+
+  return output.join('');
 };
 
 exports.escapeLast = (input, char, lastIdx) => {

@@ -3,6 +3,7 @@ import { authConfigSchema, serverConfigSchema } from "@elsa-workflows/react-stud
 import { createAuthStrategy } from "./create-strategy.js";
 import { PermissionSet } from "./permissions.js";
 import { ElsaExternalAuthStrategy } from "./strategies/elsa-external.js";
+import { ElsaIdentityAuthStrategy } from "./strategies/elsa-identity.js";
 import { readTokens, writeTokens } from "./storage.js";
 
 function storage() {
@@ -42,6 +43,18 @@ describe("shared authentication", () => {
     expect(request).toHaveBeenLastCalledWith("https://a.example.invalid/api/identity/logout", expect.objectContaining({
       method: "POST", body: JSON.stringify({ refreshToken: "refresh-a" }),
     }));
+  });
+
+  it("joins the configured backend and login path with one slash", async () => {
+    const request = vi.fn(async () => Response.json({ isAuthenticated: true, accessToken: token("Alice") }));
+    vi.stubGlobal("fetch", request);
+    const strategy = new ElsaIdentityAuthStrategy("https://a.example.invalid/api//", {
+      ...identity.elsaIdentity, loginPath: "//identity/login",
+    }, "a");
+
+    await strategy.login({ username: "Alice", password: "test-only" });
+
+    expect(request).toHaveBeenCalledWith("https://a.example.invalid/api/identity/login", expect.any(Object));
   });
 
   it("ends a rejected session when no refresh credential was issued", async () => {

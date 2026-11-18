@@ -73,7 +73,15 @@ for entry in "${clientlibs[@]}"; do
         # Verify the archive built from this checkout even when npm has a warm cache.
         matcher_cache="$clientlib/.cache"
         mkdir -p "$matcher_cache"
-        packed="$(npm pack "$glob_matcher" --ignore-scripts --pack-destination "$matcher_cache" --silent)"
+        packed="$(
+            set -e
+            pack_source="$(mktemp -d "$matcher_cache/glob-matcher.XXXXXX")"
+            trap 'rm -rf -- "$pack_source"' EXIT
+            cp -R "$glob_matcher/." "$pack_source/"
+            # npm pack records file modes in the archive, and checkout umasks can differ.
+            find "$pack_source" -type f -exec chmod 0644 {} +
+            npm pack "$pack_source" --ignore-scripts --pack-destination "$matcher_cache" --silent
+        )"
         if [[ "$matcher_archive" != "file:.cache/$packed" ]]; then
             echo "Studio glob matcher version does not match the reviewed lock: $reviewed_lock" >&2
             exit 1
