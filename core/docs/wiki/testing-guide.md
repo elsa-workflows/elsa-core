@@ -34,8 +34,14 @@ Shared helpers:
 | Console log capture, buffering, or endpoints | `Elsa.Diagnostics.ConsoleLogs.UnitTests` or `Elsa.Diagnostics.ConsoleLogs.IntegrationTests`. |
 | OpenTelemetry diagnostics collection or endpoints | `Elsa.Diagnostics.OpenTelemetry.UnitTests` or `Elsa.Diagnostics.OpenTelemetry.IntegrationTests`. |
 | Dashboard API endpoints or aggregation logic | `Elsa.Dashboard.Api.UnitTests`. |
-| AI/Weaver abstractions or host behavior | `Elsa.AI.Abstractions.UnitTests`, `Elsa.AI.Host.UnitTests`, or `Elsa.AI.IntegrationTests`. |
+| AI/Weaver abstractions, copilot, or host behavior | `Elsa.AI.Abstractions.UnitTests`, `Elsa.AI.Copilot.UnitTests`, `Elsa.AI.Host.UnitTests`, or `Elsa.AI.IntegrationTests`. |
 | Persistence vNext store or physicalization logic | `Elsa.Persistence.VNext.UnitTests`. |
+| BPMN process semantics or execution | `Elsa.Bpmn.UnitTests` or `Elsa.Bpmn.IntegrationTests`. |
+| BPMN interchange, XML import, or REST endpoints | `Elsa.Bpmn.Interchange.UnitTests` or `Elsa.Bpmn.Interchange.IntegrationTests`. |
+| User Tasks behavior or EF Core persistence | `Elsa.UserTasks.UnitTests` or `Elsa.UserTasks.Persistence.EFCore.UnitTests`. |
+| External authentication behavior or OIDC adapter | `Elsa.ExternalAuthentication.UnitTests` or `Elsa.ExternalAuthentication.IntegrationTests`. |
+| Connections credential lifecycle | `Elsa.Connections.UnitTests`. |
+| Alterations behavior or store | `Elsa.Alterations.Core.UnitTests` or `Elsa.Alterations.IntegrationTests`. |
 
 ## Useful Commands
 
