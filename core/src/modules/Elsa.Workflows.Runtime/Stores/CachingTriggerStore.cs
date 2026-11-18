@@ -61,8 +61,15 @@ public class CachingTriggerStore(ITriggerStore decoratedStore, ICacheManager cac
     /// <inheritdoc />
     public async ValueTask ReplaceAsync(IEnumerable<StoredTrigger> removed, IEnumerable<StoredTrigger> added, CancellationToken cancellationToken = default)
     {
-        await cacheManager.TriggerTokenAsync(CacheInvalidationTokenKey, cancellationToken);
-        await decoratedStore.ReplaceAsync(removed, added, cancellationToken);
+        try
+        {
+            await decoratedStore.ReplaceAsync(removed, added, cancellationToken);
+        }
+        finally
+        {
+            // Discard reads that saw the old index while the store was changing.
+            await cacheManager.TriggerTokenAsync(CacheInvalidationTokenKey);
+        }
     }
 
     /// <inheritdoc />
