@@ -132,29 +132,19 @@ public class SkipIfInstanceExistsTests
         _sendEndpoint.Verify(x => x.Send(It.Is<DispatchWorkflowDefinition>(m => m.InstanceId == InstanceId && m.IsExistingInstance), It.IsAny<CancellationToken>()), Times.Once);
     }
 
-    [Fact]
-    public async Task ConsumerRunsExistingInstanceWhenPending()
-    {
-        _client.Setup(x => x.ExportStateAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new WorkflowState { SubStatus = WorkflowSubStatus.Pending });
-
-        await CreateConsumer().Consume(CreateExistingInstanceContext());
-
-        _client.Verify(x => x.RunInstanceAsync(It.IsAny<RunWorkflowInstanceRequest>(), It.IsAny<CancellationToken>()), Times.Once);
-    }
-
     [Theory]
-    [InlineData(WorkflowSubStatus.Suspended)]
-    [InlineData(WorkflowSubStatus.Executing)]
-    [InlineData(WorkflowSubStatus.Finished)]
-    [InlineData(WorkflowSubStatus.Faulted)]
-    public async Task ConsumerSkipsExistingInstanceWhenNotPending(WorkflowSubStatus subStatus)
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task ConsumerDelegatesPendingDecisionWithDeliveryId(bool starts)
     {
-        _client.Setup(x => x.ExportStateAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new WorkflowState { SubStatus = subStatus });
+        _client.Setup(x => x.RunInstanceIfPendingAsync(It.IsAny<RunWorkflowInstanceRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(starts ? new RunWorkflowInstanceResponse() : null);
 
         await CreateConsumer().Consume(CreateExistingInstanceContext());
 
+        _client.Verify(x => x.RunInstanceIfPendingAsync(It.Is<RunWorkflowInstanceRequest>(r => r.StartDeliveryId == DeliveryId),
+            It.IsAny<CancellationToken>()), Times.Once);
+        _client.Verify(x => x.ExportStateAsync(It.IsAny<CancellationToken>()), Times.Never);
         _client.Verify(x => x.RunInstanceAsync(It.IsAny<RunWorkflowInstanceRequest>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -227,7 +217,12 @@ public class SkipIfInstanceExistsTests
     private static ConsumeContext<DispatchWorkflowDefinition> CreateExistingInstanceContext()
     {
         var context = new Mock<ConsumeContext<DispatchWorkflowDefinition>>();
-        context.Setup(x => x.Message).Returns(DispatchWorkflowDefinition.DispatchExistingWorkflowInstance(InstanceId, triggerActivityId: null));
+        context.Setup(x => x.Message).Returns(new DispatchWorkflowDefinition
+        {
+            InstanceId = InstanceId,
+            IsExistingInstance = true,
+            StartDeliveryId = DeliveryId
+        });
         context.Setup(x => x.CancellationToken).Returns(CancellationToken.None);
         return context.Object;
     }

@@ -27,6 +27,44 @@ public class LocalWorkflowClientTests
     private readonly ILogger<LocalWorkflowClient> _logger = Substitute.For<ILogger<LocalWorkflowClient>>();
 
     [Fact]
+    public async Task ConcurrentPendingDeliveriesRunOnlyOnce()
+    {
+        var firstClient = CreateClient();
+        var secondClient = CreateClient();
+        SetupWorkflowGraph("test-definition");
+        var instance = CreateRunningInstance();
+        instance.SubStatus = WorkflowSubStatus.Pending;
+        instance.WorkflowState.SubStatus = WorkflowSubStatus.Pending;
+        instance.WorkflowState.Properties[WorkflowStartDelivery.IdProperty] = "delivery";
+        _workflowInstanceManager.FindByIdAsync(firstClient.WorkflowInstanceId, Arg.Any<CancellationToken>()).Returns(instance);
+
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var resume = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _workflowRunner.RunAsync(Arg.Any<WorkflowGraph>(), Arg.Any<WorkflowState>(), Arg.Any<RunWorkflowOptions>(), Arg.Any<CancellationToken>())
+            .Returns(async call =>
+            {
+                started.TrySetResult();
+                await resume.Task;
+                instance.SubStatus = WorkflowSubStatus.Suspended;
+                instance.WorkflowState.SubStatus = WorkflowSubStatus.Suspended;
+                return new RunWorkflowResult(null!, instance.WorkflowState, call.Arg<WorkflowGraph>().Workflow, null, Journal.Empty);
+            });
+
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        Assert.Null(await firstClient.RunInstanceIfPendingAsync(new() { StartDeliveryId = "different" }, timeout.Token));
+        var request = new RunWorkflowInstanceRequest { StartDeliveryId = "delivery" };
+        var first = firstClient.RunInstanceIfPendingAsync(request, timeout.Token);
+        await started.Task.WaitAsync(timeout.Token);
+        var duplicate = secondClient.RunInstanceIfPendingAsync(request, timeout.Token);
+        resume.SetResult();
+
+        Assert.NotNull(await first);
+        Assert.Null(await duplicate);
+        await _workflowRunner.Received(1).RunAsync(Arg.Any<WorkflowGraph>(), Arg.Any<WorkflowState>(),
+            Arg.Any<RunWorkflowOptions>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task CreateInstanceAsync_ThrowsWorkflowDefinitionNotFoundException_WhenDefinitionDoesNotExist()
     {
         // Arrange

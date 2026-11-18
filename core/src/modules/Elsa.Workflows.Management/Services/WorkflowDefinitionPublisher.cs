@@ -68,7 +68,7 @@ public class WorkflowDefinitionPublisher(
 
     /// <inheritdoc />
     public async Task<PublishWorkflowDefinitionResult> PublishAsync(WorkflowDefinition definition,
-        IReadOnlyCollection<WorkflowDefinition> expectedVersions, CancellationToken cancellationToken = default)
+        IReadOnlyCollection<WorkflowDefinition> expectedVersions, CancellationToken cancellationToken)
     {
         if (expectedVersions.Count == 0 || string.IsNullOrWhiteSpace(definition.Id) || string.IsNullOrWhiteSpace(definition.DefinitionId) || definition.Version <= 0)
             throw new WorkflowDefinitionEditConflictException();

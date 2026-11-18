@@ -29,6 +29,8 @@ public class LocalWorkflowClient(
     ILogger<LocalWorkflowClient> logger,
     IWorkflowExecutionGuard? workflowExecutionGuard = null) : IWorkflowClient
 {
+    private static readonly Dictionary<string, PendingStartLock> PendingStartLocks = new(StringComparer.Ordinal);
+
     /// <summary>Retains the original constructor for hosts without an admission guard.</summary>
     public LocalWorkflowClient(string workflowInstanceId, IWorkflowInstanceManager workflowInstanceManager,
         IWorkflowDefinitionService workflowDefinitionService, IWorkflowRunner workflowRunner, IWorkflowCanceler workflowCanceler,
@@ -93,16 +95,50 @@ public class LocalWorkflowClient(
     /// <inheritdoc />
     public async Task<RunWorkflowInstanceResponse?> RunInstanceIfPendingAsync(RunWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
     {
-        await DemandUnownedAsync(workflowInstanceId, cancellationToken);
-        var workflowInstance = await GetWorkflowInstanceAsync(cancellationToken);
-
-        if (workflowInstance.SubStatus != WorkflowSubStatus.Pending || !WorkflowStartDelivery.Matches(workflowInstance.WorkflowState, request.StartDeliveryId))
+        // Clients for the same instance can be created by concurrent transport deliveries.
+        PendingStartLock startLock;
+        lock (PendingStartLocks)
         {
-            logger.LogDebug("Skipping pending start of workflow instance {WorkflowInstanceId} because the status or delivery no longer matches ({SubStatus}).", workflowInstanceId, workflowInstance.SubStatus);
-            return null;
+            if (!PendingStartLocks.TryGetValue(workflowInstanceId, out startLock!))
+            {
+                startLock = new();
+                PendingStartLocks.Add(workflowInstanceId, startLock);
+            }
+            startLock.Users++;
         }
 
-        return await RunInstanceAsync(workflowInstance, request, cancellationToken);
+        try
+        {
+            await startLock.Semaphore.WaitAsync(cancellationToken);
+            try
+            {
+                await DemandUnownedAsync(workflowInstanceId, cancellationToken);
+                var workflowInstance = await GetWorkflowInstanceAsync(cancellationToken);
+
+                if (workflowInstance.SubStatus != WorkflowSubStatus.Pending || !WorkflowStartDelivery.Matches(workflowInstance.WorkflowState, request.StartDeliveryId))
+                {
+                    logger.LogDebug("Skipping pending start of workflow instance {WorkflowInstanceId} because the status or delivery no longer matches ({SubStatus}).", workflowInstanceId, workflowInstance.SubStatus);
+                    return null;
+                }
+
+                return await RunInstanceAsync(workflowInstance, request, cancellationToken);
+            }
+            finally
+            {
+                startLock.Semaphore.Release();
+            }
+        }
+        finally
+        {
+            lock (PendingStartLocks)
+            {
+                if (--startLock.Users == 0)
+                {
+                    PendingStartLocks.Remove(workflowInstanceId);
+                    startLock.Semaphore.Dispose();
+                }
+            }
+        }
     }
 
     /// <inheritdoc />
@@ -314,6 +350,12 @@ public class LocalWorkflowClient(
         if (!result.WorkflowDefinitionExists) throw new WorkflowDefinitionNotFoundException("Workflow definition not found.", definitionHandle);
         if (!result.WorkflowGraphExists) throw new WorkflowMaterializerNotFoundException(result.WorkflowDefinition!.MaterializerName);
         return result.WorkflowGraph!;
+    }
+
+    private sealed class PendingStartLock
+    {
+        public SemaphoreSlim Semaphore { get; } = new(1, 1);
+        public int Users { get; set; }
     }
 
     private sealed class CompatibilityActivationGate : IWorkflowActivationGate

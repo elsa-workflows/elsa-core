@@ -32,6 +32,9 @@ public abstract class GroundingToolBase : IAITool
             ? jsonObject
             : null;
 
+    protected static AIToolDefinition ReadOnlyDefinition(string name, string displayName, string description, JsonObject schema) =>
+        ReadOnlyDefinition(name, displayName, description, schema, []);
+
     protected static AIToolDefinition ReadOnlyDefinition(string name, string displayName, string description, JsonObject schema, params string[] permissions) =>
         new()
         {
@@ -43,6 +46,9 @@ public abstract class GroundingToolBase : IAITool
             Mutability = AIToolMutability.ReadOnly,
             DangerLevel = AIToolDangerLevel.Low
         };
+
+    protected static AIToolDefinition ProposalDefinition(string name, string displayName, string description, JsonObject schema) =>
+        ProposalDefinition(name, displayName, description, schema, []);
 
     protected static AIToolDefinition ProposalDefinition(string name, string displayName, string description, JsonObject schema, params string[] permissions) =>
         new()

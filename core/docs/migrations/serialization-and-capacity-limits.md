@@ -39,3 +39,9 @@ Elasticsearch does not interpret custom `WorkflowInstanceFilter.TimestampFilters
 The opt-in VNext user task repository resolves an invitation from its token hash through the existing invitation storage unit. It checks the reference against the current task before returning an invitation. New invitation writes register their lookup before committing the task. A lookup reference from an interrupted task write cannot authorize an invitation absent from the committed task.
 
 Existing VNext tasks keep their invitation records. Before enabling guest invitation verification on an upgraded deployment, use `VNextUserTaskRepository.IndexInvitationTokensAsync(tenantId, taskId)` for each retained task with outstanding invitations, or reissue those invitations. The operation can be run again safely and does not change the task revision. Invitation verification never scans stored tasks, so a legacy invitation remains unavailable until its lookup is registered. No schema migration or change to the EF Core user task provider is required.
+
+## MassTransit pending workflow starts
+
+Pause new workflow dispatches on the old version. Keep the old outbox processors and broker consumers running until they finish handing off existing starts. Check every tenant and configured channel. Confirm the workflow dispatch outbox has no undelivered child starts, the broker has no ready or unacknowledged start messages, and no corresponding instances remain Pending. Reconcile failed or dead-lettered deliveries using the old deployment and the original outbox and parent records before upgrading.
+
+The upgraded dispatcher matches retries to the recorded owner of a pending start. A previously persisted start whose broker send failed may have no owner marker and no matching broker message. Resolve any such starts before switching versions. In a Proto.Actor deployment, upgrade the nodes hosting the actors before enabling the upgraded start consumers.

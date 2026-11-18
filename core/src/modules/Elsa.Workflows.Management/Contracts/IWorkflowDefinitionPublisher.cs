@@ -56,7 +56,7 @@ public interface IWorkflowDefinitionPublisher
     /// </summary>
     /// <exception cref="Exceptions.WorkflowDefinitionEditConflictException">The authorized version set is stale or cannot be written atomically.</exception>
     Task<PublishWorkflowDefinitionResult> PublishAsync(WorkflowDefinition definition, IReadOnlyCollection<WorkflowDefinition> expectedVersions,
-        CancellationToken cancellationToken = default) => throw new Exceptions.WorkflowDefinitionEditConflictException();
+        CancellationToken cancellationToken) => throw new Exceptions.WorkflowDefinitionEditConflictException();
 
     /// <summary>
     /// Retracts a workflow definition.
