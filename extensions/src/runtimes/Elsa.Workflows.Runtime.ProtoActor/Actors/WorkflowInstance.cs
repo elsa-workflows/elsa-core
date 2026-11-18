@@ -221,6 +221,18 @@ internal class WorkflowInstance(
         };
     }
 
+    public override Task RunIfPending(RunWorkflowInstanceRequest request, Action<RunIfPendingWorkflowInstanceResponse> respond, Action<string> onError)
+    {
+        Context.ReenterAfter(RunIfPending(request), completedTask =>
+        {
+            if (completedTask.IsCompletedSuccessfully)
+                respond(completedTask.Result);
+            else
+                onError(completedTask.Exception?.Message ?? "The workflow start was canceled.");
+        });
+        return Task.CompletedTask;
+    }
+
     public override async Task<RunIfPendingWorkflowInstanceResponse> RunIfPending(RunWorkflowInstanceRequest request)
     {
         if (_isRunning)
