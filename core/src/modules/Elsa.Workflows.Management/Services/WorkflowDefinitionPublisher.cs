@@ -338,7 +338,9 @@ public class WorkflowDefinitionPublisher(
         }
 
         if (existingDraft != null)
+        {
             return await PromoteExistingDraftAsync(draft, existingDraft, latestVersion, snapshot, cancellationToken);
+        }
 
         draft.Version = draft.Id == expectedId ? latestVersion.Version : (highestVersion?.Version ?? latestVersion.Version) + 1;
         draft.IsLatest = true;
@@ -362,7 +364,9 @@ public class WorkflowDefinitionPublisher(
     {
         if (existingDraft.IsLatest || existingDraft.IsPublished || existingDraft.IsReadonly || existingDraft.IsSystem ||
             existingDraft.TenantId != latestVersion.TenantId)
+        {
             throw new WorkflowDefinitionEditConflictException();
+        }
 
         var draftSnapshot = activitySerializer.Serialize(existingDraft);
         var expected = new Dictionary<string, string>
@@ -378,7 +382,9 @@ public class WorkflowDefinitionPublisher(
         await mediator.SendAsync(new WorkflowDefinitionDraftSaving(draft), cancellationToken);
 
         if (!await workflowDefinitionStore.TryPromoteExistingDraftAsync(draft, MatchesExpected, cancellationToken))
+        {
             throw new WorkflowDefinitionEditConflictException();
+        }
 
         await mediator.SendAsync(new WorkflowDefinitionDraftSaved(draft), cancellationToken);
         return draft;

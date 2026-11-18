@@ -209,7 +209,9 @@ internal class DapperWorkflowDefinitionStore(Store<WorkflowDefinitionRecord> sto
                 draft.TenantId == Tenant.AgnosticTenantId && !SharedTenantWriteScope.IsGranted(typeof(WorkflowDefinition)) ||
                 draft.IsLatest || draft.IsPublished || draft.IsReadonly || draft.IsSystem ||
                 !definition.IsLatest || definition.IsPublished)
+            {
                 return false;
+            }
 
             current.Add(draft);
         }
@@ -229,7 +231,9 @@ internal class DapperWorkflowDefinitionStore(Store<WorkflowDefinitionRecord> sto
             {
                 previous.IsLatest = false;
                 if (!promoteDraft)
+                {
                     previous.IsPublished = false;
+                }
                 var update = connectionProvider.CreateQuery().Update(store.TableName, previous, store.PrimaryKey,
                     [nameof(WorkflowDefinitionRecord.IsLatest), nameof(WorkflowDefinitionRecord.IsPublished)]);
                 if (await connection.ExecuteAsync(Command(update)) != 1)
