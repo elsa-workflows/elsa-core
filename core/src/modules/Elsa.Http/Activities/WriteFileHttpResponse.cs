@@ -7,7 +7,7 @@ using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Exceptions;
 using Elsa.Workflows.Models;
-using FluentStorage.Blobs;
+using FluentStorage.Model;
 using FluentStorage.Utils.Extensions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -174,7 +174,7 @@ public class WriteFileHttpResponse : Activity
         return Convert.ToBase64String(hash);
     }
 
-    private async Task<(Blob, Stream, Func<ValueTask>)> GenerateZipFileAsync(ActivityExecutionContext context, HttpContext httpContext, ICollection<Func<ValueTask<Downloadable>>> downloadables)
+    private async Task<(StoreObject, Stream, Func<ValueTask>)> GenerateZipFileAsync(ActivityExecutionContext context, HttpContext httpContext, ICollection<Func<ValueTask<Downloadable>>> downloadables)
     {
         var cancellationToken = context.CancellationToken;
         var downloadCorrelationId = GetDownloadCorrelationId(context, httpContext);
@@ -192,7 +192,7 @@ public class WriteFileHttpResponse : Activity
         }
     }
 
-    private async Task<(Blob, Stream, Func<ValueTask>)?> TryLoadCachedFileAsync(ActivityExecutionContext context, HttpContext httpContext)
+    private async Task<(StoreObject, Stream, Func<ValueTask>)?> TryLoadCachedFileAsync(ActivityExecutionContext context, HttpContext httpContext)
     {
         var downloadCorrelationId = GetDownloadCorrelationId(context, httpContext);
 

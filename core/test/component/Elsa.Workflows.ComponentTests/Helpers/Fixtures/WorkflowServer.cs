@@ -86,7 +86,7 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                         assemblyDirectory, "Scenarios"
                     };
                     var workflowsDirectory = Path.Join(workflowsDirectorySegments);
-                    return StorageFactory.Blobs.DirectoryFiles(workflowsDirectory);
+                    return StorageFactory.Disk(workflowsDirectory);
                 });
                 elsa.UseIdentity(identity => identity.UseEntityFrameworkCore(ef =>
                 {

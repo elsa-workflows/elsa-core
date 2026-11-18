@@ -3,7 +3,7 @@ using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Elsa.Storage.Files.Services;
 using FluentStorage;
-using FluentStorage.Blobs;
+using FluentStorage.Storage;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Storage.Files.Features;
@@ -21,7 +21,7 @@ public class FileStorageFeature : FeatureBase
     /// <summary>
     /// The blob storage to use.
     /// </summary>
-    public Func<IServiceProvider, IBlobStorage> BlobStorage { get; set; } = _ => StorageFactory.Blobs.DirectoryFiles(GetDefaultStorageDirectory());
+    public Func<IServiceProvider, IStore> BlobStorage { get; set; } = _ => StorageFactory.Disk(GetDefaultStorageDirectory());
 
     /// <inheritdoc />
     public override void Configure()

@@ -2,7 +2,7 @@ using System.Buffers;
 using System.IO.Compression;
 using Elsa.Common;
 using Elsa.Http.Options;
-using FluentStorage.Blobs;
+using FluentStorage.Model;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -31,7 +31,7 @@ internal class ZipManager
         _logger = logger;
     }
 
-    public async Task<(Blob, Stream, Action)> CreateAsync(
+    public async Task<(StoreObject, Stream, Action)> CreateAsync(
         ICollection<Func<ValueTask<Downloadable>>> downloadables,
         bool cache,
         string? downloadCorrelationId,
@@ -62,7 +62,7 @@ internal class ZipManager
     /// <param name="downloadCorrelationId">The download correlation ID.</param>
     /// <param name="cancellationToken">An optional cancellation token.</param>
     /// <returns>A tuple containing the blob and the stream.</returns>
-    public async Task<(Blob, Stream)?> LoadAsync(string downloadCorrelationId, CancellationToken cancellationToken = default)
+    public async Task<(StoreObject, Stream)?> LoadAsync(string downloadCorrelationId, CancellationToken cancellationToken = default)
     {
         if (!TryGetCacheFilename(downloadCorrelationId, out var fileCacheFilename))
         {
@@ -71,7 +71,7 @@ internal class ZipManager
         }
 
         var fileCacheStorage = _fileCacheStorageProvider.GetStorage();
-        var blob = await fileCacheStorage.GetBlobAsync(fileCacheFilename, cancellationToken);
+        var blob = await fileCacheStorage.GetObjectInfo(fileCacheFilename, cancellationToken);
 
         if (blob == null)
             return null;
@@ -90,7 +90,7 @@ internal class ZipManager
             // File expired. Try to delete it.
             try
             {
-                await fileCacheStorage.DeleteAsync(safeBlobPath, cancellationToken);
+                await fileCacheStorage.DeleteObject(safeBlobPath, cancellationToken);
             }
             catch (Exception e)
             {
@@ -100,7 +100,7 @@ internal class ZipManager
             return null;
         }
 
-        var stream = await fileCacheStorage.OpenReadAsync(safeBlobPath, cancellationToken);
+        var stream = await fileCacheStorage.OpenRead(safeBlobPath, cancellationToken);
         return (blob, stream);
     }
     
@@ -148,8 +148,8 @@ internal class ZipManager
         var fileCacheStorage = _fileCacheStorageProvider.GetStorage();
         var expiresAt = _clock.UtcNow.Add(_fileCacheOptions.Value.TimeToLive);
         var cachedBlob = CreateBlob(fileCacheFilename, downloadAsFilename, contentType, expiresAt);
-        await fileCacheStorage.WriteFileAsync(fileCacheFilename, localPath, cancellationToken);
-        await fileCacheStorage.SetBlobAsync(cachedBlob, cancellationToken: cancellationToken);
+        await fileCacheStorage.UploadObject(fileCacheFilename, localPath, true, cancellationToken); // overwrite file added
+        await fileCacheStorage.SetObjectInfo(cachedBlob, cancellationToken: cancellationToken);
     }
 
     /// <summary>
@@ -160,21 +160,21 @@ internal class ZipManager
     /// <param name="contentType">The content type of the file.</param>
     /// <param name="expiresAt">The date and time at which the file expires.</param>
     /// <returns>The blob.</returns>
-    private Blob CreateBlob(string fullPath, string? downloadAsFilename, string? contentType, DateTimeOffset? expiresAt = default)
+    private StoreObject CreateBlob(string fullPath, string? downloadAsFilename, string? contentType, DateTimeOffset? expiresAt = default)
     {
         (downloadAsFilename, contentType) = GetDownloadableMetadata(downloadAsFilename, contentType);
 
         var now = _clock.UtcNow;
         
-        var blob = new Blob(fullPath)
+        var blob = new StoreObject(fullPath)
         {
             Metadata =
             {
                 ["ContentType"] = contentType,
                 ["Filename"] = downloadAsFilename
             },
-            CreatedTime = now,
-            LastModificationTime = now
+            DateCreated = now,
+            DateModified = now
         };
         
         if(expiresAt.HasValue)

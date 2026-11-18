@@ -1,5 +1,4 @@
 using CShells.Features;
-using Elsa.Extensions;
 using Elsa.Storage.Files.Services;
 using FluentStorage;
 using JetBrains.Annotations;
@@ -20,7 +19,7 @@ public class FileStorageShellFeature : IShellFeature
 
     public void ConfigureServices(IServiceCollection services)
     {
-        var blobStorage = StorageFactory.Blobs.DirectoryFiles(_storageDirectory);
+        var blobStorage = StorageFactory.Disk(_storageDirectory);
         services.AddScoped<IBlobStorageProvider>(sp => new BlobStorageProvider(blobStorage));
     }
 
@@ -33,4 +32,3 @@ public class FileStorageShellFeature : IShellFeature
         return Path.Combine(Path.GetTempPath(), "Elsa", "Storage", "Blobs");
     }
 }
-
