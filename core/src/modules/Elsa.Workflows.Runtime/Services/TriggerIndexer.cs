@@ -85,11 +85,23 @@ public class TriggerIndexer : ITriggerIndexer
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
                 _logger.LogWarning(ex, "Failed to load workflow graph for workflow definition version {WorkflowDefinitionVersionId}.", group.Key);
-                throw;
+                if (filter.RequireCompleteCleanup)
+                {
+                    throw;
+                }
+
+                continue;
             }
 
             if (workflowGraph == null)
+            {
+                if (filter.RequireCompleteCleanup)
+                {
+                    throw new InvalidOperationException("The workflow graph is unavailable for trigger cleanup.");
+                }
+
                 continue;
+            }
 
             var removed = group.ToList();
             await _triggerStore.ReplaceAsync(removed, [], cancellationToken);
