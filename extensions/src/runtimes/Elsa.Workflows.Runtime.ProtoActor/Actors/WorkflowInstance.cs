@@ -1,5 +1,6 @@
 using Elsa.Extensions;
 using Elsa.Workflows.Management;
+using Elsa.Workflows.Management.Exceptions;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Options;
 using Elsa.Workflows.Models;
@@ -60,8 +61,8 @@ internal class WorkflowInstance(
     {
         Context.ReenterAfter(CreateAsync(request), result =>
         {
-            if (result.IsFaulted)
-                onError(result.Exception.Message);
+            if (!result.IsCompletedSuccessfully)
+                onError(WorkflowInstanceRpcErrors.FromCreateFailure(result));
             else
                 respond(new());
         });
@@ -95,8 +96,8 @@ internal class WorkflowInstance(
     {
         Context.ReenterAfter(CreateAndRunAsync(request), async completedTask =>
         {
-            if (completedTask.IsFaulted)
-                onError(completedTask.Exception.Message);
+            if (!completedTask.IsCompletedSuccessfully)
+                onError(WorkflowInstanceRpcErrors.FromCreateFailure(completedTask));
             else
             {
                 var result = await completedTask;
@@ -108,17 +109,14 @@ internal class WorkflowInstance(
 
     private async Task CreateAsync(CreateWorkflowInstanceRequest request)
     {
-        if (_workflowInstanceId != null)
-        {
-            // If a workflow instance ID is already set, this is the cluster trying to repeat this call because it was too slow.
-            // This happens when debugging and the debugger is paused for a long time, for example.
-            if (_workflowInstanceId == request.WorkflowInstanceId || request.WorkflowInstanceId == null)
-                return;
+        var workflowInstanceId = GetWorkflowInstanceId();
+        if (!string.IsNullOrEmpty(request.WorkflowInstanceId) && request.WorkflowInstanceId != workflowInstanceId)
+            throw new InvalidOperationException("The workflow instance identifier must match the actor identity.");
 
-            throw new InvalidOperationException($"Attempted to create a new workflow instance with ID {request.WorkflowInstanceId} while an instance with ID {_workflowInstanceId} is already running.");
-        }
+        if (HasState())
+            throw new WorkflowInstanceAlreadyExistsException(workflowInstanceId);
 
-        await CreateNewWorkflowInstanceAsync(request, Context.CancellationToken);
+        await CreateNewWorkflowInstanceAsync(request, workflowInstanceId, Context.CancellationToken);
     }
 
     private async Task<RunWorkflowInstanceResponse> CreateAndRunAsync(CreateAndRunWorkflowInstanceRequest request)
@@ -313,22 +311,20 @@ internal class WorkflowInstance(
         if (_workflowInstanceId != null)
             return _workflowInstanceId;
 
-        // Parse the cluster identity to get the workflow instance ID.
         var clusterIdentity = Context.ClusterIdentity()!.Identity;
-        _workflowInstanceId = clusterIdentity.Split('-').Last();
+        _workflowInstanceId = Elsa.Extensions.ClusterExtensions.GetWorkflowInstanceId(clusterIdentity);
 
         return _workflowInstanceId;
     }
     
 
-    private async Task CreateNewWorkflowInstanceAsync(CreateWorkflowInstanceRequest request, CancellationToken cancellationToken)
+    private async Task CreateNewWorkflowInstanceAsync(CreateWorkflowInstanceRequest request, string workflowInstanceId, CancellationToken cancellationToken)
     {
         var workflowDefinitionHandle = mappers.WorkflowDefinitionHandleMapper.Map(request.WorkflowDefinitionHandle);
-        var workflowInstanceId = request.WorkflowInstanceId;
         var workflowGraph = await FindWorkflowGraphAsync(workflowDefinitionHandle, cancellationToken);
         var workflowInstanceOptions = new WorkflowInstanceOptions
         {
-            WorkflowInstanceId = workflowInstanceId.NullIfEmpty(),
+            WorkflowInstanceId = workflowInstanceId,
             CorrelationId = request.CorrelationId.NullIfEmpty(),
             Input = request.Input.DeserializeInput(),
             Properties = request.Properties.DeserializeProperties(),
