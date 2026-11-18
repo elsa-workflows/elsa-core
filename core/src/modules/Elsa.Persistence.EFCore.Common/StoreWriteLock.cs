@@ -3,7 +3,6 @@ using Elsa.Common.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Elsa.Persistence.EFCore;
 
@@ -21,7 +20,8 @@ internal sealed class StoreWriteLock
         cancellationToken.ThrowIfCancellationRequested();
         // A catalog query inside an ambient transaction could reserve a pooled connection while
         // waiting for another writer. Transactional commits retain the exclusive path.
-        if (System.Transactions.Transaction.Current is not null || context.Database.ProviderName != "Npgsql.EntityFrameworkCore.PostgreSQL" ||
+        var verify = context.GetService<IDbContextOptions>().FindExtension<ElsaDbContextOptionsExtension>()?.VerifyStoreKey;
+        if (verify is null || System.Transactions.Transaction.Current is not null ||
             context.Database.CurrentTransaction is not null)
         {
             return await AcquireExclusiveAsync(cancellationToken);
@@ -35,26 +35,24 @@ internal sealed class StoreWriteLock
         }
 
         var ids = entities.Cast<Entity>().Select(entity => entity.Id).Distinct(StringComparer.Ordinal).ToArray();
-        if (ids.Contains(null))
+        if (ids.Any(id => string.IsNullOrEmpty(id) || id.Any(c => !char.IsAsciiLetterOrDigit(c) && c is not ('-' or '_'))))
         {
             return await AcquireExclusiveAsync(cancellationToken);
         }
 
-        lock (_sync)
+        try
         {
-            // A lone writer can reserve its IDs immediately. Any second caller verifies database
-            // equality before it can overlap the first, including on customized schemas.
-            if (_writes.Count == 0)
+            if (await verify(context, table, key.GetColumnName(table)!, ids.Max(id => id.Length), cancellationToken))
             {
-                return Enqueue(ids);
+                var keys = ids.Select(id => id.Replace("-", "").Replace("_", "").ToUpperInvariant()).ToArray();
+                return await AcquireAsync(keys, cancellationToken);
             }
         }
-
-        if (!await HasOrdinalPrimaryKeyAsync(context, table, key, cancellationToken))
+        catch (DbException) when (!cancellationToken.IsCancellationRequested)
         {
-            return await AcquireExclusiveAsync(cancellationToken);
+            // Older servers and restricted catalog access can still use the regular write path.
         }
-        return await AcquireAsync(ids, cancellationToken);
+        return await AcquireExclusiveAsync(cancellationToken);
     }
 
     private async ValueTask<IDisposable> AcquireAsync(string[]? ids, CancellationToken cancellationToken)
@@ -96,34 +94,6 @@ internal sealed class StoreWriteLock
             }
         }
         node.Value.Ready.TrySetResult();
-    }
-
-    private static async Task<bool> HasOrdinalPrimaryKeyAsync(DbContext context, StoreObjectIdentifier table, IProperty key, CancellationToken cancellationToken)
-    {
-        // The live index decides equality. A database can override the model's collation or use citext.
-        // Only the standard deterministic text index allows locking by the ordinal CLR string.
-        var relation = context.GetService<ISqlGenerationHelper>().DelimitIdentifier(table.Name, table.Schema);
-        var column = key.GetColumnName(table);
-        try
-        {
-            return await context.Database.SqlQuery<bool>($"""
-                SELECT EXISTS (
-                    SELECT 1 FROM pg_catalog.pg_index i
-                    JOIN pg_catalog.pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = i.indkey[0]
-                    JOIN pg_catalog.pg_opclass op ON op.oid = i.indclass[0]
-                    JOIN pg_catalog.pg_collation c ON c.oid = i.indcollation[0]
-                    WHERE i.indrelid = pg_catalog.to_regclass({relation}) AND i.indisprimary AND i.indnkeyatts = 1
-                      AND a.attname = {column} AND a.atttypid IN ('pg_catalog.text'::regtype, 'pg_catalog.varchar'::regtype)
-                      AND a.atttypmod = -1 AND op.opcnamespace = 'pg_catalog'::regnamespace AND op.opcname = 'text_ops'
-                      AND a.attcollation = i.indcollation[0] AND c.collisdeterministic
-                ) AS "Value"
-                """).SingleAsync(cancellationToken);
-        }
-        catch (DbException exception) when (exception.SqlState is "42501" or "42703")
-        {
-            // Restricted catalog access or a server predating deterministic collation metadata.
-            return false;
-        }
     }
 
     // The queue contains active and waiting writers. A whole batch is admitted atomically,

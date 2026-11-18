@@ -15,9 +15,13 @@ public static class ElsaDbContextOptionsExtensions
     /// </summary>
     /// <param name="optionsBuilder">The options builder to install the extension on.</param>
     /// <param name="options">The options to install.</param>
-    public static DbContextOptionsBuilder UseElsaDbContextOptions(this DbContextOptionsBuilder optionsBuilder, ElsaDbContextOptions? options)
+    public static DbContextOptionsBuilder UseElsaDbContextOptions(this DbContextOptionsBuilder optionsBuilder, ElsaDbContextOptions? options) =>
+        optionsBuilder.UseElsaDbContextOptions(options, null);
+
+    /// <summary>Installs Elsa options and the provider's live primary-key verifier.</summary>
+    public static DbContextOptionsBuilder UseElsaDbContextOptions(this DbContextOptionsBuilder optionsBuilder, ElsaDbContextOptions? options, StoreKeyVerifier? verifyStoreKey)
     {
-        ((IDbContextOptionsBuilderInfrastructure)optionsBuilder).AddOrUpdateExtension(new ElsaDbContextOptionsExtension(options));
+        ((IDbContextOptionsBuilderInfrastructure)optionsBuilder).AddOrUpdateExtension(new ElsaDbContextOptionsExtension(options, verifyStoreKey));
         optionsBuilder.ReplaceService<IMigrationsAssembly, DbSchemaAwareMigrationAssembly>();
         return optionsBuilder;
     }

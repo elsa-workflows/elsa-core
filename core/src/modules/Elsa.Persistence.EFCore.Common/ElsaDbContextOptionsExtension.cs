@@ -12,8 +12,13 @@ public class ElsaDbContextOptionsExtension : IDbContextOptionsExtension
     /// Initializes a new instance of the <see cref="ElsaDbContextOptionsExtension"/> class.
     /// </summary>
     /// <param name="options">The options.</param>
-    public ElsaDbContextOptionsExtension(ElsaDbContextOptions? options)
+    public ElsaDbContextOptionsExtension(ElsaDbContextOptions? options) : this(options, null)
     {
+    }
+
+    internal ElsaDbContextOptionsExtension(ElsaDbContextOptions? options, StoreKeyVerifier? verifyStoreKey)
+    {
+        VerifyStoreKey = verifyStoreKey;
         Options = options;
     }
 
@@ -21,6 +26,8 @@ public class ElsaDbContextOptionsExtension : IDbContextOptionsExtension
     /// Gets the options.
     /// </summary>
     public ElsaDbContextOptions? Options { get; }
+
+    internal StoreKeyVerifier? VerifyStoreKey { get; }
 
     /// <inheritdoc />
     public DbContextOptionsExtensionInfo Info => new CustomDbContextOptionsExtensionInfo(this);

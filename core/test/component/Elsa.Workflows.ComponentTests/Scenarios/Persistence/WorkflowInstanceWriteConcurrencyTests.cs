@@ -23,7 +23,7 @@ public class WorkflowInstanceWriteConcurrencyTests(PostgreSqlStoreSaveManyFixtur
     [InlineData(false, false, true)]
     [InlineData(true, false, true)]
     [InlineData(false, false, false, true)]
-    public async Task ConcurrentSaves_PreserveRowsAndAllowIndependentPostgresWrites(bool sqlite, bool existing, bool caseInsensitive = false, bool boundedKey = false)
+    public async Task ConcurrentSaves_RespectPhysicalKeyEquality(bool sqlite, bool existing, bool caseInsensitive = false, bool boundedKey = false)
     {
         var codec = new PausingCodec();
         var services = new ServiceCollection();
@@ -108,7 +108,7 @@ public class WorkflowInstanceWriteConcurrencyTests(PostgreSqlStoreSaveManyFixtur
                     [Instance(independentId, "unused"), Instance(overlappingId, "overlap")], cancellation.Token).AsTask());
 
                 update = store.SaveAsync(Instance(caseInsensitive ? overlappingId : id, "second")).AsTask();
-                if (sqlite || caseInsensitive || boundedKey)
+                if (caseInsensitive || boundedKey)
                 {
                     using var timeout = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
                     await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>

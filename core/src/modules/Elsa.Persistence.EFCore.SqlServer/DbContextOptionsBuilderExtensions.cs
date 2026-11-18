@@ -15,7 +15,7 @@ public static class DbContextOptionsBuilderExtensions
     /// </summary>
     public static DbContextOptionsBuilder UseElsaSqlServer(this DbContextOptionsBuilder builder, Assembly migrationsAssembly, string connectionString, ElsaDbContextOptions? options = null, Action<SqlServerDbContextOptionsBuilder>? configure = null) =>
         builder
-            .UseElsaDbContextOptions(options)
+            .UseElsaDbContextOptions(options, SqlServerStoreKeyVerifier.VerifyAsync)
             .UseSqlServer(connectionString, db =>
             {
                 db
