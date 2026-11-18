@@ -183,7 +183,10 @@ public abstract class SharedStoreRoleTenancyTests : IAsyncLifetime
     public async Task SeedingNeitherReusesNorWidensATenantAgnosticAdminRole()
     {
         // A platform role shared by every tenant, which happens to carry the admin role's ID and name.
-        await RoleStore.SaveAsync(new Role { Id = AdminRoleName, Name = AdminRoleName, TenantId = Tenant.AgnosticTenantId, Permissions = ["workflows/*:view"] });
+        using (SharedTenantWriteScope.Enter<Role>())
+        {
+            await RoleStore.SaveAsync(new Role { Id = AdminRoleName, Name = AdminRoleName, TenantId = Tenant.AgnosticTenantId, Permissions = ["workflows/*:view"] });
+        }
 
         var adminB = await SeedAdminAsync(TenantB);
 

@@ -122,17 +122,30 @@ public abstract class AlterationStoreConformanceTests
 
         var agnosticPlan = Plan("plan-star", Tenant.AgnosticTenantId);
         var explicitPlan = Plan("plan-explicit", "tenant-a");
-        await scenario.Plans.SaveAsync(agnosticPlan);
+        using (SharedTenantWriteScope.Enter<AlterationPlan>())
+        {
+            await scenario.Plans.SaveAsync(agnosticPlan);
+        }
         await scenario.Plans.SaveAsync(explicitPlan);
         Assert.Equal(Tenant.AgnosticTenantId, agnosticPlan.TenantId);
         Assert.Equal("tenant-a", explicitPlan.TenantId);
 
         var agnosticJob = Job("job-star", Tenant.AgnosticTenantId);
         var explicitJob = Job("job-explicit", "tenant-a");
-        await scenario.Jobs.SaveAsync(agnosticJob);
+        using (SharedTenantWriteScope.Enter<AlterationJob>())
+        {
+            await scenario.Jobs.SaveAsync(agnosticJob);
+        }
         await scenario.Jobs.SaveAsync(explicitJob);
         Assert.Equal(Tenant.AgnosticTenantId, agnosticJob.TenantId);
         Assert.Equal("tenant-a", explicitJob.TenantId);
+
+        using (scenario.UseTenant("tenant-a"))
+        {
+            var namedPlan = Plan("plan-named", "tenant-a");
+            await scenario.Plans.SaveAsync(namedPlan);
+            Assert.Equal("tenant-a", namedPlan.TenantId);
+        }
 
         using (scenario.UseTenant(Tenant.DefaultTenantId))
         {
@@ -141,9 +154,6 @@ public abstract class AlterationStoreConformanceTests
             Assert.Equal(Tenant.DefaultTenantId, defaultPlan.TenantId);
             Assert.Equal(Tenant.DefaultTenantId, (await scenario.Plans.FindAsync(new AlterationPlanFilter { Id = "plan-null" }))!.TenantId);
 
-            var namedPlan = Plan("plan-named", "tenant-a");
-            await scenario.Plans.SaveAsync(namedPlan);
-            Assert.Equal("tenant-a", namedPlan.TenantId);
             Assert.Null(await scenario.Plans.FindAsync(new AlterationPlanFilter { Id = "plan-named" }));
 
             var defaultJob = Job("job-null", tenantId: null);
@@ -183,8 +193,14 @@ public abstract class AlterationStoreConformanceTests
         await scenario.Jobs.SaveAsync(Job("job-completed-1", "tenant-a", planId: "plan-1", status: AlterationJobStatus.Completed));
         await scenario.Jobs.SaveAsync(Job("job-pending-2", "tenant-a", planId: "plan-2", status: AlterationJobStatus.Pending));
         await scenario.Jobs.SaveAsync(Job("job-running-1", "tenant-a", planId: "plan-1", status: AlterationJobStatus.Running));
-        await scenario.Jobs.SaveAsync(Job("job-b-pending", "tenant-b", planId: "plan-1", status: AlterationJobStatus.Pending));
-        await scenario.Jobs.SaveAsync(Job("job-star-failed", Tenant.AgnosticTenantId, planId: "plan-1", status: AlterationJobStatus.Failed));
+        using (scenario.UseTenant("tenant-b"))
+        {
+            await scenario.Jobs.SaveAsync(Job("job-b-pending", "tenant-b", planId: "plan-1", status: AlterationJobStatus.Pending));
+        }
+        using (SharedTenantWriteScope.Enter<AlterationJob>())
+        {
+            await scenario.Jobs.SaveAsync(Job("job-star-failed", Tenant.AgnosticTenantId, planId: "plan-1", status: AlterationJobStatus.Failed));
+        }
 
         var plan1 = (await scenario.Jobs.FindManyAsync(new AlterationJobFilter { PlanId = "plan-1" }, CancellationToken.None))
             .Select(x => x.Id)
@@ -307,15 +323,27 @@ public abstract class AlterationStoreConformanceTests
     private static async Task SeedMixedPlansAsync(AlterationStoreScenario scenario)
     {
         await scenario.Plans.SaveAsync(Plan("plan-a", "tenant-a"));
-        await scenario.Plans.SaveAsync(Plan("plan-b", "tenant-b"));
-        await scenario.Plans.SaveAsync(Plan("plan-star", Tenant.AgnosticTenantId));
+        using (scenario.UseTenant("tenant-b"))
+        {
+            await scenario.Plans.SaveAsync(Plan("plan-b", "tenant-b"));
+        }
+        using (SharedTenantWriteScope.Enter<AlterationPlan>())
+        {
+            await scenario.Plans.SaveAsync(Plan("plan-star", Tenant.AgnosticTenantId));
+        }
     }
 
     private static async Task SeedMixedJobsAsync(AlterationStoreScenario scenario)
     {
         await scenario.Jobs.SaveAsync(Job("job-a", "tenant-a"));
-        await scenario.Jobs.SaveAsync(Job("job-b", "tenant-b"));
-        await scenario.Jobs.SaveAsync(Job("job-star", Tenant.AgnosticTenantId));
+        using (scenario.UseTenant("tenant-b"))
+        {
+            await scenario.Jobs.SaveAsync(Job("job-b", "tenant-b"));
+        }
+        using (SharedTenantWriteScope.Enter<AlterationJob>())
+        {
+            await scenario.Jobs.SaveAsync(Job("job-star", Tenant.AgnosticTenantId));
+        }
     }
 
     private static AlterationPlan Plan(string id, string? tenantId, AlterationPlanStatus status = AlterationPlanStatus.Pending) =>
