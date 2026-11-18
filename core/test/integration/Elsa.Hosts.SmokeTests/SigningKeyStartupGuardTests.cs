@@ -40,7 +40,7 @@ public class SigningKeyStartupGuardTests
     {
         // A key that is not a known default and survives the validator's rules must boot normally. The in-memory
         // override supplies the signing and encryption keys while leaving the shipped CShells map in place.
-        AssertBootStartsAtStartup<ModularServerHost>(configuration: new Dictionary<string, string>
+        AssertBootStartsAtStartup<ModularServerHost>(configuration: new Dictionary<string, string?>
         {
             [ModularFeatures + "Identity:SigningKey"] = Convert.ToHexString(RandomNumberGenerator.GetBytes(32)),
             [ModularSecretsEncryptionKey] = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)),
@@ -56,7 +56,7 @@ public class SigningKeyStartupGuardTests
             [ModularFeatures + "Identity"] = "false",
             [ModularFeatures + "DefaultAuthentication"] = "false",
             [ModularFeatures + "SqliteIdentityPersistence"] = "false",
-        }, configuration: new Dictionary<string, string>
+        }, configuration: new Dictionary<string, string?>
         {
             [ModularSecretsEncryptionKey] = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)),
         });
@@ -72,7 +72,7 @@ public class SigningKeyStartupGuardTests
                 [ModularFeatures + "SecretsJavaScript"] = "false",
                 [ModularFeatures + "ElsaSecretsExternalAuthentication"] = "true",
             },
-            configuration: new Dictionary<string, string>
+            configuration: new Dictionary<string, string?>
             {
                 [ModularFeatures + "Identity:SigningKey"] = Convert.ToHexString(RandomNumberGenerator.GetBytes(32)),
             });
@@ -90,7 +90,7 @@ public class SigningKeyStartupGuardTests
             [ModularFeatures + "Secrets"] = "false",
             [ModularFeatures + "SecretsJavaScript"] = "false",
             [ModularFeatures + "ElsaSecretsExternalAuthentication"] = "false",
-        }, configuration: new Dictionary<string, string>
+        }, configuration: new Dictionary<string, string?>
         {
             [ModularFeatures + "Identity:SigningKey"] = Convert.ToHexString(RandomNumberGenerator.GetBytes(32)),
         });
@@ -114,7 +114,7 @@ public class SigningKeyStartupGuardTests
         Assert.Contains("SigningKey", exception.GetBaseException().Message);
     }
 
-    private static void AssertBootStartsAtStartup<TEntryPoint>(string? environment = null, IReadOnlyDictionary<string, string>? settings = null, IReadOnlyDictionary<string, string>? configuration = null) where TEntryPoint : class
+    private static void AssertBootStartsAtStartup<TEntryPoint>(string? environment = null, IReadOnlyDictionary<string, string>? settings = null, IReadOnlyDictionary<string, string?>? configuration = null) where TEntryPoint : class
     {
         using var factory = new PlaceholderSigningKeyHostFixture<TEntryPoint>(environment, settings, configuration);
 
@@ -134,7 +134,7 @@ public class SigningKeyStartupGuardTests
 public class PlaceholderSigningKeyHostFixture<TEntryPoint>(
     string? environment = null,
     IReadOnlyDictionary<string, string>? settings = null,
-    IReadOnlyDictionary<string, string>? configuration = null) : WebApplicationFactory<TEntryPoint> where TEntryPoint : class
+    IReadOnlyDictionary<string, string?>? configuration = null) : WebApplicationFactory<TEntryPoint> where TEntryPoint : class
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
