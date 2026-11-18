@@ -54,6 +54,8 @@ pnpm host                # ASP.NET host on port 5201, mounted at /studio-preview
 # In another terminal: pnpm dev  (Vite on port 5173; config proxied to the host)
 ```
 
+The local build tools reject repeated extglob syntax in file filters. Standard globstars and brace expressions remain available. [Build dependency details](vendor/picomatch-build/README.md)
+
 Point `servers[0].url` in `studio.config.json` at your Elsa API, which is typically something like
 `https://localhost:5001/elsa/api`, then sign in. The default authentication provider is Elsa Identity,
 so a username and password is all you need.
