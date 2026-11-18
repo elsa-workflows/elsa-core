@@ -1,14 +1,20 @@
-import { cpSync } from "node:fs";
+import { cpSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const relativeDirectory = "vendor/picomatch-build";
-export const buildGlobOverride = `file:./${relativeDirectory}`;
+const buildGlobOverride = `file:./${relativeDirectory}`;
 const sourceDirectory = fileURLToPath(new URL(`../${relativeDirectory}/`, import.meta.url));
 
 export function copyBuildGlobTooling(projectDirectory) {
   cpSync(sourceDirectory, join(projectDirectory, relativeDirectory), { recursive: true, errorOnExist: true, force: false });
+}
+
+export function writeBuildGlobOverrides(projectDirectory, overrides = {}) {
+  const rows = Object.entries({ ...overrides, picomatch: buildGlobOverride })
+    .map(([name, version]) => `  ${JSON.stringify(name)}: ${JSON.stringify(version)}`);
+  writeFileSync(join(projectDirectory, "pnpm-workspace.yaml"), ["overrides:", ...rows, ""].join("\n"));
 }
 
 export function assertViteUsesHardenedGlobTooling(projectDirectory) {

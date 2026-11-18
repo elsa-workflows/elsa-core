@@ -3,7 +3,7 @@ import { cpSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync }
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
-import { assertViteUsesHardenedGlobTooling, buildGlobOverride, copyBuildGlobTooling } from "./build-glob-tooling.mjs";
+import { assertViteUsesHardenedGlobTooling, copyBuildGlobTooling, writeBuildGlobOverrides } from "./build-glob-tooling.mjs";
 import { readBundle } from "./npm-release.mjs";
 
 const root = process.cwd();
@@ -35,13 +35,15 @@ try {
   const consumer = join(temporary, "consumer");
   cpSync(join(root, "samples/weather-module"), consumer, { recursive: true });
   copyBuildGlobTooling(consumer);
+  writeBuildGlobOverrides(consumer, dependencies);
   writeFileSync(join(consumer, "package.json"), JSON.stringify({
     private: true, type: "module", dependencies: {
       ...dependencies, react: installed.dependencies.react, "react-dom": installed.dependencies["react-dom"],
       "lucide-react": installed.dependencies["lucide-react"], "@types/react": reactTypes.version,
     }, devDependencies: { vite: installed.devDependencies.vite,
       "@tailwindcss/vite": installed.devDependencies["@tailwindcss/vite"], tailwindcss: installed.devDependencies.tailwindcss,
-    }, pnpm: { overrides: { ...dependencies, picomatch: buildGlobOverride } },
+    },
+    packageManager: installed.packageManager,
   }));
   writeFileSync(join(consumer, "tsconfig.json"), JSON.stringify({ compilerOptions: {
     target: "ES2022", module: "NodeNext", moduleResolution: "NodeNext", strict: true,

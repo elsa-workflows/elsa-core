@@ -34,8 +34,7 @@ it("copies the hardened build matcher and license into a standalone module", () 
   const { output, result } = generate("studio-version", "3.11.0");
   expect(result.status, result.stderr).toBe(0);
   const client = join(output, "Module/Client");
-  const manifest = JSON.parse(readFileSync(join(client, "package.json"), "utf8"));
-  expect(manifest.pnpm.overrides.picomatch).toBe("file:./vendor/picomatch-build");
+  expect(readFileSync(join(client, "pnpm-workspace.yaml"), "utf8")).toBe('overrides:\n  "picomatch": "file:./vendor/picomatch-build"\n');
   const vendoredLicense = readFileSync(new URL("../../vendor/picomatch-build/LICENSE", import.meta.url), "utf8");
   expect(readFileSync(join(client, "vendor/picomatch-build/LICENSE"), "utf8")).toBe(vendoredLicense);
   expect(existsSync(join(client, "vendor/picomatch-build/lib/parse.js"))).toBe(true);
