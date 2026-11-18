@@ -154,12 +154,22 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
     }
 
     /// <inheritdoc />
-    public async Task<bool> TryPublishAsync(WorkflowDefinition definition, Func<IReadOnlyCollection<WorkflowDefinition>, bool> matchesExpected,
-        CancellationToken cancellationToken = default)
+    public Task<bool> TryPublishAsync(WorkflowDefinition definition, Func<IReadOnlyCollection<WorkflowDefinition>, bool> matchesExpected,
+        CancellationToken cancellationToken = default) =>
+        TryWriteLatestAsync(definition, matchesExpected, promoteDraft: false, cancellationToken);
+
+    /// <inheritdoc />
+    public Task<bool> TryPromoteExistingDraftAsync(WorkflowDefinition definition, Func<IReadOnlyCollection<WorkflowDefinition>, bool> matchesExpected,
+        CancellationToken cancellationToken = default) =>
+        TryWriteLatestAsync(definition, matchesExpected, promoteDraft: true, cancellationToken);
+
+    private async Task<bool> TryWriteLatestAsync(WorkflowDefinition definition, Func<IReadOnlyCollection<WorkflowDefinition>, bool> matchesExpected,
+        bool promoteDraft, CancellationToken cancellationToken)
     {
         await using var dbContext = await store.CreateDbContextAsync(cancellationToken);
         await using var transaction = await dbContext.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
-        var versions = dbContext.WorkflowDefinitions.Where(version => version.DefinitionId == definition.DefinitionId && (version.IsLatest || version.IsPublished));
+        var versions = dbContext.WorkflowDefinitions.Where(version => version.DefinitionId == definition.DefinitionId &&
+            (version.IsLatest || (promoteDraft ? version.Id == definition.Id : version.IsPublished)));
         var current = await versions.AsTracking().ToListAsync(cancellationToken);
         if (current.Count == 0 || await versions.WhereTenantCanWrite(dbContext).CountAsync(cancellationToken) != current.Count)
             return false;
@@ -170,6 +180,11 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
             return false;
 
         var replacing = current.SingleOrDefault(version => version.Id == definition.Id);
+        if (promoteDraft && (current.Count != 2 || replacing == null || replacing.IsLatest || replacing.IsPublished || replacing.IsReadonly ||
+                             replacing.IsSystem || current.Any(version => version.TenantId != replacing.TenantId) ||
+                             !definition.IsLatest || definition.IsPublished))
+            return false;
+
         if (replacing != null)
         {
             if (replacing.TenantId != definition.TenantId || replacing.Version != definition.Version)
@@ -192,7 +207,8 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
 
         foreach (var version in current.Where(version => version.Id != definition.Id))
         {
-            version.IsPublished = false;
+            if (!promoteDraft)
+                version.IsPublished = false;
             version.IsLatest = false;
         }
 

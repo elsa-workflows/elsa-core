@@ -1,5 +1,6 @@
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
+using Elsa.Common.Multitenancy;
 using Elsa.Extensions;
 using Elsa.Persistence.MongoDb.Common;
 using Elsa.Persistence.MongoDb.Helpers;
@@ -243,17 +244,30 @@ public class MongoWorkflowDefinitionStore(MongoDbStore<WorkflowDefinition> mongo
     }
 
     /// <inheritdoc />
-    public async Task<bool> TryPublishAsync(WorkflowDefinition definition, Func<IReadOnlyCollection<WorkflowDefinition>, bool> matchesExpected,
-        CancellationToken cancellationToken = default)
+    public Task<bool> TryPublishAsync(WorkflowDefinition definition, Func<IReadOnlyCollection<WorkflowDefinition>, bool> matchesExpected,
+        CancellationToken cancellationToken = default) =>
+        TryWriteLatestAsync(definition, matchesExpected, promoteDraft: false, cancellationToken);
+
+    /// <inheritdoc />
+    public Task<bool> TryPromoteExistingDraftAsync(WorkflowDefinition definition, Func<IReadOnlyCollection<WorkflowDefinition>, bool> matchesExpected,
+        CancellationToken cancellationToken = default) =>
+        TryWriteLatestAsync(definition, matchesExpected, promoteDraft: true, cancellationToken);
+
+    private async Task<bool> TryWriteLatestAsync(WorkflowDefinition definition, Func<IReadOnlyCollection<WorkflowDefinition>, bool> matchesExpected,
+        bool promoteDraft, CancellationToken cancellationToken)
     {
-        var targets = new WorkflowDefinitionFilter { DefinitionId = definition.DefinitionId, VersionOptions = VersionOptions.LatestOrPublished };
-        var observed = (await FindManyAsync(targets, cancellationToken)).ToList();
+        if (promoteDraft && definition.TenantId == Tenant.AgnosticTenantId &&
+            !SharedTenantWriteScope.IsGranted(typeof(WorkflowDefinition)))
+            return false;
+
+        var targets = new WorkflowDefinitionFilter { DefinitionId = definition.DefinitionId };
+        var observed = (await mongoDbStore.FindManyAsync(SelectTargets, cancellationToken)).ToList();
         if (observed.Count == 0)
             return false;
 
         var collection = mongoDbStore.GetCollection();
         var replaceOptions = new ReplaceOptions { Collation = Collation.Simple };
-        if (observed.Count == 1 && observed[0].Id == definition.Id)
+        if (!promoteDraft && observed.Count == 1 && observed[0].Id == definition.Id)
         {
             var snapshot = await LoadRawSnapshotAsync(definition.Id, cancellationToken);
             if (snapshot == null)
@@ -277,11 +291,16 @@ public class MongoWorkflowDefinitionStore(MongoDbStore<WorkflowDefinition> mongo
         var readyToCommit = false;
         try
         {
-            var current = await mongoDbStore.FindManyAsync(session, query => Filter(query, targets), cancellationToken);
+            var current = await mongoDbStore.FindManyAsync(session, SelectTargets, cancellationToken);
             if (current.Count == 0 || !matchesExpected(current))
                 return false;
 
             var replacing = current.SingleOrDefault(version => version.Id == definition.Id);
+            if (promoteDraft && (current.Count != 2 || replacing == null || replacing.IsLatest || replacing.IsPublished || replacing.IsReadonly ||
+                                 replacing.IsSystem || current.Any(version => version.TenantId != replacing.TenantId) ||
+                                 !definition.IsLatest || definition.IsPublished))
+                return false;
+
             var owner = current.FirstOrDefault(version => version.IsLatest) ?? current[0];
             if (replacing != null && (replacing.Version != definition.Version || replacing.TenantId != definition.TenantId) ||
                 replacing == null && definition.TenantId != owner.TenantId)
@@ -289,7 +308,9 @@ public class MongoWorkflowDefinitionStore(MongoDbStore<WorkflowDefinition> mongo
 
             foreach (var previous in current.Where(version => version.Id != definition.Id))
             {
-                var update = Builders<WorkflowDefinition>.Update.Set(version => version.IsLatest, false).Set(version => version.IsPublished, false);
+                var update = Builders<WorkflowDefinition>.Update.Set(version => version.IsLatest, false);
+                if (!promoteDraft)
+                    update = update.Set(version => version.IsPublished, false);
                 var result = await collection.UpdateOneAsync(session, ForWrite(previous.Id), update,
                     new UpdateOptions { Collation = Collation.Simple }, cancellationToken);
                 if (result.MatchedCount != 1)
@@ -320,6 +341,10 @@ public class MongoWorkflowDefinitionStore(MongoDbStore<WorkflowDefinition> mongo
 
         await session.CommitTransactionAsync(cancellationToken);
         return true;
+
+        IQueryable<WorkflowDefinition> SelectTargets(IQueryable<WorkflowDefinition> query) =>
+            Filter(query, targets).Where(version =>
+                version.IsLatest || (promoteDraft ? version.Id == definition.Id : version.IsPublished));
 
         FilterDefinition<WorkflowDefinition> ForWrite(string id) =>
             mongoDbStore.ApplyTenantScope(Builders<WorkflowDefinition>.Filter.Eq(version => version.Id, id));

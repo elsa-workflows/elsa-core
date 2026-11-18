@@ -115,13 +115,23 @@ public sealed class MongoWorkflowDefinitionStoreCompareAndSwapTests : IDisposabl
     {
         using var tenant = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
         var published = Definition("published", "tenant-a");
-        published.IsLatest = false;
+        published.IsLatest = true;
         published.IsPublished = true;
         var draft = Definition("draft", "tenant-a");
         draft.Version = 2;
+        draft.IsLatest = false;
         draft.IsPublished = false;
         await _collection.InsertManyAsync([published, draft]);
         var proposed = draft.ShallowClone();
+        proposed.IsLatest = true;
+
+        Assert.False(await _store.TryPromoteExistingDraftAsync(proposed, versions => versions.Count == 1));
+        Assert.True((await _collection.Find(version => version.Id == published.Id).SingleAsync()).IsLatest);
+        Assert.True(await _store.TryPromoteExistingDraftAsync(proposed, versions => versions.Count == 2));
+        var draftVersions = await _collection.Find(Builders<WorkflowDefinition>.Filter.Empty).ToListAsync();
+        Assert.Equal(published.Id, Assert.Single(draftVersions, version => version.IsPublished).Id);
+        Assert.Equal(draft.Id, Assert.Single(draftVersions, version => version.IsLatest).Id);
+
         proposed.IsPublished = true;
 
         Assert.False(await _store.TryPublishAsync(proposed, versions => versions.Count == 1));

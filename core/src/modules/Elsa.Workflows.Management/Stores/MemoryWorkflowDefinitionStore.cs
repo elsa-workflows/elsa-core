@@ -140,17 +140,32 @@ public class MemoryWorkflowDefinitionStore(MemoryStore<WorkflowDefinition> store
 
     /// <inheritdoc />
     public Task<bool> TryPublishAsync(WorkflowDefinition definition, Func<IReadOnlyCollection<WorkflowDefinition>, bool> matchesExpected,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        TryWriteLatestAsync(definition, matchesExpected, promoteDraft: false, cancellationToken);
+
+    /// <inheritdoc />
+    public Task<bool> TryPromoteExistingDraftAsync(WorkflowDefinition definition, Func<IReadOnlyCollection<WorkflowDefinition>, bool> matchesExpected,
+        CancellationToken cancellationToken = default) =>
+        TryWriteLatestAsync(definition, matchesExpected, promoteDraft: true, cancellationToken);
+
+    private Task<bool> TryWriteLatestAsync(WorkflowDefinition definition, Func<IReadOnlyCollection<WorkflowDefinition>, bool> matchesExpected,
+        bool promoteDraft, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         lock (store.Sync)
         {
-            var filter = new WorkflowDefinitionFilter { DefinitionId = definition.DefinitionId, VersionOptions = VersionOptions.LatestOrPublished };
-            var current = store.Query(query => Filter(query, filter)).ToList();
+            var filter = new WorkflowDefinitionFilter { DefinitionId = definition.DefinitionId };
+            var current = store.Query(query => Filter(query, filter).Where(version =>
+                version.IsLatest || (promoteDraft ? version.Id == definition.Id : version.IsPublished))).ToList();
             if (current.Count == 0 || current.Any(version => !CanWrite(version.TenantId)) || !matchesExpected(current))
                 return Task.FromResult(false);
 
             var replacing = current.SingleOrDefault(version => version.Id == definition.Id);
+            if (promoteDraft && (current.Count != 2 || replacing == null || replacing.IsLatest || replacing.IsPublished || replacing.IsReadonly ||
+                                 replacing.IsSystem || current.Any(version => version.TenantId != replacing.TenantId) ||
+                                 !definition.IsLatest || definition.IsPublished))
+                return Task.FromResult(false);
+
             if (replacing != null)
             {
                 if (replacing.TenantId != definition.TenantId || replacing.Version != definition.Version)
@@ -168,7 +183,8 @@ public class MemoryWorkflowDefinitionStore(MemoryStore<WorkflowDefinition> store
             foreach (var previous in current.Where(version => version.Id != definition.Id))
             {
                 var retired = previous.ShallowClone();
-                retired.IsPublished = false;
+                if (!promoteDraft)
+                    retired.IsPublished = false;
                 retired.IsLatest = false;
                 store.Save(retired, GetId);
             }

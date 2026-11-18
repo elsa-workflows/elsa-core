@@ -170,8 +170,17 @@ internal class DapperWorkflowDefinitionStore(Store<WorkflowDefinitionRecord> sto
     }
 
     /// <inheritdoc />
-    public async Task<bool> TryPublishAsync(WorkflowDefinition definition, Func<IReadOnlyCollection<WorkflowDefinition>, bool> matchesExpected,
-        CancellationToken cancellationToken = default)
+    public Task<bool> TryPublishAsync(WorkflowDefinition definition, Func<IReadOnlyCollection<WorkflowDefinition>, bool> matchesExpected,
+        CancellationToken cancellationToken = default) =>
+        TryWriteLatestAsync(definition, matchesExpected, promoteDraft: false, cancellationToken);
+
+    /// <inheritdoc />
+    public Task<bool> TryPromoteExistingDraftAsync(WorkflowDefinition definition, Func<IReadOnlyCollection<WorkflowDefinition>, bool> matchesExpected,
+        CancellationToken cancellationToken = default) =>
+        TryWriteLatestAsync(definition, matchesExpected, promoteDraft: true, cancellationToken);
+
+    private async Task<bool> TryWriteLatestAsync(WorkflowDefinition definition, Func<IReadOnlyCollection<WorkflowDefinition>, bool> matchesExpected,
+        bool promoteDraft, CancellationToken cancellationToken)
     {
         using var connection = connectionProvider.GetConnection();
         if (connection is DbConnection dbConnection)
@@ -183,18 +192,37 @@ internal class DapperWorkflowDefinitionStore(Store<WorkflowDefinitionRecord> sto
         }
 
         using var transaction = connection.BeginTransaction(IsolationLevel.Serializable);
-        var targets = new WorkflowDefinitionFilter { DefinitionId = definition.DefinitionId, VersionOptions = VersionOptions.LatestOrPublished };
+        var targets = new WorkflowDefinitionFilter
+        {
+            DefinitionId = definition.DefinitionId,
+            VersionOptions = promoteDraft ? VersionOptions.Latest : VersionOptions.LatestOrPublished
+        };
         var visibleQuery = connectionProvider.CreateQuery().From(store.TableName);
         ApplyFilter(visibleQuery, targets);
         store.ApplyTenantVisibility(visibleQuery);
         var current = (await connection.QueryAsync<WorkflowDefinitionRecord>(Command(visibleQuery))).ToList();
+        if (promoteDraft)
+        {
+            var draftQuery = connectionProvider.CreateQuery().From(store.TableName);
+            ApplyFilter(draftQuery, new WorkflowDefinitionFilter { DefinitionId = definition.DefinitionId, Id = definition.Id });
+            store.ApplyWriteTenantScope(draftQuery);
+            var draft = await connection.QuerySingleOrDefaultAsync<WorkflowDefinitionRecord>(Command(draftQuery));
+            if (current.Count != 1 || draft == null || draft.TenantId != current[0].TenantId ||
+                draft.TenantId == Tenant.AgnosticTenantId && !SharedTenantWriteScope.IsGranted(typeof(WorkflowDefinition)) ||
+                draft.IsLatest || draft.IsPublished || draft.IsReadonly || draft.IsSystem ||
+                !definition.IsLatest || definition.IsPublished)
+                return false;
+
+            current.Add(draft);
+        }
+
         if (current.Count == 0 || !matchesExpected(current.Select(Map).ToArray()))
             return false;
 
         var writeScopeQuery = connectionProvider.CreateQuery().Count(store.TableName);
         ApplyFilter(writeScopeQuery, targets);
         store.ApplyWriteTenantScope(writeScopeQuery);
-        if (await connection.ExecuteScalarAsync<long>(Command(writeScopeQuery)) != current.Count)
+        if (await connection.ExecuteScalarAsync<long>(Command(writeScopeQuery)) != (promoteDraft ? 1 : current.Count))
             return false;
 
         var replacing = current.SingleOrDefault(version => version.Id == definition.Id);
@@ -208,7 +236,8 @@ internal class DapperWorkflowDefinitionStore(Store<WorkflowDefinitionRecord> sto
             foreach (var previous in current.Where(version => version.Id != definition.Id))
             {
                 previous.IsLatest = false;
-                previous.IsPublished = false;
+                if (!promoteDraft)
+                    previous.IsPublished = false;
                 var update = connectionProvider.CreateQuery().Update(store.TableName, previous, store.PrimaryKey,
                     [nameof(WorkflowDefinitionRecord.IsLatest), nameof(WorkflowDefinitionRecord.IsPublished)]);
                 if (await connection.ExecuteAsync(Command(update)) != 1)

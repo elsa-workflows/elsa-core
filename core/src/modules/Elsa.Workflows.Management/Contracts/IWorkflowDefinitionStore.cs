@@ -145,6 +145,14 @@ public interface IWorkflowDefinitionStore
     Task<bool> TryPublishAsync(WorkflowDefinition definition, Func<IReadOnlyCollection<WorkflowDefinition>, bool> matchesExpected,
         CancellationToken cancellationToken = default) => Task.FromResult(false);
 
+    /// <summary>
+    /// Makes an existing draft the latest version without changing any published flag.
+    /// Both the proposed draft and the previous latest must be writable and satisfy
+    /// <paramref name="matchesExpected"/> in the same atomic operation.
+    /// </summary>
+    Task<bool> TryPromoteExistingDraftAsync(WorkflowDefinition definition, Func<IReadOnlyCollection<WorkflowDefinition>, bool> matchesExpected,
+        CancellationToken cancellationToken = default) => Task.FromResult(false);
+
     /// <summary>Checks whether the store can commit the requested deletion and promotions together.</summary>
     bool SupportsDeletion(WorkflowDefinitionDeletionPlan plan) => false;
 
