@@ -23,12 +23,13 @@ public class Tests
     private readonly ITriggerStore _triggerStore;
     private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
     private readonly Dictionary<string, Workflow> _workflowRegistry = new();
+    private readonly FailingCleanupNotification _cleanupNotification = new();
 
     public Tests(ITestOutputHelper testOutputHelper)
     {
         _services = new TestApplicationBuilder(testOutputHelper).ConfigureServices(services =>
         {
-            services.AddNotificationHandler<FailingCleanupNotification, WorkflowTriggersIndexed>();
+            services.AddNotificationHandler<FailingCleanupNotification, WorkflowTriggersIndexed>(_ => _cleanupNotification);
             services.AddSingleton<IWorkflowMaterializer, FailingMaterializer>();
             services.AddSingleton<IWorkflowMaterializer>(_ => new WorkingMaterializer(_workflowRegistry));
         })
@@ -83,10 +84,8 @@ public class Tests
         await AssertRemainingTriggers(["trigger1"]);
     }
 
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task CleanupNotificationFailureRespectsRequiredCleanup(bool requireCompleteCleanup)
+    [Fact]
+    public async Task OrdinaryCleanupContinuesAfterNotificationFailure()
     {
         var builder = new TriggerTestDataBuilder();
         builder.AddWorkflow("workflow1", "def1", WorkingMaterializer.MaterializerName);
@@ -96,30 +95,47 @@ public class Tests
         var data = builder.Build();
         await SetupTestScenarioAsync(data);
 
-        if (requireCompleteCleanup)
+        await DeleteTriggersAsync();
+
+        await AssertRemainingTriggers([]);
+        Assert.Equal(1, _cleanupNotification.Attempts);
+    }
+
+    [Fact]
+    public async Task RequiredCleanupRetriesFailedRemovalNotification()
+    {
+        var builder = new TriggerTestDataBuilder();
+        builder.AddWorkflow("workflow1", "def1", WorkingMaterializer.MaterializerName);
+        RegisterWorkflowInRegistry("workflow1", "def1");
+        await SetupTestScenarioAsync(builder.Build());
+
+        var handler = new DeleteTriggers(_triggerIndexer);
+        var notification = new WorkflowDefinitionVersionsDeleting(["workflow1"])
         {
-            var handler = new DeleteTriggers(_triggerIndexer);
-            var versions = data.Workflows.Select(workflow => workflow.Id).ToArray();
-            await Assert.ThrowsAsync<InvalidOperationException>(() => handler.HandleAsync(new WorkflowDefinitionVersionsDeleting(versions)
-            {
-                RequireCompleteTriggerCleanup = true
-            }, CancellationToken.None));
-            await AssertRemainingTriggers(["trigger2"]);
-        }
-        else
-        {
-            await DeleteTriggersAsync();
-            await AssertRemainingTriggers([]);
-        }
+            RequireCompleteTriggerCleanup = true
+        };
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => handler.HandleAsync(notification, CancellationToken.None));
+        await AssertRemainingTriggers(["trigger1"]);
+        Assert.Equal(1, _cleanupNotification.Attempts);
+
+        await handler.HandleAsync(notification, CancellationToken.None);
+        await AssertRemainingTriggers([]);
+        Assert.Equal(2, _cleanupNotification.Attempts);
     }
 
     private sealed class FailingCleanupNotification : INotificationHandler<WorkflowTriggersIndexed>
     {
+        public int Attempts { get; private set; }
+
         public Task HandleAsync(WorkflowTriggersIndexed notification, CancellationToken cancellationToken)
         {
             if (notification.IndexedWorkflowTriggers.RemovedTriggers.Any(trigger => trigger.Id == "trigger1" && trigger.WorkflowDefinitionId == "def1"))
             {
-                throw new InvalidOperationException("Notification failed.");
+                Attempts++;
+
+                if (Attempts == 1)
+                    throw new InvalidOperationException("Notification failed.");
             }
 
             return Task.CompletedTask;
