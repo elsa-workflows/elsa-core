@@ -32,7 +32,7 @@ Important base types:
 
 ### Concurrent workflow writes
 
-Within one process, the PostgreSQL workflow stores can save distinct instance IDs, journal records, and activity execution records concurrently. Each batch reserves its record IDs together. Overlapping saves for the same entity type wait for one another, including saves from different tenant scopes.
+Within one process, the PostgreSQL workflow instance, journal, and activity execution stores coordinate `SaveAsync`, `SaveManyAsync`, and `AddManyAsync` where those operations are available. Writes to distinct records can run concurrently. Each batch reserves its record IDs together. Operations that share an ID wait for one another, including across tenant scopes.
 
 Concurrent saves require a standard deterministic text primary key. When writes overlap, Elsa checks the live PostgreSQL index. Custom key equality, transactional commits, and general-purpose store calls use exclusive access for that store type. SQLite also serializes these writes. Coordination is local to each Elsa process.
 

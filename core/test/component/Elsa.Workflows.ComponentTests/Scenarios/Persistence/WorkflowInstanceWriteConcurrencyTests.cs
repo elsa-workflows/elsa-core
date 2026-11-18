@@ -83,20 +83,21 @@ public class WorkflowInstanceWriteConcurrencyTests(PostgreSqlStoreSaveManyFixtur
             {
                 await codec.Entered.Task.WaitAsync(TimeSpan.FromSeconds(10));
                 // A batch that touches the held ID must wait even if it also contains a free ID.
+                var independentId = Guid.NewGuid().ToString();
                 using var cancellation = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
                 await Assert.ThrowsAnyAsync<OperationCanceledException>(() => store.SaveManyAsync(
-                    [Instance(Guid.NewGuid().ToString(), "unused"), Instance(overlappingId, "overlap")], cancellation.Token).AsTask());
+                    [Instance(independentId, "unused"), Instance(overlappingId, "overlap")], cancellation.Token).AsTask());
 
                 update = store.SaveAsync(Instance(id, "second")).AsTask();
                 if (sqlite || caseInsensitive)
                 {
                     using var timeout = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
                     await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
-                        store.SaveAsync(Instance(Guid.NewGuid().ToString(), "independent"), timeout.Token).AsTask());
+                        store.SaveAsync(Instance(independentId, "independent"), timeout.Token).AsTask());
                 }
                 else
                 {
-                    await store.SaveManyAsync([Instance(Guid.NewGuid().ToString(), "independent")])
+                    await store.SaveManyAsync([Instance(independentId, "independent")])
                         .AsTask().WaitAsync(TimeSpan.FromSeconds(10));
                 }
                 Assert.False(update.IsCompleted);

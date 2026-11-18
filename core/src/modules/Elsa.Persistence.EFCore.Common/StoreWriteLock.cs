@@ -11,8 +11,7 @@ namespace Elsa.Persistence.EFCore;
 internal sealed class StoreWriteLock
 {
     private readonly object _sync = new();
-    private readonly Dictionary<string, Task> _lastWriteById = new(StringComparer.Ordinal);
-    private Task _exclusive = Task.CompletedTask;
+    private readonly LinkedList<Reservation> _writes = new();
 
     public ValueTask<IDisposable> AcquireExclusiveAsync(CancellationToken cancellationToken) => AcquireAsync(null, cancellationToken);
 
@@ -45,9 +44,9 @@ internal sealed class StoreWriteLock
         {
             // A lone writer can reserve its IDs immediately. Any second caller verifies database
             // equality before it can overlap the first, including on customized schemas.
-            if (_lastWriteById.Count == 0 && _exclusive.IsCompleted)
+            if (_writes.Count == 0)
             {
-                return Reserve(ids, out _);
+                return Enqueue(ids);
             }
         }
 
@@ -61,62 +60,42 @@ internal sealed class StoreWriteLock
     private async ValueTask<IDisposable> AcquireAsync(string[]? ids, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        Lease lease;
-        Task preceding;
+        Reservation reservation;
         lock (_sync)
         {
-            lease = Reserve(ids, out preceding);
+            reservation = Enqueue(ids);
         }
 
         try
         {
-            await preceding.WaitAsync(cancellationToken);
-            return lease;
+            await reservation.Ready.Task.WaitAsync(cancellationToken);
+            return reservation;
         }
         catch (OperationCanceledException)
         {
-            // A later overlapping writer may already be queued behind this one. Keep its place
-            // until its predecessors finish, even though the caller can return immediately.
-            _ = ReleaseAfterAsync(preceding, lease);
+            reservation.Dispose();
             throw;
         }
     }
 
-    // Reserve the entire batch under one mutex. The ID is the physical key across all tenants.
-    // A null ID set reserves exclusive access for arbitrary callbacks, key selectors, and providers.
-    private Lease Reserve(string[]? ids, out Task preceding)
+    private Reservation Enqueue(string[]? ids)
     {
-        var lease = new Lease(this, ids);
-        if (ids is null)
-        {
-            preceding = _lastWriteById.Count == 0 ? _exclusive : Task.WhenAll(_lastWriteById.Values.Append(_exclusive));
-            _lastWriteById.Clear();
-            _exclusive = lease.Completion.Task;
-        }
-        else
-        {
-            var dependencies = new List<Task>();
-            if (!_exclusive.IsCompleted)
-            {
-                dependencies.Add(_exclusive);
-            }
-            foreach (var id in ids)
-            {
-                if (_lastWriteById.TryGetValue(id, out var previous))
-                {
-                    dependencies.Add(previous);
-                }
-                _lastWriteById[id] = lease.Completion.Task;
-            }
-            preceding = Task.WhenAll(dependencies);
-        }
-        return lease;
+        var reservation = new Reservation(this, ids);
+        reservation.Node = _writes.AddLast(reservation);
+        GrantIfUnblocked(reservation.Node);
+        return reservation;
     }
 
-    private static async Task ReleaseAfterAsync(Task preceding, Lease lease)
+    private static void GrantIfUnblocked(LinkedListNode<Reservation> node)
     {
-        await preceding;
-        lease.Dispose();
+        for (var prior = node.Previous; prior is not null; prior = prior.Previous)
+        {
+            if (prior.Value.ConflictsWith(node.Value))
+            {
+                return;
+            }
+        }
+        node.Value.Ready.TrySetResult();
     }
 
     private static async Task<bool> HasOrdinalPrimaryKeyAsync(DbContext context, StoreObjectIdentifier table, IProperty key, CancellationToken cancellationToken)
@@ -147,25 +126,30 @@ internal sealed class StoreWriteLock
         }
     }
 
-    private sealed class Lease(StoreWriteLock owner, string[]? ids) : IDisposable
+    // The queue contains active and waiting writers. A whole batch is admitted atomically,
+    // and canceling it immediately frees unrelated IDs for later writers.
+    private sealed class Reservation(StoreWriteLock owner, string[]? ids) : IDisposable
     {
-        public TaskCompletionSource Completion { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly HashSet<string>? _ids = ids?.ToHashSet(StringComparer.Ordinal);
+        public LinkedListNode<Reservation> Node { get; set; } = null!;
+        public TaskCompletionSource Ready { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public bool ConflictsWith(Reservation other) =>
+            _ids is null || other._ids is null || _ids.Overlaps(other._ids);
 
         public void Dispose()
         {
             lock (owner._sync)
             {
-                if (ids is not null)
+                var next = Node.Next;
+                owner._writes.Remove(Node);
+                for (; next is not null; next = next.Next)
                 {
-                    foreach (var id in ids)
+                    if (!next.Value.Ready.Task.IsCompleted && ConflictsWith(next.Value))
                     {
-                        if (owner._lastWriteById.GetValueOrDefault(id) == Completion.Task)
-                        {
-                            owner._lastWriteById.Remove(id);
-                        }
+                        GrantIfUnblocked(next);
                     }
                 }
-                Completion.TrySetResult();
             }
         }
     }
