@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using Elsa.Caching;
 using Elsa.Common.DistributedHosting;
 using Elsa.Expressions.Contracts;
 using Elsa.Extensions;
@@ -13,7 +14,9 @@ using Elsa.Workflows.Runtime.Comparers;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Notifications;
+using Elsa.Workflows.Runtime.Stores;
 using Medallion.Threading;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Open.Linq.AsyncExtensions;
@@ -100,7 +103,6 @@ public class TriggerIndexer : ITriggerIndexer
                     // Keep the removal payload available for retry if required cleanup fails.
                     await _notificationSender.SendAsync(notification, NotificationStrategy.Sequential, cancellationToken);
                     await _triggerStore.ReplaceAsync(removed, [], cancellationToken);
-                    await _notificationSender.SendAsync(new RequiredWorkflowTriggerRecordsRemoved(removed), NotificationStrategy.Sequential, cancellationToken);
                 }
                 else
                 {
@@ -112,6 +114,12 @@ public class TriggerIndexer : ITriggerIndexer
             {
                 _logger.LogWarning(ex, "Failed to clean up triggers for workflow definition version {WorkflowDefinitionVersionId}.", group.Key);
             }
+        }
+
+        // Retry this signal even when the trigger rows were removed by a prior attempt.
+        if (filter.RequireCompleteCleanup && _serviceProvider.GetService<ICacheManager>() is { } cacheManager)
+        {
+            await cacheManager.TriggerTokenAsync(CachingTriggerStore.RequiredRemovalCacheInvalidationTokenKey);
         }
     }
 
