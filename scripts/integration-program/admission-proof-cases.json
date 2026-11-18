@@ -4712,6 +4712,37 @@
       "restartRequired": false
     },
     {
+      "caseId": "host-unaudited-diagnostics",
+      "family": "host",
+      "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",
+      "method": "Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.AdmissionRuntimeHostPolicyTests.UnauditedDiagnosticProviderRejectsHostBeforeRunningDiagnostics",
+      "parameterId": "default",
+      "assertions": [
+        "behaviorAssertionsPassed"
+      ],
+      "facts": {
+        "validationAttempts": {
+          "kind": "integer",
+          "minimum": 1,
+          "maximum": 1
+        },
+        "activityEffects": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        },
+        "diagnosticCalls": {
+          "kind": "integer",
+          "minimum": 0,
+          "maximum": 0
+        }
+      },
+      "topology": "postgresql",
+      "processRoles": [],
+      "minimumProcesses": 0,
+      "restartRequired": false
+    },
+    {
       "caseId": "host-unaudited-registry",
       "family": "host",
       "project": "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests.csproj",

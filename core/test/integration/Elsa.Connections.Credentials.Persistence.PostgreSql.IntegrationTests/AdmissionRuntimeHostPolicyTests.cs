@@ -97,10 +97,12 @@ public sealed class AdmissionRuntimeHostPolicyTests(PostgreSqlConnectionsFixture
     {
         var provider = new UnreviewedDiagnosticProvider();
         await RejectHostAsync(services => services.AddSingleton<IWorkflowDiagnosticProvider>(provider),
-            "The actual admission preparation/notification chain contains an unaudited service.", _ =>
+            "The actual admission preparation/notification chain contains an unaudited service.", async probe =>
             {
                 Assert.Equal(0, provider.Calls);
-                return Task.CompletedTask;
+                await ObserveAsync("host-unaudited-diagnostics", nameof(UnauditedDiagnosticProviderRejectsHostBeforeRunningDiagnostics), "default",
+                    new() { ["validationAttempts"] = 1, ["diagnosticCalls"] = provider.Calls,
+                        ["activityEffects"] = probe.Count("activityEffects") });
             });
     }
 
