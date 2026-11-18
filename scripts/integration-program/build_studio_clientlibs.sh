@@ -70,7 +70,7 @@ for entry in "${clientlibs[@]}"; do
 
     matcher_archive="$(node -p 'require(process.argv[1]).packages["node_modules/picomatch"]?.resolved ?? ""' "$reviewed_lock")"
     if [[ "$matcher_archive" == file:.cache/elsa-workflows-picomatch-build-*.tgz ]]; then
-        # npm ci checks these locally packed bytes against the reviewed lockfile.
+        # Verify the archive built from this checkout even when npm has a warm cache.
         matcher_cache="$clientlib/.cache"
         mkdir -p "$matcher_cache"
         packed="$(npm pack "$glob_matcher" --ignore-scripts --pack-destination "$matcher_cache" --silent)"
@@ -78,6 +78,16 @@ for entry in "${clientlibs[@]}"; do
             echo "Studio glob matcher version does not match the reviewed lock: $reviewed_lock" >&2
             exit 1
         fi
+        node - "$reviewed_lock" "$matcher_cache/$packed" <<'NODE'
+const { createHash } = require("node:crypto");
+const { readFileSync } = require("node:fs");
+const [lock, archive] = process.argv.slice(2);
+const expected = require(lock).packages["node_modules/picomatch"].integrity;
+const actual = "sha512-" + createHash("sha512").update(readFileSync(archive)).digest("base64");
+if (actual !== expected) {
+  throw new Error(`Studio glob matcher archive differs from the reviewed lock: ${lock}`);
+}
+NODE
     fi
 done
 

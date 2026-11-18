@@ -52,3 +52,8 @@ The reviewed locks that depend on Picomatch use the hardened [build matcher](../
 The ClientLib script packs the local MIT-licensed source, and npm verifies its
 integrity against the lock before installation. The archive is build tooling and
 does not ship in the Studio browser bundles.
+
+If a prior build materialized the Designer, DOM Interop, or shared BPMN
+`ClientLib/package-lock.json`, the build script reports a mismatch after the
+reviewed lock changes. Inspect that diff and remove the old generated copy when
+it contains only the previous reviewed lock. The next build stages the new one.
