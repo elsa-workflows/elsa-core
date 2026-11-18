@@ -30,6 +30,12 @@ Important base types:
 
 `PersistenceFeatureBase` registers `IDbContextFactory<TDbContext>`, migration options, tenant-aware context factory decoration, and tenant model handlers.
 
+### Concurrent workflow writes
+
+Within one process, the PostgreSQL workflow stores can save distinct instance IDs, journal records, and activity execution records concurrently. Each batch reserves its record IDs together. Overlapping saves for the same entity type wait for one another, including saves from different tenant scopes.
+
+Concurrent saves require a standard deterministic text primary key. When writes overlap, Elsa checks the live PostgreSQL index. Custom key equality, transactional commits, and general-purpose store calls use exclusive access for that store type. SQLite also serializes these writes. Coordination is local to each Elsa process.
+
 ## EF Core Module Slices
 
 The shared EF Core module contains slices for:

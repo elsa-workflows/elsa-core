@@ -254,7 +254,7 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
     [RequiresUnreferencedCode("Calls Elsa.Workflows.Contracts.IWorkflowStateSerializer.SerializeAsync(WorkflowState, CancellationToken)")]
     public async ValueTask SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
     {
-        await _store.SaveAsync(instance, OnSaveAsync, cancellationToken);
+        await _store.SaveByIdAsync(instance, OnSaveAsync, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -272,7 +272,7 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
     /// <inheritdoc />
     public async ValueTask SaveManyAsync(IEnumerable<WorkflowInstance> instances, CancellationToken cancellationToken = default)
     {
-        await _store.SaveManyAsync(instances, OnSaveAsync, cancellationToken);
+        await _store.SaveManyByIdAsync(instances, OnSaveAsync, cancellationToken);
     }
 
     [RequiresUnreferencedCode("Calls Elsa.Workflows.Contracts.IWorkflowStateSerializer.SerializeAsync(WorkflowState, CancellationToken)")]

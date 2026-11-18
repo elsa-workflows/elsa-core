@@ -22,19 +22,19 @@ public class EFCoreWorkflowExecutionLogStore(EntityStore<RuntimeElsaDbContext, W
     /// <inheritdoc />
     public async Task AddManyAsync(IEnumerable<WorkflowExecutionLogRecord> records, CancellationToken cancellationToken = default)
     {
-        await store.AddManyAsync(records, OnSaveAsync, cancellationToken);
+        await store.AddManyByIdAsync(records, OnSaveAsync, cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task SaveAsync(WorkflowExecutionLogRecord record, CancellationToken cancellationToken = default)
     {
-        await store.SaveAsync(record, OnSaveAsync, cancellationToken);
+        await store.SaveByIdAsync(record, OnSaveAsync, cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task SaveManyAsync(IEnumerable<WorkflowExecutionLogRecord> records, CancellationToken cancellationToken = default)
     {
-        await store.SaveManyAsync(records, OnSaveAsync, cancellationToken);
+        await store.SaveManyByIdAsync(records, OnSaveAsync, cancellationToken);
     }
 
     /// <inheritdoc />
