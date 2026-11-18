@@ -37,7 +37,7 @@ jobs:
 
   frontend-and-host:
     runs-on: ubuntu-24.04
-    timeout-minutes: 40
+    timeout-minutes: 75
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -72,6 +72,8 @@ jobs:
       - name: Exercise the ASP.NET host across Chromium, Firefox and WebKit
         working-directory: studio/react
         run: |
+          # Regional Ubuntu mirrors can spend most of the job downloading WebKit dependencies.
+          sudo sed -i -E 's@https?://([a-z0-9-]+\.)*archive\.ubuntu\.com/ubuntu@https://archive.ubuntu.com/ubuntu@g' /etc/apt/sources.list.d/ubuntu.sources
           pnpm exec playwright install --with-deps chromium firefox webkit
           pnpm test:browser
       - name: Pack the Preview feature libraries without publishing
