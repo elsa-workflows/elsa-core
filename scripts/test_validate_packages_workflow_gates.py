@@ -159,8 +159,8 @@ OTHER_BYPASSES = (
     ),
     (
         "packages.yml sets EXCLUDE_IDS at workflow level",
-        "  base_version: '3.10.0'\n",
-        "  base_version: '3.10.0'\n  EXCLUDE_IDS: Elsa.Studio.Workflows.Designer\n",
+        "\nenv:\n  base_version:",
+        "\nenv:\n  EXCLUDE_IDS: Elsa.Studio.Workflows.Designer\n  base_version:",
         "packages.yml must not set EXCLUDE_IDS at workflow level",
     ),
     (
@@ -171,8 +171,8 @@ OTHER_BYPASSES = (
     ),
     (
         "workflow-level env exposes the NuGet key to every job",
-        "  base_version: '3.10.0'\n",
-        "  base_version: '3.10.0'\n  NUGET_KEY: ${{ secrets.NUGET_API_KEY }}\n",
+        "\nenv:\n  base_version:",
+        "\nenv:\n  NUGET_KEY: ${{ secrets.NUGET_API_KEY }}\n  base_version:",
         "the workflow outside its jobs references secrets.NUGET*",
     ),
     (
