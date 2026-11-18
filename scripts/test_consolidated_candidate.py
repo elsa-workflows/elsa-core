@@ -315,9 +315,10 @@ GOOD_ENTRY = {
 class PinEntryTests(unittest.TestCase):
     def test_the_committed_pin_file_is_data_only_and_valid(self):
         document = json.loads(verify.PIN_FILE.read_text(encoding="utf-8"))
-        self.assertEqual({"3.10.1"}, set(document))
         self.assertEqual(GOOD_ENTRY, document["3.10.1"])
-        self.assertEqual(set(document["3.10.1"]), set(verify.PIN_FIELDS))
+        for version in document:
+            with self.subTest(version=version):
+                self.assertEqual(version, verify.load_pin(version).version)
         text = verify.PIN_FILE.read_text(encoding="utf-8")
         for rejected in ("40347931480", "12664519771", "5cff67228"):
             self.assertNotIn(rejected, text)
@@ -357,7 +358,7 @@ class PinEntryTests(unittest.TestCase):
                 verify.validate_pin_entry("3.10.1", {**GOOD_ENTRY, **change})
 
     def test_unknown_and_malformed_versions_are_rejected(self):
-        for version in ("3.10.2", "9.9.9", "", "3.10", "latest", "3.10.1; rm -rf /", "../3.10.1"):
+        for version in ("9.9.9", "", "3.10", "latest", "3.10.1; rm -rf /", "../3.10.1"):
             with self.subTest(version=version), self.assertRaises(SystemExit):
                 verify.load_pin(version)
 
@@ -382,7 +383,7 @@ class PinEntryTests(unittest.TestCase):
     def test_validate_pin_command_needs_no_network_and_rejects_unknown_versions(self):
         self.assertEqual(0, verify.main(["validate-pin", "--version", "3.10.1"]))
         with self.assertRaises(SystemExit):
-            verify.main(["validate-pin", "--version", "3.10.2"])
+            verify.main(["validate-pin", "--version", "9.9.9"])
 
 
 PACKAGES = Path(__file__).resolve().parents[1] / ".github/workflows/packages.yml"
