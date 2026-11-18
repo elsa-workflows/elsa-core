@@ -281,6 +281,7 @@ public sealed class QuiescenceSignal : IQuiescenceSignal
         await UseKeyValueStoreAsync(async store =>
         {
             var live = Volatile.Read(ref _state);
+            using var grant = SharedTenantWriteScope.Enter<SerializedKeyValuePair>();
             if ((live.Reason & QuiescenceReason.AdministrativePause) != 0)
             {
                 await store.SaveAsync(new SerializedKeyValuePair
@@ -380,12 +381,16 @@ public sealed class QuiescenceSignal : IQuiescenceSignal
     {
         try
         {
-            await UseKeyValueStoreAsync(store => store.SaveAsync(new SerializedKeyValuePair
+            await UseKeyValueStoreAsync(async store =>
             {
-                Key = _persistenceKey,
-                SerializedValue = legacy.SerializedValue,
-                TenantId = Tenant.AgnosticTenantId
-            }, cancellationToken), AgnosticTenant);
+                using var grant = SharedTenantWriteScope.Enter<SerializedKeyValuePair>();
+                await store.SaveAsync(new SerializedKeyValuePair
+                {
+                    Key = _persistenceKey,
+                    SerializedValue = legacy.SerializedValue,
+                    TenantId = Tenant.AgnosticTenantId
+                }, cancellationToken);
+            }, AgnosticTenant);
             return legacy;
         }
         catch

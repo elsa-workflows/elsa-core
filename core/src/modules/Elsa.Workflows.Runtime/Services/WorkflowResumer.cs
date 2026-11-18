@@ -71,9 +71,15 @@ public class WorkflowResumer(
     {
         var filter = new BookmarkFilter
         {
+            WorkflowInstanceId = request.WorkflowInstanceId,
             BookmarkId = request.BookmarkId,
             ActivityInstanceId = request.ActivityInstanceId ?? request.ActivityHandle?.ActivityInstanceId,
         };
+
+        if (string.IsNullOrWhiteSpace(filter.BookmarkId) && string.IsNullOrWhiteSpace(filter.ActivityInstanceId) && string.IsNullOrWhiteSpace(filter.WorkflowInstanceId))
+        {
+            throw new ArgumentException("A bookmark, activity instance, or workflow instance identifier is required.", nameof(request));
+        }
 
         var resumeOptions = new ResumeBookmarkOptions()
         {

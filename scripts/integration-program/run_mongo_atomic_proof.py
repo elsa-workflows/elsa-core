@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 from collections import Counter
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -18,6 +19,7 @@ from run_current_import_affected_tests import assert_clean_source
 
 ROOT = Path(__file__).resolve().parents[2]
 BASELINE = "23b852ad6262c4bf07b9f311090c892dbecd740b"
+BASELINE_FIXTURE_REVISION = "013a1aa4c57b356c56f9c1bea1dadfb05b2c078b"
 MONGO = 'extensions/src/persistence/Elsa.Persistence.MongoDb/Elsa.Persistence.MongoDb.csproj'
 MONGO_TEST = 'extensions/test/modules/persistence/Elsa.MongoDb.UnitTests/Elsa.MongoDb.UnitTests.csproj'
 BPMN_TEST = 'core/test/integration/Elsa.Bpmn.Interchange.IntegrationTests/Elsa.Bpmn.Interchange.IntegrationTests.csproj'
@@ -46,13 +48,16 @@ MONGO_CASES = {
     "TryUpdateLatestAsync_WhenPublishedVersionCreatesDraft_UpdatesBothRowsAndPreservesTenant": 1,
     "TryUpdateLatestAsync_WhenPublishedVersionHasUnknownBsonField_RejectsWithoutMutation": 1,
     "TryUpdateLatestAsync_WhenDraftInsertFails_RollsBackLatestUnmark": 1,
-    "TryUpdateLatestAsync_WhenServerIsStandalone_FailsWithoutMutationOrCallbacks": 1,
+    "StandaloneServerUpdatesAnExistingDraftAndRequiresTransactionsToCreateAnotherVersion": 1,
+    "RetractionChangesOnlyThePublishedFlagOfTheOwnedVersion": 1,
+    "PublicationChangesTheAuthorizedVersionSetInOneTransaction": 1,
     "TryUpdateLatestAsync_CannotChangeLogicalDefinitionId": 1,
 }
 BPMN_PREFIX = "Elsa.Bpmn.Interchange.IntegrationTests.Scenarios.Interchange.BpmnDocumentPutCompareAndSwapTests."
 BPMN_CASES = {
     "ImportDocumentAsync_WhenASecondWriterSavesAfterTheFirstMatched_RefusesTheFirstAndKeepsTheSecond": 1,
     "ImportDocumentAsync_WhenMetadataIsSavedAfterTheFirstMatched_RefusesRatherThanRevertingTheRename": 1,
+    "ProtectionSetDuringDocumentEditIsRetained": 2,
     "ImportDocumentAsync_WhenMetadataIsSavedDuringCompareAndSwap_RejectsTheStaleDocumentEdit": 1,
     "ImportDocumentAsync_WhenDraftSavingHandlerEditsDraft_PersistsAllHandlerEdits": 1,
     "ImportDocumentAsync_WhenDraftSavingHandlerRejects_DoesNotPersist": 1,
@@ -106,7 +111,7 @@ def check_baseline(root: Path, fixture_hash: str) -> None:
     if git(root, "rev-parse", "HEAD") != BASELINE:
         raise ValueError("Baseline revision changed")
     if git(root, "diff", "--name-only", "HEAD") != BASELINE_FIXTURE:
-        raise ValueError("Baseline must differ only by the candidate regression fixture")
+        raise ValueError("Baseline must differ only by the pinned regression fixture")
     if git(root, "status", "--porcelain", "--untracked-files=normal") != "M " + BASELINE_FIXTURE:
         raise ValueError("Baseline contains unexpected source files or changes")
     if git(root, "diff", "--cached", "--name-only"):
@@ -171,10 +176,17 @@ def run(root: Path, output: Path, head: str) -> dict:
         raise ValueError("Evidence requires a fresh directory outside the checkout")
     assert_clean_source(root, head)
     git(root, "merge-base", "--is-ancestor", BASELINE, head)
+    git(root, "merge-base", "--is-ancestor", BASELINE_FIXTURE_REVISION, head)
+    # The historical source must compile the original probes without references
+    # to APIs introduced in the candidate. Candidate tests use the current fixture.
+    baseline_fixture = subprocess.check_output(
+        ["git", "-C", str(root), "show", f"{BASELINE_FIXTURE_REVISION}:{FIXTURE}"], stderr=subprocess.DEVNULL)
+    baseline_fixture_hash = hashlib.sha256(baseline_fixture).hexdigest()
     hashes = {path: digest(tracked_input(root, path)) for path in INPUTS}
     output.mkdir(parents=True, exist_ok=True)
     baseline = output / "baseline-source"
     receipt = {"schemaVersion": 1, "sourceRevision": head, "baselineRevision": BASELINE,
+               "baselineFixtureRevision": BASELINE_FIXTURE_REVISION, "baselineFixtureSha256": baseline_fixture_hash,
                "inputSha256": hashes, "publicationPerformed": False, "verificationComplete": False,
                "testBuilds": [], "tests": [], "builds": []}
 
@@ -217,11 +229,11 @@ def run(root: Path, output: Path, head: str) -> dict:
     git(root, "worktree", "add", "--detach", str(baseline), BASELINE)
     try:
         assert_clean_source(baseline, BASELINE)
-        tracked_input(baseline, BASELINE_FIXTURE).write_bytes(tracked_input(root, FIXTURE).read_bytes())
-        check_baseline(baseline, hashes[FIXTURE])
+        tracked_input(baseline, BASELINE_FIXTURE).write_bytes(baseline_fixture)
+        check_baseline(baseline, baseline_fixture_hash)
         for index, (checkout, project) in enumerate(((baseline, BASELINE_MONGO_TEST), (root, MONGO_TEST), (root, BPMN_TEST))):
             row = compile_project(checkout, project, "net10.0", f"fixture-build-{index}")
-            row["source"] = "baseline-with-candidate-fixture" if checkout == baseline else "candidate"
+            row["source"] = "baseline-with-pinned-fixture" if checkout == baseline else "candidate"
             receipt["testBuilds"].append(row)
             save()
             print(f"Compile fixture {index}: {row['status']}", flush=True)
@@ -229,7 +241,7 @@ def run(root: Path, output: Path, head: str) -> dict:
             return receipt
         probe_filter = "|".join(f"FullyQualifiedName={name}" for name in REGRESSIONS)
         receipt["baseline"] = test_project(baseline, BASELINE_MONGO_TEST, probe_filter, "baseline-probes", True)
-        check_baseline(baseline, hashes[FIXTURE])
+        check_baseline(baseline, baseline_fixture_hash)
         save()
         if receipt["baseline"]["status"] != "expected-regression-failures":
             return receipt
@@ -252,7 +264,7 @@ def run(root: Path, output: Path, head: str) -> dict:
             if row["status"] != "passed":
                 return receipt
         assert_clean_source(root, head)
-        check_baseline(baseline, hashes[FIXTURE])
+        check_baseline(baseline, baseline_fixture_hash)
         if hashes != {path: digest(tracked_input(root, path)) for path in INPUTS}:
             raise ValueError("Verification inputs changed")
         receipt["verificationComplete"] = True

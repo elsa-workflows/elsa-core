@@ -445,7 +445,8 @@ public class AIChatEndpointTests
                        {
                            UserId = "user-1",
                            TenantId = "tenant-1",
-                           Message = "Use a tool"
+                           Message = "Use a tool",
+                           UserPermissions = ["workflows/definitions:view"]
                        }))
         {
             // Intentionally drain the stream to completion.

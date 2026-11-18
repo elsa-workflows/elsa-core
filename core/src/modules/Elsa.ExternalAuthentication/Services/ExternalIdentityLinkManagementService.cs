@@ -1,10 +1,12 @@
 using System.Security.Claims;
 using Elsa.Common;
 using Elsa.Common.Models;
+using Elsa.Extensions;
 using Elsa.ExternalAuthentication.Contracts;
 using Elsa.ExternalAuthentication.Models;
 using Elsa.ExternalAuthentication.Notifications;
 using Elsa.Identity.Contracts;
+using Elsa.Identity.Entities;
 using Elsa.Identity.Models;
 using Elsa.Mediator.Contracts;
 using Microsoft.Extensions.DependencyInjection;
@@ -54,7 +56,7 @@ public sealed class ExternalIdentityLinkManagementService(
 
         var user = await users.FindAsync(new()
             { Id = userId }, cancellationToken);
-        if (user is null || !string.Equals(user.TenantId, tenantId, StringComparison.Ordinal))
+        if (user is null || !string.Equals(user.TenantId, tenantId, StringComparison.Ordinal) || !await CanManageUserAsync(actor, user, cancellationToken))
             return new ExternalIdentityLinkPrelinkResult.UserNotFound();
 
         // Manual administration may target disabled or invalid connections, but never archived, shadowed, or cross-tenant definitions.
@@ -89,9 +91,7 @@ public sealed class ExternalIdentityLinkManagementService(
     {
         ValidateTargetTenant(tenantId);
         ArgumentException.ThrowIfNullOrWhiteSpace(linkId);
-        var existing = await links.FindAsync(new()
-            { TenantId = tenantId }, cancellationToken);
-        var link = existing.Items.FirstOrDefault(x => string.Equals(x.Id, linkId, StringComparison.Ordinal));
+        var link = await FindManagedLinkAsync(tenantId, linkId, actor, cancellationToken);
         if (link is null || !await links.DeleteAsync(tenantId, linkId, cancellationToken))
             return false;
 
@@ -118,7 +118,10 @@ public sealed class ExternalIdentityLinkManagementService(
 
         var user = await users.FindAsync(new()
             { Id = userId }, cancellationToken);
-        if (user is null || !string.Equals(user.TenantId, tenantId, StringComparison.Ordinal))
+        if (user is null || !string.Equals(user.TenantId, tenantId, StringComparison.Ordinal) || !await CanManageUserAsync(actor, user, cancellationToken))
+            return new ExternalIdentityLinkReplaceResult.NotFound();
+
+        if (await FindManagedLinkAsync(tenantId, linkId, actor, cancellationToken) is null)
             return new ExternalIdentityLinkReplaceResult.NotFound();
 
         var connection = await FindManageableConnectionAsync(tenantId, connectionKey, cancellationToken);
@@ -161,6 +164,27 @@ public sealed class ExternalIdentityLinkManagementService(
         }
 
         return result;
+    }
+
+    private async ValueTask<ExternalIdentityLink?> FindManagedLinkAsync(string tenantId, string linkId, ClaimsPrincipal actor, CancellationToken cancellationToken)
+    {
+        var existing = await links.FindAsync(new() { TenantId = tenantId }, cancellationToken);
+        var link = existing.Items.FirstOrDefault(x => string.Equals(x.Id, linkId, StringComparison.Ordinal));
+        if (link is null)
+            return null;
+
+        var user = await users.FindAsync(new() { Id = link.UserId }, cancellationToken);
+        return user is not null && string.Equals(user.TenantId, tenantId, StringComparison.Ordinal) && await CanManageUserAsync(actor, user, cancellationToken)
+            ? link
+            : null;
+    }
+
+    private async Task<bool> CanManageUserAsync(ClaimsPrincipal actor, User user, CancellationToken cancellationToken)
+    {
+        var roleProvider = services.GetRequiredService<IRoleProvider>();
+        var roleAuthorization = services.GetRequiredService<IRoleAuthorizationService>();
+        var roles = await roleProvider.FindByIdsAsync(user.Roles, cancellationToken);
+        return roleAuthorization.CanCreateRoleWithPermissions(actor, roles.SelectMany(x => x.Permissions));
     }
 
     private async ValueTask<EffectiveIdentityProviderConnection?> FindManageableConnectionAsync(string tenantId, string connectionKey, CancellationToken cancellationToken)

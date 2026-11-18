@@ -13,7 +13,8 @@ public class ActivityDescriptorTool(IServiceProvider serviceProvider, ActivityGr
         "Get model-safe metadata for one installed activity descriptor.",
         GroundingToolSchemas.WithProperties(
             ("type", GroundingToolSchemas.String("Activity type name or short name.")),
-            ("version", GroundingToolSchemas.Integer("Optional activity version."))));
+            ("version", GroundingToolSchemas.Integer("Optional activity version."))),
+        AIGroundingPermissions.DefinitionView);
 
     public override ValueTask<AIToolResult> ExecuteAsync(AIToolExecutionContext context, CancellationToken cancellationToken = default)
     {

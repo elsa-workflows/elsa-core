@@ -23,6 +23,8 @@ internal class UpdateReferences(IWorkflowReferenceUpdater workflowReferenceUpdat
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
+        await using var mutationLock = await WorkflowDefinitionMutationLock.AcquireAsync(HttpContext.RequestServices, cancellationToken);
+
         var filter = new WorkflowDefinitionFilter
         {
             DefinitionId = request.DefinitionId,

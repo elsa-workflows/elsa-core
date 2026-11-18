@@ -80,18 +80,36 @@ public abstract class StoreSaveManyTenantOwnershipTests
     public async Task SaveManyAsync_WhenPopulatorResavesStarUnderNamedTenant_KeepsStar()
     {
         await using var scenario = await CreateScenarioAsync("tenant-a");
-        await scenario.Store.SaveManyAsync([Row("shared", Tenant.AgnosticTenantId, "before")], x => x.Id, onSaving: null);
+        using (SharedTenantWriteScope.Enter<OwnedRow>())
+            await scenario.Store.SaveManyAsync([Row("shared", Tenant.AgnosticTenantId, "before")], x => x.Id, onSaving: null);
 
-        await scenario.Store.SaveManyAsync([Row("shared", Tenant.AgnosticTenantId, "after")], x => x.Id, onSaving: null);
+        using (SharedTenantWriteScope.Enter<OwnedRow>())
+            await scenario.Store.SaveManyAsync([Row("shared", Tenant.AgnosticTenantId, "after")], x => x.Id, onSaving: null);
 
         AssertUnchanged(await scenario.FindAsync("shared"), Tenant.AgnosticTenantId, "after");
+    }
+
+    [Fact]
+    public async Task SaveManyCannotAddOrUpdateSharedRowsWithoutAHostGrant()
+    {
+        await using var scenario = await CreateScenarioAsync("named");
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            scenario.Store.SaveManyAsync([Row("shared", Tenant.AgnosticTenantId, "unapproved")], x => x.Id, onSaving: null));
+
+        using (SharedTenantWriteScope.Enter<OwnedRow>())
+            await scenario.Store.SaveManyAsync([Row("shared", Tenant.AgnosticTenantId, "provisioned")], x => x.Id, onSaving: null);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            scenario.Store.SaveManyAsync([Row("shared", Tenant.AgnosticTenantId, "unapproved")], x => x.Id, onSaving: null));
+        AssertUnchanged(await scenario.FindAsync("shared"), Tenant.AgnosticTenantId, "provisioned");
     }
 
     [Fact]
     public async Task SaveManyAsync_WhenNamedTenantSavesNullTenantIdOverStar_ThrowsAndLeavesStar()
     {
         await using var scenario = await CreateScenarioAsync("tenant-a");
-        await scenario.Store.SaveManyAsync([Row("shared", Tenant.AgnosticTenantId, "original")], x => x.Id, onSaving: null);
+        using (SharedTenantWriteScope.Enter<OwnedRow>())
+            await scenario.Store.SaveManyAsync([Row("shared", Tenant.AgnosticTenantId, "original")], x => x.Id, onSaving: null);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
             scenario.Store.SaveManyAsync([Row("shared", tenantId: null, payload: "stolen")], x => x.Id, onSaving: null));
@@ -231,7 +249,8 @@ public abstract class StoreSaveManyTenantOwnershipTests
     public async Task SaveManyAsync_WhenDuplicateKeyHasEarlierViolation_ThrowsAndWritesNothing()
     {
         await using var scenario = await CreateScenarioAsync("tenant-a");
-        await scenario.Store.SaveManyAsync([Row("shared", Tenant.AgnosticTenantId, "original")], x => x.Id, onSaving: null);
+        using (SharedTenantWriteScope.Enter<OwnedRow>())
+            await scenario.Store.SaveManyAsync([Row("shared", Tenant.AgnosticTenantId, "original")], x => x.Id, onSaving: null);
 
         var batch = new[] { Row("shared", tenantId: null, payload: "stolen") }
             .Concat(Enumerable.Range(0, 60).Select(index => Row($"filler-{index:000}", "tenant-a", "filler")))
@@ -249,7 +268,8 @@ public abstract class StoreSaveManyTenantOwnershipTests
     public async Task SaveManyAsync_WhenDuplicateKeyHasLaterViolation_ThrowsAndWritesNothing()
     {
         await using var scenario = await CreateScenarioAsync("tenant-a");
-        await scenario.Store.SaveManyAsync([Row("shared", Tenant.AgnosticTenantId, "original")], x => x.Id, onSaving: null);
+        using (SharedTenantWriteScope.Enter<OwnedRow>())
+            await scenario.Store.SaveManyAsync([Row("shared", Tenant.AgnosticTenantId, "original")], x => x.Id, onSaving: null);
 
         var batch = new[] { Row("shared", Tenant.AgnosticTenantId, "after") }
             .Concat(Enumerable.Range(0, 60).Select(index => Row($"filler-{index:000}", "tenant-a", "filler")))

@@ -14,10 +14,12 @@ using Elsa.Testing.Shared.Multitenancy;
 using Elsa.Workflows;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Options;
 using Elsa.Workflows.Management.Stores;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Stores;
+using Elsa.Workflows.State;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -36,9 +38,11 @@ public sealed class WorkflowStoreScenario(
     IBookmarkQueueDeadLetterStore deadLetters,
     IActivityExecutionStore activityExecutions,
     IWorkflowExecutionLogStore executionLogs,
+    IWorkflowInstanceStore instances,
     Func<Func<Task>, Task> assertUniquenessConflictAsync,
     Func<ValueTask> disposeAsync,
-    IDbContextFactory<RuntimeElsaDbContext>? runtimeDbContextFactory = null) : IAsyncDisposable
+    IDbContextFactory<RuntimeElsaDbContext>? runtimeDbContextFactory = null,
+    IDbContextFactory<ManagementElsaDbContext>? managementDbContextFactory = null) : IAsyncDisposable
 {
     public TestTenantAccessor TenantAccessor { get; } = tenantAccessor;
     public IWorkflowDefinitionStore Definitions { get; } = definitions;
@@ -47,7 +51,9 @@ public sealed class WorkflowStoreScenario(
     public IBookmarkQueueDeadLetterStore DeadLetters { get; } = deadLetters;
     public IActivityExecutionStore ActivityExecutions { get; } = activityExecutions;
     public IWorkflowExecutionLogStore ExecutionLogs { get; } = executionLogs;
+    public IWorkflowInstanceStore Instances { get; } = instances;
     public IDbContextFactory<RuntimeElsaDbContext>? RuntimeDbContextFactory { get; } = runtimeDbContextFactory;
+    public IDbContextFactory<ManagementElsaDbContext>? ManagementDbContextFactory { get; } = managementDbContextFactory;
 
     public IDisposable UseTenant(string tenantId) =>
         TenantAccessor.PushContext(tenantId == Tenant.DefaultTenantId
@@ -81,6 +87,7 @@ public sealed class WorkflowStoreScenario(
             new MemoryBookmarkQueueDeadLetterStore(new MemoryStore<BookmarkQueueDeadLetterItem>()),
             new MemoryActivityExecutionStore(new MemoryStore<ActivityExecutionRecord>()),
             new MemoryWorkflowExecutionLogStore(new MemoryStore<WorkflowExecutionLogRecord>()),
+            new MemoryWorkflowInstanceStore(new MemoryStore<WorkflowInstance>(), tenantAccessor),
             operation => Assert.ThrowsAsync<InvalidOperationException>(operation),
             () => ValueTask.CompletedTask));
     }
@@ -120,12 +127,16 @@ public sealed class WorkflowStoreScenario(
                 .AddScoped<Store<RuntimeElsaDbContext, BookmarkQueueDeadLetterItem>>()
                 .AddScoped<EntityStore<RuntimeElsaDbContext, ActivityExecutionRecord>>()
                 .AddScoped<EntityStore<RuntimeElsaDbContext, WorkflowExecutionLogRecord>>()
+                .AddScoped<EntityStore<ManagementElsaDbContext, WorkflowInstance>>()
+                .AddSingleton<IWorkflowStateSerializer, ConformanceWorkflowStateSerializer>()
+                .AddSingleton(Microsoft.Extensions.Options.Options.Create(new ManagementOptions()))
                 .AddScoped<EFCoreWorkflowDefinitionStore>()
                 .AddScoped<EFCoreTriggerStore>()
                 .AddScoped<EFCoreBookmarkStore>()
                 .AddScoped<EFBookmarkQueueDeadLetterStore>()
                 .AddScoped<EFCoreActivityExecutionStore>()
                 .AddScoped<EFCoreWorkflowExecutionLogStore>()
+                .AddScoped<EFCoreWorkflowInstanceStore>()
                 .BuildServiceProvider();
 
             await using (var management = await services.GetRequiredService<IDbContextFactory<ManagementElsaDbContext>>().CreateDbContextAsync())
@@ -144,6 +155,7 @@ public sealed class WorkflowStoreScenario(
                 scoped.GetRequiredService<EFBookmarkQueueDeadLetterStore>(),
                 scoped.GetRequiredService<EFCoreActivityExecutionStore>(),
                 scoped.GetRequiredService<EFCoreWorkflowExecutionLogStore>(),
+                scoped.GetRequiredService<EFCoreWorkflowInstanceStore>(),
                 AssertSqliteUniquenessConflictAsync,
                 async () =>
                 {
@@ -153,7 +165,8 @@ public sealed class WorkflowStoreScenario(
                     File.Delete(managementPath);
                     File.Delete(runtimePath);
                 },
-                scoped.GetRequiredService<IDbContextFactory<RuntimeElsaDbContext>>());
+                scoped.GetRequiredService<IDbContextFactory<RuntimeElsaDbContext>>(),
+                scoped.GetRequiredService<IDbContextFactory<ManagementElsaDbContext>>());
         }
         catch
         {
@@ -224,5 +237,53 @@ public sealed class WorkflowStoreScenario(
         public T Deserialize<T>(string json) => JsonSerializer.Deserialize<T>(json, Options)!;
         public T Deserialize<T>(JsonElement element) => element.Deserialize<T>(Options)!;
         public JsonSerializerOptions GetOptions() => Options;
+    }
+
+    /// <summary>
+    /// Keeps instance saves off the full workflow-state serializer. Compare-and-swap tests read columns, not state.
+    /// </summary>
+    private sealed class ConformanceWorkflowStateSerializer : IWorkflowStateSerializer
+    {
+        public string Serialize(WorkflowState workflowState) => "{}";
+
+        public string Serialize(object workflowState) => "{}";
+
+        public WorkflowState Deserialize(string serializedState) => new();
+
+        public WorkflowState Deserialize(JsonElement serializedState) => new();
+
+        public T Deserialize<T>(string serializedState) => default!;
+
+        public byte[] SerializeToUtfBytes(WorkflowState workflowState) => "{}"u8.ToArray();
+
+        public JsonElement SerializeToElement(WorkflowState workflowState) => JsonSerializer.SerializeToElement(new { });
+
+        [Obsolete("Use the non-async version Serialize instead.")]
+        public Task<string> SerializeAsync(WorkflowState workflowState, CancellationToken cancellationToken = default) =>
+            Task.FromResult(Serialize(workflowState));
+
+        [Obsolete("Use the non-async version SerializeToUtfBytes instead.")]
+        public Task<byte[]> SerializeToUtfBytesAsync(WorkflowState workflowState, CancellationToken cancellationToken = default) =>
+            Task.FromResult(SerializeToUtfBytes(workflowState));
+
+        [Obsolete("Use the non-async version SerializeToElement instead.")]
+        public Task<JsonElement> SerializeToElementAsync(WorkflowState workflowState, CancellationToken cancellationToken = default) =>
+            Task.FromResult(SerializeToElement(workflowState));
+
+        [Obsolete("Use the non-async version Serialize instead.")]
+        public Task<string> SerializeAsync(object workflowState, CancellationToken cancellationToken = default) =>
+            Task.FromResult(Serialize(workflowState));
+
+        [Obsolete("Use the non-async version Deserialize instead.")]
+        public Task<WorkflowState> DeserializeAsync(string serializedState, CancellationToken cancellationToken = default) =>
+            Task.FromResult(Deserialize(serializedState));
+
+        [Obsolete("Use the non-async version Deserialize instead.")]
+        public Task<WorkflowState> DeserializeAsync(JsonElement serializedState, CancellationToken cancellationToken = default) =>
+            Task.FromResult(Deserialize(serializedState));
+
+        [Obsolete("Use the non-async version Deserialize instead.")]
+        public Task<T> DeserializeAsync<T>(string serializedState, CancellationToken cancellationToken = default) =>
+            Task.FromResult(Deserialize<T>(serializedState));
     }
 }

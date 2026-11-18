@@ -170,6 +170,9 @@ document `PUT` leaves those properties as that save left them, since it edits th
 definition — see the next section. `POST bpmn/import` with the same `DefinitionId` is different: it is a
 whole-definition import and resets them from the document, same as it always has.
 
+BPMN import and document replacement return HTTP 403 when workflow management is read-only.
+Importing over an existing definition or replacing its BPMN document also requires the target to be editable.
+
 `PUT` requires an `If-Match` request header carrying the `ETag` a prior `GET` (or `PUT`) returned:
 
 - **Missing, or the wildcard `*`** — `428 Precondition Required`. Neither says which revision the caller is
@@ -187,11 +190,10 @@ whole-definition import and resets them from the document, same as it always has
   ETag-covered graph moved in that window the swap is `412` rather than silently overwriting the other
   write. A lost race is still `412`. The swap is `IWorkflowDefinitionStore.TryUpdateLatestAsync`, which every
   definition store in this repository implements: in-memory (one lock), EF Core and Dapper (one database
-  transaction; Dapper's is serializable) and MongoDB (one session transaction with snapshot read concern). MongoDB
-  transactions need a deployment that supports them, such as a replica set: against a standalone server the store
-  throws `NotSupportedException` without writing anything, so the `PUT` fails instead of saving an unguarded
-  edit. A third-party definition store must implement the method with the same guarantee for this
-  endpoint to be concurrency-safe on it.
+  transaction; Dapper's is serializable) and MongoDB. MongoDB edits an existing draft with a conditional
+  document replacement, including on standalone servers. Creating a draft of a published version changes
+  two documents and requires transaction support, such as a replica set. A third-party definition store
+  must implement the same guarantee for concurrent edits.
 
 ### The document endpoints and the JSON payload format
 

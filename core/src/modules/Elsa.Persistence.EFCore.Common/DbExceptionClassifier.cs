@@ -33,6 +33,9 @@ internal static class DbExceptionClassifier
         if (providerName.Contains("MySql", StringComparison.OrdinalIgnoreCase))
             return EnumerateExceptions(exception).Any(IsMySqlTransientException);
 
+        if (providerName.Contains("Oracle", StringComparison.OrdinalIgnoreCase))
+            return EnumerateExceptions(exception).Any(IsOracleTransientException);
+
         return false;
     }
 
@@ -59,6 +62,14 @@ internal static class DbExceptionClassifier
                                    || typeNamespace.Equals("MySql.Data.MySqlClient", StringComparison.OrdinalIgnoreCase));
 
         return isMySqlException && GetErrorNumbers(exception).Any(MySqlTransientErrorNumbers.Contains);
+    }
+
+    private static bool IsOracleTransientException(Exception exception)
+    {
+        var type = exception.GetType();
+        return type.Name == "OracleException"
+               && type.Namespace == "Oracle.ManagedDataAccess.Client"
+               && GetErrorNumbers(exception).Any(number => number is 8176 or 8177);
     }
 
     private static bool IsDuplicateKeyException(Exception exception)

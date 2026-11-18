@@ -130,7 +130,7 @@ internal class Export : ElsaEndpointWithMapper<Request, WorkflowInstanceMapper>
         var bookmarksElement = bookmarks != null ? SerializeBookmarks(bookmarks) : default(JsonElement?);
         var executionLogRecordsElement = executionLogRecords != null ? _safeSerializer.SerializeToElement(executionLogRecords) : default(JsonElement?);
         var activityExecutionLogRecordsElement = activityExecutionLogRecords != null ? _safeSerializer.SerializeToElement(activityExecutionLogRecords) : default(JsonElement?);
-        var model = new ExportedWorkflowState(workflowStateElement, bookmarksElement, activityExecutionLogRecordsElement, executionLogRecordsElement);
+        var model = new ExportedWorkflowState(workflowStateElement, bookmarksElement, activityExecutionLogRecordsElement, executionLogRecordsElement) { TenantId = instance.TenantId };
         return model;
     }
 

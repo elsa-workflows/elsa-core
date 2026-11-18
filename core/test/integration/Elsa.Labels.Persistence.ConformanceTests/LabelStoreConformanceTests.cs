@@ -200,14 +200,19 @@ public abstract class LabelStoreConformanceTests
         using (scenario.UseTenant("tenant-b"))
             Assert.Contains(await scenario.AssociationQuery.FindByLabelIdsAsync(["red"]), x => x.Id == "assoc-b");
 
-        var deletedLabels = await scenario.Labels.DeleteManyAsync(["label-a", "label-b", "label-star"]);
-        Assert.Equal(2, deletedLabels);
+        using (SharedTenantWriteScope.Enter<Label>())
+        {
+            Assert.Equal(2, await scenario.Labels.DeleteManyAsync(["label-a", "label-b", "label-star"]));
+        }
         using (scenario.UseTenant("tenant-b"))
             Assert.Equal("label-b", (await scenario.Labels.FindByIdAsync("label-b"))!.Id);
 
         using (scenario.UseTenant("tenant-b"))
             await scenario.Associations.SaveAsync(Association("assoc-b-order", "blue", "order", "order:1", "tenant-b"));
-        Assert.Equal(2, await scenario.Associations.DeleteByWorkflowDefinitionIdAsync("order"));
+        using (SharedTenantWriteScope.Enter<WorkflowDefinitionLabel>())
+        {
+            Assert.Equal(2, await scenario.Associations.DeleteByWorkflowDefinitionIdAsync("order"));
+        }
         Assert.Empty(await scenario.Associations.FindByWorkflowDefinitionVersionIdAsync("order:1"));
         using (scenario.UseTenant("tenant-b"))
         {
@@ -216,15 +221,18 @@ public abstract class LabelStoreConformanceTests
             Assert.Contains(stillB, x => x.Id == "assoc-b-order");
         }
 
+        using (scenario.UseTenant("tenant-a"))
+        {
+            var namedLabel = Label("label-named", "Named", "tenant-a");
+            await scenario.Labels.SaveAsync(namedLabel);
+            Assert.Equal("tenant-a", namedLabel.TenantId);
+        }
+
         using (scenario.UseTenant(Tenant.DefaultTenantId))
         {
             var stampedLabel = Label("label-null", "Null", tenantId: null);
             await scenario.Labels.SaveAsync(stampedLabel);
             Assert.Equal(Tenant.DefaultTenantId, stampedLabel.TenantId);
-
-            var namedLabel = Label("label-named", "Named", "tenant-a");
-            await scenario.Labels.SaveAsync(namedLabel);
-            Assert.Equal("tenant-a", namedLabel.TenantId);
 
             var defaultLabels = (await scenario.Labels.ListAsync()).Items.ToList();
             Assert.Contains(defaultLabels, x => x.Id == "label-null");
@@ -247,7 +255,10 @@ public abstract class LabelStoreConformanceTests
         }
 
         var agnostic = Label("label-star-2", "Star2", Tenant.AgnosticTenantId);
-        await scenario.Labels.SaveAsync(agnostic);
+        using (SharedTenantWriteScope.Enter<Label>())
+        {
+            await scenario.Labels.SaveAsync(agnostic);
+        }
         Assert.Equal(Tenant.AgnosticTenantId, agnostic.TenantId);
 
         var stampedNamedLabel = Label("label-named-stamp", "NamedStamp", tenantId: null);
@@ -295,7 +306,10 @@ public abstract class LabelStoreConformanceTests
         await scenario.AssertUniquenessConflictAsync(() => scenario.Labels.SaveAsync(Label("label-later", "Critical", "tenant-a")));
         Assert.Equal("Later", (await scenario.Labels.FindByIdAsync("label-later"))!.Name);
 
-        await scenario.Labels.SaveAsync(Label("label-star", "Critical", Tenant.AgnosticTenantId));
+        using (SharedTenantWriteScope.Enter<Label>())
+        {
+            await scenario.Labels.SaveAsync(Label("label-star", "Critical", Tenant.AgnosticTenantId));
+        }
         Assert.NotNull(await scenario.Labels.FindByIdAsync("label-star"));
 
         using (scenario.UseTenant(Tenant.DefaultTenantId))
@@ -322,15 +336,27 @@ public abstract class LabelStoreConformanceTests
     private static async Task SeedMixedLabelsAsync(LabelStoreScenario scenario)
     {
         await scenario.Labels.SaveAsync(Label("label-a", "A", "tenant-a"));
-        await scenario.Labels.SaveAsync(Label("label-b", "B", "tenant-b"));
-        await scenario.Labels.SaveAsync(Label("label-star", "Star", Tenant.AgnosticTenantId));
+        using (scenario.UseTenant("tenant-b"))
+        {
+            await scenario.Labels.SaveAsync(Label("label-b", "B", "tenant-b"));
+        }
+        using (SharedTenantWriteScope.Enter<Label>())
+        {
+            await scenario.Labels.SaveAsync(Label("label-star", "Star", Tenant.AgnosticTenantId));
+        }
     }
 
     private static async Task SeedMixedAssociationsAsync(LabelStoreScenario scenario)
     {
         await scenario.Associations.SaveAsync(Association("assoc-a", "red", "order", "order:1", "tenant-a"));
-        await scenario.Associations.SaveAsync(Association("assoc-b", "red", "order", "order:1", "tenant-b"));
-        await scenario.Associations.SaveAsync(Association("assoc-star", "red", "order", "order:1", Tenant.AgnosticTenantId));
+        using (scenario.UseTenant("tenant-b"))
+        {
+            await scenario.Associations.SaveAsync(Association("assoc-b", "red", "order", "order:1", "tenant-b"));
+        }
+        using (SharedTenantWriteScope.Enter<WorkflowDefinitionLabel>())
+        {
+            await scenario.Associations.SaveAsync(Association("assoc-star", "red", "order", "order:1", Tenant.AgnosticTenantId));
+        }
     }
 
     private static Label Label(string id, string name, string? tenantId) =>

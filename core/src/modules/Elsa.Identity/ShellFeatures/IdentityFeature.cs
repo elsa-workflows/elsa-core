@@ -7,6 +7,7 @@ using Elsa.Common.ShellFeatures;
 using Elsa.Extensions;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Entities;
+using Elsa.Identity.Extensions;
 using Elsa.Identity.Multitenancy;
 using Elsa.Identity.Options;
 using Elsa.Identity.Providers;
@@ -47,6 +48,8 @@ public class IdentityFeature : IFastEndpointsShellFeature
         // The identity stores are tenant-scoped, so a host that never enables multitenancy still needs an
         // accessor. TryAdd leaves an existing registration -- notably MultitenancyFeature's -- untouched.
         services.TryAddSingleton<ITenantAccessor, DefaultTenantAccessor>();
+        services.AddLocalPasswordAttemptLimiter();
+        services.AddOptions<LocalPasswordAttemptOptions>().Configure<ShellConfiguration>((options, config) => config.GetSection("Identity:LocalPasswordAttempts").Bind(options));
         services.AddHostedService<HostedServices.StoredPermissionValidator>();
         services.AddHostedService<HostedServices.IdentityBootstrapDiagnostic>();
         services.AddScoped<Services.RoleSecurityNotifier>();

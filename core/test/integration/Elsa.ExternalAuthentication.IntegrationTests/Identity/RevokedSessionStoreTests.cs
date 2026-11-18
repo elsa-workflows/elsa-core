@@ -75,6 +75,7 @@ public abstract class RevokedSessionStoreTests : IAsyncLifetime
     [Fact]
     public async Task RevokingASessionAgainNeverShortensItsRevocation()
     {
+        using var grant = SharedTenantWriteScope.Enter<RevokedSession>();
         await Store.AddOrExtendAsync(Revocation("session-a", Now.AddDays(30)));
 
         await Store.AddOrExtendAsync(Revocation("session-a", Now.AddHours(2)));
@@ -85,6 +86,7 @@ public abstract class RevokedSessionStoreTests : IAsyncLifetime
     [Fact]
     public async Task RevokingASessionAgainExtendsItsRevocation()
     {
+        using var grant = SharedTenantWriteScope.Enter<RevokedSession>();
         await Store.AddOrExtendAsync(Revocation("session-a", Now.AddHours(2)));
 
         await Store.AddOrExtendAsync(Revocation("session-a", Now.AddDays(30)));
@@ -95,6 +97,7 @@ public abstract class RevokedSessionStoreTests : IAsyncLifetime
     [Fact]
     public async Task DeleteExpiredKeepsRevocationsThatHaveNotExpired()
     {
+        using var grant = SharedTenantWriteScope.Enter<RevokedSession>();
         // SQLite stores these as text, so sub-second and cross-month values check that ordering survives the conversion.
         await Store.AddOrExtendAsync(Revocation("expired", Now.AddMilliseconds(-500)));
         await Store.AddOrExtendAsync(Revocation("expires-just-after", Now.AddMilliseconds(250)));
@@ -145,6 +148,7 @@ public sealed class SqliteRevokedSessionStoreTests : RevokedSessionStoreTests
     [InlineData(3)]
     public async Task ARevocationThatLosesItsInsertToAConcurrentOneKeepsTheLaterExpiry(int concurrentExpiryHours)
     {
+        using var grant = SharedTenantWriteScope.Enter<RevokedSession>();
         _inserts.BeforeNext = () => Store.AddOrExtendAsync(Revocation("session-a", Now.AddHours(concurrentExpiryHours)));
 
         await Store.AddOrExtendAsync(Revocation("session-a", Now.AddHours(2)));

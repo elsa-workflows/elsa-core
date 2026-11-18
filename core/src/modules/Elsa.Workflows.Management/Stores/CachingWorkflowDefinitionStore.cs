@@ -105,6 +105,63 @@ public class CachingWorkflowDefinitionStore(IWorkflowDefinitionStore decoratedSt
     }
 
     /// <inheritdoc />
+    public async Task<bool> TryAddAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
+    {
+        var added = await decoratedStore.TryAddAsync(definition, cancellationToken);
+        if (added)
+            await cacheManager.TriggerTokenAsync(CacheInvalidationTokenKey, cancellationToken);
+
+        return added;
+    }
+
+    /// <inheritdoc />
+    public async Task<bool> TryRetractAsync(WorkflowDefinition expected, CancellationToken cancellationToken = default)
+    {
+        var retracted = await decoratedStore.TryRetractAsync(expected, cancellationToken);
+        if (retracted)
+            await cacheManager.TriggerTokenAsync(CacheInvalidationTokenKey, cancellationToken);
+
+        return retracted;
+    }
+
+    /// <inheritdoc />
+    public async Task<bool> TryPublishAsync(WorkflowDefinition definition, Func<IReadOnlyCollection<WorkflowDefinition>, bool> matchesExpected,
+        CancellationToken cancellationToken = default)
+    {
+        var published = await decoratedStore.TryPublishAsync(definition, matchesExpected, cancellationToken);
+        if (published)
+            await cacheManager.TriggerTokenAsync(CacheInvalidationTokenKey, cancellationToken);
+
+        return published;
+    }
+
+    /// <inheritdoc />
+    public async Task<bool> TryPromoteExistingDraftAsync(WorkflowDefinition definition, Func<IReadOnlyCollection<WorkflowDefinition>, bool> matchesExpected,
+        CancellationToken cancellationToken = default)
+    {
+        var promoted = await decoratedStore.TryPromoteExistingDraftAsync(definition, matchesExpected, cancellationToken);
+        if (promoted)
+        {
+            await cacheManager.TriggerTokenAsync(CacheInvalidationTokenKey, cancellationToken);
+        }
+
+        return promoted;
+    }
+
+    /// <inheritdoc />
+    public bool SupportsDeletion(WorkflowDefinitionDeletionPlan plan) => decoratedStore.SupportsDeletion(plan);
+
+    /// <inheritdoc />
+    public async Task<bool> TryDeleteAsync(WorkflowDefinitionDeletionPlan plan, CancellationToken cancellationToken = default)
+    {
+        var deleted = await decoratedStore.TryDeleteAsync(plan, cancellationToken);
+        if (deleted)
+            await cacheManager.TriggerTokenAsync(CacheInvalidationTokenKey, cancellationToken);
+
+        return deleted;
+    }
+
+    /// <inheritdoc />
     public async Task<WorkflowDefinitionUpdateResult> TryUpdateLatestAsync(
         WorkflowDefinitionFilter filter,
         Func<WorkflowDefinition, bool> matchesExpected,

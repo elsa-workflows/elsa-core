@@ -7,14 +7,13 @@ namespace Elsa.Diagnostics.OpenTelemetry.UnitTests.Ingestion;
 
 public class OtlpIngestionSecurityTests
 {
-    [Fact(DisplayName = "Loopback ingestion is allowed without API key in development mode")]
+    [Fact(DisplayName = "Loopback ingestion without a key requires explicit opt-in")]
     public void AllowsLoopbackWithoutApiKey()
     {
         var context = CreateContext(IPAddress.Loopback);
 
-        var authorized = OtlpIngestionSecurity.IsAuthorized(context, new OpenTelemetryDiagnosticsOptions());
-
-        Assert.True(authorized);
+        Assert.False(OtlpIngestionSecurity.IsAuthorized(context, new OpenTelemetryDiagnosticsOptions()));
+        Assert.True(OtlpIngestionSecurity.IsAuthorized(context, new OpenTelemetryDiagnosticsOptions { AllowUnauthenticatedLoopback = true }));
     }
 
     [Fact(DisplayName = "Non-loopback ingestion is rejected without API key")]

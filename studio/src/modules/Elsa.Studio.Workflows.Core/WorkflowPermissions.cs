@@ -25,6 +25,7 @@ public static class WorkflowPermissions
 /// <summary>The workflow verbs beyond the core <c>PermissionVerbs</c>.</summary>
 public static class WorkflowVerbs
 {
+    public const string Restore = "restore";
     /// <summary>Publish a workflow definition.</summary>
     public const string Publish = "publish";
 

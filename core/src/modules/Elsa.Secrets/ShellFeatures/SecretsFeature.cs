@@ -19,12 +19,14 @@ public class SecretsFeature : IFastEndpointsShellFeature
 {
     public string ConfigurationSectionName { get; set; } = "Elsa:Secrets";
     public byte[]? EncryptionKey { get; set; }
+    public ICollection<byte[]> PreviousEncryptionKeys { get; set; } = [];
 
     public void ConfigureServices(IServiceCollection services)
     {
         services.AddSecretsServices(options =>
         {
             options.ConfigurationSectionName = ConfigurationSectionName;
+            options.PreviousEncryptionKeys = PreviousEncryptionKeys;
             if (EncryptionKey != null)
                 options.EncryptionKey = EncryptionKey;
         });

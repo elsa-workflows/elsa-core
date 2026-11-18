@@ -1,5 +1,4 @@
 using Elsa.ServiceBus.MassTransit.Messages;
-using Elsa.Workflows;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Messages;
@@ -92,20 +91,16 @@ public class DispatchWorkflowRequestConsumer(IWorkflowDefinitionService workflow
         if (string.IsNullOrWhiteSpace(message.InstanceId)) throw new ArgumentException("The instance ID is required when dispatching an existing workflow instance.");
 
         var workflowClient = await workflowRuntime.CreateClientAsync(message.InstanceId, cancellationToken);
-        var state = await workflowClient.ExportStateAsync(cancellationToken);
-        if (state.SubStatus != WorkflowSubStatus.Pending)
-        {
-            logger.LogDebug("Skipping existing-instance dispatch of {InstanceId}: sub-status is {SubStatus}", message.InstanceId, state.SubStatus);
-            return;
-        }
-
         var request = new RunWorkflowInstanceRequest
         {
             TriggerActivityId = message.TriggerActivityId,
+            StartDeliveryId = message.StartDeliveryId,
             Input = message.Input,
             Properties = message.Properties
         };
 
-        await workflowClient.RunInstanceAsync(request, cancellationToken);
+        var response = await workflowClient.RunInstanceIfPendingAsync(request, cancellationToken);
+        if (response == null)
+            logger.LogDebug("Skipping pending dispatch of {InstanceId}: status or delivery ownership changed.", message.InstanceId);
     }
 }

@@ -114,11 +114,11 @@ public sealed partial class IdentityProviderConnectionManagementService(
             return new ManagementConnectionMutationResult.Forbidden();
         if (!string.Equals(existing.Key, candidate.Key, StringComparison.Ordinal))
             return new ManagementConnectionMutationResult.Conflict("connection_key_immutable");
-        var requireUnsafeConfirmation = adapters.TryGet(candidate.AdapterType, out var candidateAdapter) &&
-            UnsafeSettingsChanged(existing.AdapterSettings, candidate.AdapterSettings, candidateAdapter.Describe());
-        var validation = await ValidateAsync(candidate, actor, targetTenantId, requireCompleteConfiguration: candidate.IsEnabled, confirmUnsafeSettings, requireUnsafeConfirmation, allowIncompleteDraft: !candidate.IsEnabled, cancellationToken: cancellationToken);
+        var validation = await ValidateAsync(candidate, actor, targetTenantId, requireCompleteConfiguration: candidate.IsEnabled, confirmUnsafeSettings, allowIncompleteDraft: !candidate.IsEnabled, cancellationToken: cancellationToken);
         if (!validation.IsValid)
             return new ManagementConnectionMutationResult.ValidationFailed(validation);
+        if (!CanConfirmProviderTrust(actor, confirmUnsafeSettings) && await UnsafeSettingsChangedAsync(existing, candidate, cancellationToken))
+            return new ManagementConnectionMutationResult.ValidationFailed(new(false, [UnsafeSettingsConfirmationError()], validation.Warnings));
 
         if (await IsBlockedByFinalLoginPathGuardAsync(existing, candidate, targetTenantId, actor, confirmFinalLoginPathOverride, cancellationToken))
             return new ManagementConnectionMutationResult.Conflict("final_login_path_guard");
@@ -224,8 +224,8 @@ public sealed partial class IdentityProviderConnectionManagementService(
         var descriptor = adapter.Describe();
         ValidateSecretBindingFields(connection, descriptor, requireCompleteConfiguration, errors);
         ValidateSecretBindingsAreNotAdapterSettings(connection.AdapterSettings, descriptor, errors);
-        if (requireUnsafeConfirmation && UsesUnsafeSettings(connection.AdapterSettings, descriptor) && (!confirmUnsafeSettings || !permissionEvaluator.HasPermission(actor, ExternalAuthenticationResourcePermissions.ProviderTrust, ExternalAuthenticationVerbs.Override)))
-            errors.Add(new("adapterSettings", "unsafe_confirmation_required", "Unsafe provider trust settings require permission and explicit confirmation."));
+        if (requireUnsafeConfirmation && UsesUnsafeSettings(connection.AdapterSettings, descriptor) && !CanConfirmProviderTrust(actor, confirmUnsafeSettings))
+            errors.Add(UnsafeSettingsConfirmationError());
 
         if (requireCompleteConfiguration)
         {
@@ -626,20 +626,49 @@ public sealed partial class IdentityProviderConnectionManagementService(
             settings.TryGetProperty(field.Name, out var value) && IsUnsafeFieldValue(field, value));
     }
 
-    private static bool UnsafeSettingsChanged(JsonElement beforeSettings, JsonElement afterSettings, ExternalAuthenticationAdapterDescriptor descriptor)
+    private bool CanConfirmProviderTrust(ClaimsPrincipal actor, bool confirmed) =>
+        confirmed && permissionEvaluator.HasPermission(actor, ExternalAuthenticationResourcePermissions.ProviderTrust, ExternalAuthenticationVerbs.Override);
+
+    private static ConnectionValidationError UnsafeSettingsConfirmationError() =>
+        new("adapterSettings", "unsafe_confirmation_required", "Provider trust changes require permission and explicit confirmation.");
+
+    private async ValueTask<bool> UnsafeSettingsChangedAsync(IdentityProviderConnection existing, IdentityProviderConnection candidate, CancellationToken cancellationToken)
     {
-        if (afterSettings.ValueKind != JsonValueKind.Object)
+        if (!string.Equals(existing.AdapterType, candidate.AdapterType, StringComparison.Ordinal))
+            return (adapters.TryGet(existing.AdapterType, out var previousAdapter) && UsesUnsafeSettings(existing.AdapterSettings, previousAdapter.Describe())) ||
+                   (adapters.TryGet(candidate.AdapterType, out var nextAdapter) && UsesUnsafeSettings(candidate.AdapterSettings, nextAdapter.Describe()));
+
+        if (!adapters.TryGet(candidate.AdapterType, out var adapter))
             return false;
 
-        foreach (var field in descriptor.Fields.Where(x => x.IsUnsafe))
+        var beforeSettings = existing.AdapterSettings;
+        if (existing.AdapterSettingsVersion != candidate.AdapterSettingsVersion)
         {
-            if (!afterSettings.TryGetProperty(field.Name, out var afterValue) || !IsUnsafeFieldValue(field, afterValue))
-                continue;
-            if (beforeSettings.ValueKind != JsonValueKind.Object || !beforeSettings.TryGetProperty(field.Name, out var beforeValue) || !JsonValueEquals(beforeValue, afterValue))
-                return true;
+            try
+            {
+                var migration = await settingsMigrations.MigrateAsync(existing.AdapterType, existing.AdapterSettingsVersion, beforeSettings, cancellationToken);
+                beforeSettings = migration.Settings;
+            }
+            catch (InvalidOperationException)
+            {
+                // Updating unrecognized trust settings is a repair operation that needs explicit authorization.
+                return adapter.Describe().Fields.Any(x => x.IsUnsafe);
+            }
         }
 
-        return false;
+        return adapter.Describe().Fields.Where(x => x.IsUnsafe).Any(field => UnsafeFieldChanged(field, beforeSettings, candidate.AdapterSettings));
+    }
+
+    private static bool UnsafeFieldChanged(SettingFieldDescriptor field, JsonElement beforeSettings, JsonElement afterSettings)
+    {
+        var beforeValue = GetSetting(beforeSettings, field.Name);
+        var afterValue = GetSetting(afterSettings, field.Name);
+        return (IsUnsafeFieldValue(field, beforeValue) || IsUnsafeFieldValue(field, afterValue)) && !JsonValueEquals(beforeValue, afterValue);
+
+        static JsonElement GetSetting(JsonElement settings, string name)
+        {
+            return settings.ValueKind == JsonValueKind.Object && settings.TryGetProperty(name, out var value) ? value : default;
+        }
     }
 
     private static bool IsUnsafeFieldValue(SettingFieldDescriptor field, JsonElement value) =>
@@ -647,7 +676,7 @@ public sealed partial class IdentityProviderConnectionManagementService(
         (!string.Equals(field.Name, "providerPkce", StringComparison.Ordinal) || value.ValueKind != JsonValueKind.String || string.Equals(value.GetString(), "disabled", StringComparison.OrdinalIgnoreCase));
 
     private static bool JsonValueEquals(JsonElement left, JsonElement right) =>
-        left.ValueKind == right.ValueKind && string.Equals(left.GetRawText(), right.GetRawText(), StringComparison.Ordinal);
+        left.ValueKind == right.ValueKind && (left.ValueKind == JsonValueKind.Undefined || string.Equals(left.GetRawText(), right.GetRawText(), StringComparison.Ordinal));
 
     private static EffectiveIdentityProviderConnection ToEffective(IdentityProviderConnection connection) => new(connection, ConnectionSourceOwnership.Database, ToScope(connection.TenantId), ConnectionValidity.Unknown, false, DatabaseIdentityProviderConnectionSource.SourceName);
     private static ConnectionScope ToScope(string tenantId) => tenantId == ConnectionScope.HostTenantId ? ConnectionScope.Host : tenantId.Length == 0 ? ConnectionScope.DefaultTenant : new(ConnectionScopeKind.Tenant, tenantId);

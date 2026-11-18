@@ -27,6 +27,7 @@ public record AIContextResolutionRequest
     public AIContextAttachment Attachment { get; init; } = default!;
     public string? TenantId { get; init; }
     public string UserId { get; init; } = default!;
+    public IReadOnlyCollection<string> UserPermissions { get; init; } = [];
 }
 
 public record AITimeRange

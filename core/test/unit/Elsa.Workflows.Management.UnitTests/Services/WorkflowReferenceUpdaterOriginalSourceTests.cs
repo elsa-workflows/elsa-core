@@ -6,6 +6,7 @@ using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Exceptions;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Management.Models;
@@ -56,7 +57,7 @@ public class WorkflowReferenceUpdaterOriginalSourceTests
         await publisher.DidNotReceive().GetDraftAsync(elsaScriptConsumer.DefinitionId, Arg.Any<VersionOptions>(), Arg.Any<CancellationToken>());
         await publisher.DidNotReceive().SaveDraftAsync(elsaScriptConsumer, Arg.Any<CancellationToken>());
         await publisher.DidNotReceive().PublishAsync(elsaScriptConsumer, Arg.Any<CancellationToken>());
-        await publisher.Received(1).SaveDraftAsync(jsonConsumer, Arg.Any<CancellationToken>());
+        await publisher.Received(1).SaveDraftAsync(updated, Arg.Any<CancellationToken>());
         Assert.Contains(logger.Messages, message =>
             message.Contains(elsaScriptConsumer.DefinitionId, StringComparison.Ordinal)
             && message.Contains(target.DefinitionId, StringComparison.Ordinal)
@@ -104,6 +105,74 @@ public class WorkflowReferenceUpdaterOriginalSourceTests
             .Returns(new Workflow());
         await new ElsaScriptWorkflowMaterializer(compiler).MaterializeAsync(elsaScriptConsumer, CancellationToken.None);
         await compiler.Received(1).CompileAsync(ElsaScriptSource, Arg.Any<CancellationToken>());
+    }
+
+    [Theory]
+    [InlineData(true, false, false)]
+    [InlineData(false, true, false)]
+    [InlineData(false, false, true)]
+    public async Task UpdateWorkflowReferencesAsync_SkipsProtectedConsumersAndPublicationTargets(
+        bool readonlyLatest, bool systemLatest, bool systemPublished)
+    {
+        var target = CreateTargetDefinition();
+        var consumer = CreateJsonConsumer();
+        consumer.IsReadonly = readonlyLatest;
+        consumer.IsSystem = systemLatest;
+        consumer.IsPublished = systemPublished;
+        var graph = CreateConsumerGraph(consumer, target, "consumer");
+        var publisher = Substitute.For<IWorkflowDefinitionPublisher>();
+        var registry = Substitute.For<IActivityRegistry>();
+        var updater = CreateUpdater(target, [consumer], [graph], publisher, new CollectingLogger(), registry, out var store);
+        if (systemPublished)
+        {
+            var protectedPublished = consumer.ShallowClone();
+            protectedPublished.IsSystem = true;
+            store.FindAsync(Arg.Is<WorkflowDefinitionFilter>(filter => filter.VersionOptions.HasValue && filter.VersionOptions.Value.IsPublished),
+                    Arg.Any<CancellationToken>())
+                .Returns(protectedPublished);
+        }
+
+        var result = await updater.UpdateWorkflowReferencesAsync(target);
+
+        Assert.Empty(result.UpdatedWorkflows);
+        Assert.Equal("OLD_JSON", consumer.StringData);
+        await publisher.DidNotReceive().GetDraftAsync(Arg.Any<string>(), Arg.Any<VersionOptions>(), Arg.Any<CancellationToken>());
+        await publisher.DidNotReceive().SaveDraftAsync(Arg.Any<WorkflowDefinition>(), Arg.Any<CancellationToken>());
+        await publisher.DidNotReceive().PublishAsync(Arg.Any<WorkflowDefinition>(), Arg.Any<CancellationToken>());
+        registry.DidNotReceive().Add(Arg.Any<Type>(), Arg.Any<ActivityDescriptor>());
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task UpdateWorkflowReferencesAsync_UsesConditionalPublicationAndOmitsConflicts(bool conflict)
+    {
+        var target = CreateTargetDefinition();
+        var consumer = CreateJsonConsumer();
+        consumer.IsPublished = true;
+        var graph = CreateConsumerGraph(consumer, target, "published-consumer");
+        var publisher = Substitute.For<IWorkflowDefinitionPublisher>();
+        var updater = CreateUpdater(target, [consumer], [graph], publisher, new CollectingLogger(), null, out var store);
+        store.FindManyAsync(Arg.Is<WorkflowDefinitionFilter>(filter =>
+                filter.DefinitionId == consumer.DefinitionId && filter.VersionOptions.GetValueOrDefault().IsLatestOrPublished),
+            Arg.Any<CancellationToken>()).Returns([consumer]);
+        publisher.PublishAsync(Arg.Any<WorkflowDefinition>(), Arg.Any<IReadOnlyCollection<WorkflowDefinition>>(), Arg.Any<CancellationToken>())
+            .Returns(_ => conflict
+                ? Task.FromException<PublishWorkflowDefinitionResult>(new WorkflowDefinitionEditConflictException())
+                : Task.FromResult(new PublishWorkflowDefinitionResult(true, [], new([]))));
+
+        var result = await updater.UpdateWorkflowReferencesAsync(target);
+
+        await publisher.Received(1).PublishAsync(
+            Arg.Is<WorkflowDefinition>(version => version.DefinitionId == consumer.DefinitionId && version.StringData == "serialized-root"),
+            Arg.Is<IReadOnlyCollection<WorkflowDefinition>>(versions =>
+                versions.Count == 1 && versions.All(version =>
+                    !ReferenceEquals(version, consumer) && version.Id == consumer.Id &&
+                    version.IsPublished && version.IsLatest && version.StringData == "OLD_JSON")),
+            Arg.Any<CancellationToken>());
+        await publisher.DidNotReceive().PublishAsync(Arg.Any<WorkflowDefinition>(), Arg.Any<CancellationToken>());
+        await publisher.DidNotReceive().SaveDraftAsync(Arg.Any<WorkflowDefinition>(), Arg.Any<CancellationToken>());
+        Assert.Equal(conflict ? 0 : 1, result.UpdatedWorkflows.Count);
     }
 
     private static WorkflowReferenceUpdater CreateUpdater(

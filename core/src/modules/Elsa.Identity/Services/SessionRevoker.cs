@@ -6,6 +6,7 @@ using Elsa.Common;
 using Elsa.Common.Multitenancy;
 using Elsa.Identity.Constants;
 using Elsa.Identity.Contracts;
+using Elsa.Identity.Entities;
 using Elsa.Identity.Models;
 using Elsa.Identity.Options;
 using Microsoft.Extensions.Options;
@@ -73,6 +74,7 @@ public class SessionRevoker(IRevokedSessionStore store, ISystemClock systemClock
         var newestExpiry = now + identityTokenOptions.Value.RefreshTokenLifetime;
         var expiresAt = (session.ExpiresAt > newestExpiry ? session.ExpiresAt : newestExpiry) + ExpiryMargin;
 
+        using var grant = SharedTenantWriteScope.Enter<RevokedSession>();
         await store.DeleteExpiredAsync(now, cancellationToken);
         await store.AddOrExtendAsync(new()
         {

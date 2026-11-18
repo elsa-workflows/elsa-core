@@ -73,6 +73,15 @@ public class ProtoActorWorkflowClient : IWorkflowClient
     }
 
     /// <inheritdoc />
+    public async Task<RunWorkflowInstanceResponse?> RunInstanceIfPendingAsync(RunWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
+    {
+        var protoRequest = _mappers.RunWorkflowInstanceRequestMapper.Map(request);
+        var response = await _actorClient.RunIfPending(protoRequest, CreateHeaders(), cancellationToken)
+            ?? throw new InvalidOperationException("The workflow actor did not respond to the pending start.");
+        return response.Execution == null ? null : _mappers.RunWorkflowInstanceResponseMapper.Map(WorkflowInstanceId, response.Execution);
+    }
+
+    /// <inheritdoc />
     public async Task<RunWorkflowInstanceResponse> CreateAndRunInstanceAsync(CreateAndRunWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
     {
         var protoRequest = _mappers.CreateAndRunWorkflowInstanceRequestMapper.Map(WorkflowInstanceId, request);
@@ -113,8 +122,7 @@ public class ProtoActorWorkflowClient : IWorkflowClient
     /// <inheritdoc />
     public Task<bool> InstanceExistsAsync(CancellationToken cancellationToken = default)
     {
-        // Ask the instance store, not the grain: the proto InstanceExists RPC only inspects in-memory
-        // create state, and sending that message would activate the actor.
+        // Check existence without activating the actor.
         if (_workflowInstanceManager is null)
         {
             throw new InvalidOperationException("InstanceExistsAsync requires the constructor that accepts IWorkflowInstanceManager.");

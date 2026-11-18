@@ -46,6 +46,8 @@ internal class Import : ElsaEndpoint<WorkflowDefinitionModel>
     /// <inheritdoc />
     public override async Task HandleAsync(WorkflowDefinitionModel model, CancellationToken cancellationToken)
     {
+        await using var mutationLock = await WorkflowDefinitionMutationLock.AcquireAsync(HttpContext.RequestServices, cancellationToken);
+
         var definitionId = model.DefinitionId;
         var isNew = string.IsNullOrWhiteSpace(definitionId);
 

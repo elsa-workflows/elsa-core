@@ -11,6 +11,8 @@ using Elsa.ExternalAuthentication.Contracts;
 using Elsa.ExternalAuthentication.Features;
 using Elsa.ExternalAuthentication.Models;
 using Elsa.ExternalAuthentication.Notifications;
+using Elsa.ExternalAuthentication.OpenIdConnect.Services;
+using Elsa.ExternalAuthentication.OpenIdConnect.Validation;
 using Elsa.ExternalAuthentication.Options;
 using Elsa.ExternalAuthentication.Permissions;
 using Elsa.ExternalAuthentication.Services;
@@ -92,7 +94,9 @@ public class ConnectionManagementTests : IAsyncLifetime
         builder.Services.AddSingleton<IConnectionObservationStore>(_observations);
         builder.Services.AddSingleton<ConnectionRevisionCalculator>();
         _adapter = new TestAdapter();
-        builder.Services.AddSingleton<IExternalAuthenticationAdapterRegistry>(new TestAdapterRegistry(_adapter));
+        builder.Services.AddSingleton<IExternalAuthenticationAdapterRegistry>(services => new TestAdapterRegistry(
+            _adapter,
+            new OpenIdConnectExternalAuthenticationAdapter(Substitute.For<IProviderHttpClient>(), new OpenIdConnectSettingsParser(), services.GetRequiredService<IOptions<ExternalAuthenticationOptions>>())));
         _settingsMigrations = new TestAdapterSettingsMigrationService();
         builder.Services.AddSingleton<IAdapterSettingsMigrationService>(_settingsMigrations);
         builder.Services.AddSingleton<IIdentityProviderConnectionValidityAssessor, IdentityProviderConnectionValidityAssessor>();
@@ -443,6 +447,51 @@ public class ConnectionManagementTests : IAsyncLifetime
         _settingsMigrations.CanMigrateVersionOne = true;
         var uppercaseKey = await client.PostAsJsonAsync("/external-authentication/connections", CreateRequest("UpperCase"));
         Assert.Equal(HttpStatusCode.BadRequest, uppercaseKey.StatusCode);
+    }
+
+    [Fact]
+    public async Task OpenIdConnectTrustChangesRequirePermissionAndConfirmation()
+    {
+        var client = _client!;
+        const string adapterType = OpenIdConnectExternalAuthenticationAdapter.AdapterType;
+        var discovery = new { mode = "discovery", clientId = "studio", discoveryUrl = "https://issuer.example/metadata" };
+        _unsafePermissionGranted = false;
+        var createDenied = await client.PostAsJsonAsync("/external-authentication/connections", CreateRequest("oidc", settings: discovery, adapterType: adapterType, confirmUnsafeSettings: true));
+        Assert.Equal(HttpStatusCode.BadRequest, createDenied.StatusCode);
+        Assert.Contains("unsafe_confirmation_required", await createDenied.Content.ReadAsStringAsync());
+
+        _unsafePermissionGranted = true;
+        var created = await client.PostAsJsonAsync("/external-authentication/connections", CreateRequest("oidc", settings: discovery, adapterType: adapterType, confirmUnsafeSettings: true));
+        Assert.Equal(HttpStatusCode.Created, created.StatusCode);
+        var connection = Assert.IsType<ConnectionDocument>(await created.Content.ReadFromJsonAsync<ConnectionDocument>());
+
+        _unsafePermissionGranted = false;
+        Assert.Equal(HttpStatusCode.OK, (await UpdateAsync(discovery, 1)).StatusCode);
+
+        var manual = new { mode = "manual", clientId = "studio", issuer = "https://issuer.example", authorizationEndpoint = "https://issuer.example/authorize", tokenEndpoint = "https://issuer.example/token", jwksUri = "https://issuer.example/keys" };
+        var modeDenied = await UpdateAsync(manual, 2, confirmed: true);
+        Assert.Equal(HttpStatusCode.BadRequest, modeDenied.StatusCode);
+        Assert.Contains("unsafe_confirmation_required", await modeDenied.Content.ReadAsStringAsync());
+        var removalDenied = await UpdateAsync(new { mode = "discovery", clientId = "studio" }, 2, confirmed: true);
+        Assert.Equal(HttpStatusCode.BadRequest, removalDenied.StatusCode);
+        Assert.Contains("unsafe_confirmation_required", await removalDenied.Content.ReadAsStringAsync());
+        var persisted = Assert.IsType<IdentityProviderConnection>(await _store.FindByIdAsync(connection.Id));
+        Assert.Equal(2, persisted.Revision);
+        Assert.Equal("https://issuer.example/metadata", persisted.AdapterSettings.GetProperty("discoveryUrl").GetString());
+
+        _unsafePermissionGranted = true;
+        Assert.Equal(HttpStatusCode.BadRequest, (await UpdateAsync(manual, 2)).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await UpdateAsync(manual, 2, confirmed: true)).StatusCode);
+
+        async Task<HttpResponseMessage> UpdateAsync(object settings, int revision, bool confirmed = false)
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Put, $"/external-authentication/connections/{connection.Id}")
+            {
+                Content = JsonContent.Create(CreateRequest("oidc", displayName: "Updated name", settings: settings, adapterType: adapterType, confirmUnsafeSettings: confirmed))
+            };
+            request.Headers.TryAddWithoutValidation("If-Match", $"\"{revision}\"");
+            return await client.SendAsync(request);
+        }
     }
 
     [Fact]
@@ -874,12 +923,12 @@ public class ConnectionManagementTests : IAsyncLifetime
             defaultRoleIds = Array.Empty<string>()
         }));
 
-    private static object CreateRequest(string key, object? scope = null, string displayName = "Contoso", object? settings = null, bool confirmUnsafeSettings = false, object? unlinkedPolicy = null, string upstreamLogoutMode = "disabled", bool overridesConfigurationConnection = false) => new
+    private static object CreateRequest(string key, object? scope = null, string displayName = "Contoso", object? settings = null, bool confirmUnsafeSettings = false, object? unlinkedPolicy = null, string upstreamLogoutMode = "disabled", bool overridesConfigurationConnection = false, string adapterType = "test") => new
     {
         key,
         scope = scope ?? new { kind = "host" },
-        adapterType = "test",
-        adapterSettingsVersion = 1,
+        adapterType,
+        adapterSettingsVersion = adapterType == OpenIdConnectExternalAuthenticationAdapter.AdapterType ? 2 : 1,
         adapterSettings = settings ?? new { valid = true },
         displayName,
         order = 10,
@@ -980,13 +1029,13 @@ public class ConnectionManagementTests : IAsyncLifetime
         Revision = 1
     };
 
-    private sealed class TestAdapterRegistry(IExternalAuthenticationAdapter registeredAdapter) : IExternalAuthenticationAdapterRegistry
+    private sealed class TestAdapterRegistry(params IExternalAuthenticationAdapter[] registeredAdapters) : IExternalAuthenticationAdapterRegistry
     {
-        public IReadOnlyCollection<ExternalAuthenticationAdapterDescriptor> ListDescriptors() => [registeredAdapter.Describe()];
+        public IReadOnlyCollection<ExternalAuthenticationAdapterDescriptor> ListDescriptors() => registeredAdapters.Select(x => x.Describe()).ToArray();
         public bool TryGet(string type, out IExternalAuthenticationAdapter adapter)
         {
-            adapter = registeredAdapter;
-            return string.Equals(type, registeredAdapter.Type, StringComparison.Ordinal);
+            adapter = registeredAdapters.FirstOrDefault(x => string.Equals(type, x.Type, StringComparison.Ordinal))!;
+            return adapter != null;
         }
     }
 
@@ -1019,6 +1068,9 @@ public class ConnectionManagementTests : IAsyncLifetime
 
         public ValueTask<AdapterSettingsMigrationResult> MigrateAsync(string adapterType, int settingsVersion, JsonElement settings, CancellationToken cancellationToken = default)
         {
+            if (adapterType == OpenIdConnectExternalAuthenticationAdapter.AdapterType && settingsVersion == 2)
+                return ValueTask.FromResult(new AdapterSettingsMigrationResult(2, settings.Clone(), false));
+
             if (!string.Equals(adapterType, "test", StringComparison.Ordinal) || settingsVersion is < 1 or > 2 || (settingsVersion == 1 && !CanMigrateVersionOne))
                 throw new InvalidOperationException("No compatible settings migration is available.");
 

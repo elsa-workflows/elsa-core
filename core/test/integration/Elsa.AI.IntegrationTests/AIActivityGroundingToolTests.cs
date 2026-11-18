@@ -30,7 +30,7 @@ public class AIActivityGroundingToolTests
             }));
         using var provider = services.BuildServiceProvider();
         var registry = provider.GetRequiredService<IAIToolRegistry>();
-        using var tool = await registry.FindAsync("activities.search", new AIToolQuery { ActorId = "user-1" });
+        using var tool = await registry.FindAsync("activities.search", new AIToolQuery { ActorId = "user-1", UserPermissions = ["workflows/definitions:view"] });
 
         var result = await tool!.ExecuteAsync(new AIToolExecutionContext
         {

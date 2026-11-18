@@ -58,6 +58,91 @@ public sealed class DapperWorkflowDefinitionStoreCompareAndSwapTests : IDisposab
         _store = new DapperWorkflowDefinitionStore(store, new JsonPayloadSerializer(), connectionProvider, _tenantAccessor);
     }
 
+    [Fact]
+    public async Task RetractionChangesOnlyThePublishedFlagOfTheOwnedVersion()
+    {
+        using var tenant = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+        var published = Definition("definition", "published", name: "Original", stringData: "graph");
+        published.IsLatest = false;
+        published.IsPublished = true;
+        await _store.SaveAsync(published);
+        var expected = (await _store.FindAsync(new() { Id = published.Id }))!.ShallowClone();
+
+        using (_tenantAccessor.PushContext(new Tenant { Id = "tenant-b" }))
+            Assert.False(await _store.TryRetractAsync(expected));
+
+        var mismatched = expected.ShallowClone();
+        mismatched.IsReadonly = true;
+        Assert.False(await _store.TryRetractAsync(mismatched));
+
+        expected.Name = "Older name";
+        Assert.True(await _store.TryRetractAsync(expected));
+        Assert.False(await _store.TryRetractAsync(expected));
+
+        var stored = (await _store.FindAsync(new() { Id = published.Id }))!;
+        Assert.False(stored.IsPublished);
+        Assert.False(stored.IsLatest);
+        Assert.Equal("Original", stored.Name);
+    }
+
+    [Fact]
+    public async Task PublicationChangesTheAuthorizedVersionSetInOneWrite()
+    {
+        using var tenant = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+        var published = Definition("definition", "published", name: "Published", stringData: "graph-1");
+        published.IsLatest = true;
+        published.IsPublished = true;
+        var draft = Definition("definition", "draft", name: "Draft", stringData: "graph-2");
+        draft.Version = 2;
+        draft.IsLatest = false;
+        await _store.SaveManyAsync([published, draft]);
+        var proposed = (await _store.FindAsync(new() { Id = draft.Id }))!;
+        proposed.IsLatest = true;
+
+        Assert.False(await _store.TryPromoteExistingDraftAsync(proposed, versions => versions.Count == 1));
+        Assert.True((await _store.FindAsync(new() { Id = published.Id }))!.IsLatest);
+        Assert.True(await _store.TryPromoteExistingDraftAsync(proposed, versions => versions.Count == 2));
+        var promoted = await _store.FindManyAsync(new() { DefinitionId = "definition" });
+        Assert.Equal(published.Id, Assert.Single(promoted, version => version.IsPublished).Id);
+        Assert.Equal(draft.Id, Assert.Single(promoted, version => version.IsLatest).Id);
+
+        proposed.IsPublished = true;
+
+        Assert.False(await _store.TryPublishAsync(proposed, versions => versions.Count == 1));
+        Assert.True((await _store.FindAsync(new() { Id = published.Id }))!.IsPublished);
+        Assert.False((await _store.FindAsync(new() { Id = draft.Id }))!.IsPublished);
+        Assert.True(await _store.TryPublishAsync(proposed, versions => versions.Count == 2));
+
+        var saved = await _store.FindManyAsync(new() { DefinitionId = "definition" });
+        Assert.Equal("draft", Assert.Single(saved, version => version.IsPublished).Id);
+        Assert.Equal("draft", Assert.Single(saved, version => version.IsLatest).Id);
+    }
+
+    [Fact]
+    public async Task PromotionPreservesLegacyDefaultTenantIdentifiers()
+    {
+        var published = Definition("definition", "published", name: "Published", stringData: "graph-1");
+        published.IsPublished = true;
+        var draft = Definition("definition", "draft", name: "Draft", stringData: "graph-2");
+        draft.Version = 2;
+        draft.IsLatest = false;
+        await _store.SaveManyAsync([published, draft]);
+        using var connection = new SqliteConnection($"Data Source={_databasePath};Pooling=False");
+        await connection.OpenAsync();
+        await connection.ExecuteAsync("update WorkflowDefinitions set TenantId = '' where Id = 'published';");
+        await connection.ExecuteAsync("update WorkflowDefinitions set TenantId = null where Id = 'draft';");
+
+        var proposed = (await _store.FindAsync(new() { Id = draft.Id }))!;
+        proposed.IsLatest = true;
+        Assert.True(await _store.TryPromoteExistingDraftAsync(proposed, versions => versions.Count == 2));
+
+        var saved = (await _store.FindManyAsync(new() { DefinitionId = "definition" })).ToList();
+        Assert.Equal(published.Id, Assert.Single(saved, version => version.IsPublished).Id);
+        Assert.Equal(draft.Id, Assert.Single(saved, version => version.IsLatest).Id);
+        var tenantIds = (await connection.QueryAsync<string?>("select TenantId from WorkflowDefinitions order by Id;")).ToArray();
+        Assert.Equal(new string?[] { null, "" }, tenantIds);
+    }
+
     [Fact(DisplayName = "A missing definition is NotFound")]
     public async Task TryUpdateLatestAsync_WhenNothingMatchesTheFilter_ReturnsNotFound()
     {

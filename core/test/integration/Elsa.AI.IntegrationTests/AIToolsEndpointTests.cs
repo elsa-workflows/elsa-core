@@ -23,6 +23,7 @@ public class AIToolsEndpointTests
         using var provider = services.BuildServiceProvider();
         var endpoint = new ToolsEndpoint(provider.GetRequiredService<IAIToolRegistry>(), MicrosoftOptions.Create(new AIHostOptions()));
 
+        SetHttpContext(endpoint, "workflows/*:view", "workflows/definitions:write");
         var tools = await endpoint.ExecuteAsync(new Request(), CancellationToken.None);
 
         Assert.Contains(tools, x => x.Name == "activities.search");
@@ -71,6 +72,7 @@ public class AIToolsEndpointTests
         using var provider = services.BuildServiceProvider();
         var endpoint = new ToolsEndpoint(provider.GetRequiredService<IAIToolRegistry>(), MicrosoftOptions.Create(new AIHostOptions()));
 
+        SetHttpContext(endpoint, "workflows/*:view", "workflows/definitions:write");
         var tools = await endpoint.ExecuteAsync(new Request(), CancellationToken.None);
 
         Assert.Contains(tools, tool => tool.Name == "activities.getDescriptor");

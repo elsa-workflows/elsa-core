@@ -77,10 +77,10 @@ public sealed class PostgreSqlDialectTests
         Assert.DoesNotContain("order by CreatedAt desc\n", queries["order-desc"], StringComparison.Ordinal);
     }
 
-    [Fact(DisplayName = "PG DateTimeOffset handler accepts DateTime, DateTimeOffset, and string")]
+    [Fact(DisplayName = "DateTimeOffset handler accepts DateTime, DateTimeOffset, and string")]
     public void DateTimeOffsetHandler_AcceptsNpgsqlAndSqliteShapes()
     {
-        var handler = new Elsa.Persistence.Dapper.TypeHandlers.PostgreSql.DateTimeOffsetHandler();
+        var handler = new Elsa.Persistence.Dapper.TypeHandlers.DateTimeOffsetHandler();
         var utc = new DateTime(2026, 9, 28, 7, 52, 22, DateTimeKind.Utc);
         var dto = new DateTimeOffset(utc);
 

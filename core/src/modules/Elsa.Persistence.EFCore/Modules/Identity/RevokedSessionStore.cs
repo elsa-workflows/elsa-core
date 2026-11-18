@@ -1,3 +1,4 @@
+using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -38,7 +39,7 @@ public class EFCoreRevokedSessionStore(EntityStore<IdentityElsaDbContext, Revoke
     {
         var expiresAt = revokedSession.ExpiresAt;
         await using var dbContext = await store.CreateDbContextAsync(cancellationToken);
-        var revocation = dbContext.RevokedSessions.Where(x => x.Id == revokedSession.Id);
+        var revocation = dbContext.RevokedSessions.WhereTenantCanWrite(dbContext).Where(x => x.Id == revokedSession.Id);
         var extended = await revocation.Where(x => x.ExpiresAt < expiresAt).ExecuteUpdateAsync(x => x.SetProperty(r => r.ExpiresAt, expiresAt), cancellationToken);
 
         return extended > 0 || await revocation.AnyAsync(x => x.ExpiresAt >= expiresAt, cancellationToken);

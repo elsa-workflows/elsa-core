@@ -57,6 +57,11 @@ public class WorkflowResumerConsumedBookmarkTests
             lockProvider,
             Microsoft.Extensions.Options.Options.Create(new DistributedLockingOptions()),
             NullLogger<WorkflowResumer>.Instance);
+        var wrongInstance = new ResumeBookmarkRequest { WorkflowInstanceId = "another-instance", BookmarkId = "bookmark-1" };
+        Assert.Empty(await resumer.ResumeAsync(wrongInstance));
+        Assert.Equal(0, runCount);
+        await Assert.ThrowsAsync<ArgumentException>(() => resumer.ResumeAsync(new ResumeBookmarkRequest()));
+
         var filter = new BookmarkFilter { BookmarkId = "bookmark-1" };
 
         var first = (await resumer.ResumeAsync(filter)).ToList();

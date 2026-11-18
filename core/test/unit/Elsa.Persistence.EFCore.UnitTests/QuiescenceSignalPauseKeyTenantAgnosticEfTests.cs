@@ -366,6 +366,7 @@ public class QuiescenceSignalPauseKeyTenantAgnosticEfTests
                 SerializedValue = value,
                 TenantId = tenantId
             });
+            using var grant = tenantId == Tenant.AgnosticTenantId ? SharedTenantWriteScope.Enter<SerializedKeyValuePair>() : null;
             await dbContext.SaveChangesAsync();
         }
 

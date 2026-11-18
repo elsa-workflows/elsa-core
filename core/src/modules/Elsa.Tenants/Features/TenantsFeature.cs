@@ -58,7 +58,9 @@ public class TenantsFeature(IModule serviceConfiguration) : FeatureBase(serviceC
         Services.Configure<TenantsOptions>(options => options.IsEnabled = true);
 
         Services
-            .AddScoped<ITenantResolverPipelineInvoker, DefaultTenantResolverPipelineInvoker>()
+            .AddScoped<DefaultTenantResolverPipelineInvoker>()
+            .AddScoped<ITenantResolverPipelineInvoker>(services => services.GetRequiredService<DefaultTenantResolverPipelineInvoker>())
+            .AddScoped<ITenantRequestHints>(services => services.GetRequiredService<DefaultTenantResolverPipelineInvoker>())
             .AddScoped<ITenantResolver, DefaultTenantResolver>();
     }
 }

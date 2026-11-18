@@ -465,17 +465,17 @@ public static class ParameterizedQueryBuilderExtensions
     /// <param name="getParameterName">An optional function to get the parameter name.</param>
     public static ParameterizedQuery Insert(this ParameterizedQuery query, string table, object record, Func<string, string>? getParameterName = null)
     {
-        var fields = record.GetType().GetProperties()
-            .Select(x => x.Name)
-            .ToArray();
+        var properties = record.GetType().GetProperties();
+        var fields = properties.Select(property => property.Name).ToArray();
 
         getParameterName ??= x => x;
         query.Sql.AppendLine(query.Dialect.Insert(table, fields, getParameterName));
 
-        foreach (var field in fields)
+        foreach (var property in properties)
         {
-            var value = record.GetType().GetProperty(field)?.GetValue(record);
-            query.Parameters.Add($"@{getParameterName(field)}", value);
+            var value = property.GetValue(record);
+            var dbType = value == null ? GetDbType(property.PropertyType) : null;
+            query.Parameters.Add($"@{getParameterName(property.Name)}", value, dbType);
         }
 
         return query;

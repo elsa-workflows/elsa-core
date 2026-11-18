@@ -123,6 +123,43 @@ public interface IWorkflowDefinitionStore
     Task SaveAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Inserts the supplied version without changing any existing row. Returns false if
+    /// the version ID or definition version is already present.
+    /// </summary>
+    Task<bool> TryAddAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default) =>
+        Task.FromResult(false);
+
+    /// <summary>
+    /// Clears the published flag only if the stored version still matches the expected identity,
+    /// tenant and protection flags. A missing or changed row is never inserted or overwritten.
+    /// </summary>
+    /// <remarks>Stores that do not implement conditional retraction return false.</remarks>
+    Task<bool> TryRetractAsync(WorkflowDefinition expected, CancellationToken cancellationToken = default) =>
+        Task.FromResult(false);
+
+    /// <summary>
+    /// Atomically publishes a prepared version against the latest and published versions of its definition.
+    /// All existing targets must be writable and satisfy <paramref name="matchesExpected"/> before any
+    /// change is committed. An absent proposed version is inserted only if its identity is free.
+    /// </summary>
+    Task<bool> TryPublishAsync(WorkflowDefinition definition, Func<IReadOnlyCollection<WorkflowDefinition>, bool> matchesExpected,
+        CancellationToken cancellationToken = default) => Task.FromResult(false);
+
+    /// <summary>
+    /// Makes an existing draft the latest version without changing any published flag.
+    /// Both the proposed draft and the previous latest must be writable and satisfy
+    /// <paramref name="matchesExpected"/> in the same atomic operation.
+    /// </summary>
+    Task<bool> TryPromoteExistingDraftAsync(WorkflowDefinition definition, Func<IReadOnlyCollection<WorkflowDefinition>, bool> matchesExpected,
+        CancellationToken cancellationToken = default) => Task.FromResult(false);
+
+    /// <summary>Checks whether the store can commit the requested deletion and promotions together.</summary>
+    bool SupportsDeletion(WorkflowDefinitionDeletionPlan plan) => false;
+
+    /// <summary>Atomically applies the deletion plan when all expected versions and write scopes still match.</summary>
+    Task<bool> TryDeleteAsync(WorkflowDefinitionDeletionPlan plan, CancellationToken cancellationToken = default) => Task.FromResult(false);
+
+    /// <summary>
     /// Compare-and-swap the latest definition matching <paramref name="filter"/>.
     /// </summary>
     /// <remarks>
@@ -131,7 +168,7 @@ public interface IWorkflowDefinitionStore
     /// <paramref name="update"/> to that just-loaded row and saves the result. The load, the match,
     /// the update and the save are one critical section (memory), one conditional write (EF:
     /// <c>ExecuteUpdate</c> against the loaded snapshot), one serializable transaction (Dapper) or one
-    /// snapshot-read session transaction (MongoDB). A lost race returns
+    /// atomic document replacement or transaction (MongoDB). A lost race returns
     /// <see cref="WorkflowDefinitionUpdateOutcome.Conflict"/> — it does not wait.
     /// </para>
     /// <para>
@@ -145,10 +182,9 @@ public interface IWorkflowDefinitionStore
     /// of a published version), the previously latest row is unmarked in the same step.
     /// </para>
     /// <para>
-    /// Every store in this repository implements this atomically. The MongoDB store needs a deployment
-    /// that supports transactions, such as a replica set; against a standalone server it throws
-    /// <see cref="NotSupportedException"/> without writing. A store from outside this repository must
-    /// give the same guarantee for the BPMN document <c>PUT</c> to be concurrency-safe on it.
+    /// Creating a draft of a published definition under MongoDB requires a deployment that supports
+    /// transactions, such as a replica set. In-place edits use a conditional replacement. A store from
+    /// outside this repository must give equivalent guarantees for concurrent edits.
     /// </para>
     /// </remarks>
     /// <param name="filter">Typically the latest version of one definition id.</param>

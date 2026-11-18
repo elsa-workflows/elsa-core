@@ -47,5 +47,23 @@ public class ApiClientRegistrationTests : IDisposable
         Assert.Null(exception);
     }
 
+    [Fact]
+    public void BrokerBackchannelDoesNotUseTheStudioAuthenticationHandler()
+    {
+        var handlerFactory = _serviceProvider.GetRequiredService<IHttpMessageHandlerFactory>();
+
+        Assert.DoesNotContain(GetHandlers(handlerFactory.CreateHandler(nameof(IExternalAuthenticationBrokerApi))), x => x is PassthroughAuthenticationHandler);
+        Assert.Contains(GetHandlers(handlerFactory.CreateHandler(nameof(IIdentityRolesApi))), x => x is PassthroughAuthenticationHandler);
+    }
+
+    private static IEnumerable<HttpMessageHandler> GetHandlers(HttpMessageHandler? handler)
+    {
+        while (handler != null)
+        {
+            yield return handler;
+            handler = (handler as DelegatingHandler)?.InnerHandler;
+        }
+    }
+
     private sealed class PassthroughAuthenticationHandler : DelegatingHandler;
 }

@@ -83,6 +83,76 @@ public sealed class MongoWorkflowDefinitionStoreCompareAndSwapTests : IDisposabl
     public void Dispose() => _client.Dispose();
 
     [Fact]
+    public async Task RetractionChangesOnlyThePublishedFlagOfTheOwnedVersion()
+    {
+        using var tenant = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+        var published = Definition("published", "tenant-a");
+        published.IsLatest = false;
+        published.IsPublished = true;
+        published.Name = "Original";
+        await _collection.InsertOneAsync(published);
+
+        var expected = published.ShallowClone();
+        expected.Name = "Older name";
+        var mismatched = expected.ShallowClone();
+        mismatched.IsReadonly = true;
+
+        using (_tenantAccessor.PushContext(new Tenant { Id = "tenant-b" }))
+            Assert.False(await _store.TryRetractAsync(expected));
+
+        Assert.False(await _store.TryRetractAsync(mismatched));
+        Assert.True(await _store.TryRetractAsync(expected));
+        Assert.False(await _store.TryRetractAsync(expected));
+
+        var stored = await _collection.Find(x => x.Id == published.Id).SingleAsync();
+        Assert.False(stored.IsPublished);
+        Assert.False(stored.IsLatest);
+        Assert.Equal("Original", stored.Name);
+    }
+
+    [Fact]
+    public async Task PublicationChangesTheAuthorizedVersionSetInOneTransaction()
+    {
+        using var tenant = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+        var published = Definition("published", "tenant-a");
+        published.IsLatest = true;
+        published.IsPublished = true;
+        var draft = Definition("draft", "tenant-a");
+        draft.Version = 2;
+        draft.IsLatest = false;
+        draft.IsPublished = false;
+        await _collection.InsertManyAsync([published, draft]);
+        var proposed = draft.ShallowClone();
+        proposed.IsLatest = true;
+
+        Assert.False(await _store.TryPromoteExistingDraftAsync(proposed, versions => versions.Count == 1));
+        Assert.True((await _collection.Find(version => version.Id == published.Id).SingleAsync()).IsLatest);
+        Assert.True(await _store.TryPromoteExistingDraftAsync(proposed, versions => versions.Count == 2));
+        var draftVersions = await _collection.Find(Builders<WorkflowDefinition>.Filter.Empty).ToListAsync();
+        Assert.Equal(published.Id, Assert.Single(draftVersions, version => version.IsPublished).Id);
+        Assert.Equal(draft.Id, Assert.Single(draftVersions, version => version.IsLatest).Id);
+
+        proposed.IsPublished = true;
+
+        Assert.False(await _store.TryPublishAsync(proposed, versions => versions.Count == 1));
+        Assert.True((await _collection.Find(version => version.Id == published.Id).SingleAsync()).IsPublished);
+        Assert.False((await _collection.Find(version => version.Id == draft.Id).SingleAsync()).IsPublished);
+        Assert.True(await _store.TryPublishAsync(proposed, versions => versions.Count == 2));
+
+        var saved = await _collection.Find(Builders<WorkflowDefinition>.Filter.Empty).ToListAsync();
+        Assert.Equal("draft", Assert.Single(saved, version => version.IsPublished).Id);
+        Assert.Equal("draft", Assert.Single(saved, version => version.IsLatest).Id);
+
+        var plan = new WorkflowDefinitionDeletionPlan([saved.Single(version => version.Id == draft.Id)], saved);
+        Assert.True(_store.SupportsDeletion(plan));
+        Assert.True(await _store.TryDeleteAsync(plan));
+        var promoted = await _collection.Find(Builders<WorkflowDefinition>.Filter.Empty).SingleAsync();
+        Assert.Equal("published", promoted.Id);
+        Assert.True(promoted.IsLatest);
+        Assert.False(promoted.IsPublished);
+    }
+
+    [Fact]
     public async Task TryUpdateLatestAsync_WhenNothingMatchesTheFilter_ReturnsNotFound()
     {
         using var tenant = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
@@ -510,7 +580,7 @@ public sealed class MongoWorkflowDefinitionStoreCompareAndSwapTests : IDisposabl
         await _collection.InsertOneAsync(conflictingVersion);
         var updateCalls = 0;
 
-        await Assert.ThrowsAsync<MongoWriteException>(() => _store.TryUpdateLatestAsync(
+        var result = await _store.TryUpdateLatestAsync(
             LatestFilter("definition"),
             _ => true,
             current =>
@@ -522,8 +592,9 @@ public sealed class MongoWorkflowDefinitionStoreCompareAndSwapTests : IDisposabl
                 draft.IsPublished = false;
                 draft.IsLatest = true;
                 return draft;
-            }));
+            });
 
+        Assert.Equal(WorkflowDefinitionUpdateOutcome.Conflict, result.Outcome);
         Assert.Equal(1, updateCalls);
         var storedPublished = await _collection.Find(x => x.Id == "published").SingleAsync();
         Assert.True(storedPublished.IsLatest, "Failed draft insertion must leave prior latest unchanged.");
@@ -532,7 +603,7 @@ public sealed class MongoWorkflowDefinitionStoreCompareAndSwapTests : IDisposabl
     }
 
     [Fact]
-    public async Task TryUpdateLatestAsync_WhenServerIsStandalone_FailsWithoutMutationOrCallbacks()
+    public async Task StandaloneServerUpdatesAnExistingDraftAndRequiresTransactionsToCreateAnotherVersion()
     {
         await using var container = new MongoDbBuilder().WithImage("mongo:7.0.24").Build();
         await container.StartAsync();
@@ -542,27 +613,46 @@ public sealed class MongoWorkflowDefinitionStoreCompareAndSwapTests : IDisposabl
         var store = new MongoWorkflowDefinitionStore(new MongoDbStore<WorkflowDefinition>(collection, _tenantAccessor));
         using var tenant = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
         await collection.InsertOneAsync(Definition("latest", "tenant-a"));
-        var callbackCalls = 0;
-
-        var error = await Assert.ThrowsAsync<NotSupportedException>(() => store.TryUpdateLatestAsync(
+        var updated = await store.TryUpdateLatestAsync(
             LatestFilter("definition"),
-            _ =>
-            {
-                callbackCalls++;
-                return true;
-            },
+            current => current.StringData == "initial graph",
             current =>
             {
-                callbackCalls++;
-                current.StringData = "should not be saved";
+                current.StringData = "updated graph";
+                return current;
+            });
+        Assert.Equal(WorkflowDefinitionUpdateOutcome.Updated, updated.Outcome);
+
+        var published = updated.Definition!.ShallowClone();
+        published.IsPublished = true;
+        Assert.True(await store.TryPublishAsync(published, versions => versions.Count == 1 && !versions.Single().IsPublished));
+
+        var multiVersion = published.ShallowClone();
+        multiVersion.Id = "new-published";
+        multiVersion.Version = 2;
+        Assert.False(await store.TryPublishAsync(multiVersion, versions => versions.Count == 1));
+        Assert.False(await collection.Find(x => x.Id == "new-published").AnyAsync());
+
+        await Assert.ThrowsAsync<NotSupportedException>(() => store.TryUpdateLatestAsync(
+            LatestFilter("definition"),
+            _ => true,
+            current =>
+            {
+                current.Id = "new-version";
+                current.Version++;
                 return current;
             }));
 
-        Assert.Equal("Standalone servers do not support transactions.", error.Message);
-        Assert.Equal(0, callbackCalls);
         var stored = await collection.Find(x => x.Id == "latest").SingleAsync();
-        Assert.Equal("initial graph", stored.StringData);
+        Assert.Equal("updated graph", stored.StringData);
+        Assert.True(stored.IsPublished);
+        Assert.False(await collection.Find(x => x.Id == "new-version").AnyAsync());
         Assert.True(stored.IsLatest);
+
+        var plan = new WorkflowDefinitionDeletionPlan([stored], [stored]);
+        Assert.True(store.SupportsDeletion(plan));
+        Assert.True(await store.TryDeleteAsync(plan));
+        Assert.False(await collection.Find(x => x.Id == "latest").AnyAsync());
     }
 
     [Fact]

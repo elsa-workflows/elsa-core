@@ -8,6 +8,7 @@ using Elsa.Secrets.Types;
 using Elsa.Tenants.Options;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Secrets.Extensions;
 
@@ -18,11 +19,13 @@ public static class ServiceCollectionExtensions
         if (configureOptions != null)
             services.Configure(configureOptions);
 
-        services.AddOptions<SecretsOptions>();
+        services.AddOptions<SecretsOptions>().ValidateOnStart();
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IValidateOptions<SecretsOptions>, ValidateSecretsOptions>());
         services.AddOptions<TenantsOptions>();
         services.TryAddSingleton<ISecretNameValidator, DefaultSecretNameValidator>();
         services.TryAddSingleton<ISecretRepository, FileSecretRepository>();
         services.TryAddSingleton<ISecretValueProtector, DefaultSecretValueProtector>();
+        services.TryAddScoped<SecretKeyRotation>();
         services.TryAddSingleton<DefaultSecretManager>();
         services.TryAddSingleton<ISecretManager>(serviceProvider => serviceProvider.GetRequiredService<DefaultSecretManager>());
         services.TryAddSingleton<IManagedSecretManager>(serviceProvider => serviceProvider.GetRequiredService<DefaultSecretManager>());

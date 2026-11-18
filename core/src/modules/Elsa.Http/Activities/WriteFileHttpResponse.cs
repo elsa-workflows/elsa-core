@@ -1,4 +1,7 @@
+using System.Security.Claims;
 using System.Security.Cryptography;
+using System.Text.Json;
+using Elsa.Common.Multitenancy;
 using Elsa.Extensions;
 using Elsa.Http.Exceptions;
 using Elsa.Http.Options;
@@ -58,9 +61,9 @@ public class WriteFileHttpResponse : Activity
     public Input<bool> EnableResumableDownloads { get; set; } = null!;
 
     /// <summary>
-    /// The correlation ID of the download. Used to resume a download.
+    /// A workflow-selected key identifying the precise download and its content revision.
     /// </summary>
-    [Input(Description = "The correlation ID of the download used to resume a download. If left empty, the x-download-id header will be used.")]
+    [Input(Description = "A workflow-selected key for the precise download and content revision. Leave empty to serve without caching.")]
     public Input<string> DownloadCorrelationId { get; set; } = null!;
 
     /// <inheritdoc />
@@ -137,8 +140,9 @@ public class WriteFileHttpResponse : Activity
 
     private async Task SendMultipleFilesAsync(ActivityExecutionContext context, HttpContext httpContext, ICollection<Func<ValueTask<Downloadable>>> downloadables)
     {
-        // If resumable downloads are enabled, check to see if we have a cached file.
-        var (zipBlob, zipStream, cleanupCallback) = await TryLoadCachedFileAsync(context, httpContext) ?? await GenerateZipFileAsync(context, httpContext, downloadables);
+        var cacheKey = GetDownloadCacheKey(context, httpContext);
+        var (zipBlob, zipStream, cleanupCallback) = await TryLoadCachedFileAsync(context, cacheKey)
+            ?? await GenerateZipFileAsync(context, downloadables, cacheKey);
 
         try
         {
@@ -174,14 +178,13 @@ public class WriteFileHttpResponse : Activity
         return Convert.ToBase64String(hash);
     }
 
-    private async Task<(Blob, Stream, Func<ValueTask>)> GenerateZipFileAsync(ActivityExecutionContext context, HttpContext httpContext, ICollection<Func<ValueTask<Downloadable>>> downloadables)
+    private async Task<(Blob, Stream, Func<ValueTask>)> GenerateZipFileAsync(ActivityExecutionContext context, ICollection<Func<ValueTask<Downloadable>>> downloadables, string? cacheKey)
     {
         var cancellationToken = context.CancellationToken;
-        var downloadCorrelationId = GetDownloadCorrelationId(context, httpContext);
         var contentType = ContentType.GetOrDefault(context);
         var downloadAsFilename = Filename.GetOrDefault(context);
         var zipService = context.GetRequiredService<ZipManager>();
-        var (zipBlob, zipStream, cleanup) = await zipService.CreateAsync(downloadables, true, downloadCorrelationId, downloadAsFilename, contentType, cancellationToken);
+        var (zipBlob, zipStream, cleanup) = await zipService.CreateAsync(downloadables, cacheKey != null, cacheKey, downloadAsFilename, contentType, cancellationToken);
 
         return (zipBlob, zipStream, Cleanup);
 
@@ -192,16 +195,15 @@ public class WriteFileHttpResponse : Activity
         }
     }
 
-    private async Task<(Blob, Stream, Func<ValueTask>)?> TryLoadCachedFileAsync(ActivityExecutionContext context, HttpContext httpContext)
+    private async Task<(Blob, Stream, Func<ValueTask>)?> TryLoadCachedFileAsync(ActivityExecutionContext context, string? cacheKey)
     {
-        var downloadCorrelationId = GetDownloadCorrelationId(context, httpContext);
 
-        if (string.IsNullOrWhiteSpace(downloadCorrelationId))
+        if (cacheKey == null)
             return null;
 
         var cancellationToken = context.CancellationToken;
         var zipService = context.GetRequiredService<ZipManager>();
-        var tuple = await zipService.LoadAsync(downloadCorrelationId, cancellationToken);
+        var tuple = await zipService.LoadAsync(cacheKey, cancellationToken);
 
         if (tuple == null)
             return null;
@@ -211,25 +213,44 @@ public class WriteFileHttpResponse : Activity
         ValueTask Noop() => default;
     }
 
-    private string GetDownloadCorrelationId(ActivityExecutionContext context, HttpContext httpContext)
+    private string? GetDownloadCacheKey(ActivityExecutionContext context, HttpContext httpContext)
     {
-        var downloadCorrelationId = DownloadCorrelationId.GetOrDefault(context);
+        if (!EnableResumableDownloads.GetOrDefault(context))
+            return null;
 
-        if (string.IsNullOrWhiteSpace(downloadCorrelationId))
-            downloadCorrelationId = httpContext.Request.Headers["x-download-id"];
+        var downloadId = DownloadCorrelationId.GetOrDefault(context);
+        if (string.IsNullOrWhiteSpace(downloadId))
+            return null;
 
-        if (string.IsNullOrWhiteSpace(downloadCorrelationId))
-        {
-            var identity = context.WorkflowExecutionContext.Workflow.Identity;
-            var definitionId = identity.DefinitionId;
-            var version = identity.Version.ToString();
-            var correlationId = context.WorkflowExecutionContext.CorrelationId;
-            var sources = new[] { definitionId, version, correlationId }.Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
+        var tenantId = context.GetService<ITenantAccessor>()?.Tenant?.Id;
+        var workflow = context.WorkflowExecutionContext.Workflow.Identity;
 
-            downloadCorrelationId = string.Join("-", sources);
-        }
+        return BuildDownloadCacheKey(httpContext.User, tenantId, workflow.TenantId, workflow.Id, context.Activity.Id, downloadId);
+    }
 
-        return downloadCorrelationId;
+    internal static string? BuildDownloadCacheKey(
+        ClaimsPrincipal principal,
+        string? tenantId,
+        string? definitionTenantId,
+        string workflowVersionId,
+        string activityId,
+        string downloadId)
+    {
+        var authenticated = principal.Identities.Where(identity => identity.IsAuthenticated).ToList();
+        if (authenticated.Count != 1)
+            return null;
+
+        var identity = authenticated[0];
+        var subjects = identity.Claims
+            .Where(claim => claim.Type is ClaimTypes.NameIdentifier or "sub" && !string.IsNullOrWhiteSpace(claim.Value))
+            .Select(claim => (claim.Value, claim.Issuer))
+            .Distinct().ToList();
+        if (subjects.Count != 1 || string.IsNullOrWhiteSpace(workflowVersionId) || string.IsNullOrWhiteSpace(activityId))
+            return null;
+
+        var (subject, issuer) = subjects[0];
+        var scope = new[] { tenantId, definitionTenantId, workflowVersionId, activityId, identity.AuthenticationType, issuer, subject, downloadId };
+        return $"zip-v2-{Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(scope)))}";
     }
 
     private async Task SendFileStream(ActivityExecutionContext context, HttpContext httpContext, Stream source, string contentType, string filename, EntityTagHeaderValue? eTag)

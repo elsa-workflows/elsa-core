@@ -11,7 +11,8 @@ public class WorkflowInstanceExecutionHistoryTool(IServiceProvider serviceProvid
         "Get bounded execution-history evidence from the workflow instance state.",
         GroundingToolSchemas.WithProperties(
             ("instanceId", GroundingToolSchemas.String("Workflow instance ID.")),
-            ("id", GroundingToolSchemas.String("Workflow instance ID."))));
+            ("id", GroundingToolSchemas.String("Workflow instance ID."))),
+        AIGroundingPermissions.InstanceView, AIGroundingPermissions.ActivityExecutionView);
 
     public override async ValueTask<AIToolResult> ExecuteAsync(AIToolExecutionContext context, CancellationToken cancellationToken = default)
     {
