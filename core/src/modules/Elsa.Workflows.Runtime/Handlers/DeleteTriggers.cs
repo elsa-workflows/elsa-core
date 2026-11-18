@@ -47,7 +47,8 @@ public class DeleteTriggers(ITriggerIndexer triggerIndexer) :
     {
         await DeleteTriggersAsync(new TriggerFilter
         {
-            WorkflowDefinitionVersionIds = notification.Ids
+            WorkflowDefinitionVersionIds = notification.Ids,
+            RequireCompleteCleanup = notification.RequireCompleteTriggerCleanup
         }, cancellationToken);
     }
 

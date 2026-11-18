@@ -4,8 +4,10 @@ using Elsa.Workflows.IntegrationTests.Scenarios.TriggerIndexing.Fakes;
 using Elsa.Workflows.IntegrationTests.Scenarios.TriggerIndexing.TestData;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Notifications;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.Runtime.Handlers;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit.Abstractions;
 
@@ -57,6 +59,24 @@ public class Tests
 
         // Assert
         await AssertRemainingTriggers(scenario.ExpectedRemainingTriggerIds);
+    }
+
+    [Fact]
+    public async Task RequiredCleanupLeavesTriggersAvailableWhenMaterializationFails()
+    {
+        var builder = new TriggerTestDataBuilder();
+        builder.AddWorkflow("workflow1", "def1", FailingMaterializer.MaterializerName);
+        var data = builder.Build();
+        await SetupTestScenarioAsync(data);
+
+        var handler = new DeleteTriggers(_triggerIndexer);
+        var versions = data.Workflows.Select(workflow => workflow.Id).ToArray();
+        var exception = await Assert.ThrowsAsync<Exception>(() => handler.HandleAsync(new WorkflowDefinitionVersionsDeleting(versions)
+        {
+            RequireCompleteTriggerCleanup = true
+        }, CancellationToken.None));
+        Assert.Equal("Provider not found", exception.Message);
+        await AssertRemainingTriggers(["trigger1"]);
     }
 
     public static IEnumerable<object[]> GetTriggerDeletionTestData()

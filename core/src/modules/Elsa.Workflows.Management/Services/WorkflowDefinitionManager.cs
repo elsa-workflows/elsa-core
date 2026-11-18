@@ -28,7 +28,10 @@ public class WorkflowDefinitionManager(
 
         // Keep the definition rows available for retry until dependent cleanup has succeeded.
         var ids = plan.Deleted.Select(version => version.Id).ToArray();
-        await notificationSender.SendAsync(new WorkflowDefinitionVersionsDeleting(ids), cancellationToken);
+        await notificationSender.SendAsync(new WorkflowDefinitionVersionsDeleting(ids)
+        {
+            RequireCompleteTriggerCleanup = true
+        }, cancellationToken);
         if (!await store.TryDeleteAsync(plan, cancellationToken))
             throw new WorkflowDefinitionEditConflictException();
 
