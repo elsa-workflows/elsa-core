@@ -327,6 +327,19 @@ public class WorkflowDefinitionPublisher(
 
         var expectedId = latestVersion.Id;
         var snapshot = activitySerializer.Serialize(latestVersion);
+        WorkflowDefinition? existingDraft = null;
+        if (!string.IsNullOrEmpty(draft.Id) && draft.Id != expectedId)
+        {
+            existingDraft = await workflowDefinitionStore.FindAsync(new()
+            {
+                Id = draft.Id,
+                DefinitionId = definitionId
+            }, cancellationToken);
+        }
+
+        if (existingDraft != null)
+            return await PromoteExistingDraftAsync(draft, existingDraft, latestVersion, snapshot, cancellationToken);
+
         draft.Version = draft.Id == expectedId ? latestVersion.Version : (highestVersion?.Version ?? latestVersion.Version) + 1;
         draft.IsLatest = true;
         draft = Initialize(draft);
@@ -342,6 +355,38 @@ public class WorkflowDefinitionPublisher(
 
         await mediator.SendAsync(new WorkflowDefinitionDraftSaved(draft), cancellationToken);
         return draft;
+    }
+
+    private async Task<WorkflowDefinition> PromoteExistingDraftAsync(WorkflowDefinition draft, WorkflowDefinition existingDraft,
+        WorkflowDefinition latestVersion, string latestSnapshot, CancellationToken cancellationToken)
+    {
+        if (existingDraft.IsLatest || existingDraft.IsPublished || existingDraft.IsReadonly || existingDraft.IsSystem ||
+            existingDraft.TenantId != latestVersion.TenantId)
+            throw new WorkflowDefinitionEditConflictException();
+
+        var draftSnapshot = activitySerializer.Serialize(existingDraft);
+        var expected = new Dictionary<string, string>
+        {
+            [existingDraft.Id] = draftSnapshot,
+            [latestVersion.Id] = latestSnapshot
+        };
+
+        draft.Version = existingDraft.Version;
+        draft.TenantId = existingDraft.TenantId;
+        draft.IsLatest = true;
+        draft.IsPublished = false;
+        await mediator.SendAsync(new WorkflowDefinitionDraftSaving(draft), cancellationToken);
+
+        if (!await workflowDefinitionStore.TryPromoteExistingDraftAsync(draft, MatchesExpected, cancellationToken))
+            throw new WorkflowDefinitionEditConflictException();
+
+        await mediator.SendAsync(new WorkflowDefinitionDraftSaved(draft), cancellationToken);
+        return draft;
+
+        bool MatchesExpected(IReadOnlyCollection<WorkflowDefinition> versions) =>
+            !options.Value.IsReadOnlyMode && versions.Count == expected.Count && versions.All(version =>
+                !version.IsReadonly && !version.IsSystem && expected.TryGetValue(version.Id, out var value) &&
+                string.Equals(value, activitySerializer.Serialize(version), StringComparison.Ordinal));
     }
 
     private async Task<List<WorkflowValidationError>> ValidateForPublicationAsync(WorkflowDefinition definition, CancellationToken cancellationToken)

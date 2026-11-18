@@ -175,14 +175,28 @@ public class TenantScopedDefinitionIdsMigrationTests
             serializer,
             NullLogger<EFCoreWorkflowDefinitionStore>.Instance);
         var published = NewDefinition("published");
-        published.IsLatest = false;
+        published.IsLatest = true;
         published.IsPublished = true;
         await store.SaveAsync(published);
         var draft = NewDefinition("draft");
         draft.Version = 2;
+        draft.IsLatest = false;
         await store.SaveAsync(draft);
         var expected = draft.ShallowClone();
         expected.Name = "Published draft";
+        expected.IsLatest = true;
+
+        Assert.False(await store.TryPromoteExistingDraftAsync(expected, versions => versions.Count == 1));
+        await using (var unchangedDrafts = await factory.CreateDbContextAsync())
+            Assert.Equal(published.Id, await unchangedDrafts.WorkflowDefinitions.Where(version => version.IsLatest).Select(version => version.Id).SingleAsync());
+        Assert.True(await store.TryPromoteExistingDraftAsync(expected, versions => versions.Count == 2));
+        await using (var promotedDrafts = await factory.CreateDbContextAsync())
+        {
+            var saved = await promotedDrafts.WorkflowDefinitions.ToListAsync();
+            Assert.Equal(published.Id, Assert.Single(saved, version => version.IsPublished).Id);
+            Assert.Equal(draft.Id, Assert.Single(saved, version => version.IsLatest).Id);
+        }
+
         expected.IsPublished = true;
 
         Assert.False(await store.TryPublishAsync(expected, versions => versions.Count == 1));
