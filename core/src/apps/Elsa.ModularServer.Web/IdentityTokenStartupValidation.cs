@@ -30,16 +30,9 @@ namespace Elsa.ModularServer.Web;
 /// with the same Development/Demo leniency. Invalid options throw <see cref="OptionsValidationException"/>.
 /// </para>
 /// </remarks>
-internal static class IdentityTokenStartupValidation
+internal sealed class IdentityTokenStartupValidation(IServiceProvider rootServices) : IHostedService
 {
-    /// <summary>
-    /// Validates enabled Identity and Secrets options for every shell the blueprint provider lists.
-    /// </summary>
-    /// <remarks>
-    /// The first shell with invalid options throws, aborting the host before it listens - the same behavior
-    /// Elsa.Server.Web has for the identical configuration.
-    /// </remarks>
-    public static async Task ValidateConfiguredShellsAsync(IServiceProvider rootServices, CancellationToken cancellationToken = default)
+    public async Task StartAsync(CancellationToken cancellationToken)
     {
         var registry = rootServices.GetRequiredService<IShellRegistry>();
         var rootConfiguration = rootServices.GetRequiredService<IConfiguration>();
@@ -89,6 +82,8 @@ internal static class IdentityTokenStartupValidation
             cursor = page.NextCursor;
         } while (cursor is not null);
     }
+
+    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
     private static void ValidateOptions(ValidateIdentityTokenOptions validator, ShellSettings settings, IConfiguration rootConfiguration)
     {

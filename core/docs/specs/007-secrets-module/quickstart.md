@@ -90,7 +90,8 @@ dotnet build /Users/sipke/.codex/worktrees/ae40/elsa-studio/src/modules/Elsa.Stu
 For a hosted production deployment with the Elsa Secrets feature, supply a new random key from external
 configuration before starting the service. For ModularServer the default shell setting is
 `CShells__Shells__Default__Features__Secrets__EncryptionKey`, with a base64 value. Configure each shell that
-uses Secrets, including shells that enable it through a feature dependency.
+uses Secrets, including shells that enable it through a feature dependency. ModularServer starts hosted services
+sequentially so it validates keys after Nuplane has loaded its initial packages and before the web server listens.
 The sample key is rejected in Production.
 
 For retained encrypted data, rehearse against a restored backup first. Stop all writers to the repository,
