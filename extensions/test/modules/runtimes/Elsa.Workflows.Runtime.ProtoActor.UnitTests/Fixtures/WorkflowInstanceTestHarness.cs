@@ -55,9 +55,13 @@ internal sealed class WorkflowInstanceTestHarness : IAsyncDisposable
             .Setup(x => x.RunAsync(It.IsAny<WorkflowGraph>(), It.IsAny<WorkflowState>(), It.IsAny<RunWorkflowOptions?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((WorkflowGraph graph, WorkflowState state, RunWorkflowOptions? _, CancellationToken _) =>
                 new RunWorkflowResult(null!, state, graph.Workflow, null, Journal.Empty));
+        WorkflowCanceler
+            .Setup(x => x.CancelWorkflowAsync(It.IsAny<WorkflowGraph>(), It.IsAny<WorkflowState>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((WorkflowGraph _, WorkflowState state, CancellationToken _) => state);
 
         var services = new ServiceCollection();
         services.AddSingleton(WorkflowRunner.Object);
+        services.AddSingleton(WorkflowCanceler.Object);
         services.AddSingleton(WorkflowInstanceManager.Object);
         services.AddSingleton(WorkflowDefinitionService.Object);
         _serviceProvider = services.BuildServiceProvider();
@@ -74,6 +78,7 @@ internal sealed class WorkflowInstanceTestHarness : IAsyncDisposable
     }
 
     public Mock<IWorkflowRunner> WorkflowRunner { get; } = new();
+    public Mock<IWorkflowCanceler> WorkflowCanceler { get; } = new();
     public Mock<IWorkflowInstanceManager> WorkflowInstanceManager { get; } = new();
     public Mock<IWorkflowDefinitionService> WorkflowDefinitionService { get; } = new();
     public WorkflowGraph WorkflowGraph { get; set; }
