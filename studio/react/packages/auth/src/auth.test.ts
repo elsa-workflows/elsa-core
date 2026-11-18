@@ -44,6 +44,18 @@ describe("shared authentication", () => {
     }));
   });
 
+  it("treats a 401 login response as invalid credentials without attempting a token refresh", async () => {
+    const request = vi.fn(async (url: string) =>
+      url.endsWith("/identity/login") ? new Response(null, { status: 401 }) : new Response(null, { status: 500 }));
+    vi.stubGlobal("fetch", request);
+    const strategy = createAuthStrategy(identity, server("https://a.example.invalid/api"));
+    await expect(strategy.login({ username: "Alice", password: "test-only" })).rejects.toThrow("Invalid username or password.");
+    expect(strategy.getSnapshot().status).toBe("unauthenticated");
+    expect(strategy.getSnapshot().error).toBe("Invalid username or password.");
+    expect(request).toHaveBeenCalledOnce();
+    expect(request).toHaveBeenCalledWith("https://a.example.invalid/api/identity/login", expect.objectContaining({ method: "POST" }));
+  });
+
   it("shares an in-flight refresh across concurrent API requests", async () => {
     const url = "https://a.example.invalid/api";
     writeTokens(encodeURIComponent(url), { accessToken: "expired", refreshToken: "refresh-a" });

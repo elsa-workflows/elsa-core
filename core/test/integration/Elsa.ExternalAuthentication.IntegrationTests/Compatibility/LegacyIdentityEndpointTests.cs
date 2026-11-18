@@ -92,15 +92,17 @@ public sealed class LegacyIdentityEndpointTests : IAsyncLifetime
         await _credentialsValidator.Received(1).ValidateAsync("admin", "password", Arg.Any<CancellationToken>());
     }
 
-    [Fact]
-    public async Task IdentityLoginRetainsItsGenericUnauthenticatedResponse()
+    [Theory]
+    [InlineData("unknown-user", "password")] // Nonexistent user.
+    [InlineData("admin", "wrong-password")] // Incorrect password.
+    public async Task IdentityLoginReturnsUnauthorizedWithGenericBodyForInvalidCredentials(string username, string password)
     {
-        _credentialsValidator.ValidateAsync("unknown", "wrong", Arg.Any<CancellationToken>()).Returns((User?)null);
+        _credentialsValidator.ValidateAsync(username, password, Arg.Any<CancellationToken>()).Returns((User?)null);
 
-        var response = await _client!.PostAsJsonAsync("/identity/login", new { username = "unknown", password = "wrong" });
+        var response = await _client!.PostAsJsonAsync("/identity/login", new { username, password });
         var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         Assert.False(document.RootElement.GetProperty("isAuthenticated").GetBoolean());
         Assert.Equal(JsonValueKind.Null, document.RootElement.GetProperty("accessToken").ValueKind);
         Assert.Equal(JsonValueKind.Null, document.RootElement.GetProperty("refreshToken").ValueKind);

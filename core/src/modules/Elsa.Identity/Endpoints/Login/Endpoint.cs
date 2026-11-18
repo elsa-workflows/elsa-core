@@ -2,6 +2,7 @@
 using Elsa.Identity.Models;
 using FastEndpoints;
 using JetBrains.Annotations;
+using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Identity.Endpoints.Login;
 
@@ -16,15 +17,18 @@ internal class Login(IUserCredentialsValidator userCredentialsValidator, IAccess
     }
 
     /// <inheritdoc />
-    public override async Task<LoginResponse> ExecuteAsync(Request request, CancellationToken cancellationToken)
+    public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
         var user = await userCredentialsValidator.ValidateAsync(request.Username.Trim(), request.Password.Trim(), cancellationToken);
 
         if (user == null)
-            return new LoginResponse(false, null, null);
+        {
+            await Send.ResponseAsync(new LoginResponse(false, null, null), StatusCodes.Status401Unauthorized, cancellationToken);
+            return;
+        }
 
         var tokens = await tokenIssuer.IssueTokensAsync(user, cancellationToken);
 
-        return new LoginResponse(true, tokens.AccessToken, tokens.RefreshToken);
+        await Send.OkAsync(new LoginResponse(true, tokens.AccessToken, tokens.RefreshToken), cancellationToken);
     }
 }

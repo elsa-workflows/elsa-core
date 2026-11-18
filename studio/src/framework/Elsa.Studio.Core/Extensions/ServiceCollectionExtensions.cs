@@ -108,6 +108,11 @@ public static class ServiceCollectionExtensions
         services.TryAddScoped<IRemoteBackendAccessor, DefaultRemoteBackendAccessor>();
         services.TryAddScoped<IBackendApiClientProvider, DefaultBackendApiClientProvider>();
         services.TryAddScoped<IAnonymousBackendApiClientProvider, DefaultAnonymousBackendApiClientProvider>();
+
+        // Named HTTP client reserved for anonymous API calls (e.g. /identity/login). It carries no authentication
+        // delegating handlers, unlike the per-API clients created by AddDefaultApiClients.
+        services.AddHttpClient(DefaultAnonymousBackendApiClientProvider.AnonymousHttpClientName);
+
         return services;
     }
     
