@@ -23,6 +23,8 @@ namespace Elsa.Hosts.SmokeTests;
 /// </remarks>
 public class SigningKeyStartupGuardTests
 {
+    private const string ModularSecretsEncryptionKey = "CShells:Shells:Default:Features:Secrets:EncryptionKey";
+
     [Fact]
     public void ClassicServerFailsToStartInProductionWithPlaceholderSigningKey() =>
         AssertBootFailsAtStartup<ClassicServerHost>();
@@ -35,23 +37,25 @@ public class SigningKeyStartupGuardTests
     public void ModularServerStartsInProductionWithValidSigningKey()
     {
         // A key that is not a known default and survives the validator's rules must boot normally. The in-memory
-        // override adds only the leaf key on top of the shipped appsettings, leaving CShells' object-map
-        // structure (and every other feature entry) exactly as shipped.
+        // override supplies the signing and encryption keys while leaving the shipped CShells map in place.
         AssertBootStartsAtStartup<ModularServerHost>(configuration: new Dictionary<string, string>
         {
             ["CShells:Shells:Default:Features:Identity:SigningKey"] = Convert.ToHexString(RandomNumberGenerator.GetBytes(32)),
+            [ModularSecretsEncryptionKey] = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)),
         });
     }
 
     [Fact]
     public void ModularServerStartsInProductionWhenIdentityFeaturesAreDisabled()
     {
-        // With the identity features disabled there is nothing to validate and the placeholder key stays untouched,
-        // matching how the shell assembles itself: no identity options are registered, so no signing key is needed.
+        // Disabling identity bypasses its signing-key check. The Secrets feature still needs its encryption key.
         AssertBootStartsAtStartup<ModularServerHost>(settings: new Dictionary<string, string>
         {
             ["CShells:Shells:Default:Features:Identity"] = "false",
             ["CShells:Shells:Default:Features:DefaultAuthentication"] = "false",
+        }, configuration: new Dictionary<string, string>
+        {
+            [ModularSecretsEncryptionKey] = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)),
         });
     }
 

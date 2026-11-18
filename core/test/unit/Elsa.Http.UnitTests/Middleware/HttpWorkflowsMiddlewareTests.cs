@@ -262,11 +262,15 @@ public class HttpWorkflowsMiddlewareTests
             .RunAsync(Arg.Any<WorkflowGraph>(), Arg.Do<RunWorkflowOptions?>(options => runOptions = options), Arg.Any<CancellationToken>())
             // The middleware reads only the resulting state's incidents.
             .Returns(new RunWorkflowResult(null!, new WorkflowState(), workflow, null, Journal.Empty));
-        var serviceProvider = new ServiceCollection()
+        var activationGate = Substitute.For<IWorkflowActivationGate>();
+        activationGate.EvaluateAsync(workflow, Arg.Any<string?>(), Arg.Any<CancellationToken>())
+            .Returns(_ => new WorkflowActivationLease(true, null));
+        using var serviceProvider = new ServiceCollection()
             .AddSingleton<IRouteMatcher, ExactRouteMatcher>()
             .AddSingleton<IRouteTable>(new ListRouteTable([new(BookmarkPath)]))
             .AddSingleton<IStimulusHasher, FixedStimulusHasher>()
             .AddSingleton(Substitute.For<IHttpEndpointAuthorizationHandler>())
+            .AddSingleton(activationGate)
             .AddSingleton(workflowRunner)
             .BuildServiceProvider();
         var httpContext = new DefaultHttpContext
@@ -283,6 +287,7 @@ public class HttpWorkflowsMiddlewareTests
             new FixedHttpWorkflowLookupService(new(new WorkflowGraph(workflow, root, [root]), [trigger])));
 
         Assert.NotNull(runOptions);
+        Assert.True(runOptions.RequireNewInstance);
         Assert.Equal(trigger.ActivityId, runOptions.TriggerActivityId);
         Assert.NotNull(runOptions.Properties);
         Assert.Equal(triggerHash, runOptions.Properties[TriggerWorkflowProperties.StimulusHash]);
