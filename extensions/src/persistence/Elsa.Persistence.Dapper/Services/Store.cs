@@ -575,7 +575,7 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantAccesso
     /// <param name="tenantAgnostic">Whether to ignore the tenant filter.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns><c>true</c> if any records match the specified query.</returns>
-    public async Task<bool> AnyAsync(Action<ParameterizedQuery> filter, bool tenantAgnostic, CancellationToken cancellationToken = default)
+    public async Task<bool> AnyAsync(Action<ParameterizedQuery> filter, bool tenantAgnostic, CancellationToken cancellationToken)
     {
         var query = dbConnectionProvider.CreateQuery().From(TableName, PrimaryKey);
         ApplyTenantFilter(query, tenantAgnostic);

@@ -5,10 +5,10 @@
 ## EF Core
 
 - `IX_WorkflowDefinition_DefinitionId_Version` on `(DefinitionId, Version)` is replaced by `IX_WorkflowDefinition_DefinitionId_TenantId_Version` on `(DefinitionId, TenantId, Version)`, still unique.
-- The new `TenantScopedDefinitionIds` migration in the Management context drops and recreates the index for SQL Server, PostgreSQL, MySQL, Oracle and SQLite. Existing rows satisfy the wider key, so `Up()` cannot fail on data.
+- The new `TenantScopedDefinitionIds` migration in the Management context replaces the index for SQL Server, PostgreSQL, MySQL, Oracle and SQLite. Check existing SQL Server key lengths before applying it.
 - The default tenant is `""`, not `NULL`, like the label uniqueness migration (`PerTenantLabelUniqueness`). PostgreSQL, MySQL and SQLite treat `NULL`s as distinct in a unique index, so `Up()` stamps leftover `NULL` `TenantId` values to `""` there (and on SQL Server), and `EFCoreWorkflowDefinitionStore` now stores `""` instead of `NULL` when multitenancy is off. Without this, two concurrent imports of the same new definition could both create version 1.
 - Oracle stores `''` as `NULL`, but treats rows with equal non-null columns and a `NULL` `TenantId` as duplicates in a unique index, so the index stays unique for the default tenant without stamping. SQL Server also treats `NULL`s as equal. The index has no filter.
-- On SQL Server the key is `nvarchar(450)` + `nvarchar(450)` + `int`, up to 1804 bytes, above the 1700-byte limit for a nonclustered index key. The migration succeeds with a warning, and an insert fails only when `DefinitionId` and `TenantId` together exceed about 848 characters.
+- SQL Server limits nonclustered index keys to 1,700 bytes. The declared columns allow up to 1,804 bytes. Before applying the migration, find existing rows where `DATALENGTH(DefinitionId) + COALESCE(DATALENGTH(TenantId), 0) + 4 > 1700` and shorten the identifiers through the application's supported process. An over-limit row can block index creation. The limit also applies to later inserts and updates. [SQL Server index limits](https://learn.microsoft.com/en-us/sql/t-sql/statements/create-index-transact-sql#index-key-size)
 - `Down()` restores the old index. It fails while two tenants hold the same `(DefinitionId, Version)`; remove or rename one of them first. Oracle checks for duplicates before dropping the new index. MySQL replaces both indexes in a single atomic `ALTER TABLE`, which leaves the tenant-scoped index in place if the old index cannot be built.
 
 ## Import

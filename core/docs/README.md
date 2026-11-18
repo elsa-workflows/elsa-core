@@ -39,6 +39,8 @@ source-repository archival; the [first consolidated release policy](../../docs/a
 and [artifact proof](../../docs/integration-program/consolidated-package-proof.md)
 retain their separate gates.
 
+Before upgrading a shared database, review the [tenant-scoped workflow definition index](migrations/tenant-scoped-definition-ids.md). If your host uses MassTransit, follow the [pending workflow start upgrade steps](migrations/serialization-and-capacity-limits.md#masstransit-pending-workflow-starts).
+
 ## Planned native compensation
 
 The [Native compensation and saga recovery delivery program](compensation/README.md) is the current program entrypoint for scope, ownership and readiness. Its [Elsa 3 adaptation design packet](specs/native-compensation/README.md) records the reviewed design and remaining technical gates. Standing owner authorization permits delivery through those gates; the proposal does not claim implementation or proof.
