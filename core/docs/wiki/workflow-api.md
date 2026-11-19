@@ -37,6 +37,14 @@ A successfully prepared start has a stored initial execution snapshot. If execut
 
 New definition imports insert version 1 without replacing an existing row. They retain the exported version ID when it is available and retry with a server-generated ID if another version owns it. The definition ID stays the same. Custom workflow definition publishers and stores must implement the create-only import contract to accept new imports.
 
+For multipart imports with `POST /elsa/api/workflow-definitions/import-files`, uploads with
+`Content-Type: application/json` are read as definitions; other uploads are read as ZIP
+archives, selecting entries with a case-insensitive `.json` suffix. Malformed JSON,
+JSON `null`, or unreadable ZIP data returns HTTP 400 with a standard validation error
+under `errors.generalErrors`. The message identifies the upload (and the entry for
+malformed JSON inside a ZIP), without parser or exception details. If any selected
+file cannot be read, no definitions from that request are imported.
+
 ## FastEndpoints Registration
 
 FastEndpoints assemblies are collected through module properties:
