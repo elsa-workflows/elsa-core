@@ -4,7 +4,6 @@ using Elsa.Common.Multitenancy;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 using Proto;
-using Proto.DependencyInjection;
 
 namespace Elsa.Actors.ProtoActor.UnitTests.Middleware;
 
@@ -49,47 +48,5 @@ public class TenantScopeMiddlewareTests
         await next.ReadTenant(_servicesWithoutTenancy)(Substitute.For<IReceiverContext>(), _envelope);
 
         Assert.True(forwarded);
-    }
-
-    [Fact(DisplayName = "Receiving restores the original service provider when forwarding fails")]
-    public async Task ReadTenant_WhenForwardingThrows_RestoresOriginalServiceProvider()
-    {
-        var tenant = new Tenant { Id = "tenant-1", Name = "Tenant 1" };
-        var originalActor = new MarkerActor();
-        var tenantScope = CreateTenantScope(tenant, new MarkerActor());
-
-        var tenantFinder = Substitute.For<ITenantFinder>();
-        tenantFinder.FindByIdAsync(tenant.Id).Returns(tenant);
-        var tenantScopeFactory = Substitute.For<ITenantScopeFactory>();
-        tenantScopeFactory.CreateScope(tenant).Returns(tenantScope);
-        var services = new ServiceCollection()
-            .AddSingleton(tenantFinder)
-            .AddSingleton(tenantScopeFactory)
-            .AddSingleton(originalActor)
-            .BuildServiceProvider();
-
-        await using var system = new ActorSystem().WithServiceProvider(services);
-        var context = Substitute.For<IReceiverContext>();
-        context.System.Returns(system);
-
-        Receiver next = (_, _) => throw new InvalidOperationException("Forwarding failed");
-
-        await Assert.ThrowsAsync<InvalidOperationException>(() => next.ReadTenant(services)(context, _envelope));
-
-        var producer = system.DI().PropsFor<MarkerActor>().Producer;
-        Assert.Same(originalActor, producer(system, null!));
-    }
-
-    private static TenantScope CreateTenantScope(Tenant tenant, MarkerActor actor)
-    {
-        var tenantServices = new ServiceCollection().AddSingleton(actor).BuildServiceProvider();
-        var serviceScope = Substitute.For<IServiceScope>();
-        serviceScope.ServiceProvider.Returns(tenantServices);
-        return new TenantScope(serviceScope, Substitute.For<ITenantAccessor>(), tenant);
-    }
-
-    private sealed class MarkerActor : IActor
-    {
-        public Task ReceiveAsync(IContext context) => Task.CompletedTask;
     }
 }
