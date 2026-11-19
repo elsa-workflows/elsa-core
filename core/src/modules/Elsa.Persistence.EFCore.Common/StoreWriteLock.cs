@@ -1,7 +1,5 @@
-using System.Data.Common;
 using Elsa.Common.Entities;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace Elsa.Persistence.EFCore;
@@ -18,10 +16,9 @@ internal sealed class StoreWriteLock
         DbContext context, IReadOnlyList<TEntity> entities, CancellationToken cancellationToken) where TEntity : class
     {
         cancellationToken.ThrowIfCancellationRequested();
-        // A catalog query inside an ambient transaction could reserve a pooled connection while
+        // A write inside an ambient transaction could reserve a pooled connection while
         // waiting for another writer. Transactional commits retain the exclusive path.
-        var verify = context.GetService<IDbContextOptions>().FindExtension<ElsaDbContextOptionsExtension>()?.VerifyStoreKey;
-        if (verify is null || System.Transactions.Transaction.Current is not null ||
+        if (System.Transactions.Transaction.Current is not null ||
             context.Database.CurrentTransaction is not null)
         {
             return await AcquireExclusiveAsync(cancellationToken);
@@ -29,7 +26,7 @@ internal sealed class StoreWriteLock
 
         var entityType = context.Model.FindEntityType(typeof(TEntity))!;
         if (entityType.FindPrimaryKey()?.Properties is not [var key] || key.Name != nameof(Entity.Id) ||
-            key.GetTypeMapping().Converter is not null || StoreObjectIdentifier.Create(entityType, StoreObjectType.Table) is not { } table)
+            key.GetTypeMapping().Converter is not null || StoreObjectIdentifier.Create(entityType, StoreObjectType.Table) is null)
         {
             return await AcquireExclusiveAsync(cancellationToken);
         }
@@ -40,19 +37,11 @@ internal sealed class StoreWriteLock
             return await AcquireExclusiveAsync(cancellationToken);
         }
 
-        try
-        {
-            if (await verify(context, table, key.GetColumnName(table)!, ids.Max(id => id.Length), cancellationToken))
-            {
-                var keys = ids.Select(id => id.Replace("-", "").Replace("_", "").ToUpperInvariant()).ToArray();
-                return await AcquireAsync(keys, cancellationToken);
-            }
-        }
-        catch (DbException) when (!cancellationToken.IsCancellationRequested)
-        {
-            // Older servers and restricted catalog access can still use the regular write path.
-        }
-        return await AcquireExclusiveAsync(cancellationToken);
+        // Fold ASCII case and separators so equivalent spellings share a reservation on every
+        // supported provider default collation. That is a conservative superset of those collations
+        // for this character set, so a live catalog check is not required.
+        var keys = ids.Select(id => id.Replace("-", "").Replace("_", "").ToUpperInvariant()).ToArray();
+        return await AcquireAsync(keys, cancellationToken);
     }
 
     private async ValueTask<IDisposable> AcquireAsync(string[]? ids, CancellationToken cancellationToken)
