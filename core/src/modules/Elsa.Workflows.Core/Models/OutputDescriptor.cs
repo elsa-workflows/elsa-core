@@ -24,7 +24,8 @@ public class OutputDescriptor : PropertyDescriptor
         PropertyInfo? propertyInfo = default,
         string? description = default,
         bool? isBrowsable = default,
-        bool? isSerializable = default)
+        bool? isSerializable = default,
+        bool isDictionaryWithValueOfOutput = false)
     {
         Name = name;
         DisplayName = displayName;
@@ -35,5 +36,11 @@ public class OutputDescriptor : PropertyDescriptor
         IsBrowsable = isBrowsable;
         IsSerializable = isSerializable;
         PropertyInfo = propertyInfo;
+        IsDictionaryWithValueOfOutput = isDictionaryWithValueOfOutput;
     }
+
+    /// <summary>
+    /// True if the property is a dictionary with <see cref="Output{T}"/> values, false otherwise.
+    /// </summary>
+    public bool IsDictionaryWithValueOfOutput { get; set; }
 }

@@ -1,4 +1,5 @@
 using Elsa.Workflows;
+using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Models;
 
 // ReSharper disable once CheckNamespace
@@ -46,6 +47,22 @@ public static class ActivityDescriptorExtensions
         }
 
         /// <summary>
+        /// Returns the entries of each collection of inputs from the specified activity, by input name.
+        /// </summary>
+        public IDictionary<string, IReadOnlyList<Input?>?> GetCollectionOfInputProperties(IActivity activity)
+        {
+            return activityDescriptor.Inputs.Where(x => x.IsCollectionOfInput).ToDictionary(x => x.Name, x => InputOutputCollections.ReadCollection<Input>(x.ValueGetter(activity)));
+        }
+
+        /// <summary>
+        /// Returns the entries of each dictionary of inputs from the specified activity, by input name.
+        /// </summary>
+        public IDictionary<string, IReadOnlyDictionary<string, Input?>?> GetDictionaryWithValueOfInputProperties(IActivity activity)
+        {
+            return activityDescriptor.Inputs.Where(x => x.IsDictionaryWithValueOfInput).ToDictionary(x => x.Name, x => InputOutputCollections.ReadDictionary<Input>(x.ValueGetter(activity)));
+        }
+
+        /// <summary>
         /// Returns each input descriptor from the specified activity.
         /// </summary>
         public InputDescriptor? GetWrappedInputPropertyDescriptor(IActivity activity, string name)
@@ -60,6 +77,14 @@ public static class ActivityDescriptorExtensions
         {
             var inputDescriptor = activityDescriptor.Inputs.FirstOrDefault(x => x.Name == name && x.IsWrapped);
             return inputDescriptor?.ValueGetter(activity) as Input;
+        }
+
+        /// <summary>
+        /// Returns the entries of each dictionary of outputs from the specified activity, by output name.
+        /// </summary>
+        public IDictionary<string, IReadOnlyDictionary<string, Output?>?> GetDictionaryWithValueOfOutputProperties(IActivity activity)
+        {
+            return activityDescriptor.Outputs.Where(x => x.IsDictionaryWithValueOfOutput).ToDictionary(x => x.Name, x => InputOutputCollections.ReadDictionary<Output>(x.ValueGetter(activity)));
         }
     }
 }
