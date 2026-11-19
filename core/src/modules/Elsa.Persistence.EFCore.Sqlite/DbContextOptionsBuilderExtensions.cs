@@ -15,7 +15,7 @@ public static class DbContextOptionsBuilderExtensions
     /// </summary>
     public static DbContextOptionsBuilder UseElsaSqlite(this DbContextOptionsBuilder builder, Assembly migrationsAssembly, string connectionString = Constants.DefaultConnectionString, ElsaDbContextOptions? options = null, Action<SqliteDbContextOptionsBuilder>? configure = null) =>
         builder
-            .UseElsaDbContextOptions(options)
+            .UseElsaDbContextOptions(options, SqliteStoreKeyVerifier.VerifyAsync)
             .UseSqlite(connectionString, db =>
             {
                 db

@@ -26,9 +26,8 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
     private const int WriteMaxRetryCount = 3;
     private static readonly TimeSpan WriteBaseDelay = TimeSpan.FromMilliseconds(50);
 
-    // ReSharper disable once StaticMemberInGenericType
-    // Justification: This is a static member that is used to ensure that only one thread can access the database for TEntity at a time.
-    private static readonly SemaphoreSlim Semaphore = new(1, 1);
+    // Shared by single and bulk writes, including calls made through separate store instances.
+    private static readonly StoreWriteLock WriteLock = new();
 
     /// <summary>
     /// Creates a new instance of the database context.
@@ -83,13 +82,19 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
     /// <param name="entities">The entities to save.</param>
     /// <param name="onSaving">The callback to invoke before saving the entity.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    public async Task AddManyAsync(
+    public Task AddManyAsync(
         IEnumerable<TEntity> entities,
         Func<TDbContext, TEntity, CancellationToken, ValueTask>? onSaving = null,
-        CancellationToken cancellationToken = default)
-    {
-        await Semaphore.WaitAsync(cancellationToken);
+        CancellationToken cancellationToken = default) =>
+        AddManyAsync(entities, onSaving, false, cancellationToken);
 
+    internal async Task AddManyAsync(
+        IEnumerable<TEntity> entities,
+        Func<TDbContext, TEntity, CancellationToken, ValueTask>? onSaving,
+        bool stableEntityIds, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        IDisposable? writeLock = stableEntityIds ? null : await WriteLock.AcquireExclusiveAsync(cancellationToken);
         try
         {
             var entityList = entities.ToList();
@@ -99,6 +104,7 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
 
             await ExecuteWriteWithRetryAsync(async (dbContext, ct) =>
             {
+                writeLock ??= await WriteLock.AcquireByIdAsync(dbContext, entityList, ct);
                 if (onSaving != null)
                 {
                     var savingTasks = entityList.Select(entity => onSaving(dbContext, entity, ct).AsTask()).ToList();
@@ -115,7 +121,7 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
         }
         finally
         {
-            Semaphore.Release();
+            writeLock?.Dispose();
         }
     }
 
@@ -134,13 +140,17 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
     /// <param name="keySelector">The key selector to get the primary key property.</param>
     /// <param name="onSaving">The callback to invoke before saving the entity.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    public async Task SaveAsync(TEntity entity, Expression<Func<TEntity, string>> keySelector, Func<TDbContext, TEntity, CancellationToken, ValueTask>? onSaving, CancellationToken cancellationToken = default)
-    {
-        await Semaphore.WaitAsync(cancellationToken); // Asynchronous wait
+    public Task SaveAsync(TEntity entity, Expression<Func<TEntity, string>> keySelector, Func<TDbContext, TEntity, CancellationToken, ValueTask>? onSaving, CancellationToken cancellationToken = default) =>
+        SaveAsync(entity, keySelector, onSaving, false, cancellationToken);
 
+    internal async Task SaveAsync(TEntity entity, Expression<Func<TEntity, string>> keySelector, Func<TDbContext, TEntity, CancellationToken, ValueTask>? onSaving, bool stableEntityIds, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        IDisposable? writeLock = stableEntityIds ? null : await WriteLock.AcquireExclusiveAsync(cancellationToken);
         try
         {
             await using var dbContext = await CreateDbContextAsync(cancellationToken);
+            writeLock ??= await WriteLock.AcquireByIdAsync(dbContext, new[] { entity }, cancellationToken);
 
             if (onSaving != null)
                 await onSaving(dbContext, entity, cancellationToken);
@@ -158,7 +168,7 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
         }
         finally
         {
-            Semaphore.Release();
+            writeLock?.Dispose();
         }
     }
 
@@ -177,14 +187,21 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
     /// <param name="keySelector">The key selector to get the primary key property.</param>
     /// <param name="onSaving">The callback to invoke before saving the entity.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    public async Task SaveManyAsync(
+    public Task SaveManyAsync(
         IEnumerable<TEntity> entities,
         Expression<Func<TEntity, string>> keySelector,
         Func<TDbContext, TEntity, CancellationToken, ValueTask>? onSaving = null,
-        CancellationToken cancellationToken = default)
-    {
-        await Semaphore.WaitAsync(cancellationToken);
+        CancellationToken cancellationToken = default) =>
+        SaveManyAsync(entities, keySelector, onSaving, false, cancellationToken);
 
+    internal async Task SaveManyAsync(
+        IEnumerable<TEntity> entities,
+        Expression<Func<TEntity, string>> keySelector,
+        Func<TDbContext, TEntity, CancellationToken, ValueTask>? onSaving,
+        bool stableEntityIds, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        IDisposable? writeLock = stableEntityIds ? null : await WriteLock.AcquireExclusiveAsync(cancellationToken);
         try
         {
             var entityList = entities.ToList();
@@ -197,6 +214,7 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
 
             await ExecuteWriteWithRetryAsync(async (dbContext, ct) =>
             {
+                writeLock ??= await WriteLock.AcquireByIdAsync(dbContext, entityList, ct);
                 if (onSaving != null)
                 {
                     var savingTasks = entityList.Select(entity => onSaving(dbContext, entity, ct).AsTask()).ToList();
@@ -272,7 +290,7 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
         }
         finally
         {
-            Semaphore.Release();
+            writeLock?.Dispose();
         }
     }
 

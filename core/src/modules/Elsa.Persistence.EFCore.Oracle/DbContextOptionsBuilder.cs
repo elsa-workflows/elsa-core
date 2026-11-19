@@ -15,7 +15,7 @@ public static class DbContextOptionsBuilderExtensions
     /// </summary>
     public static DbContextOptionsBuilder UseElsaOracle(this DbContextOptionsBuilder builder, Assembly migrationsAssembly, string connectionString, ElsaDbContextOptions? options = null, Action<OracleDbContextOptionsBuilder>? configure = null) =>
         builder
-            .UseElsaDbContextOptions(options)
+            .UseElsaDbContextOptions(options, OracleStoreKeyVerifier.VerifyAsync)
             .UseOracle(connectionString, db =>
             {
                 db
