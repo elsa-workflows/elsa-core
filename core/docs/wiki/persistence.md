@@ -34,11 +34,11 @@ Important base types:
 
 Within one process, the EF Core workflow instance, journal, and activity execution stores coordinate `SaveAsync`, `SaveManyAsync`, and `AddManyAsync` where those operations are available. Writes to distinct records can run concurrently. Each batch reserves its record IDs together. Operations that share an ID wait for one another, including across tenant scopes.
 
-PostgreSQL, SQLite, SQL Server, MySQL, and Oracle each check the live primary key before admitting concurrent writes. The built-in providers recognize ordinary text keys on their supported collations. IDs containing ASCII letters, digits, hyphens, and underscores are eligible. Comparisons ignore ASCII case, hyphens, and underscores so equivalent inputs share a reservation. The database still receives the original IDs.
+IDs containing ASCII letters, digits, hyphens, and underscores are eligible. Comparisons ignore ASCII case, hyphens, and underscores so equivalent inputs share a reservation. The database still receives the original IDs.
 
-An unrecognized schema, another ID format, an unavailable catalog, or a transaction uses exclusive access for that store type. General-purpose calls with arbitrary key selectors or callbacks also take exclusive access. Additional providers can register a `StoreKeyVerifier` through `UseElsaDbContextOptions`. Each database engine still controls how many writes it can execute at once. Coordination is local to each Elsa process.
+Another ID format or a transaction uses exclusive access for that store type. General-purpose calls with arbitrary key selectors or callbacks also take exclusive access. Each database engine still controls how many writes it can execute at once. Coordination is local to each Elsa process.
 
-The live concurrency tests in `Elsa.Persistence.EFCore.UnitTests` read `ELSA_SQLSERVER_CONNECTION_STRING`, `ELSA_MYSQL_CONNECTION_STRING`, and `ELSA_ORACLE_CONNECTION_STRING`. Point each at a test database where the account can create and drop a table. Run the project on .NET 9 to include MySQL. The PostgreSQL and SQLite scenarios run in `Elsa.Workflows.ComponentTests`.
+The live concurrency tests in `Elsa.Persistence.EFCore.UnitTests` read `ELSA_SQLSERVER_CONNECTION_STRING`, `ELSA_MYSQL_CONNECTION_STRING`, and `ELSA_ORACLE_CONNECTION_STRING`. Point each at a test database where the account can create and drop a table. Run the project on .NET 9 to include MySQL. The PostgreSQL and SQLite scenarios run in `Elsa.Workflows.ComponentTests`. The lock itself does not query the catalog.
 
 ## EF Core Module Slices
 

@@ -13,25 +13,25 @@ public class ProviderStoreWriteConcurrencyTests
     private const string MySql = "ELSA_MYSQL_CONNECTION_STRING";
 
     [ProviderDatabase(SqlServer)]
-    public Task SqlServer_VerifiesTextKeyAndFallsBackForOtherCollations() =>
+    public Task SqlServer_IndependentIdsProceedOnKnownAndUnknownCollations() =>
         CheckAsync(SqlServer, (b, cs) => b.UseElsaSqlServer(GetType().Assembly, cs),
             "nvarchar(128) COLLATE Latin1_General_100_CI_AS", "nvarchar(128) COLLATE Turkish_CI_AS");
 
     [ProviderDatabase(Oracle)]
-    public Task Oracle_VerifiesNationalTextKeyAndFallsBackForOtherTypes() =>
+    public Task Oracle_IndependentIdsProceedOnNationalAndByteTextKeys() =>
         CheckAsync(Oracle, (b, cs) => b.UseElsaOracle(GetType().Assembly, cs),
             "NVARCHAR2(128)", "VARCHAR2(128)");
 
 #if NET9_0
     [ProviderDatabase(MySql)]
-    public Task MySql_VerifiesTextKeyAndFallsBackForOtherCollations() =>
+    public Task MySql_IndependentIdsProceedOnKnownAndUnknownCollations() =>
         CheckAsync(MySql, (b, cs) => b.UseElsaMySql(GetType().Assembly, cs),
             "varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin",
             "varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_turkish_ci");
 #endif
 
     private static async Task CheckAsync(string variable, Action<DbContextOptionsBuilder, string> configure,
-        string verifiedColumnType, string unknownColumnType)
+        string firstColumnType, string secondColumnType)
     {
         var builder = new DbContextOptionsBuilder().EnableServiceProviderCaching(false);
         configure(builder, Environment.GetEnvironmentVariable(variable)!);
@@ -43,7 +43,7 @@ public class ProviderStoreWriteConcurrencyTests
         var id = sql.DelimitIdentifier(nameof(Entity.Id));
         var coordinator = new StoreWriteLock();
 
-        foreach (var type in new[] { verifiedColumnType, unknownColumnType })
+        foreach (var type in new[] { firstColumnType, secondColumnType })
         {
             var ddl = $"CREATE TABLE {table} ({id} {type} NOT NULL PRIMARY KEY)";
             await db.Database.ExecuteSqlRawAsync(ddl);
@@ -51,15 +51,11 @@ public class ProviderStoreWriteConcurrencyTests
             {
                 using var first = await AcquireAsync("Order-A", CancellationToken.None);
                 using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(15));
-                if (type == verifiedColumnType)
-                {
-                    using var independent = await AcquireAsync("Order-B", timeout.Token);
-                }
+                using var independent = await AcquireAsync("Order-B", timeout.Token);
 
                 using var cancel = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
-                var conflicting = type == verifiedColumnType ? "order-a" : "Order-B";
                 await Assert.ThrowsAnyAsync<OperationCanceledException>(
-                    () => AcquireAsync(conflicting, cancel.Token).AsTask());
+                    () => AcquireAsync("order-a", cancel.Token).AsTask());
             }
             finally
             {

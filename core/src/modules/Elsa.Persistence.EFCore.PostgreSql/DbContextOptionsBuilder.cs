@@ -15,7 +15,7 @@ public static class DbContextOptionsBuilderExtensions
     /// </summary>
     public static DbContextOptionsBuilder UseElsaPostgreSql(this DbContextOptionsBuilder builder, Assembly migrationsAssembly, string connectionString, ElsaDbContextOptions? options = null, Action<NpgsqlDbContextOptionsBuilder>? configure = null) =>
         builder
-            .UseElsaDbContextOptions(options, PostgreSqlStoreKeyVerifier.VerifyAsync)
+            .UseElsaDbContextOptions(options)
             .UseNpgsql(connectionString, db =>
             {
                 db

@@ -108,19 +108,10 @@ public class WorkflowInstanceWriteConcurrencyTests(PostgreSqlStoreSaveManyFixtur
                     [Instance(independentId, "unused"), Instance(overlappingId, "overlap")], cancellation.Token).AsTask());
 
                 update = store.SaveAsync(Instance(caseInsensitive ? overlappingId : id, "second")).AsTask();
-                if (caseInsensitive || boundedKey)
-                {
-                    using var timeout = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
-                    await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
-                        store.SaveAsync(Instance(independentId, "independent"), timeout.Token).AsTask());
-                }
-                else
-                {
-                    await store.SaveManyAsync([Instance(independentId, "independent")])
-                        .AsTask().WaitAsync(TimeSpan.FromSeconds(10));
-                    var independent = await store.FindAsync(new WorkflowInstanceFilter { Id = independentId });
-                    Assert.Equal("independent", independent?.WorkflowState.Name);
-                }
+                await store.SaveManyAsync([Instance(independentId, "independent")])
+                    .AsTask().WaitAsync(TimeSpan.FromSeconds(10));
+                var independent = await store.FindAsync(new WorkflowInstanceFilter { Id = independentId });
+                Assert.Equal("independent", independent?.WorkflowState.Name);
                 Assert.False(update.IsCompleted);
             }
             finally

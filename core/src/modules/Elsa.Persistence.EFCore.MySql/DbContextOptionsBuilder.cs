@@ -21,7 +21,7 @@ public static class DbContextOptionsBuilderExtensions
         ServerVersion? serverVersion = null, 
         Action<MySqlDbContextOptionsBuilder>? configure = null) =>
         builder
-            .UseElsaDbContextOptions(options, MySqlStoreKeyVerifier.VerifyAsync)
+            .UseElsaDbContextOptions(options)
             .UseMySql(connectionString, serverVersion ?? ServerVersion.AutoDetect(connectionString), db =>
             {
                 db
