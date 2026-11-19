@@ -15,8 +15,11 @@ public class StoreWriteLockTests
         var commands = 0;
         harness.OnCommand = () => Interlocked.Increment(ref commands);
 
-        using var held = await harness.AcquireAsync("Order-A");
+        await harness.Db.Database.ExecuteSqlRawAsync("SELECT 1");
+        Assert.True(commands > 0);
 
+        commands = 0;
+        using var held = await harness.AcquireAsync("Order-A");
         Assert.Equal(0, commands);
     }
 
@@ -153,16 +156,34 @@ public class StoreWriteLockTests
             return base.ReaderExecuting(command, eventData, result);
         }
 
+        public override ValueTask<InterceptionResult<DbDataReader>> ReaderExecutingAsync(DbCommand command, CommandEventData eventData, InterceptionResult<DbDataReader> result, CancellationToken cancellationToken = default)
+        {
+            onCommand();
+            return base.ReaderExecutingAsync(command, eventData, result, cancellationToken);
+        }
+
         public override InterceptionResult<int> NonQueryExecuting(DbCommand command, CommandEventData eventData, InterceptionResult<int> result)
         {
             onCommand();
             return base.NonQueryExecuting(command, eventData, result);
         }
 
+        public override ValueTask<InterceptionResult<int>> NonQueryExecutingAsync(DbCommand command, CommandEventData eventData, InterceptionResult<int> result, CancellationToken cancellationToken = default)
+        {
+            onCommand();
+            return base.NonQueryExecutingAsync(command, eventData, result, cancellationToken);
+        }
+
         public override InterceptionResult<object> ScalarExecuting(DbCommand command, CommandEventData eventData, InterceptionResult<object> result)
         {
             onCommand();
             return base.ScalarExecuting(command, eventData, result);
+        }
+
+        public override ValueTask<InterceptionResult<object>> ScalarExecutingAsync(DbCommand command, CommandEventData eventData, InterceptionResult<object> result, CancellationToken cancellationToken = default)
+        {
+            onCommand();
+            return base.ScalarExecutingAsync(command, eventData, result, cancellationToken);
         }
     }
 }
