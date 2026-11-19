@@ -14,8 +14,6 @@ namespace Elsa.Scheduling.Quartz.UnitTests.Jobs;
 
 public class RunWorkflowJobTests
 {
-    private readonly Mock<ITenantAccessor> _tenantAccessor = QuartzJobTestHelper.CreateTenantAccessor();
-    private readonly Mock<ITenantFinder> _tenantFinder = new();
     private readonly Mock<IWorkflowStarter> _workflowStarter = new();
     private readonly Mock<IQuartzJobRetryScheduler> _retryScheduler = new();
     private readonly Mock<ILogger<RunWorkflowJob>> _logger = new();
@@ -24,8 +22,8 @@ public class RunWorkflowJobTests
     public RunWorkflowJobTests()
     {
         _job = new(
-            _tenantAccessor.Object,
-            _tenantFinder.Object,
+            Mock.Of<ITenantAccessor>(),
+            Mock.Of<ITenantFinder>(),
             _workflowStarter.Object,
             _retryScheduler.Object,
             _logger.Object);
@@ -235,16 +233,58 @@ public class RunWorkflowJobTests
     }
 
     [Fact]
-    public async Task Execute_TenantFinderThrowsTransientException_SchedulesRetryAndDoesNotPropagate()
+    public async Task Execute_WhenTriggerTenantMissingFromContext_ThrowsNamingTenantIdAndJobKey()
     {
-        var (context, _) = CreateJobExecutionContext(withTenantId: true);
-        _retryScheduler.SetupRetry(isRetryable: true);
-        _tenantFinder.Setup(f => f.FindByIdAsync("tenant-123", It.IsAny<CancellationToken>())).ThrowsAsync(new TimeoutException());
+        var logger = new Mock<ILogger<RunWorkflowJob>>();
+        var job = new RunWorkflowJob(
+            new DefaultTenantAccessor(),
+            new AnyIdTenantFinder(),
+            _workflowStarter.Object,
+            _retryScheduler.Object,
+            logger.Object);
+        var (context, _) = QuartzJobTestHelper.CreateJobExecutionContext(
+            new Dictionary<string, object> { ["DefinitionVersionId"] = "def-1" },
+            triggerData: new Dictionary<string, object> { ["TenantId"] = "tenant-b" });
 
-        await _job.Execute(context);
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => job.Execute(context));
 
-        _retryScheduler.VerifyRetryScheduled(context);
-        _workflowStarter.Verify(w => w.StartWorkflowAsync(It.IsAny<StartWorkflowRequest>(), It.IsAny<CancellationToken>()), Times.Never);
+        Assert.Contains("tenant-b", exception.Message);
+        Assert.Contains(context.JobDetail.Key.ToString(), exception.Message);
+        _workflowStarter.Verify(x => x.StartWorkflowAsync(It.IsAny<StartWorkflowRequest>(), It.IsAny<CancellationToken>()), Times.Never);
+        logger.VerifyLogged(LogLevel.Error, Times.Once());
+    }
+
+    [Fact]
+    public async Task Execute_WhenTriggerTenantAlreadyInContext_StartsWorkflow()
+    {
+        var accessor = new DefaultTenantAccessor();
+        using var _ = accessor.PushContext(new Tenant { Id = "tenant-b", Name = "tenant-b" });
+        var job = new RunWorkflowJob(accessor, new AnyIdTenantFinder(), _workflowStarter.Object, _retryScheduler.Object, _logger.Object);
+        _workflowStarter.SetupStartWorkflow(new() { WorkflowInstanceId = "workflow-123" });
+        var (context, _) = QuartzJobTestHelper.CreateJobExecutionContext(
+            new Dictionary<string, object> { ["DefinitionVersionId"] = "workflow-def-123" },
+            triggerData: new Dictionary<string, object> { ["TenantId"] = "tenant-b" });
+
+        await job.Execute(context);
+
+        _workflowStarter.VerifyStartWorkflowCalled();
+    }
+
+    [Fact]
+    public async Task Execute_WhenContextTenantDiffersFromTrigger_ThrowsNamingTenantIdAndJobKey()
+    {
+        var accessor = new DefaultTenantAccessor();
+        using var _ = accessor.PushContext(new Tenant { Id = "tenant-a", Name = "tenant-a" });
+        var job = new RunWorkflowJob(accessor, new AnyIdTenantFinder(), _workflowStarter.Object, _retryScheduler.Object, _logger.Object);
+        var (context, _) = QuartzJobTestHelper.CreateJobExecutionContext(
+            new Dictionary<string, object> { ["DefinitionVersionId"] = "def-1" },
+            triggerData: new Dictionary<string, object> { ["TenantId"] = "tenant-b" });
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => job.Execute(context));
+
+        Assert.Contains("tenant-b", exception.Message);
+        Assert.Contains(context.JobDetail.Key.ToString(), exception.Message);
+        _workflowStarter.Verify(x => x.StartWorkflowAsync(It.IsAny<StartWorkflowRequest>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -262,7 +302,7 @@ public class RunWorkflowJobTests
         Assert.Equal("workflow-def-123", capturedRequest.WorkflowDefinitionHandle.DefinitionVersionId);
     }
 
-    private static (IJobExecutionContext, Mock<QuartzScheduler>) CreateJobExecutionContext(string? jobKeyName = null, bool withTenantId = false)
+    private static (IJobExecutionContext, Mock<QuartzScheduler>) CreateJobExecutionContext(string? jobKeyName = null)
     {
         var jobData = new Dictionary<string, object>
         {
@@ -270,9 +310,6 @@ public class RunWorkflowJobTests
             { "CorrelationId", "corr-123" },
             { "TriggerActivityId", "trigger-123" }
         };
-
-        if (withTenantId)
-            jobData["TenantId"] = "tenant-123";
 
         return QuartzJobTestHelper.CreateJobExecutionContext(jobData, jobKeyName);
     }

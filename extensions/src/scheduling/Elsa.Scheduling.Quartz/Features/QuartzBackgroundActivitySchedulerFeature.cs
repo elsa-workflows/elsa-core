@@ -34,5 +34,6 @@ public class QuartzBackgroundActivitySchedulerFeature : FeatureBase
     public override void Apply()
     {
         Services.AddSingleton<QuartzBackgroundActivityScheduler>();
+        JobFactoryRegistration.TryUseTenantAwareJobFactory(Services);
     }
 }
