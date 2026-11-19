@@ -23,7 +23,7 @@ public class WorkflowInstanceWriteConcurrencyTests(PostgreSqlStoreSaveManyFixtur
     [InlineData(false, false, true)]
     [InlineData(true, false, true)]
     [InlineData(false, false, false, true)]
-    public async Task ConcurrentSaves_RespectPhysicalKeyEquality(bool sqlite, bool existing, bool caseInsensitive = false, bool boundedKey = false)
+    public async Task ConcurrentSaves_CoordinateFoldedIds(bool sqlite, bool existing, bool caseInsensitive = false, bool boundedKey = false)
     {
         var codec = new PausingCodec();
         var services = new ServiceCollection();

@@ -15,8 +15,11 @@ public class StoreWriteLockTests
         var commands = 0;
         harness.OnCommand = () => Interlocked.Increment(ref commands);
 
-        using var held = await harness.AcquireAsync("Order-A");
+        await harness.Db.Database.ExecuteSqlRawAsync("SELECT 1");
+        Assert.True(commands > 0);
 
+        commands = 0;
+        using var held = await harness.AcquireAsync("Order-A");
         Assert.Equal(0, commands);
     }
 
@@ -96,6 +99,31 @@ public class StoreWriteLockTests
             () => harness.AcquireAsync("Order-B", cancel.Token).AsTask());
     }
 
+    [Fact]
+    public async Task ExclusiveStoreWrites_BlocksIndependentIds()
+    {
+        await using var harness = await Harness.CreateAsync(new ElsaDbContextOptions { ExclusiveStoreWrites = true });
+        using var first = await harness.AcquireAsync("Order-A");
+        using var cancel = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => harness.AcquireAsync("Order-B", cancel.Token).AsTask());
+    }
+
+    [Fact]
+    public async Task ExclusiveStoreWrites_DoesNotQueryTheDatabase()
+    {
+        await using var harness = await Harness.CreateAsync(new ElsaDbContextOptions { ExclusiveStoreWrites = true });
+        var commands = 0;
+        harness.OnCommand = () => Interlocked.Increment(ref commands);
+
+        await harness.Db.Database.ExecuteSqlRawAsync("SELECT 1");
+        Assert.True(commands > 0);
+
+        commands = 0;
+        using var held = await harness.AcquireAsync("Order-A");
+        Assert.Equal(0, commands);
+    }
+
     private sealed class Harness : IAsyncDisposable
     {
         private readonly SqliteConnection _connection;
@@ -110,17 +138,21 @@ public class StoreWriteLockTests
         public TestContext Db { get; }
         public Action? OnCommand { get; set; }
 
-        public static async Task<Harness> CreateAsync()
+        public static async Task<Harness> CreateAsync(ElsaDbContextOptions? elsaOptions = null)
         {
             var connection = new SqliteConnection("Data Source=:memory:");
             await connection.OpenAsync();
             var harness = default(Harness);
-            var options = new DbContextOptionsBuilder()
+            var builder = new DbContextOptionsBuilder()
                 .UseSqlite(connection)
                 .EnableServiceProviderCaching(false)
-                .AddInterceptors(new CallbackInterceptor(() => harness?.OnCommand?.Invoke()))
-                .Options;
-            var db = new TestContext(options);
+                .AddInterceptors(new CallbackInterceptor(() => harness?.OnCommand?.Invoke()));
+            if (elsaOptions is not null)
+            {
+                builder.UseElsaDbContextOptions(elsaOptions);
+            }
+
+            var db = new TestContext(builder.Options);
             harness = new Harness(connection, db);
             return harness;
         }
@@ -153,16 +185,34 @@ public class StoreWriteLockTests
             return base.ReaderExecuting(command, eventData, result);
         }
 
+        public override ValueTask<InterceptionResult<DbDataReader>> ReaderExecutingAsync(DbCommand command, CommandEventData eventData, InterceptionResult<DbDataReader> result, CancellationToken cancellationToken = default)
+        {
+            onCommand();
+            return base.ReaderExecutingAsync(command, eventData, result, cancellationToken);
+        }
+
         public override InterceptionResult<int> NonQueryExecuting(DbCommand command, CommandEventData eventData, InterceptionResult<int> result)
         {
             onCommand();
             return base.NonQueryExecuting(command, eventData, result);
         }
 
+        public override ValueTask<InterceptionResult<int>> NonQueryExecutingAsync(DbCommand command, CommandEventData eventData, InterceptionResult<int> result, CancellationToken cancellationToken = default)
+        {
+            onCommand();
+            return base.NonQueryExecutingAsync(command, eventData, result, cancellationToken);
+        }
+
         public override InterceptionResult<object> ScalarExecuting(DbCommand command, CommandEventData eventData, InterceptionResult<object> result)
         {
             onCommand();
             return base.ScalarExecuting(command, eventData, result);
+        }
+
+        public override ValueTask<InterceptionResult<object>> ScalarExecutingAsync(DbCommand command, CommandEventData eventData, InterceptionResult<object> result, CancellationToken cancellationToken = default)
+        {
+            onCommand();
+            return base.ScalarExecutingAsync(command, eventData, result, cancellationToken);
         }
     }
 }

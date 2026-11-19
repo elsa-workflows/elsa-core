@@ -1,5 +1,6 @@
 using Elsa.Common.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace Elsa.Persistence.EFCore;
@@ -20,6 +21,11 @@ internal sealed class StoreWriteLock
         // waiting for another writer. Transactional commits retain the exclusive path.
         if (System.Transactions.Transaction.Current is not null ||
             context.Database.CurrentTransaction is not null)
+        {
+            return await AcquireExclusiveAsync(cancellationToken);
+        }
+
+        if (context.GetService<IDbContextOptions>().FindExtension<ElsaDbContextOptionsExtension>()?.Options?.ExclusiveStoreWrites == true)
         {
             return await AcquireExclusiveAsync(cancellationToken);
         }
