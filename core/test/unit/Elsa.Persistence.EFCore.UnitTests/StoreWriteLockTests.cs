@@ -99,6 +99,31 @@ public class StoreWriteLockTests
             () => harness.AcquireAsync("Order-B", cancel.Token).AsTask());
     }
 
+    [Fact]
+    public async Task ExclusiveStoreWrites_BlocksIndependentIds()
+    {
+        await using var harness = await Harness.CreateAsync(new ElsaDbContextOptions { ExclusiveStoreWrites = true });
+        using var first = await harness.AcquireAsync("Order-A");
+        using var cancel = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => harness.AcquireAsync("Order-B", cancel.Token).AsTask());
+    }
+
+    [Fact]
+    public async Task ExclusiveStoreWrites_DoesNotQueryTheDatabase()
+    {
+        await using var harness = await Harness.CreateAsync(new ElsaDbContextOptions { ExclusiveStoreWrites = true });
+        var commands = 0;
+        harness.OnCommand = () => Interlocked.Increment(ref commands);
+
+        await harness.Db.Database.ExecuteSqlRawAsync("SELECT 1");
+        Assert.True(commands > 0);
+
+        commands = 0;
+        using var held = await harness.AcquireAsync("Order-A");
+        Assert.Equal(0, commands);
+    }
+
     private sealed class Harness : IAsyncDisposable
     {
         private readonly SqliteConnection _connection;
@@ -113,17 +138,21 @@ public class StoreWriteLockTests
         public TestContext Db { get; }
         public Action? OnCommand { get; set; }
 
-        public static async Task<Harness> CreateAsync()
+        public static async Task<Harness> CreateAsync(ElsaDbContextOptions? elsaOptions = null)
         {
             var connection = new SqliteConnection("Data Source=:memory:");
             await connection.OpenAsync();
             var harness = default(Harness);
-            var options = new DbContextOptionsBuilder()
+            var builder = new DbContextOptionsBuilder()
                 .UseSqlite(connection)
                 .EnableServiceProviderCaching(false)
-                .AddInterceptors(new CallbackInterceptor(() => harness?.OnCommand?.Invoke()))
-                .Options;
-            var db = new TestContext(options);
+                .AddInterceptors(new CallbackInterceptor(() => harness?.OnCommand?.Invoke()));
+            if (elsaOptions is not null)
+            {
+                builder.UseElsaDbContextOptions(elsaOptions);
+            }
+
+            var db = new TestContext(builder.Options);
             harness = new Harness(connection, db);
             return harness;
         }

@@ -34,7 +34,7 @@ Important base types:
 
 Within one process, the EF Core workflow instance, journal, and activity execution stores coordinate `SaveAsync`, `SaveManyAsync`, and `AddManyAsync` where those operations are available. Writes to distinct records can run concurrently. Each batch reserves its record IDs together. Operations that share an ID wait for one another, including across tenant scopes.
 
-IDs containing ASCII letters, digits, hyphens, and underscores are eligible. Comparisons ignore ASCII case, hyphens, and underscores so equivalent inputs share a reservation. The database still receives the original IDs. The folded lock assumes an ordinary text collation; a numeric ICU collation, where `order1` equals `order01`, is not covered.
+IDs containing ASCII letters, digits, hyphens, and underscores are eligible. Comparisons ignore ASCII case, hyphens, and underscores so equivalent inputs share a reservation. The database still receives the original IDs. The folded lock assumes an ordinary text collation; a numeric ICU collation, where `order1` equals `order01`, is not covered, and hosts with such columns set `ElsaDbContextOptions.ExclusiveStoreWrites` so those stores take exclusive access.
 
 Another ID format or a transaction uses exclusive access for that store type. General-purpose calls with arbitrary key selectors or callbacks also take exclusive access. Each database engine still controls how many writes it can execute at once. Coordination is local to each Elsa process.
 
