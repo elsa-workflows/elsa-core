@@ -38,7 +38,10 @@ public sealed class WorkflowActivationLease : IAsyncDisposable
     /// </summary>
     public bool CanStart { get; }
 
-    internal CancellationToken GetEffectiveCancellationToken(CancellationToken fallbackToken) =>
+    /// <summary>
+    /// Returns the lease's linked cancellation token, or the caller's token for a lease with no linked token.
+    /// </summary>
+    public CancellationToken GetEffectiveCancellationToken(CancellationToken fallbackToken) =>
         _effectiveCancellationToken.CanBeCanceled ? _effectiveCancellationToken : fallbackToken;
 
     /// <inheritdoc />

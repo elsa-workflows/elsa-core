@@ -13,6 +13,7 @@ namespace Elsa.UserTasks.Persistence.VNext.Repositories;
 public sealed class VNextUserTaskRepository(IDocumentStore documentStore) : IUserTaskRepository
 {
     public const string StorageUnitName = "UserTasks";
+    private const string InvitationStorageUnitName = "UserTaskInvitations";
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
         Converters = { new JsonStringEnumConverter() }
@@ -60,15 +61,31 @@ public sealed class VNextUserTaskRepository(IDocumentStore documentStore) : IUse
 
     public async Task<(UserTask Task, UserTaskInvitation Invitation)?> FindByInvitationTokenHashAsync(string tokenHash, CancellationToken cancellationToken = default)
     {
-        // The document store has no cross-tenant secondary index for invitation hashes, so this scans the
-        // storage unit. Verification is rate limited and rare; correctness matters more than the scan here.
-        foreach (var task in await LoadAllAsync(cancellationToken))
-        {
-            var invitation = task.Invitations.FirstOrDefault(x => string.Equals(x.TokenHash, tokenHash, StringComparison.Ordinal));
-            if (invitation != null)
-                return (task, invitation);
-        }
-        return null;
+        if (string.IsNullOrWhiteSpace(tokenHash))
+            return null;
+
+        var document = await documentStore.LoadAsync(InvitationStorageUnitName, tokenHash, cancellationToken);
+        if (document == null)
+            return null;
+
+        var reference = ReadInvitationReference(document);
+        var task = await GetAsync(reference.TenantId, reference.TaskId, cancellationToken);
+        if (task == null || task.Id != reference.TaskId || task.TenantId != reference.TenantId)
+            return null;
+
+        var invitation = task.Invitations.FirstOrDefault(candidate =>
+            candidate.Id == reference.InvitationId && string.Equals(candidate.TokenHash, tokenHash, StringComparison.Ordinal));
+        return invitation != null ? (task, invitation) : null;
+    }
+
+    /// <summary>
+    /// Indexes the invitations already persisted on a specific task as part of upgrading the document store.
+    /// </summary>
+    public async Task IndexInvitationTokensAsync(string tenantId, string taskId, CancellationToken cancellationToken = default)
+    {
+        var task = await GetAsync(tenantId, taskId, cancellationToken);
+        if (task != null)
+            await IndexNewInvitationTokensAsync(task, [], cancellationToken);
     }
 
     public async Task SaveAsync(UserTask task, int expectedRevision, CancellationToken cancellationToken = default)
@@ -80,6 +97,7 @@ public sealed class VNextUserTaskRepository(IDocumentStore documentStore) : IUse
         if (loaded.Task.Revision != expectedRevision)
             throw new UserTaskRevisionConflictException(task.Id, expectedRevision);
 
+        await IndexNewInvitationTokensAsync(task, loaded.Task.Invitations, cancellationToken);
         task.Revision = expectedRevision + 1;
         task.UpdatedAt = DateTimeOffset.UtcNow;
         try
@@ -98,6 +116,8 @@ public sealed class VNextUserTaskRepository(IDocumentStore documentStore) : IUse
     {
         if (await FindByMaterializationKeyAsync(task.TenantId, task.MaterializationKey, cancellationToken) is not null)
             return;
+
+        await IndexNewInvitationTokensAsync(task, [], cancellationToken);
         try
         {
             await documentStore.SaveAsync(CreateRequest(task, expectedVersion: 0), cancellationToken);
@@ -134,8 +154,14 @@ public sealed class VNextUserTaskRepository(IDocumentStore documentStore) : IUse
         if (existing is null)
             return false;
         var loaded = existing.Value;
-        if (loaded.Task.Revision != expectedRevision || !mutation(loaded.Task))
+        if (loaded.Task.Revision != expectedRevision)
             return false;
+
+        var previousInvitations = loaded.Task.Invitations.ToArray();
+        if (!mutation(loaded.Task))
+            return false;
+
+        await IndexNewInvitationTokensAsync(loaded.Task, previousInvitations, cancellationToken);
         loaded.Task.Revision = expectedRevision + 1;
         loaded.Task.UpdatedAt = DateTimeOffset.UtcNow;
         try
@@ -149,23 +175,47 @@ public sealed class VNextUserTaskRepository(IDocumentStore documentStore) : IUse
         }
     }
 
-    /// <summary>
-    /// Loads every stored task across tenants. Only the invitation-hash lookup uses this: an anonymous
-    /// holder presents a secret and no tenant, so the scan cannot be narrowed by an index.
-    /// </summary>
-    private async Task<IReadOnlyCollection<UserTask>> LoadAllAsync(CancellationToken cancellationToken)
+    private async Task IndexNewInvitationTokensAsync(UserTask task, IReadOnlyCollection<UserTaskInvitation> previousInvitations, CancellationToken cancellationToken)
     {
-        var tasks = new List<UserTask>();
-        foreach (var status in Enum.GetValues<UserTaskStatus>())
+        var previousTokens = previousInvitations.Select(invitation => (invitation.Id, invitation.TokenHash)).ToHashSet();
+
+        foreach (var invitation in task.Invitations)
         {
-            var documents = await documentStore.QueryAsync(new DocumentQuery(StorageUnitName, new Dictionary<string, string?>
+            if (previousTokens.Contains((invitation.Id, invitation.TokenHash)))
+                continue;
+
+            var reference = new InvitationReference(task.TenantId, task.Id, invitation.Id);
+            var request = new SaveDocumentRequest(InvitationStorageUnitName, invitation.TokenHash,
+                JsonSerializer.Serialize(reference, JsonOptions),
+                new Dictionary<string, string?>
+                {
+                    ["TenantId"] = reference.TenantId,
+                    ["TaskId"] = reference.TaskId,
+                    ["TokenHash"] = invitation.TokenHash,
+                    ["Status"] = invitation.Status.ToString()
+                },
+                ExpectedVersion: 0);
+
+            try
             {
-                ["Status"] = status.ToString()
-            }), cancellationToken);
-            tasks.AddRange(documents.Select(Deserialize));
+                // Reserve the lookup before saving the task. Readers always confirm the invitation
+                // on the task, so an interrupted or rejected task write cannot authorize a token.
+                await documentStore.SaveAsync(request, cancellationToken);
+            }
+            catch (DocumentStoreConcurrencyException)
+            {
+                var existing = await documentStore.LoadAsync(InvitationStorageUnitName, invitation.TokenHash, cancellationToken);
+                if (existing == null || ReadInvitationReference(existing) != reference)
+                    throw;
+            }
         }
-        return tasks;
     }
+
+    private static InvitationReference ReadInvitationReference(StoredDocument document) =>
+        JsonSerializer.Deserialize<InvitationReference>(document.Content, JsonOptions)
+        ?? throw new JsonException("User task invitation lookup is missing its task reference.");
+
+    private sealed record InvitationReference(string TenantId, string TaskId, string InvitationId);
 
     private async Task<UserTask?> FindByIndexAsync(string tenantId, Func<UserTask, bool> predicate, CancellationToken cancellationToken)
     {

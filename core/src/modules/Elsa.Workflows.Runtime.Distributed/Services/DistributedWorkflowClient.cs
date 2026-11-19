@@ -34,6 +34,13 @@ public class DistributedWorkflowClient(
         return result;
     }
 
+    public async Task<RunWorkflowInstanceResponse?> RunInstanceIfPendingAsync(RunWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
+    {
+        // Read and run under the same lock: deciding outside it lets two dispatchers that
+        // both observed Pending pass the guard and run the instance twice (#8869).
+        return await WithLockAsync(async () => await _localWorkflowClient.RunInstanceIfPendingAsync(request, cancellationToken), cancellationToken);
+    }
+
     public async Task<RunWorkflowInstanceResponse> CreateAndRunInstanceAsync(CreateAndRunWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
     {
         // We need to lock newly created workflow instances too, because it might dispatch child workflows that attempt to resume the parent workflow.

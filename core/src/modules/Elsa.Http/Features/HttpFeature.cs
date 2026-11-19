@@ -165,6 +165,7 @@ public class HttpFeature(IModule module) : FeatureBase(module)
 
         var httpClientBuilder = Services.AddHttpClient<SendHttpRequestBase>(HttpClient);
         HttpClientBuilder(httpClientBuilder);
+        httpClientBuilder.WithResponseBodyLimit();
 
         Services
             .AddScoped<IRouteMatcher, RouteMatcher>()
@@ -239,7 +240,9 @@ public class HttpFeature(IModule module) : FeatureBase(module)
             .AddAuthorization();
 
         // HTTP clients.
-        Services.AddHttpClient<IFileDownloader, HttpClientFileDownloader>();
+        Services.AddHttpClient<IFileDownloader, HttpClientFileDownloader>()
+            .ConfigurePrimaryHttpMessageHandler(HttpClientFileDownloader.CreateHandler)
+            .WithResponseBodyLimit();
 
         // Add selectors.
         foreach (var httpCorrelationIdSelectorType in HttpCorrelationIdSelectorTypes)

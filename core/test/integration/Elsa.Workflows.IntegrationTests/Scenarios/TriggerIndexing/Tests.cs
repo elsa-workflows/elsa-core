@@ -1,11 +1,16 @@
+using Elsa.Extensions;
+using Elsa.Mediator.Contracts;
 using Elsa.Testing.Shared;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.IntegrationTests.Scenarios.TriggerIndexing.Fakes;
 using Elsa.Workflows.IntegrationTests.Scenarios.TriggerIndexing.TestData;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Notifications;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.Runtime.Handlers;
+using Elsa.Workflows.Runtime.Notifications;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit.Abstractions;
 
@@ -18,11 +23,13 @@ public class Tests
     private readonly ITriggerStore _triggerStore;
     private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
     private readonly Dictionary<string, Workflow> _workflowRegistry = new();
+    private readonly FailingCleanupNotification _cleanupNotification = new();
 
     public Tests(ITestOutputHelper testOutputHelper)
     {
         _services = new TestApplicationBuilder(testOutputHelper).ConfigureServices(services =>
         {
+            services.AddNotificationHandler<FailingCleanupNotification, WorkflowTriggersIndexed>(_ => _cleanupNotification);
             services.AddSingleton<IWorkflowMaterializer, FailingMaterializer>();
             services.AddSingleton<IWorkflowMaterializer>(_ => new WorkingMaterializer(_workflowRegistry));
         })
@@ -57,6 +64,84 @@ public class Tests
 
         // Assert
         await AssertRemainingTriggers(scenario.ExpectedRemainingTriggerIds);
+    }
+
+    [Fact]
+    public async Task RequiredCleanupLeavesTriggersAvailableWhenMaterializationFails()
+    {
+        var builder = new TriggerTestDataBuilder();
+        builder.AddWorkflow("workflow1", "def1", FailingMaterializer.MaterializerName);
+        var data = builder.Build();
+        await SetupTestScenarioAsync(data);
+
+        var handler = new DeleteTriggers(_triggerIndexer);
+        var versions = data.Workflows.Select(workflow => workflow.Id).ToArray();
+        var exception = await Assert.ThrowsAsync<Exception>(() => handler.HandleAsync(new WorkflowDefinitionVersionsDeleting(versions)
+        {
+            RequireCompleteTriggerCleanup = true
+        }, CancellationToken.None));
+        Assert.Equal("Provider not found", exception.Message);
+        await AssertRemainingTriggers(["trigger1"]);
+    }
+
+    [Fact]
+    public async Task OrdinaryCleanupContinuesAfterNotificationFailure()
+    {
+        var builder = new TriggerTestDataBuilder();
+        builder.AddWorkflow("workflow1", "def1", WorkingMaterializer.MaterializerName);
+        builder.AddWorkflow("workflow2", "def2", WorkingMaterializer.MaterializerName);
+        RegisterWorkflowInRegistry("workflow1", "def1");
+        RegisterWorkflowInRegistry("workflow2", "def2");
+        var data = builder.Build();
+        await SetupTestScenarioAsync(data);
+
+        await DeleteTriggersAsync();
+
+        await AssertRemainingTriggers([]);
+        Assert.Equal(1, _cleanupNotification.Attempts);
+    }
+
+    [Fact]
+    public async Task RequiredCleanupRetriesFailedRemovalNotification()
+    {
+        var builder = new TriggerTestDataBuilder();
+        builder.AddWorkflow("workflow1", "def1", WorkingMaterializer.MaterializerName);
+        RegisterWorkflowInRegistry("workflow1", "def1");
+        await SetupTestScenarioAsync(builder.Build());
+
+        var handler = new DeleteTriggers(_triggerIndexer);
+        var notification = new WorkflowDefinitionVersionsDeleting(["workflow1"])
+        {
+            RequireCompleteTriggerCleanup = true
+        };
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => handler.HandleAsync(notification, CancellationToken.None));
+        await AssertRemainingTriggers(["trigger1"]);
+        Assert.Equal(1, _cleanupNotification.Attempts);
+
+        await handler.HandleAsync(notification, CancellationToken.None);
+        await AssertRemainingTriggers([]);
+        Assert.Equal(2, _cleanupNotification.Attempts);
+    }
+
+    private sealed class FailingCleanupNotification : INotificationHandler<WorkflowTriggersIndexed>
+    {
+        public int Attempts { get; private set; }
+
+        public Task HandleAsync(WorkflowTriggersIndexed notification, CancellationToken cancellationToken)
+        {
+            if (notification.IndexedWorkflowTriggers.RemovedTriggers.Any(trigger => trigger.Id == "trigger1" && trigger.WorkflowDefinitionId == "def1"))
+            {
+                Attempts++;
+
+                if (Attempts == 1)
+                {
+                    throw new InvalidOperationException("Notification failed.");
+                }
+            }
+
+            return Task.CompletedTask;
+        }
     }
 
     public static IEnumerable<object[]> GetTriggerDeletionTestData()

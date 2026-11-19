@@ -25,7 +25,7 @@ public class DataProtectorTokenServiceTests : IDisposable
         var token = _service.CreateToken(payload, TimeSpan.FromMinutes(5));
         var result = _service.DecryptToken<TokenPayload>(token);
 
-        Assert.StartsWith("v1.tl.", token);
+        Assert.StartsWith("v2.tl.", token);
         AssertPayload(payload, result);
     }
 
@@ -48,7 +48,7 @@ public class DataProtectorTokenServiceTests : IDisposable
         var token = _service.CreateToken(payload);
         var result = _service.TryDecryptToken<TokenPayload>(token, out var decryptedPayload);
 
-        Assert.StartsWith("v1.ne.", token);
+        Assert.StartsWith("v2.ne.", token);
         Assert.True(result);
         AssertPayload(payload, decryptedPayload);
     }
@@ -87,6 +87,33 @@ public class DataProtectorTokenServiceTests : IDisposable
 
         Assert.False(result);
     }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void IssuedTokens_AreBoundToTheirDeclaredPayloadType(bool expires)
+    {
+        var payload = new TokenPayload("workflow", "bookmark");
+        var token = expires ? _service.CreateToken(payload, TimeSpan.FromMinutes(5)) : _service.CreateToken(payload);
+
+        Assert.False(_service.TryDecryptToken<OtherPayload>(token, out _));
+        Assert.Equal(payload, _service.DecryptToken<TokenPayload>(token));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void CanReadVersionOneTokens(bool expires)
+    {
+        var payload = new TokenPayload("workflow", "bookmark");
+        var protector = _dataProtectionProvider.CreateProtector("Elsa Tokens");
+        var json = JsonSerializer.Serialize(payload);
+        var token = expires ? "v1.tl." + protector.ToTimeLimitedDataProtector().Protect(json, TimeSpan.FromMinutes(5)) : "v1.ne." + protector.Protect(json);
+
+        Assert.Equal(payload, _service.DecryptToken<TokenPayload>(token));
+    }
+
+    private record OtherPayload(string WorkflowInstanceId, string BookmarkId);
 
     public void Dispose()
     {

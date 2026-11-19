@@ -198,8 +198,9 @@ public sealed class OwnershipDbContext(DbContextOptions<OwnershipDbContext> opti
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.HasDefaultSchema("Elsa");
-        modelBuilder.Entity<OwnedRow>().ToTable("OwnedRows", "Elsa");
+        var schema = Database.ProviderName == "Oracle.EntityFrameworkCore" ? null : "Elsa";
+        modelBuilder.HasDefaultSchema(schema);
+        modelBuilder.Entity<OwnedRow>().ToTable("OwnedRows", schema);
         modelBuilder.Entity<OwnedRow>().HasKey(x => x.Id);
         modelBuilder.Entity<OwnedRow>().Property(x => x.Payload).IsRequired();
     }

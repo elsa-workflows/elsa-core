@@ -96,7 +96,10 @@ builder.AddShells(shells => shells
             typeof(SqliteUserTasksPersistenceShellFeature));
     }));
 
-services.AddSingleton<PluginCatalog>();
+var enableSampleCatalog = builder.Environment.IsDevelopment() &&
+    (configuration.GetValue<bool?>("SampleCatalog:Enabled") ?? true);
+if (enableSampleCatalog)
+    services.AddSingleton<PluginCatalog>();
 services.AddHealthChecks();
 
 services.AddAuthentication();
@@ -108,7 +111,10 @@ app.MapHealthChecks("/");
 app.MapShells();
 app.UseAuthentication();
 app.UseAuthorization();
-app.MapSampleCatalog();
+if (enableSampleCatalog)
+    app.MapSampleCatalog();
+
+await SecretsStartupValidation.ValidateConfiguredShellsAsync(app.Services);
 app.Run();
 
 static ResourceBuilder CreateOpenTelemetryResource(string serviceName, string? serviceVersion)

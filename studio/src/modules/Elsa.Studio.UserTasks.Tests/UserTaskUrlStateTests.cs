@@ -13,6 +13,28 @@ public class UserTaskUrlStateTests
     private const string BaseUri = "https://studio.example/workflows/user-tasks";
 
     [Fact]
+    public void BackReturnsToTheLocalQueueWithItsFilters()
+    {
+        const string studio = "https://studio.example:7443/elsa/";
+        const string queue = "https://studio.example:7443/elsa/workflows/user-tasks?tab=history&search=a%2Fb";
+        Assert.Equal(queue, UserTaskUrlState.GetBackDestination(studio, queue));
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("https://studio.example:7443//elsewhere.example/elsa/workflows/user-tasks")]
+    [InlineData("https://studio.example:7443/workflows/user-tasks")]
+    [InlineData("https://studio.example/elsa/workflows/user-tasks")]
+    [InlineData("http://studio.example:7443/elsa/workflows/user-tasks")]
+    [InlineData("https://elsewhere.example:7443/elsa/workflows/user-tasks")]
+    [InlineData("https://name@studio.example:7443/elsa/workflows/user-tasks")]
+    public void BackFallsBackForAnythingOutsideTheStudioQueue(string? returnUrl)
+    {
+        Assert.Equal("https://studio.example:7443/elsa/workflows/user-tasks",
+            UserTaskUrlState.GetBackDestination("https://studio.example:7443/elsa/", returnUrl));
+    }
+
+    [Fact]
     public void Parse_RestoresEverySupportedFilter()
     {
         var query = UserTaskUrlState.Parse(

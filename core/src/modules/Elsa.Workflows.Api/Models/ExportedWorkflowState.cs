@@ -9,4 +9,8 @@ public record ExportedWorkflowState(
     JsonElement WorkflowState, 
     JsonElement? Bookmarks,
     JsonElement? ActivityExecutionRecords, 
-    JsonElement? WorkflowExecutionLogRecords);
+    JsonElement? WorkflowExecutionLogRecords)
+{
+    /// <summary>The tenant which owns the exported instance.</summary>
+    public string? TenantId { get; init; }
+}

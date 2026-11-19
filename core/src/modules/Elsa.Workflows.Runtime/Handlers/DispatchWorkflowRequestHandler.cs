@@ -1,5 +1,6 @@
 using Elsa.Mediator.Contracts;
 using Elsa.Mediator.Models;
+using Elsa.Workflows.Management.Exceptions;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Commands;
 using Elsa.Workflows.Runtime.Messages;
@@ -54,7 +55,16 @@ internal class DispatchWorkflowCommandHandler(IStimulusSender stimulusSender, IW
             SchedulingWorkflowInstanceId = command.SchedulingWorkflowInstanceId,
             SchedulingCallStackDepth = command.SchedulingCallStackDepth
         };
-        var response = await client.CreateAndRunInstanceAsync(createRequest, cancellationToken);
+        RunWorkflowInstanceResponse response;
+        try
+        {
+            response = await client.CreateAndRunInstanceAsync(createRequest, cancellationToken);
+        }
+        catch (WorkflowInstanceAlreadyExistsException) when (command.SkipIfInstanceExists)
+        {
+            // Another worker may have inserted the same outbox start after the preliminary check.
+            return Unit.Instance;
+        }
         if (response.CannotStart &&
             denialRoute is { } route &&
             !string.IsNullOrWhiteSpace(command.ParentWorkflowInstanceId) &&

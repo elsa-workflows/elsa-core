@@ -1,3 +1,4 @@
+using Elsa.Persistence.VNext.Document;
 using Elsa.Persistence.VNext.Sqlite;
 using Elsa.UserTasks.Contracts;
 using Elsa.UserTasks.Persistence.ConformanceTests.Infrastructure;
@@ -25,6 +26,8 @@ public sealed class VNextUserTaskStoreFixture : UserTaskStoreFixture
     }
 
     public override IUserTaskRepository Repository => _repository;
+
+    internal IDocumentStore DocumentStore => _store;
 
     // One in-memory SQLite connection backs the document store, so both handles address the same data.
     public override IUserTaskRepository CreateSecondRepository() => new VNextUserTaskRepository(_store);

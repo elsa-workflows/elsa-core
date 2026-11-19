@@ -2,7 +2,7 @@ namespace Elsa.Secrets.Stores;
 
 public class EncryptedSecretStore(ISecretValueProtector protector) : ISecretStore
 {
-    private const string ProtectedValueKey = "protectedValue";
+    internal const string ProtectedValueKey = "protectedValue";
 
     public string Name => SecretStoreNames.Encrypted;
 

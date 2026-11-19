@@ -42,6 +42,7 @@
       "core/src/modules/Elsa.ExternalAuthentication.Secrets/Elsa.ExternalAuthentication.Secrets.csproj",
       "core/src/modules/Elsa.ExternalAuthentication/Elsa.ExternalAuthentication.csproj",
       "core/src/modules/Elsa.Hosting.Management/Elsa.Hosting.Management.csproj",
+      "core/src/modules/Elsa.Http.Webhooks/Elsa.Http.Webhooks.csproj",
       "core/src/modules/Elsa.Http/Elsa.Http.csproj",
       "core/src/modules/Elsa.Identity/Elsa.Identity.csproj",
       "core/src/modules/Elsa.KeyValues/Elsa.KeyValues.csproj",

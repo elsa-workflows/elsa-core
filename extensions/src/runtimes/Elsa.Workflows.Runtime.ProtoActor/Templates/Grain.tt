@@ -57,7 +57,12 @@ namespace {{CsNamespace}}
         {{/each}}
     
         {{#each Methods}}
+        {{#StringEquality Name "RunIfPending"}}
+        public virtual Task<{{OutputName}}> {{Name}}({{SingleParameterDefinition}})
+            => throw new NotSupportedException("This workflow actor does not support guarded pending starts.");
+        {{else}}
         public abstract Task{{#if UseReturn}}<{{OutputName}}>{{/if}} {{Name}}({{SingleParameterDefinition}});
+        {{/StringEquality}}
         {{/each}}
     }
 
@@ -87,7 +92,7 @@ namespace {{CsNamespace}}
                 // enveloped response
                 global::Proto.Cluster.GrainResponseMessage grainResponse => {{#if UseReturn}}({{OutputName}}?)grainResponse.ResponseMessage{{else}}global::Proto.Nothing.Instance{{/if}},
                 // error response
-                global::Proto.Cluster.GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
+                global::Proto.Cluster.GrainErrorResponse grainErrorResponse => throw WorkflowInstanceRpcErrors.ToException(_id, grainErrorResponse.Err),
                 // timeout (when enabled by ClusterConfig.LegacyRequestTimeoutBehavior), othwerwise TimeoutException is thrown
                 null => null,
                 // unsupported response
@@ -108,7 +113,7 @@ namespace {{CsNamespace}}
                 // enveloped response
                 global::Proto.Cluster.GrainResponseMessage grainResponse => {{#if UseReturn}}({{OutputName}}?)grainResponse.ResponseMessage{{else}}global::Proto.Nothing.Instance{{/if}},
                 // error response
-                global::Proto.Cluster.GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
+                global::Proto.Cluster.GrainErrorResponse grainErrorResponse => throw WorkflowInstanceRpcErrors.ToException(_id, grainErrorResponse.Err),
                 // timeout (when enabled by ClusterConfig.LegacyRequestTimeoutBehavior), othwerwise TimeoutException is thrown
                 null => null,
                 // unsupported response
@@ -129,7 +134,7 @@ namespace {{CsNamespace}}
                 // enveloped response
                 global::Proto.Cluster.GrainResponseMessage grainResponse => {{#if UseReturn}}({{OutputName}}?)grainResponse.ResponseMessage{{else}}global::Proto.Nothing.Instance{{/if}},
                 // error response
-                global::Proto.Cluster.GrainErrorResponse grainErrorResponse => throw new Exception(grainErrorResponse.Err),
+                global::Proto.Cluster.GrainErrorResponse grainErrorResponse => throw WorkflowInstanceRpcErrors.ToException(_id, grainErrorResponse.Err),
                 // timeout (when enabled by ClusterConfig.LegacyRequestTimeoutBehavior), othwerwise TimeoutException is thrown
                 null => null,
                 // unsupported response

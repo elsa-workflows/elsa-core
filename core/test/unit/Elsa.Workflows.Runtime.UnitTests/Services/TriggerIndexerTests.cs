@@ -1,3 +1,4 @@
+using Elsa.Caching;
 using Elsa.Common.DistributedHosting;
 using Elsa.Common.Serialization;
 using Elsa.Expressions.Contracts;
@@ -8,6 +9,9 @@ using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.Runtime.Filters;
+using Elsa.Workflows.Runtime.Notifications;
+using Elsa.Workflows.Runtime.Stores;
 using Medallion.Threading;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -27,11 +31,14 @@ public class TriggerIndexerTests
 
     private readonly IStimulusHasher _hasher;
     private readonly TriggerIndexer _indexer;
+    private readonly ITriggerStore _triggerStore = Substitute.For<ITriggerStore>();
+    private readonly IWorkflowDefinitionService _definitionService = Substitute.For<IWorkflowDefinitionService>();
+    private readonly INotificationSender _notifications = Substitute.For<INotificationSender>();
+    private readonly IServiceProvider _serviceProvider = Substitute.For<IServiceProvider>();
 
     public TriggerIndexerTests()
     {
         var typeRegistry = SerializationTypeRegistry.CreateDefault();
-        var serviceProvider = Substitute.For<IServiceProvider>();
         var activityRegistry = Substitute.For<IActivityRegistry>();
         var identityGenerator = Substitute.For<IIdentityGenerator>();
 
@@ -40,19 +47,73 @@ public class TriggerIndexerTests
         _hasher = new StimulusHasher(new Hasher(typeRegistry));
 
         _indexer = new(
-            new ActivityVisitor([], serviceProvider),
-            Substitute.For<IWorkflowDefinitionService>(),
+            new ActivityVisitor([], _serviceProvider),
+            _definitionService,
             Substitute.For<IExpressionEvaluator>(),
             identityGenerator,
-            Substitute.For<ITriggerStore>(),
+            _triggerStore,
             activityRegistry,
-            Substitute.For<INotificationSender>(),
-            serviceProvider,
+            _notifications,
+            _serviceProvider,
             _hasher,
             Substitute.For<IDistributedLockProvider>(),
             typeRegistry,
             Microsoft.Extensions.Options.Options.Create(new DistributedLockingOptions()),
             NullLogger<TriggerIndexer>.Instance);
+    }
+
+    [Fact]
+    public async Task VersionCleanupRemovesAndNotifiesOnlyTheSelectedTriggers()
+    {
+        var selected = new StoredTrigger { Id = "old-trigger", WorkflowDefinitionId = "definition", WorkflowDefinitionVersionId = "version-1" };
+        var other = new StoredTrigger { Id = "current-trigger", WorkflowDefinitionId = "definition", WorkflowDefinitionVersionId = "version-2" };
+        var records = new[] { selected, other };
+        _triggerStore.FindManyAsync(Arg.Any<TriggerFilter>(), Arg.Any<CancellationToken>())
+            .Returns(call => ValueTask.FromResult<IEnumerable<StoredTrigger>>(call.Arg<TriggerFilter>().Apply(records.AsQueryable()).ToArray()));
+
+        var activity = new Sequence { Id = "root" };
+        var workflow = new Workflow(activity) { Identity = new("definition", 1, "version-1") };
+        var node = new ActivityNode(activity, "root");
+        _definitionService.FindWorkflowGraphAsync("version-1", Arg.Any<CancellationToken>()).Returns(new WorkflowGraph(workflow, node, [node]));
+
+        await _indexer.DeleteTriggersAsync(new TriggerFilter { WorkflowDefinitionVersionId = "version-1" });
+
+        await _triggerStore.Received(1).ReplaceAsync(Arg.Is<IEnumerable<StoredTrigger>>(removed => removed.SequenceEqual(new[] { selected })),
+            Arg.Is<IEnumerable<StoredTrigger>>(added => !added.Any()), Arg.Any<CancellationToken>());
+        await _notifications.Received(1).SendAsync(Arg.Is<WorkflowTriggersIndexed>(message => message.IndexedWorkflowTriggers.RemovedTriggers.SequenceEqual(new[] { selected })), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task RequiredCleanupRetriesCacheSignalAfterTriggerRowsHaveBeenRemoved()
+    {
+        var trigger = new StoredTrigger { Id = "trigger", WorkflowDefinitionId = "definition", WorkflowDefinitionVersionId = "version" };
+        var filter = new TriggerFilter { WorkflowDefinitionVersionId = "version", RequireCompleteCleanup = true };
+        IEnumerable<StoredTrigger> records = [trigger];
+        _triggerStore.FindManyAsync(filter).Returns(_ => ValueTask.FromResult(records));
+        _triggerStore.ReplaceAsync(Arg.Any<IEnumerable<StoredTrigger>>(), Arg.Any<IEnumerable<StoredTrigger>>())
+            .Returns(_ =>
+            {
+                records = [];
+                return ValueTask.CompletedTask;
+            });
+        var activity = new Sequence { Id = "root" };
+        var workflow = new Workflow(activity) { Identity = new("definition", 1, "version") };
+        var node = new ActivityNode(activity, "root");
+        _definitionService.FindWorkflowGraphAsync("version").Returns(new WorkflowGraph(workflow, node, [node]));
+
+        var cache = Substitute.For<ICacheManager>();
+        _serviceProvider.GetService(typeof(ICacheManager)).Returns(cache);
+        var key = CachingTriggerStore.RequiredRemovalCacheInvalidationTokenKey;
+        cache.TriggerTokenAsync(key).Returns(new ValueTask(Task.FromException(new InvalidOperationException("Cache broadcast failed."))), ValueTask.CompletedTask);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => _indexer.DeleteTriggersAsync(filter));
+        Assert.Equal("Cache broadcast failed.", exception.Message);
+        Assert.Empty(records);
+
+        await _indexer.DeleteTriggersAsync(filter);
+
+        await cache.Received(2).TriggerTokenAsync(key);
+        await _triggerStore.Received(1).ReplaceAsync(Arg.Any<IEnumerable<StoredTrigger>>(), Arg.Any<IEnumerable<StoredTrigger>>());
     }
 
     [Fact(DisplayName = "A payload without a name of its own is indexed under the activity type name")]

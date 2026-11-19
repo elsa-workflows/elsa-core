@@ -18,7 +18,8 @@ public class InstancesSearchTool(IServiceProvider serviceProvider, RuntimeGround
             ("correlationId", GroundingToolSchemas.String("Correlation ID.")),
             ("hasIncidents", GroundingToolSchemas.Boolean("Whether incidents are present.")),
             ("from", GroundingToolSchemas.String("Updated-at range start.")),
-            ("to", GroundingToolSchemas.String("Updated-at range end."))));
+            ("to", GroundingToolSchemas.String("Updated-at range end."))),
+        AIGroundingPermissions.InstanceView);
 
     public override async ValueTask<AIToolResult> ExecuteAsync(AIToolExecutionContext context, CancellationToken cancellationToken = default)
     {

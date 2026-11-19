@@ -1,5 +1,6 @@
 using Elsa.Common.Services;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Exceptions;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Stores;
 
@@ -7,6 +8,20 @@ namespace Elsa.Workflows.Management.UnitTests.Stores;
 
 public class MemoryWorkflowInstanceStoreTests
 {
+    [Fact]
+    public async Task AddingAnExistingInstancePreservesTheOriginal()
+    {
+        var memory = new MemoryStore<WorkflowInstance>();
+        var firstScope = new MemoryWorkflowInstanceStore(memory);
+        var secondScope = new MemoryWorkflowInstanceStore(memory);
+        await firstScope.AddAsync(new WorkflowInstance { Id = "same", DefinitionId = "original" });
+
+        await Assert.ThrowsAsync<WorkflowInstanceAlreadyExistsException>(async () =>
+            await secondScope.AddAsync(new WorkflowInstance { Id = "same", DefinitionId = "other" }));
+
+        Assert.Equal("original", (await firstScope.FindAsync(new WorkflowInstanceFilter { Id = "same" }))!.DefinitionId);
+    }
+
     [Fact(DisplayName = "TryMarkInterruptedAsync applies Interrupted only when the instance is still Running")]
     public async Task TryMarkInterrupted_MarksRunningInstance()
     {

@@ -221,7 +221,7 @@ public class WorkflowDispatchOutboxProcessor(
 
         var response = item.Kind switch
         {
-            WorkflowDispatchOutboxItemKind.WorkflowDefinition when item.WorkflowDefinitionCommand is { } command => await DispatchDefinitionAsync(command, options, cancellationToken),
+            WorkflowDispatchOutboxItemKind.WorkflowDefinition when item.WorkflowDefinitionCommand is { } command => await DispatchDefinitionAsync(command, item.Id, options, cancellationToken),
             WorkflowDispatchOutboxItemKind.WorkflowInstance when item.WorkflowInstanceCommand is { } command => await innerDispatcher.DispatchAsync(new DispatchWorkflowInstanceRequest(command.InstanceId)
             {
                 BookmarkId = command.BookmarkId,
@@ -260,7 +260,7 @@ public class WorkflowDispatchOutboxProcessor(
         logger.LogDebug("Delivered workflow dispatch outbox item {OutboxItemId} for owner workflow {WorkflowInstanceId} on channel {Channel}", item.Id, item.OwnerWorkflowInstanceId, item.Channel ?? "(default)");
     }
 
-    private Task<DispatchWorkflowResponse> DispatchDefinitionAsync(DispatchWorkflowDefinitionCommand command, DispatchWorkflowOptions options, CancellationToken cancellationToken)
+    private Task<DispatchWorkflowResponse> DispatchDefinitionAsync(DispatchWorkflowDefinitionCommand command, string deliveryId, DispatchWorkflowOptions options, CancellationToken cancellationToken)
     {
         return innerDispatcher.DispatchAsync(new DispatchWorkflowDefinitionRequest(command.DefinitionVersionId)
         {
@@ -275,7 +275,8 @@ public class WorkflowDispatchOutboxProcessor(
             SchedulingCallStackDepth = command.SchedulingCallStackDepth,
             // The child's instance ID is fixed at enqueue; the dispatcher checks for it right before creating the child,
             // so a retried delivery cannot create it twice.
-            SkipIfInstanceExists = command.SkipIfInstanceExists
+            SkipIfInstanceExists = command.SkipIfInstanceExists,
+            StartDeliveryId = deliveryId
         }, options, cancellationToken);
     }
 

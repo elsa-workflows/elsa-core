@@ -27,7 +27,7 @@ public class WorkflowDefinitionImporterOriginalSourceTests
             SerializationTypeRegistry.CreateDefault(),
             scopeFactory,
             NullLogger<VariableDefinitionMapper>.Instance);
-        _importer = new(_serializer, _publisher, variableDefinitionMapper);
+        _importer = new(_serializer, _publisher, variableDefinitionMapper, Substitute.For<IWorkflowDefinitionStore>());
         _mapper = new(_serializer, Substitute.For<IWorkflowDefinitionService>(), variableDefinitionMapper);
     }
 

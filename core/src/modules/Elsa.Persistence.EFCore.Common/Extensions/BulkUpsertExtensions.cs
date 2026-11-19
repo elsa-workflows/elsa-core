@@ -62,13 +62,18 @@ public static class BulkUpsertExtensions
         // Identify the current provider (e.g., "Microsoft.EntityFrameworkCore.SqlServer")
         var providerName = dbContext.Database.ProviderName?.ToLowerInvariant() ?? string.Empty;
 
+        if (providerName.Contains("mysql"))
+        {
+            await UpsertMySqlAsync(dbContext, entities, keySelector, cancellationToken);
+            return;
+        }
+
         // Determine the method for generating SQL based on the provider
         Func<DbContext, IList<TEntity>, Expression<Func<TEntity, string>>, (string, object[])> generateSql = providerName switch
         {
             var pn when pn.Contains("sqlserver") => GenerateSqlServerUpsert,
             var pn when pn.Contains("sqlite") => GenerateSqliteUpsert,
             var pn when pn.Contains("postgres") => GeneratePostgresUpsert,
-            var pn when pn.Contains("mysql") => GenerateMySqlUpsert,
             var pn when pn.Contains("oracle") => GenerateOracleUpsert,
             _ => throw new NotSupportedException($"Provider '{providerName}' is not supported.")
         };
@@ -278,66 +283,66 @@ public static class BulkUpsertExtensions
         return (sb.ToString(), parameters.ToArray());
     }
 
-    private static (string, object[]) GenerateMySqlUpsert<TEntity>(
+    private static async Task UpsertMySqlAsync<TEntity>(
         DbContext dbContext,
         IList<TEntity> entities,
-        Expression<Func<TEntity, string>> keySelector)
+        Expression<Func<TEntity, string>> keySelector,
+        CancellationToken cancellationToken)
         where TEntity : class
     {
         var entityType = dbContext.Model.FindEntityType(typeof(TEntity))!;
-        var tableName = entityType.GetTableName();
-        var storeObject = StoreObjectIdentifier.Table(tableName!, entityType.GetSchema());
+        var table = StoreObjectIdentifier.Table(entityType.GetTableName()!, entityType.GetSchema());
+        var properties = entityType.GetProperties().ToList();
+        var keyProperty = entityType.FindProperty(keySelector.GetMemberAccess().Name)!;
+        var keyIndex = properties.IndexOf(keyProperty);
 
-        var props = entityType.GetProperties().ToList();
+        static string Quote(string name) => $"`{name.Replace("`", "``")}`";
+        var tableName = Quote(table.Name);
+        var columns = properties.Select(property => Quote(property.GetColumnName(table)!)).ToArray();
+        var placeholders = Enumerable.Range(0, properties.Count).Select(index => $"{{{index}}}").ToArray();
+        var assignments = columns.Where((_, index) => index != keyIndex)
+            .Select((column, index) => $"{column} = {placeholders[index >= keyIndex ? index + 1 : index]}");
+        var lookup = $"SELECT 1 AS Value FROM {tableName} WHERE {columns[keyIndex]} = {{0}} FOR UPDATE";
+        var insert = $"INSERT INTO {tableName} ({string.Join(", ", columns)}) VALUES ({string.Join(", ", placeholders)})";
+        var update = $"UPDATE {tableName} SET {string.Join(", ", assignments)} WHERE {columns[keyIndex]} = {placeholders[keyIndex]}";
 
-        var keyProp = entityType.FindProperty(keySelector.GetMemberAccess().Name)!;
-        var keyColumnName = keyProp.GetColumnName(storeObject);
-        var columnNames = props
-            .Select(p => p.GetColumnName(storeObject)!)
-            .ToList();
-
-        var sb = new StringBuilder();
-        var parameters = new List<object>();
-        var parameterCount = 0;
-
-        sb.Append($"INSERT INTO `{tableName}` ({string.Join(", ", columnNames.Select(c => $"`{c}`"))}) VALUES ");
-
-        for (var i = 0; i < entities.Count; i++)
+        // MySQL's ON DUPLICATE KEY UPDATE can target a row reached through any unique index.
+        // Lock and select by the requested key, then let ordinary writes reject other conflicts.
+        await dbContext.Database.OpenConnectionAsync(cancellationToken);
+        try
         {
-            var entity = entities[i];
-            var placeholders = new List<string>();
+            await using var transaction = dbContext.Database.CurrentTransaction == null && System.Transactions.Transaction.Current == null
+                ? await dbContext.Database.BeginTransactionAsync(cancellationToken)
+                : null;
 
-            foreach (var property in props)
+            foreach (var entity in entities)
             {
-                var paramName = $"{{{parameterCount++}}}";
+                var parameters = properties.Select(property =>
+                {
+                    var value = property.IsShadowProperty()
+                        ? dbContext.Entry(entity).Property(property.Name).CurrentValue
+                        : property.PropertyInfo?.GetValue(entity);
+                    var converter = property.GetTypeMapping().Converter;
+                    return (converter != null ? converter.ConvertToProvider(value) : value) ?? DBNull.Value;
+                }).ToArray();
 
-                var value = property.IsShadowProperty()
-                    ? dbContext.Entry(entity).Property(property.Name).CurrentValue
-                    : property.PropertyInfo?.GetValue(entity);
+                var matches = await dbContext.Database.SqlQueryRaw<int>(lookup, parameters[keyIndex]).ToListAsync(cancellationToken);
+                if (matches.Count > 1)
+                    throw new InvalidOperationException("The MySQL upsert key matched multiple records.");
 
-                var converter = property.GetTypeMapping().Converter;
-                if (converter != null)
-                    value = converter.ConvertToProvider(value);
-
-                placeholders.Add(paramName);
-                parameters.Add(value!);
+                if (matches.Count == 0)
+                    await dbContext.Database.ExecuteSqlRawAsync(insert, parameters, cancellationToken);
+                else if (properties.Count > 1)
+                    await dbContext.Database.ExecuteSqlRawAsync(update, parameters, cancellationToken);
             }
 
-            sb.Append($"({string.Join(", ", placeholders)})");
-            if (i < entities.Count - 1)
-                sb.Append(", ");
+            if (transaction != null)
+                await transaction.CommitAsync(cancellationToken);
         }
-
-        sb.AppendLine();
-        sb.AppendLine("ON DUPLICATE KEY UPDATE");
-
-        var updateAssignments = columnNames
-            .Where(c => c != keyColumnName)
-            .Select(c => $"`{c}` = VALUES(`{c}`)");
-
-        sb.AppendLine(string.Join(", ", updateAssignments) + ";");
-
-        return (sb.ToString(), parameters.ToArray());
+        finally
+        {
+            await dbContext.Database.CloseConnectionAsync();
+        }
     }
 
     internal static (string, object[]) GenerateOracleUpsert<TEntity>(

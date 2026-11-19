@@ -384,6 +384,7 @@ public class EFCoreSecretRepositoryTests : IAsyncLifetime
         await WithTenantAwareRepositoryAsync(async (repository, tenantAccessor) =>
         {
             using (UseTenant(tenantAccessor, Tenant.AgnosticTenantId))
+            using (SharedTenantWriteScope.Enter<Secret>())
             {
                 await repository.SaveAsync(new Secret
                 {
@@ -419,6 +420,7 @@ public class EFCoreSecretRepositoryTests : IAsyncLifetime
         await WithTenantAwareRepositoryAsync(async (repository, tenantAccessor) =>
         {
             using (UseTenant(tenantAccessor, Tenant.AgnosticTenantId))
+            using (SharedTenantWriteScope.Enter<Secret>())
             {
                 await repository.SaveAsync(new Secret
                 {
@@ -456,6 +458,7 @@ public class EFCoreSecretRepositoryTests : IAsyncLifetime
         await WithTenantAwareRepositoryAsync(async (repository, tenantAccessor) =>
         {
             using (UseTenant(tenantAccessor, Tenant.AgnosticTenantId))
+            using (SharedTenantWriteScope.Enter<Secret>())
             {
                 await repository.SaveAsync(new Secret
                 {
@@ -489,6 +492,7 @@ public class EFCoreSecretRepositoryTests : IAsyncLifetime
         await WithTenantAwareRepositoryAsync(async (repository, tenantAccessor) =>
         {
             using (UseTenant(tenantAccessor, Tenant.AgnosticTenantId))
+            using (SharedTenantWriteScope.Enter<Secret>())
             {
                 await repository.SaveAsync(new Secret
                 {

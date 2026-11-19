@@ -74,10 +74,9 @@ public class DefaultTenantService(IServiceScopeFactory scopeFactory, ITenantScop
         try
         {
             await using var scope = scopeFactory.CreateAsyncScope();
-            var tenantsProvider = scope.ServiceProvider.GetRequiredService<ITenantsProvider>();
             var currentTenants = await GetTenantsDictionaryAsync(cancellationToken);
             var currentTenantIds = currentTenants.Keys;
-            var tenantsFromProvider = (await tenantsProvider.ListAsync(cancellationToken)).ToList();
+            var tenantsFromProvider = await ReadRegistryAsync(scope.ServiceProvider, cancellationToken);
             var newTenants = tenantsFromProvider.Count == 0
                 ? new Dictionary<string, Tenant> { [Tenant.DefaultTenantId] = Tenant.Default }
                 : tenantsFromProvider.ToDictionary(x => x.Id.EmptyIfNull());
@@ -114,8 +113,7 @@ public class DefaultTenantService(IServiceScopeFactory scopeFactory, ITenantScop
                 {
                     _tenantsDictionary = new Dictionary<string, Tenant>();
                     _tenantScopesDictionary = new Dictionary<Tenant, TenantScope>();
-                    var tenantsProvider = _serviceScope.ServiceProvider.GetRequiredService<ITenantsProvider>();
-                    var tenants = (await tenantsProvider.ListAsync(cancellationToken)).ToList();
+                    var tenants = await ReadRegistryAsync(_serviceScope.ServiceProvider, cancellationToken);
                     if (tenants.Count == 0)
                         tenants = [Tenant.Default];
 
@@ -143,6 +141,13 @@ public class DefaultTenantService(IServiceScopeFactory scopeFactory, ITenantScop
         }
 
         return _tenantsDictionary;
+    }
+
+    private async Task<List<Tenant>> ReadRegistryAsync(IServiceProvider services, CancellationToken cancellationToken)
+    {
+        using var hostContext = tenantAccessor.PushContext(null);
+        var provider = services.GetRequiredService<ITenantsProvider>();
+        return (await provider.ListAsync(cancellationToken)).ToList();
     }
 
     private async Task RegisterTenantAsync(Tenant tenant, CancellationToken cancellationToken = default)

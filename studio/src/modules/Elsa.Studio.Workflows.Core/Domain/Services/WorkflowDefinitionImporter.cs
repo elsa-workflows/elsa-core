@@ -19,6 +19,9 @@ namespace Elsa.Studio.Workflows.Domain.Services;
 /// </summary>
 public class WorkflowDefinitionImporter(IBackendApiClientProvider backendApiClientProvider, IMediator mediator, IWorkflowJsonDetector workflowJsonDetector) : IWorkflowDefinitionImporter
 {
+    private const int MaxArchiveDepth = 8;
+    private const int MaxArchiveEntries = 1024;
+
     private async Task<IWorkflowDefinitionsApi> GetApiAsync(CancellationToken cancellationToken = default)
     {
         return await backendApiClientProvider.GetApiAsync<IWorkflowDefinitionsApi>(cancellationToken);
@@ -27,13 +30,13 @@ public class WorkflowDefinitionImporter(IBackendApiClientProvider backendApiClie
     /// <inheritdoc />
     public async Task<IEnumerable<WorkflowImportResult>> ImportFilesAsync(IReadOnlyList<IBrowserFile> files, ImportOptions? options = null)
     {
-        var maxAllowedSize = options?.MaxAllowedSize ?? 1024 * 1024 * 10; // 10 MB
+        options ??= new ImportOptions();
         var results = new List<WorkflowImportResult>();
 
         foreach (var file in files)
         {
             await mediator.NotifyAsync(new ImportingFile(file));
-            await using var stream = file.OpenReadStream(maxAllowedSize);
+            await using var stream = file.OpenReadStream(options.MaxAllowedSize);
 
             if (file.ContentType == MediaTypeNames.Application.Zip || file.Name.EndsWith(".zip"))
             {
@@ -56,42 +59,83 @@ public class WorkflowDefinitionImporter(IBackendApiClientProvider backendApiClie
     /// <inheritdoc />
     public async Task<IList<WorkflowImportResult>> ImportZipFileAsync(Stream stream, ImportOptions? options)
     {
-        using var memoryStream = new MemoryStream();
-        await stream.CopyToAsync(memoryStream);
-        memoryStream.Seek(0, SeekOrigin.Begin);
-        var importResultList = new List<WorkflowImportResult>();
+        options ??= new ImportOptions();
+        var results = new List<WorkflowImportResult>();
+        var remainingExpandedBytes = (long)options.MaxArchiveExpandedSize;
+        var remainingEntries = MaxArchiveEntries;
 
         try
         {
-            var zipArchive = new ZipArchive(memoryStream);
-            foreach (var entry in zipArchive.Entries.Where(x => !x.FullName.StartsWith("__MACOSX", StringComparison.OrdinalIgnoreCase)))
-            {
-                if (entry.FullName.EndsWith(".json"))
-                {
-                    await using var entryStream = entry.Open();
-                    var result = await ImportFromStreamAsync(entry.Name, entryStream, options);
-
-                    importResultList.Add(result);
-                }
-                else if (entry.FullName.EndsWith(".zip"))
-                {
-                    await using var entryStream = entry.Open();
-                    var results = await ImportZipFileAsync(entryStream, options);
-                    importResultList.AddRange(results);
-                }
-            }
+            using var archiveBuffer = new MemoryStream();
+            await CopyWithinLimitAsync(stream, archiveBuffer, options.MaxAllowedSize, "ZIP upload");
+            await ImportEntriesAsync(archiveBuffer, 1);
         }
-        catch (Exception e)
+        catch (Exception exception) when (exception is not OperationCanceledException and not OutOfMemoryException)
         {
-            if (options?.ErrorCallback != null)
-                await options.ErrorCallback(e);
-            importResultList.Add(new()
+            if (options.ErrorCallback != null)
+                await options.ErrorCallback(exception);
+
+            results.Add(new()
             {
-                Failure = new(e.ToUserMessage(), WorkflowImportFailureType.Exception)
+                Failure = new(exception.ToUserMessage(), WorkflowImportFailureType.Exception)
             });
         }
 
-        return importResultList;
+        return results;
+
+        async Task ImportEntriesAsync(Stream archiveStream, int depth)
+        {
+            if (depth > MaxArchiveDepth)
+                throw new InvalidDataException($"ZIP import exceeds the limit of {MaxArchiveDepth} archive levels.");
+
+            using var archive = new ZipArchive(archiveStream, ZipArchiveMode.Read, leaveOpen: true);
+            if (archive.Entries.Count > remainingEntries)
+                throw new InvalidDataException($"ZIP import exceeds the limit of {MaxArchiveEntries} entries.");
+
+            remainingEntries -= archive.Entries.Count;
+
+            foreach (var entry in archive.Entries)
+            {
+                if (entry.FullName.StartsWith("__MACOSX", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                var isJson = entry.FullName.EndsWith(".json", StringComparison.Ordinal);
+                var isZip = entry.FullName.EndsWith(".zip", StringComparison.Ordinal);
+                if (!isJson && !isZip)
+                    continue;
+
+                if (entry.Length > remainingExpandedBytes)
+                    throw new InvalidDataException("ZIP import exceeds the expanded size limit.");
+
+                await using var entryStream = entry.Open();
+                using var expanded = new MemoryStream();
+                await CopyWithinLimitAsync(entryStream, expanded, remainingExpandedBytes, "ZIP expansion");
+                remainingExpandedBytes -= expanded.Length;
+
+                if (isZip)
+                    await ImportEntriesAsync(expanded, depth + 1);
+                else
+                    results.Add(await ImportFromStreamAsync(entry.Name, expanded, options));
+            }
+        }
+    }
+
+    private static async Task CopyWithinLimitAsync(Stream source, MemoryStream target, long maxBytes, string operation)
+    {
+        var buffer = new byte[8192];
+        while (true)
+        {
+            var count = await source.ReadAsync(buffer.AsMemory());
+            if (count == 0)
+                break;
+
+            if (count > maxBytes - target.Length)
+                throw new InvalidDataException($"{operation} exceeds the size limit.");
+
+            await target.WriteAsync(buffer.AsMemory(0, count));
+        }
+
+        target.Position = 0;
     }
 
     /// <inheritdoc />

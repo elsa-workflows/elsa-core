@@ -57,6 +57,8 @@ public class TriggerFilter
     /// </summary>
     public bool TenantAgnostic { get; set; }
 
+    internal bool RequireCompleteCleanup { get; set; }
+
     /// <summary>
     /// Applies the filter to the specified query.
     /// </summary>

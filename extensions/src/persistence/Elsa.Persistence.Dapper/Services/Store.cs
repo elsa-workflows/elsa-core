@@ -232,6 +232,27 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantAccesso
     }
 
     /// <summary>
+    /// Returns the records of one page without counting the total.
+    /// </summary>
+    /// <param name="filter">The conditions to apply to the query.</param>
+    /// <param name="pageArgs">The page arguments.</param>
+    /// <param name="orderKey">The order key selector.</param>
+    /// <param name="orderDirection">The order direction.</param>
+    /// <param name="tenantAgnostic">Whether to ignore the tenant filter.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The records of the page.</returns>
+    internal async Task<IEnumerable<T>> FindPageItemsAsync(Action<ParameterizedQuery>? filter, PageArgs pageArgs, string orderKey, OrderDirection orderDirection, bool tenantAgnostic, CancellationToken cancellationToken = default)
+    {
+        var query = dbConnectionProvider.CreateQuery().From(TableName);
+        ApplyTenantFilter(query, tenantAgnostic);
+        filter?.Invoke(query);
+        query = query.OrderBy(new OrderField(orderKey, orderDirection)).Page(pageArgs);
+
+        using var connection = dbConnectionProvider.GetConnection();
+        return await query.QueryAsync<T>(connection);
+    }
+
+    /// <summary>
     /// Returns a set of records.
     /// </summary>
     /// <param name="filter">The conditions to apply to the query.</param>
@@ -513,8 +534,20 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantAccesso
     /// <returns><c>true</c> if any records match the specified query.</returns>
     public async Task<bool> AnyAsync(Action<ParameterizedQuery> filter, CancellationToken cancellationToken = default)
     {
+        return await AnyAsync(filter, false, cancellationToken);
+    }
+
+    /// <summary>
+    /// Returns <c>true</c> if any records match the specified query.
+    /// </summary>
+    /// <param name="filter">The conditions to apply to the query.</param>
+    /// <param name="tenantAgnostic">Whether to ignore the tenant filter.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns><c>true</c> if any records match the specified query.</returns>
+    public async Task<bool> AnyAsync(Action<ParameterizedQuery> filter, bool tenantAgnostic, CancellationToken cancellationToken)
+    {
         var query = dbConnectionProvider.CreateQuery().From(TableName, PrimaryKey);
-        ApplyTenantFilter(query, false);
+        ApplyTenantFilter(query, tenantAgnostic);
         filter(query);
         using var connection = dbConnectionProvider.GetConnection();
         return await connection.QueryFirstOrDefaultAsync<object>(query.Sql.ToString(), query.Parameters) != null;
@@ -535,7 +568,7 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantAccesso
         return await countQuery.SingleAsync<long>(connection);
     }
 
-    private void ApplyTenantFilter(ParameterizedQuery query, bool tenantAgnostic = false)
+    internal void ApplyTenantFilter(ParameterizedQuery query, bool tenantAgnostic = false)
     {
         if (tenantAgnostic)
             return;

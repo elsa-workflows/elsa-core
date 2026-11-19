@@ -5,6 +5,7 @@ using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
+using Elsa.Workflows.Runtime.Entities;
 using Microsoft.Extensions.Logging;
 using Open.Linq.AsyncExtensions;
 
@@ -21,6 +22,7 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
     private readonly ISystemClock _systemClock;
     private readonly IIdentityGraphService _identityGraphService;
     private readonly ITenantAccessor _tenantAccessor;
+    private readonly IIdentityGenerator _versionIdGenerator = new ShortGuidIdentityGenerator();
     private readonly ILogger<DefaultWorkflowDefinitionStorePopulator> _logger;
     private readonly SemaphoreSlim _semaphore = new(1, 1);
 
@@ -106,7 +108,12 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         return await result.OnSuccessAsync(async workflowDefinition =>
         {
             if (indexTriggers && workflowDefinition.IsPublished)
+            {
+                using var grant = workflowDefinition.TenantId == Tenant.AgnosticTenantId
+                    ? SharedTenantWriteScope.Enter<StoredTrigger>()
+                    : null;
                 await _triggerIndexer.IndexTriggersAsync(workflowDefinition, cancellationToken);
+            }
         });
     }
 
@@ -194,7 +201,11 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
                 // It's possible that the imported workflow definition has a different ID than the existing one in the store.
                 // In a future update, we might store this discrepancy in a "troubleshooting" table and provide tooling for managing these, and other, discrepancies.
                 // See https://github.com/elsa-workflows/elsa-core/issues/5540
-                _logger.LogWarning("Workflow with ID {WorkflowId} already exists with a different ID {ExistingWorkflowId}", workflow.Identity.Id, existingDefinitionVersion.Id);
+                var idIsTaken = await _workflowDefinitionStore.AnyAsync(new WorkflowDefinitionFilter { Id = workflow.Identity.Id, TenantAgnostic = true }, cancellationToken);
+                if (idIsTaken)
+                    _logger.LogDebug("Workflow with ID {WorkflowId} already exists with a different ID {ExistingWorkflowId}", workflow.Identity.Id, existingDefinitionVersion.Id);
+                else
+                    _logger.LogWarning("Workflow with ID {WorkflowId} already exists with a different ID {ExistingWorkflowId}", workflow.Identity.Id, existingDefinitionVersion.Id);
             }
         }
 
@@ -239,6 +250,9 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
             return workflowDefinition;
         }
 
+        if (existingDefinitionVersion is null && workflowTenantId != Tenant.AgnosticTenantId)
+            workflowDefinition.Id = await _workflowDefinitionStore.ResolveVersionIdAsync(workflowDefinition.Id, _versionIdGenerator.GenerateId(), cancellationToken);
+
         workflowDefinitionsToSave.Add(workflowDefinition);
 
         var duplicates = workflowDefinitionsToSave.GroupBy(wd => wd.Id)
@@ -251,7 +265,8 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
             throw new Exception($"Unable to update WorkflowDefinition with ids {string.Join(',', duplicates)} multiple times.");
         }
 
-        await _workflowDefinitionStore.SaveManyAsync(workflowDefinitionsToSave, cancellationToken);
+        using (workflowTenantId == Tenant.AgnosticTenantId ? SharedTenantWriteScope.Enter<WorkflowDefinition>() : null)
+            await _workflowDefinitionStore.SaveManyAsync(workflowDefinitionsToSave, cancellationToken);
         return workflowDefinition;
 
         async Task UpdateIsLatest()

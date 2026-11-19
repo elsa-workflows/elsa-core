@@ -31,7 +31,8 @@ internal class Resume(ITokenService tokenService, IWorkflowResumer workflowResum
     {
         var token = Query<string?>("t", false);
 
-        if (string.IsNullOrWhiteSpace(token) || !tokenService.TryDecryptToken<BookmarkTokenPayload>(token, out var payload))
+        if (string.IsNullOrWhiteSpace(token) || !tokenService.TryDecryptToken<BookmarkTokenPayload>(token, out var payload)
+            || string.IsNullOrWhiteSpace(payload?.BookmarkId) || string.IsNullOrWhiteSpace(payload.WorkflowInstanceId))
         {
             AddError("Invalid token.");
             await Send.ErrorsAsync(cancellation: cancellationToken);

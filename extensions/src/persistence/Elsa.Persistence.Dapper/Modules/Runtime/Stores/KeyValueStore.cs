@@ -7,9 +7,6 @@ using Elsa.KeyValues.Contracts;
 using Elsa.KeyValues.Entities;
 using Elsa.KeyValues.Models;
 using JetBrains.Annotations;
-using Microsoft.Data.SqlClient;
-using Microsoft.Data.Sqlite;
-using Npgsql;
 
 namespace Elsa.Persistence.Dapper.Modules.Runtime.Stores;
 
@@ -46,7 +43,7 @@ internal class DapperKeyValueStore(Store<KeyValuePairRecord> store) : IKeyValueS
             // Add stamps the ambient tenant, ignoring ownership supplied by the caller.
             await store.AddAsync(record, cancellationToken);
         }
-        catch (DbException exception) when (IsDuplicateKey(exception))
+        catch (DbException exception) when (DapperExceptionClassifier.IsDuplicateKey(exception))
         {
             // A competing insert is safe to retry only through the tenant-scoped update.
             if (await TryUpdateOwnedAsync(record, cancellationToken))
@@ -96,14 +93,6 @@ internal class DapperKeyValueStore(Store<KeyValuePairRecord> store) : IKeyValueS
 
     private static InvalidOperationException OwnershipConflict(string id, KeyValuePairRecord existing) =>
         new($"Cannot save key '{id}' because it belongs to {(existing.TenantId == "*" ? "the tenant-agnostic ('*') scope" : "another tenant")}.");
-
-    private static bool IsDuplicateKey(DbException exception) => exception switch
-    {
-        SqliteException { SqliteExtendedErrorCode: 1555 or 2067 } => true,
-        PostgresException { SqlState: PostgresErrorCodes.UniqueViolation } => true,
-        SqlException { Number: 2601 or 2627 } => true,
-        _ => false
-    };
 
     /// <inheritdoc />
     public async Task<SerializedKeyValuePair?> FindAsync(KeyValueFilter filter, CancellationToken cancellationToken)

@@ -71,6 +71,9 @@ public record DispatchWorkflowDefinition
     /// </summary>
     public bool IsExistingInstance { get; init; }
 
+    /// <summary>The producer delivery that created the pending instance.</summary>
+    public string? StartDeliveryId { get; init; }
+
     /// <summary>
     /// The ID of the activity that triggered the workflow.
     /// </summary>

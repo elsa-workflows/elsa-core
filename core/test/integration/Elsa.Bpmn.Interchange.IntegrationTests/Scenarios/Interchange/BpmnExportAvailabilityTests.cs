@@ -272,7 +272,7 @@ public class BpmnExportAvailabilityTests(ITestOutputHelper testOutputHelper) : B
         // double cannot make, but any real store (which only reflects a committed write) does.
         var draft = new WorkflowDefinition { Id = "draft-1", DefinitionId = "def-1", Version = 3, CustomProperties = new Dictionary<string, object>() };
         var importer = new StubWorkflowDefinitionImporter(draft);
-        var store = new AlwaysFailingSaveWorkflowDefinitionStore();
+        var store = new AlwaysFailingSaveWorkflowDefinitionStore(draft);
 
         var documentService = new BpmnInterchangeDocumentService(
             services.GetRequiredService<BpmnXmlReader>(),
@@ -375,8 +375,8 @@ public class BpmnExportAvailabilityTests(ITestOutputHelper testOutputHelper) : B
         }
     }
 
-    /// <summary>A store whose <see cref="SaveAsync"/> always fails; nothing else is exercised by the test that uses it.</summary>
-    private sealed class AlwaysFailingSaveWorkflowDefinitionStore : IWorkflowDefinitionStore
+    /// <summary>A store that resolves the editable target and fails any save.</summary>
+    private sealed class AlwaysFailingSaveWorkflowDefinitionStore(WorkflowDefinition existing) : IWorkflowDefinitionStore
     {
         public Task SaveAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default) =>
             throw new InvalidOperationException("Simulated save failure for testing atomic BPMN import.");
@@ -389,7 +389,7 @@ public class BpmnExportAvailabilityTests(ITestOutputHelper testOutputHelper) : B
             throw new InvalidOperationException("Simulated save failure for testing atomic BPMN import.");
 
         public Task<WorkflowDefinition?> FindAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default) => throw new NotSupportedException();
-        public Task<WorkflowDefinition?> FindAsync<TOrderBy>(WorkflowDefinitionFilter filter, WorkflowDefinitionOrder<TOrderBy> order, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task<WorkflowDefinition?> FindAsync<TOrderBy>(WorkflowDefinitionFilter filter, WorkflowDefinitionOrder<TOrderBy> order, CancellationToken cancellationToken = default) => Task.FromResult<WorkflowDefinition?>(existing);
         public Task<Page<WorkflowDefinition>> FindManyAsync(WorkflowDefinitionFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<Page<WorkflowDefinition>> FindManyAsync<TOrderBy>(WorkflowDefinitionFilter filter, WorkflowDefinitionOrder<TOrderBy> order, PageArgs pageArgs, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<IEnumerable<WorkflowDefinition>> FindManyAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default) => throw new NotSupportedException();

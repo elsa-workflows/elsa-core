@@ -122,6 +122,200 @@ internal class DapperWorkflowDefinitionStore(Store<WorkflowDefinitionRecord> sto
     }
 
     /// <inheritdoc />
+    public async Task<bool> TryAddAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await store.AddAsync(Map(definition), cancellationToken);
+            return true;
+        }
+        catch (System.Data.Common.DbException ex) when (DapperExceptionClassifier.IsDuplicateKey(ex))
+        {
+            return false;
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<bool> TryRetractAsync(WorkflowDefinition expected, CancellationToken cancellationToken = default)
+    {
+        var update = new WorkflowDefinitionRecord { IsPublished = false };
+        var updated = await store.UpdateAsync(update, [x => x.IsPublished], query =>
+        {
+            query.Is(nameof(WorkflowDefinitionRecord.Id), expected.Id)
+                .Is(nameof(WorkflowDefinitionRecord.DefinitionId), expected.DefinitionId)
+                .Is(nameof(WorkflowDefinitionRecord.Version), expected.Version)
+                .Is(nameof(WorkflowDefinitionRecord.IsReadonly), expected.IsReadonly);
+
+            var systemColumn = query.Dialect.QuoteIdentifier(nameof(WorkflowDefinitionRecord.IsSystem));
+            query.Sql.AppendLine(expected.IsSystem ? $"and {systemColumn} = @ExpectedSystem" : $"and ({systemColumn} = @ExpectedSystem or {systemColumn} is null)");
+            query.Parameters.Add("@ExpectedSystem", expected.IsSystem);
+
+            var publishedColumn = query.Dialect.QuoteIdentifier(nameof(WorkflowDefinitionRecord.IsPublished));
+            query.Sql.AppendLine($"and {publishedColumn} = @ExpectedPublished");
+            query.Parameters.Add("@ExpectedPublished", true);
+
+            if (expected.TenantId == null)
+                query.IsNull(nameof(WorkflowDefinitionRecord.TenantId));
+            else
+            {
+                var tenantColumn = query.Dialect.QuoteIdentifier(nameof(WorkflowDefinitionRecord.TenantId));
+                query.Sql.AppendLine($"and {tenantColumn} = @ExpectedTenantId");
+                query.Parameters.Add("@ExpectedTenantId", expected.TenantId);
+            }
+        }, cancellationToken);
+
+        return updated == 1;
+    }
+
+    /// <inheritdoc />
+    public Task<bool> TryPublishAsync(WorkflowDefinition definition, Func<IReadOnlyCollection<WorkflowDefinition>, bool> matchesExpected,
+        CancellationToken cancellationToken = default) =>
+        TryWriteLatestAsync(definition, matchesExpected, promoteDraft: false, cancellationToken);
+
+    /// <inheritdoc />
+    public Task<bool> TryPromoteExistingDraftAsync(WorkflowDefinition definition, Func<IReadOnlyCollection<WorkflowDefinition>, bool> matchesExpected,
+        CancellationToken cancellationToken = default) =>
+        TryWriteLatestAsync(definition, matchesExpected, promoteDraft: true, cancellationToken);
+
+    private async Task<bool> TryWriteLatestAsync(WorkflowDefinition definition, Func<IReadOnlyCollection<WorkflowDefinition>, bool> matchesExpected,
+        bool promoteDraft, CancellationToken cancellationToken)
+    {
+        using var connection = connectionProvider.GetConnection();
+        if (connection is DbConnection dbConnection)
+            await dbConnection.OpenAsync(cancellationToken);
+        else
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            connection.Open();
+        }
+
+        using var transaction = connection.BeginTransaction(IsolationLevel.Serializable);
+        var targets = new WorkflowDefinitionFilter
+        {
+            DefinitionId = definition.DefinitionId,
+            VersionOptions = promoteDraft ? VersionOptions.Latest : VersionOptions.LatestOrPublished
+        };
+        var visibleQuery = connectionProvider.CreateQuery().From(store.TableName);
+        ApplyFilter(visibleQuery, targets);
+        store.ApplyTenantFilter(visibleQuery);
+        var current = (await connection.QueryAsync<WorkflowDefinitionRecord>(Command(visibleQuery))).ToList();
+        if (promoteDraft)
+        {
+            var draftQuery = connectionProvider.CreateQuery().From(store.TableName);
+            ApplyFilter(draftQuery, new WorkflowDefinitionFilter { DefinitionId = definition.DefinitionId, Id = definition.Id });
+            store.ApplyTenantFilter(draftQuery);
+            var draft = await connection.QuerySingleOrDefaultAsync<WorkflowDefinitionRecord>(Command(draftQuery));
+            if (current.Count != 1 || draft == null || draft.TenantId.NormalizeTenantId() != current[0].TenantId.NormalizeTenantId() ||
+                draft.TenantId == Tenant.AgnosticTenantId && !SharedTenantWriteScope.IsGranted(typeof(WorkflowDefinition)) ||
+                draft.IsLatest || draft.IsPublished || draft.IsReadonly || draft.IsSystem ||
+                !definition.IsLatest || definition.IsPublished)
+            {
+                return false;
+            }
+
+            current.Add(draft);
+        }
+
+        if (current.Count == 0 || !matchesExpected(current.Select(Map).ToArray()))
+            return false;
+
+        var replacing = current.SingleOrDefault(version => version.Id == definition.Id);
+        var owner = current.FirstOrDefault(version => version.IsLatest) ?? current[0];
+        if (replacing != null && (replacing.TenantId != definition.TenantId || replacing.Version != definition.Version) ||
+            replacing == null && definition.TenantId.NormalizeTenantId() != owner.TenantId.NormalizeTenantId())
+            return false;
+
+        try
+        {
+            foreach (var previous in current.Where(version => version.Id != definition.Id))
+            {
+                previous.IsLatest = false;
+                if (!promoteDraft)
+                {
+                    previous.IsPublished = false;
+                }
+                var update = connectionProvider.CreateQuery().Update(store.TableName, previous, store.PrimaryKey,
+                    [nameof(WorkflowDefinitionRecord.IsLatest), nameof(WorkflowDefinitionRecord.IsPublished)]);
+                if (await connection.ExecuteAsync(Command(update)) != 1)
+                    return false;
+            }
+
+            var record = Map(definition);
+            record.ToolVersion = replacing?.ToolVersion ?? owner.ToolVersion;
+            var publish = replacing == null
+                ? connectionProvider.CreateQuery().Insert(store.TableName, record)
+                : connectionProvider.CreateQuery().Update(store.TableName, record, store.PrimaryKey);
+            publish.Parameters.Add(nameof(WorkflowDefinitionRecord.BinaryData), record.BinaryData, DbType.Binary);
+            if (await connection.ExecuteAsync(Command(publish)) != 1)
+                return false;
+        }
+        catch (DbException exception) when (DapperExceptionClassifier.IsDuplicateKey(exception) || IsAbortedContention(exception))
+        {
+            return false;
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+        transaction.Commit();
+        return true;
+
+        CommandDefinition Command(ParameterizedQuery query) =>
+            new(query.Sql.ToString(), query.Parameters, transaction, cancellationToken: cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public bool SupportsDeletion(WorkflowDefinitionDeletionPlan plan) => true;
+
+    /// <inheritdoc />
+    public async Task<bool> TryDeleteAsync(WorkflowDefinitionDeletionPlan plan, CancellationToken cancellationToken = default)
+    {
+        using var connection = connectionProvider.GetConnection();
+        if (connection is DbConnection dbConnection)
+            await dbConnection.OpenAsync(cancellationToken);
+        else
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            connection.Open();
+        }
+
+        using var transaction = connection.BeginTransaction(IsolationLevel.Serializable);
+        try
+        {
+            var read = connectionProvider.CreateQuery().From(store.TableName).In(nameof(WorkflowDefinitionRecord.DefinitionId), plan.DefinitionIds);
+            store.ApplyTenantFilter(read);
+            var current = (await connection.QueryAsync<WorkflowDefinitionRecord>(Command(read))).ToDictionary(version => version.Id);
+            if (!plan.Matches(current.Values.Select(Map).ToArray()))
+                return false;
+
+            var removedIds = plan.Deleted.Select(version => version.Id).ToArray();
+
+            var remove = connectionProvider.CreateQuery().Delete(store.TableName).In(store.PrimaryKey, removedIds);
+            store.ApplyTenantFilter(remove);
+            if (await connection.ExecuteAsync(Command(remove)) != removedIds.Length)
+                return false;
+
+            foreach (var version in plan.Promoted)
+            {
+                var survivor = current[version.Id];
+                survivor.IsLatest = true;
+                var promote = connectionProvider.CreateQuery().Update(store.TableName, survivor, store.PrimaryKey, [nameof(WorkflowDefinitionRecord.IsLatest)]);
+                if (await connection.ExecuteAsync(Command(promote)) != 1)
+                    return false;
+            }
+        }
+        catch (DbException exception) when (IsAbortedContention(exception))
+        {
+            return false;
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+        transaction.Commit();
+        return true;
+
+        CommandDefinition Command(ParameterizedQuery query) =>
+            new(query.Sql.ToString(), query.Parameters, transaction, cancellationToken: cancellationToken);
+    }
+
+    /// <inheritdoc />
     public async Task<WorkflowDefinitionUpdateResult> TryUpdateLatestAsync(
         WorkflowDefinitionFilter filter,
         Func<WorkflowDefinition, bool> matchesExpected,
@@ -251,7 +445,7 @@ internal class DapperWorkflowDefinitionStore(Store<WorkflowDefinitionRecord> sto
     /// <inheritdoc />
     public async Task<bool> AnyAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
-        return await store.AnyAsync(q => ApplyFilter(q, filter), cancellationToken);
+        return await store.AnyAsync(q => ApplyFilter(q, filter), filter.TenantAgnostic, cancellationToken);
     }
 
     /// <inheritdoc />

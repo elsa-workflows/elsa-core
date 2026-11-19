@@ -15,7 +15,8 @@ public class IncidentsSearchTool(IServiceProvider serviceProvider, RuntimeGround
             ("instanceId", GroundingToolSchemas.String("Workflow instance ID.")),
             ("query", GroundingToolSchemas.String("Free-text incident or instance search term.")),
             ("from", GroundingToolSchemas.String("Updated-at range start.")),
-            ("to", GroundingToolSchemas.String("Updated-at range end."))));
+            ("to", GroundingToolSchemas.String("Updated-at range end."))),
+        AIGroundingPermissions.InstanceView);
 
     public override async ValueTask<AIToolResult> ExecuteAsync(AIToolExecutionContext context, CancellationToken cancellationToken = default)
     {

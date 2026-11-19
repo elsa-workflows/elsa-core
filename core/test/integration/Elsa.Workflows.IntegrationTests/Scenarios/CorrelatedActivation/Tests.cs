@@ -9,11 +9,13 @@ using Elsa.Testing.Shared;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Exceptions;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Notifications;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.ActivationValidators;
+using Elsa.Workflows.Runtime.Messages;
 using Elsa.Workflows.Runtime.Requests;
 using Medallion.Threading;
 using Microsoft.EntityFrameworkCore;
@@ -30,6 +32,76 @@ public class Tests
     public Tests(ITestOutputHelper testOutputHelper)
     {
         _testOutputHelper = testOutputHelper;
+    }
+
+    [Fact]
+    public async Task CreateAndRun_CannotReuseAnotherInstancesId()
+    {
+        var services = CreateServices();
+        await services.PopulateRegistriesAsync();
+        await using var scope = services.CreateAsyncScope();
+        var runtime = scope.ServiceProvider.GetRequiredService<IWorkflowRuntime>();
+        var store = scope.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>();
+        const string id = "requested-instance";
+        var client = await runtime.CreateClientAsync(id);
+        var definition = WorkflowDefinitionHandle.ByDefinitionId(nameof(AllowAlwaysConversationWorkflow), VersionOptions.Published);
+
+        await client.CreateAndRunInstanceAsync(new CreateAndRunWorkflowInstanceRequest
+        {
+            WorkflowDefinitionHandle = definition,
+            CorrelationId = "first-conversation"
+        });
+
+        await Assert.ThrowsAsync<WorkflowInstanceAlreadyExistsException>(() =>
+            client.CreateAndRunInstanceAsync(new CreateAndRunWorkflowInstanceRequest
+            {
+                WorkflowDefinitionHandle = definition,
+                CorrelationId = "second-conversation"
+            }));
+
+        var instance = await store.FindAsync(new WorkflowInstanceFilter { Id = id });
+        Assert.NotNull(instance);
+        Assert.Equal("first-conversation", instance.CorrelationId);
+        Assert.Equal(WorkflowSubStatus.Suspended, instance.SubStatus);
+    }
+
+    [Fact]
+    public async Task ConcurrentCreateAndRun_OnlyOneOwnsTheRequestedId()
+    {
+        var services = CreateServices();
+        await services.PopulateRegistriesAsync();
+        const string id = "concurrent-start";
+        var handle = WorkflowDefinitionHandle.ByDefinitionId(nameof(AllowAlwaysConversationWorkflow), VersionOptions.Published);
+
+        async Task<bool> TryStartAsync(string correlationId)
+        {
+            await using var scope = services.CreateAsyncScope();
+            var runtime = scope.ServiceProvider.GetRequiredService<IWorkflowRuntime>();
+            var client = await runtime.CreateClientAsync(id);
+
+            try
+            {
+                await client.CreateAndRunInstanceAsync(new CreateAndRunWorkflowInstanceRequest
+                {
+                    WorkflowDefinitionHandle = handle,
+                    CorrelationId = correlationId
+                });
+                return true;
+            }
+            catch (WorkflowInstanceAlreadyExistsException)
+            {
+                return false;
+            }
+        }
+
+        var results = await Task.WhenAll(TryStartAsync("first"), TryStartAsync("second"));
+        Assert.Single(results, result => result);
+
+        await using var readScope = services.CreateAsyncScope();
+        var store = readScope.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>();
+        var instance = Assert.IsType<WorkflowInstance>(await store.FindAsync(new WorkflowInstanceFilter { Id = id }));
+        Assert.Equal(results[0] ? "first" : "second", instance.CorrelationId);
+        Assert.Equal(WorkflowSubStatus.Suspended, instance.SubStatus);
     }
 
     [Fact(DisplayName = "Concurrent start with the same CorrelationId and CorrelatedSingleton creates one Running instance")]

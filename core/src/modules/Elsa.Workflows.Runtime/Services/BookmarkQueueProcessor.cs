@@ -3,6 +3,7 @@ using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Common;
 using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Messages;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.OrderDefinitions;
@@ -52,6 +53,9 @@ public class BookmarkQueueProcessor(
 
     private async Task<bool> ProcessItemAsync(BookmarkQueueItem item, CancellationToken cancellationToken = default)
     {
+        if (item.UnreadableOptions != null)
+            return await QuarantineAsync(item, cancellationToken);
+
         var filter = item.CreateBookmarkFilter();
         var resumeOptions = item.Options;
         
@@ -81,6 +85,20 @@ public class BookmarkQueueProcessor(
 
         logger.LogDebug("No matching bookmarks found for bookmark queue item {BookmarkQueueItemId} for workflow instance {WorkflowInstanceId} for activity type {ActivityType} with stimulus {StimulusHash}", item.Id, item.WorkflowInstanceId, item.ActivityTypeName, item.StimulusHash);
         return true;
+    }
+
+    private async Task<bool> QuarantineAsync(BookmarkQueueItem item, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await deadLetterManager.DeadLetterAsync(item, BookmarkQueueDeadLetterItem.UnreadableOptionsReason, cancellationToken: cancellationToken);
+            return await store.DeleteAsync(new BookmarkQueueFilter { Id = item.Id }, cancellationToken) == 0;
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException and not OutOfMemoryException and not StackOverflowException)
+        {
+            logger.LogError(exception, "Could not quarantine bookmark queue item {BookmarkQueueItemId}; it will be retried.", item.Id);
+            return true;
+        }
     }
 
     private async Task<bool> HandleFailureAsync(BookmarkQueueItem item, Exception exception, CancellationToken cancellationToken)

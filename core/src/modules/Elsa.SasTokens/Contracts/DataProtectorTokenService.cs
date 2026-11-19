@@ -9,8 +9,10 @@ namespace Elsa.SasTokens.Contracts;
 /// </summary>
 public class DataProtectorTokenService : ITokenService
 {
-    private const string TimeLimitedTokenPrefix = "v1.tl.";
-    private const string NonExpiringTokenPrefix = "v1.ne.";
+    private const string TimeLimitedTokenPrefix = "v2.tl.";
+    private const string NonExpiringTokenPrefix = "v2.ne.";
+    private const string LegacyTimeLimitedPrefix = "v1.tl.";
+    private const string LegacyNonExpiringPrefix = "v1.ne.";
     private readonly IDataProtector _dataProtector;
     private readonly ITimeLimitedDataProtector _timeLimitedDataProtector;
 
@@ -27,21 +29,21 @@ public class DataProtectorTokenService : ITokenService
     public string CreateToken<T>(T payload, TimeSpan lifetime)
     {
         var json = JsonSerializer.Serialize(payload);
-        return TimeLimitedTokenPrefix + _timeLimitedDataProtector.Protect(json, lifetime);
+        return TimeLimitedTokenPrefix + GetProtector<T>().ToTimeLimitedDataProtector().Protect(json, lifetime);
     }
     
     /// <inheritdoc />
     public string CreateToken<T>(T payload, DateTimeOffset expiresAt)
     {
         var json = JsonSerializer.Serialize(payload);
-        return TimeLimitedTokenPrefix + _timeLimitedDataProtector.Protect(json, expiresAt);
+        return TimeLimitedTokenPrefix + GetProtector<T>().ToTimeLimitedDataProtector().Protect(json, expiresAt);
     }
     
     /// <inheritdoc />
     public string CreateToken<T>(T payload)
     {
         var json = JsonSerializer.Serialize(payload);
-        return NonExpiringTokenPrefix + _dataProtector.Protect(json);
+        return NonExpiringTokenPrefix + GetProtector<T>().Protect(json);
     }
 
     /// <inheritdoc />
@@ -65,17 +67,30 @@ public class DataProtectorTokenService : ITokenService
     /// <inheritdoc />
     public T DecryptToken<T>(string token)
     {
-        var json = Unprotect(token);
-        return JsonSerializer.Deserialize<T>(json)!;
+        var json = Unprotect<T>(token);
+        return JsonSerializer.Deserialize<T>(json) ?? throw new JsonException("Token payload is missing.");
     }
 
-    private string Unprotect(string token)
+    private IDataProtector GetProtector<T>()
+    {
+        // Omit assembly versions so package upgrades can still read outstanding links.
+        var type = typeof(T);
+        return _dataProtector.CreateProtector("v2", type.Assembly.GetName().Name!, type.ToString());
+    }
+
+    private string Unprotect<T>(string token)
     {
         if (token.StartsWith(TimeLimitedTokenPrefix, StringComparison.Ordinal))
-            return _timeLimitedDataProtector.Unprotect(token[TimeLimitedTokenPrefix.Length..]);
+            return GetProtector<T>().ToTimeLimitedDataProtector().Unprotect(token[TimeLimitedTokenPrefix.Length..]);
 
         if (token.StartsWith(NonExpiringTokenPrefix, StringComparison.Ordinal))
-            return _dataProtector.Unprotect(token[NonExpiringTokenPrefix.Length..]);
+            return GetProtector<T>().Unprotect(token[NonExpiringTokenPrefix.Length..]);
+
+        if (token.StartsWith(LegacyTimeLimitedPrefix, StringComparison.Ordinal))
+            return _timeLimitedDataProtector.Unprotect(token[LegacyTimeLimitedPrefix.Length..]);
+
+        if (token.StartsWith(LegacyNonExpiringPrefix, StringComparison.Ordinal))
+            return _dataProtector.Unprotect(token[LegacyNonExpiringPrefix.Length..]);
 
         try
         {
