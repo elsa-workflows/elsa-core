@@ -6,6 +6,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\..\src\modules\Elsa.Http\Elsa.Http.csproj" />
+      <Compile Include="..\..\..\..\studio\src\hosts\Elsa.ServerAndStudio.Web\CombinedStudioUnmatchedHttpHandler.cs" Link="Support\CombinedStudioUnmatchedHttpHandler.cs" />
     </ItemGroup>
 
 </Project>

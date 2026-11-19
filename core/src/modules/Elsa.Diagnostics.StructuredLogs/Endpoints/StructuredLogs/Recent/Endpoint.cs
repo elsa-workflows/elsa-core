@@ -1,8 +1,10 @@
 using Elsa.Authorization;
+using Elsa.Common.Multitenancy;
 using Elsa.Abstractions;
 using Elsa.Diagnostics.StructuredLogs.Contracts;
 using Elsa.Diagnostics.StructuredLogs.Models;
 using Elsa.Diagnostics.StructuredLogs.Permissions;
+using Elsa.Diagnostics.StructuredLogs.Services;
 using JetBrains.Annotations;
 
 namespace Elsa.Diagnostics.StructuredLogs.Endpoints.StructuredLogs.Recent;
@@ -19,6 +21,6 @@ internal class Endpoint(IStructuredLogProvider logProvider) : ElsaEndpoint<Struc
     
     public override async Task<RecentStructuredLogsResult> ExecuteAsync(StructuredLogFilter request, CancellationToken cancellationToken)
     {
-        return await logProvider.GetRecentAsync(request, cancellationToken);
+        return await logProvider.GetRecentForTenantAsync(request, TryResolve<ITenantAccessor>()?.TenantId, cancellationToken);
     }
 }

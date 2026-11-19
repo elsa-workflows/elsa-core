@@ -23,6 +23,27 @@ dotnet build Elsa.Studio.slnf
 dotnet test studio/src/modules/Elsa.Studio.Workflows.Designer.Tests/Elsa.Studio.Workflows.Designer.Tests.csproj
 ```
 
+The Community combined image host is
+[`Elsa.ServerAndStudio.Web`](../src/hosts/Elsa.ServerAndStudio.Web). It serves
+the Elsa Server API and Blazor Server Studio in one process. Same-process Studio
+must call the in-container API (`Backend__Url=http://127.0.0.1:8080/elsa/api`),
+not a host-mapped port. HTTP endpoint start/resume stays on `/workflows/{path}`,
+including existing `definitions/...` and `instances/...` callbacks. When no HTTP
+trigger or bookmark matches, exact Studio pages (`/workflows/definitions`,
+`/workflows/definitions/{id}/edit`, `/workflows/instances`,
+`/workflows/instances/{id}/view`) fall through to Blazor. A published HTTP
+workflow at an exact Studio page URL hides that Studio page for the matching
+method; choose a distinct HTTP path if both are needed. The combined host
+registers a single unmatched handler (last registration wins). That registration
+opts this host into lookup-then-reject during pause or drain: matched HTTP start
+and resume still return 503 without executing work, unmatched Studio pages remain
+available, and unmatched non-page paths stay 404. Hosts without the handler keep
+the original pre-lookup 503.
+The dashboard is `/` and `/dashboard`. Workflow and identity persistence share
+`elsa_workflows.db`.
+`docker/ElsaServerAndStudio.Dockerfile` publishes this host after generating
+Studio ClientLib assets.
+
 Start a backend such as [`Elsa.Server.Web`](../../core/src/apps/Elsa.Server.Web)
 and run the [`Elsa.Studio.Host.Server`](../src/hosts/Elsa.Studio.Host.Server)
 project in separate terminals to work on the Blazor UI. Its default backend URL is

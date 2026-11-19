@@ -4,7 +4,7 @@
     "source_commit": "4c272d6f769c332b6974c7f39e61029b9bcc5726",
     "version": "3.10.0",
     "package_count": 231,
-    "exclusion_count": 135,
+    "exclusion_count": 136,
     "issue": 8725,
     "note": "release/3.10.0 evaluation only. This is not main's inventory; the two are not the same."
   },
@@ -582,6 +582,11 @@
     {
       "id": "Elsa.Studio.Core.Tests",
       "project": "studio/src/framework/Elsa.Studio.Core.Tests/Elsa.Studio.Core.Tests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.ServerAndStudio.Web",
+      "project": "studio/src/hosts/Elsa.ServerAndStudio.Web/Elsa.ServerAndStudio.Web.csproj",
       "reason": "Project or inherited nonpackable setting remains active"
     },
     {
