@@ -13,12 +13,12 @@ public class IntegerJsonConverter : JsonConverter<int>
     public override int Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         if (reader.TokenType == JsonTokenType.Number)
-            return reader.GetInt32();
+            return reader.TryGetInt32(out var number) ? number : throw new JsonException("The JSON number is not a valid integer.");
 
         if (reader.TokenType == JsonTokenType.String)
         {
-            var value = reader.GetString()!;
-            return int.Parse(value, CultureInfo.InvariantCulture);
+            var value = reader.GetString();
+            return int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var result) ? result : throw new JsonException($"'{value}' is not a valid integer.");
         }
 
         throw new JsonException("Expected number or string.");

@@ -13,12 +13,12 @@ public class DecimalJsonConverter : JsonConverter<decimal>
     public override decimal Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         if (reader.TokenType == JsonTokenType.Number)
-            return reader.GetDecimal();
+            return reader.TryGetDecimal(out var number) ? number : throw new JsonException("The JSON number is not a valid decimal.");
 
         if (reader.TokenType == JsonTokenType.String)
         {
-            var value = reader.GetString()!;
-            return decimal.Parse(value, CultureInfo.InvariantCulture);
+            var value = reader.GetString();
+            return decimal.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out var result) ? result : throw new JsonException($"'{value}' is not a valid decimal.");
         }
 
         throw new JsonException("Expected number or string.");
