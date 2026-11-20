@@ -20,7 +20,7 @@ public static class TenantWriteQueryExtensions
             return query;
 
         var tenantId = context.TenantId.NormalizeTenantId();
-        var canWriteShared = SharedTenantWriteScope.IsGranted(typeof(TEntity), tenantId);
+        var canWriteShared = SharedTenantWriteScope.IsGranted(typeof(TEntity));
 
         return query.Where(entity =>
             (canWriteShared && EF.Property<string?>(entity, nameof(Entity.TenantId)) == Tenant.AgnosticTenantId) ||

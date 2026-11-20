@@ -108,6 +108,7 @@ public class ApplyTenantIdTests
     [InlineData(null)]
     [InlineData("")]
     [InlineData("named")]
+    [InlineData("*")]
     public async Task SharedRowsRequireExplicitAuthority(string? ambientTenantId)
     {
         var (exception, storedTenantId) = await SaveWithAmbientAsync(ambientTenantId, Tenant.AgnosticTenantId);
@@ -118,15 +119,6 @@ public class ApplyTenantIdTests
         var (hostException, sharedTenantId) = await SaveWithAmbientAsync(ambientTenantId, Tenant.AgnosticTenantId);
         Assert.Null(hostException);
         Assert.Equal(Tenant.AgnosticTenantId, sharedTenantId);
-    }
-
-    [Fact(DisplayName = "A registered \"*\" tenant's context writes shared rows without a grant")]
-    public async Task AgnosticTenantContextWritesSharedRows()
-    {
-        var (exception, storedTenantId) = await SaveWithAmbientAsync(Tenant.AgnosticTenantId, Tenant.AgnosticTenantId);
-
-        Assert.Null(exception);
-        Assert.Equal(Tenant.AgnosticTenantId, storedTenantId);
     }
 
     [Theory(DisplayName = "When multitenancy is disabled the entity tenant id is left untouched")]

@@ -15,7 +15,7 @@ namespace Elsa.Workflows.Runtime.Tasks;
 /// Restarts running workflow instances that have not been updated within the inactivity threshold.
 /// </summary>
 /// <remarks>
-/// Runs once per cycle for all tenants; instances with an empty or null tenant id restart under the default tenant, and "*" instances under the "*" tenant when the host registers one, else under the default tenant.
+/// Runs once per cycle for all tenants; instances with an empty, null or "*" tenant id restart under the default tenant.
 /// A tenant whose instances live in its own database (a connection string in its configuration) is scanned separately in its own scope.
 /// <para>Each cycle restarts stale executing instances, then stale <see cref="WorkflowSubStatus.Interrupted"/> instances.
 /// A drain on another node can interrupt instances after this node's startup scan ran, for example during a slot swap or a rolling deploy.

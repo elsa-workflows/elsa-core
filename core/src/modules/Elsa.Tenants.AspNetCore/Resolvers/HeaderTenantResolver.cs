@@ -32,10 +32,6 @@ public class HeaderTenantResolver(IHttpContextAccessor httpContextAccessor, IOpt
         var headerName = options.Value.TenantHeaderName;
         var tenantId = httpContext.Request.Headers[headerName].FirstOrDefault();
 
-        // The client chooses the header, and a "*" context may write shared records, so only the host resolves "*".
-        if (tenantId == Tenant.AgnosticTenantId)
-            return Unresolved();
-
         return AutoResolve(tenantId);
     }
 }

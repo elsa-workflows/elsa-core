@@ -26,7 +26,6 @@ internal static class InterruptedWorkflowRequeuer
         var collected = new List<(string Id, string? TenantId)>();
         seen ??= new HashSet<(string TenantKey, string Id)>();
         var tenants = new Dictionary<string, Tenant?>();
-        var skippedTenantKeys = new HashSet<string>();
         var requeued = 0;
 
         await foreach (var summary in instances.WithCancellation(cancellationToken))
@@ -43,16 +42,23 @@ internal static class InterruptedWorkflowRequeuer
             {
                 if (tenantService is not null && tenantAccessor is not null)
                 {
-                    var tenantKey = GetTenantKey(instanceTenantId);
-                    var tenant = await FindTenantAsync(tenantService, tenants, tenantKey, cancellationToken);
+                    var tenantKey = TenantKey.From(instanceTenantId);
+
+                    if (!tenants.TryGetValue(tenantKey, out var tenant))
+                    {
+                        tenant = await tenantService.FindAsync(tenantKey, cancellationToken);
+
+                        if (tenant is null && tenantKey == Tenant.DefaultTenantId)
+                            tenant = Tenant.Default;
+
+                        tenants[tenantKey] = tenant;
+
+                        if (tenant is null)
+                            logger.LogWarning("Skipping {Count} interrupted workflow(s): their tenant {TenantId} was not found.", collected.Count(x => TenantKey.From(x.TenantId) == tenantKey), tenantKey);
+                    }
 
                     if (tenant is null)
-                    {
-                        if (skippedTenantKeys.Add(tenantKey))
-                            logger.LogWarning("Skipping {Count} interrupted workflow(s): their tenant {TenantId} was not found.", collected.Count(x => GetTenantKey(x.TenantId) == tenantKey), tenantKey);
-
                         continue;
-                    }
 
                     using (tenantAccessor.PushContext(tenant))
                         await restarter.RestartWorkflowAsync(instanceId, cancellationToken);
@@ -71,27 +77,5 @@ internal static class InterruptedWorkflowRequeuer
         }
 
         return requeued;
-    }
-
-    // A tenant-agnostic instance restarts under "*" when the host registers it: its rows are shared, and the store refuses to replace them under any other tenant.
-    private static string GetTenantKey(string? instanceTenantId) =>
-        instanceTenantId == Tenant.AgnosticTenantId ? Tenant.AgnosticTenantId : TenantKey.From(instanceTenantId);
-
-    // Without a registered "*" tenant, tenant-agnostic instances restart under the default tenant.
-    private static async Task<Tenant?> FindTenantAsync(ITenantService tenantService, Dictionary<string, Tenant?> tenants, string tenantKey, CancellationToken cancellationToken)
-    {
-        if (tenants.TryGetValue(tenantKey, out var cached))
-            return cached;
-
-        var tenant = await tenantService.FindAsync(tenantKey, cancellationToken);
-
-        if (tenant is null && tenantKey == Tenant.AgnosticTenantId)
-            tenant = await FindTenantAsync(tenantService, tenants, Tenant.DefaultTenantId, cancellationToken);
-
-        if (tenant is null && tenantKey == Tenant.DefaultTenantId)
-            tenant = Tenant.Default;
-
-        tenants[tenantKey] = tenant;
-        return tenant;
     }
 }

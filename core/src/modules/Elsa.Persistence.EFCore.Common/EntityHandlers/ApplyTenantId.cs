@@ -28,7 +28,7 @@ public class ApplyTenantId(IOptions<TenantsOptions> tenantsOptions) : IEntitySav
         }
 
         var tenantId = dbContext.TenantId.NormalizeTenantId();
-        var canWriteShared = SharedTenantWriteScope.IsGranted(entry.Metadata.ClrType, tenantId);
+        var canWriteShared = SharedTenantWriteScope.IsGranted(entry.Metadata.ClrType);
 
         if (entity.TenantId == Tenant.AgnosticTenantId && !canWriteShared)
             throw new InvalidOperationException("Writing a shared record requires trusted host authority.");

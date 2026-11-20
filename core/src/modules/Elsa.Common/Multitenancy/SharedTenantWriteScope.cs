@@ -21,14 +21,6 @@ public static class SharedTenantWriteScope
     }
 
     /// <summary>
-    /// Returns whether an operation running under <paramref name="ambientTenantId"/> may write tenant-agnostic records of the
-    /// entity type: it holds a grant for the type, or it runs in the context of the <c>"*"</c> tenant. Only host code
-    /// creates that context, by registering and resolving a tenant with ID <c>"*"</c>; Elsa's own resolvers never resolve it.
-    /// </summary>
-    public static bool IsGranted(Type entityType, string? ambientTenantId) =>
-        ambientTenantId == Tenant.AgnosticTenantId || IsGranted(entityType);
-
-    /// <summary>
     /// Returns whether the current operation explicitly holds authority for the entity type.
     /// </summary>
     public static bool IsGranted(Type entityType)
