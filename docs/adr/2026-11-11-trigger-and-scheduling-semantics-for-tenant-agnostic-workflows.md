@@ -8,7 +8,7 @@ Proposed
 
 ## Context
 
-ADR 0009 established `"*"` (`Tenant.AgnosticTenantId`) as the sentinel value for tenant-agnostic entities. Such entities are visible to every tenant but are owned by no specific tenant. The follow-up ADR [2026-11-02-a-host-may-register-the-asterisk-tenant](https://github.com/elsa-workflows/elsa-core/pull/9171) (PR #9171) clarified that a host *may* register a tenant whose ID is `"*"`, and that interrupted-workflow recovery for `"*"` instances uses that registered tenant when it exists, falling back to the default tenant otherwise.
+ADR 0009 established `"*"` (`Tenant.AgnosticTenantId`) as the sentinel value for tenant-agnostic entities. Such entities are visible to every tenant but are owned by no specific tenant. The follow-up ADR [2026-11-02-a-host-may-register-the-asterisk-tenant](2026-11-02-a-host-may-register-the-asterisk-tenant.md) clarified that a host *may* register a tenant whose ID is `"*"`, that a `"*"` tenant context grants no shared-write authority, and that workflow instances are never tenant-agnostic.
 
 What remained undecided was the runtime semantics of triggers, bookmarks, messages and scheduling for workflows whose `TenantId` is `"*"`. Specifically:
 
@@ -22,7 +22,7 @@ This ADR records the decisions approved by the maintainers for Elsa 3.12.
 
 ## Decision
 
-A `"*"` **workflow definition is shared**; its **triggers are tenant-scoped**; the **instances created from those triggers belong to the invoking tenant**; and **timers/cron run per tenant**. Recovery of `"*"` instances follows PR #9171.
+A `"*"` **workflow definition is shared**; its **triggers are tenant-scoped**; the **instances created from those triggers belong to the invoking tenant**; and **timers/cron run per tenant**. Workflow instances are never `"*"` (see 2026-11-02).
 
 ### 1. Definitions, triggers and fan-out
 
@@ -50,7 +50,7 @@ This rule applies to:
 - Stimuli sent through `IStimulusSender`.
 - Timers and cron fired by any scheduler for a tenant-scoped trigger.
 
-The only way to obtain a `"*"` workflow instance is to create it explicitly under a `"*"` ambient tenant context (for example, via `IWorkflowRuntime` with `TenantAccessor.PushContext("*")`). Such instances are governed by the recovery rules in PR #9171.
+Elsa does not persist `"*"` workflow instances. Instances with `TenantId = "*"` from before 3.11 stay interrupted (see the migration note).
 
 ### 4. HTTP and stimuli / messages
 
@@ -65,7 +65,7 @@ Bookmarks are created during workflow execution and must inherit the `TenantId` 
 Consequences of this rule:
 
 - An instance created from a `"*"` trigger by tenant A has `WorkflowInstance.TenantId == "A"`; its bookmarks must also have `TenantId == "A"`. Tenant B cannot find or resume them.
-- An instance explicitly created under the `"*"` ambient tenant has `WorkflowInstance.TenantId == "*"`; its bookmarks are also `"*"` and visible to every tenant.
+- There are no `"*"` instances (see 2026-11-02), so no bookmark inherits `"*"` from its instance.
 - A tenant-specific instance has tenant-specific bookmarks.
 
 The visibility rules are:
@@ -104,10 +104,8 @@ Global scheduling (a single cron that fires once for all tenants) is **not** par
 
 ### 8. Recovery
 
-Recovery of `"*"` workflow instances follows the rules introduced by PR #9171 and recorded in [2026-11-02-a-host-may-register-the-asterisk-tenant](https://github.com/elsa-workflows/elsa-core/pull/9171):
+Workflow instances are never `"*"`, so recovery always runs in the owning tenant. Instances with `TenantId = "*"` from before 3.11 stay interrupted; operators re-stamp them to a tenant; recovery then resumes them there, where they can be cancelled (see the migration note in `core/docs/migrations/tenant-owned-persistence.md` and [2026-11-02-a-host-may-register-the-asterisk-tenant](2026-11-02-a-host-may-register-the-asterisk-tenant.md)).
 
-- If the host registers a `"*"` tenant, recovery restarts the `"*"` instance under that tenant.
-- If no `"*"` tenant is registered, recovery falls back to the default tenant (`""`).
 - `TenantKey.From` continues to be used only for deduplication in the recovery scan, never for selecting the ambient execution context.
 
 ## Consequences
@@ -115,11 +113,11 @@ Recovery of `"*"` workflow instances follows the rules introduced by PR #9171 an
 ### Positive
 
 - **Clear ownership.** Every workflow instance has a well-defined owning tenant, even when it was started from a shared definition.
-- **Tenant isolation.** A tenant cannot create or resume instances whose `TenantId` belongs to another tenant simply because the definition is shared. Instances explicitly created with `TenantId = "*"` remain visible and resumable by all tenants.
+- **Tenant isolation.** A tenant cannot create or resume instances whose `TenantId` belongs to another tenant simply because the definition is shared.
 - **Scheduler compatibility.** Fan-out of trigger rows allows the default scheduler, Quartz and Hangfire to coexist without inventing a second sentinel or special-casing `"*"` in every scheduler.
 - **Predictable lifecycle.** Trigger rows appear when a tenant activates or a `"*"` definition is published, and disappear when the tenant is deleted, when a `"*"` definition is unpublished, or when a `"*"` definition is deleted.
 - **Clean retirement.** Unpublishing or deleting a shared (`"*"`) workflow definition removes its triggers and schedules from every active tenant, so no timer or cron continues to fire after the definition is retired.
-- **Aligned with recovery.** Because instances created from `"*"` triggers belong to the invoking tenant, the recovery rules from PR #9171 apply only to instances that were explicitly created under `"*"`.
+- **Aligned with recovery.** Since instances are never `"*"`, recovery always runs in the owning tenant.
 
 ### Negative
 
@@ -143,7 +141,6 @@ Whether the tenant context is lost in practice depends on whether `DefaultTenant
 1. Add a `TenantId` property to `ScheduleNewWorkflowInstanceRequest` and `ScheduleExistingWorkflowInstanceRequest`.
 2. Capture the ambient tenant **from the scheduling context** in `DefaultTriggerScheduler` and `DefaultBookmarkScheduler`. The captured value must be the actual tenant under which the schedule is created:
    - A `"*"` workflow definition indexed and scheduled within tenant A must transport `"A"`.
-   - An execution explicitly scheduled under the `"*"` ambient tenant context must transport `"*"`.
 
    The value must not be inferred from `WorkflowDefinition.TenantId` and must not be replaced by the default tenant.
 3. Restore the captured tenant in `RunWorkflowTask` and `ResumeWorkflowTask` with `tenantAccessor.PushContext(tenantId)` before invoking the workflow runtime, so the tenant is preserved through the deferred execution.
@@ -154,8 +151,8 @@ Tracked by [#9252](https://github.com/elsa-workflows/elsa-core/issues/9252).
 
 **Tests needed before claiming the behavior is fixed:**
 
-- A timer/cron trigger scheduled for tenant A (or under `"*"`) fires and creates an instance whose `WorkflowInstance.TenantId` is that same scheduling tenant, not the default tenant.
-- A bookmark scheduled for tenant A (or under `"*"`) resumes the instance under that same scheduling tenant.
+- A timer/cron trigger scheduled for tenant A fires and creates an instance whose `WorkflowInstance.TenantId` is that same scheduling tenant, not the default tenant.
+- A bookmark scheduled for tenant A resumes the instance under that same scheduling tenant.
 - The same trigger definitions under different tenants produce independent schedules that do not collide.
 
 ### Bookmark instance-tenancy propagation
@@ -179,5 +176,4 @@ Tracked by [#9254](https://github.com/elsa-workflows/elsa-core/issues/9254).
 ## Related decisions
 
 - [0009-asterisk-sentinel-value-for-tenant-agnostic-entities](0009-asterisk-sentinel-value-for-tenant-agnostic-entities.md)
-- [2026-11-02-a-host-may-register-the-asterisk-tenant](https://github.com/elsa-workflows/elsa-core/pull/9171)
-- PR #9171 — recover `"*"` workflow instances under a registered `"*"` tenant.
+- [2026-11-02-a-host-may-register-the-asterisk-tenant](2026-11-02-a-host-may-register-the-asterisk-tenant.md) (PR #9171)
