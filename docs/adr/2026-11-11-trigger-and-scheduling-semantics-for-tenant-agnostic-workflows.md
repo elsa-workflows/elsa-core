@@ -141,7 +141,6 @@ Whether the tenant context is lost in practice depends on whether `DefaultTenant
 1. Add a `TenantId` property to `ScheduleNewWorkflowInstanceRequest` and `ScheduleExistingWorkflowInstanceRequest`.
 2. Capture the ambient tenant **from the scheduling context** in `DefaultTriggerScheduler` and `DefaultBookmarkScheduler`. The captured value must be the actual tenant under which the schedule is created:
    - A `"*"` workflow definition indexed and scheduled within tenant A must transport `"A"`.
-   - An execution explicitly scheduled under the `"*"` ambient tenant context must transport `"*"`.
 
    The value must not be inferred from `WorkflowDefinition.TenantId` and must not be replaced by the default tenant.
 3. Restore the captured tenant in `RunWorkflowTask` and `ResumeWorkflowTask` with `tenantAccessor.PushContext(tenantId)` before invoking the workflow runtime, so the tenant is preserved through the deferred execution.
@@ -152,8 +151,8 @@ Tracked by [#9252](https://github.com/elsa-workflows/elsa-core/issues/9252).
 
 **Tests needed before claiming the behavior is fixed:**
 
-- A timer/cron trigger scheduled for tenant A (or under `"*"`) fires and creates an instance whose `WorkflowInstance.TenantId` is that same scheduling tenant, not the default tenant.
-- A bookmark scheduled for tenant A (or under `"*"`) resumes the instance under that same scheduling tenant.
+- A timer/cron trigger scheduled for tenant A fires and creates an instance whose `WorkflowInstance.TenantId` is that same scheduling tenant, not the default tenant.
+- A bookmark scheduled for tenant A resumes the instance under that same scheduling tenant.
 - The same trigger definitions under different tenants produce independent schedules that do not collide.
 
 ### Bookmark instance-tenancy propagation
