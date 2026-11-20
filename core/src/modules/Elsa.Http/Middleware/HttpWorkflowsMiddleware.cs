@@ -183,10 +183,10 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
         // loading, checking and running the instance can't interleave with another resume of the same instance.
         // The lock is held until the run completes, so nothing in the run may resume this same instance inline
         // (for example through IWorkflowClient): it would wait on this lock until its own timeout.
-        // Don't wait for the lock longer than the request is allowed to take.
+        // Don't wait for the lock longer than the request is allowed to take (only a positive timeout caps the wait).
         var lockProvider = serviceProvider.GetRequiredService<IDistributedLockProvider>();
         var lockTimeout = serviceProvider.GetRequiredService<IOptions<DistributedLockingOptions>>().Value.LockAcquisitionTimeout;
-        if (bookmarkPayload.RequestTimeout is { } requestTimeout && requestTimeout < lockTimeout)
+        if (bookmarkPayload.RequestTimeout is { } requestTimeout && requestTimeout > TimeSpan.Zero && requestTimeout < lockTimeout)
             lockTimeout = requestTimeout;
 
         await using var instanceLock = await lockProvider.TryAcquireLockAsync($"workflow-instance:{bookmark.WorkflowInstanceId}", lockTimeout, cancellationToken);

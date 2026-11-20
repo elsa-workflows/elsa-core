@@ -525,6 +525,22 @@ public class HttpWorkflowsMiddlewareTests
         Assert.Equal(new DistributedLockingOptions().LockAcquisitionTimeout, resume.RequestedLockTimeout);
     }
 
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)] // Timeout.InfiniteTimeSpan
+    [InlineData(60 * 60 * 1000)] // Longer than the default lock timeout.
+    public async Task InvokeAsync_WhenTheRequestTimeoutIsNotAShorterPositiveValue_WaitsForTheInstanceLockForTheConfiguredLockTimeout(int requestTimeoutMilliseconds)
+    {
+        // Arrange
+        var resume = new ResumeScenario(requestTimeout: TimeSpan.FromMilliseconds(requestTimeoutMilliseconds));
+
+        // Act
+        await resume.InvokeAsync(_middleware);
+
+        // Assert
+        Assert.Equal(new DistributedLockingOptions().LockAcquisitionTimeout, resume.RequestedLockTimeout);
+    }
+
     /// <summary>
     /// A request that matches one HTTP bookmark of a running workflow instance, with a fake per-instance lock.
     /// </summary>
