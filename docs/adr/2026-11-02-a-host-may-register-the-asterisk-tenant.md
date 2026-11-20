@@ -35,5 +35,5 @@ Before 3.11, writes in that context were stamped `"*"` without further checks, i
 ### Negative
 
 - A host that authors in a `"*"` session must enter `SharedTenantWriteScope` for the entity types it writes there, such as workflow definitions and the triggers indexed when they are published.
-- `"*"` instances persisted before 3.11 are not recovered automatically. Operators cancel them or re-stamp them to a tenant (see the migration note).
+- `"*"` instances persisted before 3.11 are not recovered automatically. Operators re-stamp them to a tenant; recovery then resumes them there, where they can be cancelled (see the migration note).
 - The ID that marks shared data can also be a tenant, so "the current tenant is `"*"`" and "the entity is shared" have to be told apart by context.

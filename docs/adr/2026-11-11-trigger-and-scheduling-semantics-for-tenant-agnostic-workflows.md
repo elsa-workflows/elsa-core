@@ -104,7 +104,7 @@ Global scheduling (a single cron that fires once for all tenants) is **not** par
 
 ### 8. Recovery
 
-Workflow instances are never `"*"`, so recovery always runs in the owning tenant. Instances with `TenantId = "*"` from before 3.11 stay interrupted; operators cancel them or re-stamp them to a tenant (see the migration note in `core/docs/migrations/tenant-owned-persistence.md` and [2026-11-02-a-host-may-register-the-asterisk-tenant](2026-11-02-a-host-may-register-the-asterisk-tenant.md)).
+Workflow instances are never `"*"`, so recovery always runs in the owning tenant. Instances with `TenantId = "*"` from before 3.11 stay interrupted; operators re-stamp them to a tenant; recovery then resumes them there, where they can be cancelled (see the migration note in `core/docs/migrations/tenant-owned-persistence.md` and [2026-11-02-a-host-may-register-the-asterisk-tenant](2026-11-02-a-host-may-register-the-asterisk-tenant.md)).
 
 - `TenantKey.From` continues to be used only for deduplication in the recovery scan, never for selecting the ambient execution context.
 
