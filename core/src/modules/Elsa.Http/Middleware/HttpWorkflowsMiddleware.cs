@@ -1,8 +1,10 @@
+using Elsa.Common.DistributedHosting;
 using Elsa.Extensions;
 using Elsa.Http.Bookmarks;
 using Elsa.Http.Options;
 using Elsa.Workflows.Runtime.Filters;
 using JetBrains.Annotations;
+using Medallion.Threading;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -176,11 +178,21 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
         var serviceProvider = httpContext.RequestServices;
         var cancellationToken = httpContext.RequestAborted;
         var bookmarkPayload = bookmark.GetPayload<HttpEndpointBookmarkPayload>();
+
+        // Take the same per-instance lock the workflow runtime uses (see DistributedWorkflowClient), so that
+        // loading, checking and running the instance can't interleave with another resume of the same instance.
+        var lockProvider = serviceProvider.GetRequiredService<IDistributedLockProvider>();
+        var lockTimeout = serviceProvider.GetRequiredService<IOptions<DistributedLockingOptions>>().Value.LockAcquisitionTimeout;
+        await using var instanceLock = await lockProvider.AcquireLockAsync($"workflow-instance:{bookmark.WorkflowInstanceId}", lockTimeout, cancellationToken);
+
         var workflowInstanceStore = serviceProvider.GetRequiredService<IWorkflowInstanceStore>();
         var workflowInstance = await workflowInstanceStore.FindAsync(bookmark.WorkflowInstanceId, cancellationToken);
 
-        // A finished instance can no longer be resumed (e.g. when concurrent requests target the same bookmark), so treat it like a missing one.
-        if (workflowInstance == null || workflowInstance.Status == WorkflowStatus.Finished)
+        // The instance may have finished, or another request may have consumed the bookmark, while we waited for the lock.
+        // In both cases there is nothing left to resume, so treat it like a missing instance.
+        if (workflowInstance == null
+            || workflowInstance.Status == WorkflowStatus.Finished
+            || workflowInstance.WorkflowState.Bookmarks.All(x => x.Id != bookmark.Id))
         {
             await httpContext.Response.SendNotFoundAsync(cancellation: cancellationToken);
             return;
