@@ -1,3 +1,4 @@
+using Elsa.Common;
 using Elsa.Common.Models;
 using Elsa.Common.Multitenancy;
 using Elsa.Workflows.Management;
@@ -176,6 +177,34 @@ public class InterruptedRecoveryScannerTests
         await services.GetRequiredService<InterruptedRecoveryScanner>().ScanAndRequeueAsync(CancellationToken.None);
 
         scopeFactory.Received(1).CreateScope(ownTenant);
+    }
+
+    [Fact(DisplayName = "The container resolves the constructor that takes the clock, so restarts are stamped")]
+    public async Task Container_ResolvesClockConstructor()
+    {
+        StubInstances(new[] { Summary("a") });
+        var now = DateTimeOffset.Parse("2026-04-14T12:00:00Z");
+        var clock = Substitute.For<ISystemClock>();
+        clock.UtcNow.Returns(now);
+        var services = new ServiceCollection()
+            .AddLogging()
+            .AddSingleton(_restarter)
+            .AddSingleton(_instanceStore)
+            .AddSingleton(Microsoft.Extensions.Options.Options.Create(_runtimeOptions))
+            .AddSingleton(Substitute.For<ITenantService>())
+            .AddSingleton<ITenantAccessor>(new DefaultTenantAccessor())
+            .AddSingleton(Substitute.For<ITenantScopeFactory>())
+            .AddSingleton(clock)
+            .AddScoped<InterruptedRecoveryScanner>()
+            .BuildServiceProvider();
+
+        await services.GetRequiredService<InterruptedRecoveryScanner>().ScanAndRequeueAsync(CancellationToken.None);
+
+        Received.InOrder(() =>
+        {
+            _instanceStore.UpdateUpdatedTimestampAsync("a", now, Arg.Any<CancellationToken>());
+            _restarter.RestartWorkflowAsync("a", Arg.Any<CancellationToken>());
+        });
     }
 
     [Fact(DisplayName = "The obsolete constructor still scans the shared store")]
