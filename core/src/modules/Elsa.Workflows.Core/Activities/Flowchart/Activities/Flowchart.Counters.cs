@@ -184,19 +184,90 @@ public partial class Flowchart
             flowScope.RegisterActivityVisit(activity);
         }
 
+        var outboundConnections = flowGraph.GetOutboundConnections(activity);
+        var deferredLoopExits = GetDeferredLoopExits(flowGraph, activity, outboundConnections, outcomes);
+
         // Process each outbound connection from the current activity
-        foreach (var outboundConnection in flowGraph.GetOutboundConnections(activity))
+        foreach (var outboundConnection in outboundConnections)
         {
+            // A loop exit that is not taken while the loop goes around again is not decided yet. It is registered when the loop is left.
+            if (deferredLoopExits.Contains(outboundConnection))
+                continue;
+
             var connectionFollowed = outcomes.Names.Contains(outboundConnection.Source.Port);
             flowScope.RegisterConnectionVisit(outboundConnection, connectionFollowed);
             var outboundActivity = outboundConnection.Target.Activity;
 
             // Determine the scheduling strategy based on connection-type.
             if (flowGraph.IsBackwardConnection(outboundConnection, out var backwardConnectionIsValid))
+            {
+                // A loop whose backward connection is not followed has been left, so its deferred exits are now decided as not taken.
+                if (!connectionFollowed && backwardConnectionIsValid)
+                    hasScheduledActivity |= await RegisterDeferredLoopExitsAsync(flowGraph, flowScope, flowchartContext, completedActivityContext, outboundConnection, completionCallback);
+
                 // Backward connections are scheduled differently
                 hasScheduledActivity |= await MaybeScheduleBackwardConnectionActivityAsync(flowGraph, flowchartContext, completedActivityContext, outboundConnection, outboundActivity, connectionFollowed, backwardConnectionIsValid, completionCallback);
+            }
             else
                 hasScheduledActivity |= await MaybeScheduleOutboundActivityAsync(flowGraph, flowScope, flowchartContext, completedActivityContext, outboundConnection, outboundActivity, completionCallback);
+        }
+
+        return hasScheduledActivity;
+    }
+
+    /// <summary>
+    /// Returns the not-followed connections of the activity that leave a loop which the activity's followed connections stay in.
+    /// Each iteration of the loop visits such an exit, so registering it now would tell the target that this path was decided, while the loop may still exit through it later.
+    /// </summary>
+    private static HashSet<Connection> GetDeferredLoopExits(FlowGraph flowGraph, IActivity activity, List<Connection> outboundConnections, Outcomes outcomes)
+    {
+        var deferredLoopExits = new HashSet<Connection>();
+        var followedConnections = outboundConnections.Where(x => outcomes.Names.Contains(x.Source.Port)).ToList();
+
+        if (followedConnections.Count == 0)
+            return deferredLoopExits;
+
+        foreach (var loopBackConnection in flowGraph.GetLoopBackConnections())
+        {
+            var loopActivities = flowGraph.GetLoopActivities(loopBackConnection);
+
+            if (!loopActivities.Contains(activity) || !followedConnections.Any(x => loopActivities.Contains(x.Target.Activity)))
+                continue;
+
+            var notFollowedExits = outboundConnections.Where(x =>
+                !followedConnections.Contains(x)
+                && !loopActivities.Contains(x.Target.Activity)
+                && !flowGraph.IsBackwardConnection(x, out _));
+
+            deferredLoopExits.UnionWith(notFollowedExits);
+        }
+
+        return deferredLoopExits;
+    }
+
+    /// <summary>
+    /// Registers the exits of a loop that has been left without them being decided yet as not followed, and evaluates their targets.
+    /// An exit is decided once per pass through the loop, so an exit with fewer visits than the loop's start activity is still pending.
+    /// </summary>
+    private static async ValueTask<bool> RegisterDeferredLoopExitsAsync(FlowGraph flowGraph, FlowScope flowScope, ActivityExecutionContext flowchartContext, ActivityExecutionContext? completedActivityContext, Connection loopBackConnection, ActivityCompletionCallback completionCallback)
+    {
+        var hasScheduledActivity = false;
+        var loopActivities = flowGraph.GetLoopActivities(loopBackConnection);
+        var loopStartVisitCount = flowScope.GetActivityVisitCount(loopBackConnection.Target.Activity);
+        var completedActivity = completedActivityContext?.Activity;
+
+        var pendingExits = loopActivities
+            // The completed activity registers its own outbound connections.
+            .Where(x => x != completedActivity)
+            .SelectMany(flowGraph.GetOutboundConnections)
+            .Where(x => !loopActivities.Contains(x.Target.Activity) && !flowGraph.IsBackwardConnection(x, out _))
+            .Where(x => flowScope.GetConnectionVisitCount(x) < loopStartVisitCount)
+            .ToList();
+
+        foreach (var exit in pendingExits)
+        {
+            flowScope.RegisterConnectionVisit(exit, false);
+            hasScheduledActivity |= await MaybeScheduleOutboundActivityAsync(flowGraph, flowScope, flowchartContext, completedActivityContext, exit, exit.Target.Activity, completionCallback);
         }
 
         return hasScheduledActivity;

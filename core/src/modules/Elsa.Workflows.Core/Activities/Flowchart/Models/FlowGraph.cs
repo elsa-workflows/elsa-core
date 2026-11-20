@@ -16,6 +16,8 @@ public class FlowGraph(ICollection<Connection> connections, IActivity? rootActiv
     private readonly Dictionary<Connection, (bool IsBackwardConnection, bool IsValid)> _cachedIsBackwardConnection = new();
     private readonly Dictionary<IActivity, bool> _cachedIsDanglingActivity = new();
     private readonly Dictionary<IActivity, List<IActivity>> _cachedAncestors = new();
+    private List<Connection>? _cachedLoopBackConnections;
+    private readonly Dictionary<Connection, HashSet<IActivity>> _cachedLoopActivities = new();
 
     /// <summary>
     /// Gets the list of forward connections, computing them if not already cached.
@@ -72,6 +74,26 @@ public class FlowGraph(ICollection<Connection> connections, IActivity? rootActiv
     public List<IActivity> GetAncestorActivities(IActivity activity)
     {
         return _cachedAncestors.GetOrAdd(activity, () => ComputeAncestors(activity));
+    }
+
+    /// <summary>
+    /// Retrieves the valid backward connections, each of which closes a loop.
+    /// </summary>
+    public List<Connection> GetLoopBackConnections() => _cachedLoopBackConnections ??= connections.Where(x => IsBackwardConnection(x, out var isValid) && isValid).ToList();
+
+    /// <summary>
+    /// Retrieves the activities of the loop that the specified backward connection closes:
+    /// the activities on forward paths from the connection's target to its source.
+    /// </summary>
+    public HashSet<IActivity> GetLoopActivities(Connection backwardConnection)
+    {
+        return _cachedLoopActivities.GetOrAdd(backwardConnection, () =>
+        {
+            var loopStart = backwardConnection.Target.Activity;
+            var loopEnd = backwardConnection.Source.Activity;
+            var loopBody = GetAncestorActivities(loopEnd).Where(x => GetAncestorActivities(x).Contains(loopStart));
+            return [loopStart, loopEnd, ..loopBody];
+        });
     }
 
     /// <summary>

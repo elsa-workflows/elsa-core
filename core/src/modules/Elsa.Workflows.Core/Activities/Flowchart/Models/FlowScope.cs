@@ -37,7 +37,7 @@ public class FlowScope
     /// </summary>
     /// <param name="activity">The activity to check.</param>
     /// <returns>The visit count of the activity.</returns>
-    private long GetActivityVisitCount(IActivity activity) => ActivitiesVisitCount.GetValueOrDefault(activity.Id, 0);
+    public long GetActivityVisitCount(IActivity activity) => ActivitiesVisitCount.GetValueOrDefault(activity.Id, 0);
 
     /// <summary>
     /// Registers a visit to the specified connection and records whether it was followed.
@@ -57,7 +57,7 @@ public class FlowScope
     /// </summary>
     /// <param name="connection">The connection to check.</param>
     /// <returns>The visit count of the connection.</returns>
-    private long GetConnectionVisitCount(Connection connection) => ConnectionVisitCount.GetValueOrDefault(connection.ToString(), 0);
+    public long GetConnectionVisitCount(Connection connection) => ConnectionVisitCount.GetValueOrDefault(connection.ToString(), 0);
 
     /// <summary>
     /// Determines whether the last visit to the specified connection was followed.
