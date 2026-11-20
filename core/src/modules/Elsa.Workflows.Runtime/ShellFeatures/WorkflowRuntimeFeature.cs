@@ -221,6 +221,7 @@ public class WorkflowRuntimeFeature : IShellFeature
             options.OverflowPolicy = GracefulShutdown.OverflowPolicy;
             options.PausePersistence = GracefulShutdown.PausePersistence;
             options.MaxForceCancelledInstanceIdsReported = GracefulShutdown.MaxForceCancelledInstanceIdsReported;
+            options.InterruptOnHostStop = GracefulShutdown.InterruptOnHostStop;
         });
 
         services
@@ -307,6 +308,7 @@ public class WorkflowRuntimeFeature : IShellFeature
             .AddScoped<WorkflowCommitNotificationBuffer>()
             .AddScoped<IWorkflowCommitNotificationBuffer>(sp => sp.GetRequiredService<WorkflowCommitNotificationBuffer>())
             .AddScoped<INotificationSender, WorkflowCommitNotificationSender>()
+            .AddScoped<IWorkflowStartPersistence, WorkflowStartPersistence>()
             .AddScoped<IWorkflowCommitTransaction, NoopWorkflowCommitTransaction>()
             .AddScoped<DefaultCommitStateHandler>()
             // Decorator: disposes the execution cycle handle AFTER the workflow runner's terminal commit has persisted state,

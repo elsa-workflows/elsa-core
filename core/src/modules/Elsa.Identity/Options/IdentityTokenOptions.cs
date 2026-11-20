@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Elsa.Common.Multitenancy;
 using Elsa.Identity.Constants;
 using Elsa.Identity.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -85,6 +86,19 @@ public class IdentityTokenOptions
             {
                 context.Fail($"The token is not a valid {requiredTokenUse} token.");
                 return;
+            }
+
+            if (context.Principal?.Identity is ClaimsIdentity identity && !identity.HasClaim(claim => claim.Type == TenantPrincipalClaims.BoundTenant))
+            {
+                // Existing signed Elsa tokens carry the previously configured tenant claim, or imply the default tenant.
+                var tenantIds = identity.FindAll(TenantIdClaimsType).Select(claim => claim.Value).Distinct(StringComparer.Ordinal).ToArray();
+                if (tenantIds.Length > 1)
+                {
+                    context.Fail("The token has inconsistent tenant claims.");
+                    return;
+                }
+
+                identity.AddClaim(new(TenantPrincipalClaims.BoundTenant, tenantIds.SingleOrDefault().NormalizeTenantId()));
             }
 
             if (string.Equals(requiredTokenUse, TokenUse.Refresh, StringComparison.Ordinal))

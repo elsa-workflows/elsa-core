@@ -3,13 +3,13 @@ name: Consolidated release candidate
 on:
   # Dispatch from main. The tooling (this workflow's scripts) is main's checkout; the product source is a separate
   # checkout of source_commit, which must be on the version's release branch (release/<major>.<minor>.0, derived from the version).
-  # No tag is required. The same steps run for every version. Publication stays a separate decision: the unpublished
+  # No tag is required. The same steps run for the admitted consolidated release lines. Publication stays a separate decision: the unpublished
   # artifact is pinned in .github/release-pins/consolidated.json and promoted by packages.yml
   # (promote_candidate_version).
   workflow_dispatch:
     inputs:
       version:
-        description: Candidate package version, for example 3.10.1. Its release branch is release/<major>.<minor>.0.
+        description: Candidate package version, for example 3.11.0. Its release branch is release/<major>.<minor>.0.
         required: true
         type: string
       source_commit:
@@ -50,7 +50,7 @@ jobs:
           CANDIDATE_SOURCE: ${{ inputs.source_commit }}
         run: |
           set -euo pipefail
-          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          [[ "$VERSION" =~ ^3\.(10|11)\.(0|[1-9][0-9]*)$ ]]
           IFS=. read -r major minor _ <<< "$VERSION"
           branch="release/$major.$minor.0"
           [[ "$CANDIDATE_SOURCE" =~ ^[a-f0-9]{40}$ ]]
@@ -93,6 +93,9 @@ jobs:
         with:
           python-version: '3.12'
       - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+        env:
+          # The verifier links the selected SDK's NuGet assemblies and targets .NET 10.
+          DOTNET_INSTALL_DIR: ${{ runner.temp }}/dotnet-10
         with:
           dotnet-version: |
             8.0.x
@@ -121,7 +124,7 @@ jobs:
           CANDIDATE_SOURCE: ${{ inputs.source_commit }}
         run: |
           set -euo pipefail
-          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          [[ "$VERSION" =~ ^3\.(10|11)\.(0|[1-9][0-9]*)$ ]]
           IFS=. read -r major minor _ <<< "$VERSION"
           branch="release/$major.$minor.0"
           [[ "$CANDIDATE_SOURCE" =~ ^[a-f0-9]{40}$ ]]
@@ -140,7 +143,7 @@ jobs:
           test "$(git -C source rev-parse HEAD)" = "$CANDIDATE_SOURCE"
           python3 tooling/scripts/integration-program/prepare_consolidated_release_candidate.py \
             --version "$VERSION" --source-root source --output "$RUNNER_TEMP/consolidated-candidate" --remote-sources
-      - name: Guard the 231-ID inventory on the candidate artifacts
+      - name: Guard the version-specific inventory on the candidate artifacts
         env:
           VERSION: ${{ inputs.version }}
           PACKAGES_DIR: ${{ runner.temp }}/consolidated-candidate/artifacts
@@ -192,7 +195,7 @@ jobs:
           VERSION: ${{ inputs.version }}
         run: |
           set -euo pipefail
-          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          [[ "$VERSION" =~ ^3\.(10|11)\.(0|[1-9][0-9]*)$ ]]
           [[ "$ARTIFACT_ID" =~ ^[1-9][0-9]*$ ]]
           [[ "$RUN_ID" =~ ^[1-9][0-9]*$ && "$RUN_ATTEMPT" =~ ^[1-9][0-9]*$ ]]
           [[ "$SOURCE_SHA" =~ ^[a-f0-9]{40}$ && "$RUN_SHA" =~ ^[a-f0-9]{40}$ ]]
@@ -262,6 +265,9 @@ jobs:
           ref: ${{ github.sha }}
           persist-credentials: false
       - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+        env:
+          # The verifier links the selected SDK's NuGet assemblies and targets .NET 10.
+          DOTNET_INSTALL_DIR: ${{ runner.temp }}/dotnet-10
         with:
           dotnet-version: |
             8.0.x

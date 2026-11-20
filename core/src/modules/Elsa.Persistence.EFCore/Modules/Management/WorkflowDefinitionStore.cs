@@ -1,3 +1,4 @@
+using System.Data;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 using System.Text.Json.Serialization;
@@ -5,6 +6,7 @@ using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Common.Multitenancy;
 using Elsa.Extensions;
+using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
@@ -125,6 +127,146 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
     }
 
     /// <inheritdoc />
+    public async Task<bool> TryAddAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await store.AddAsync(definition, OnSaveAsync, cancellationToken);
+            return true;
+        }
+        catch (DbUpdateException ex) when (DbExceptionClassifier.IsDuplicateKey(ex))
+        {
+            return false;
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<bool> TryRetractAsync(WorkflowDefinition expected, CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await store.CreateDbContextAsync(cancellationToken);
+        var updated = await dbContext.WorkflowDefinitions.WhereTenantCanWrite(dbContext)
+            .Where(x => x.Id == expected.Id && x.DefinitionId == expected.DefinitionId && x.Version == expected.Version &&
+                        x.TenantId == expected.TenantId && x.IsPublished && x.IsReadonly == expected.IsReadonly &&
+                        (x.IsSystem == expected.IsSystem || (!expected.IsSystem && x.IsSystem == null!)))
+            .ExecuteUpdateAsync(setters => setters.SetProperty(x => x.IsPublished, false), cancellationToken);
+
+        return updated == 1;
+    }
+
+    /// <inheritdoc />
+    public Task<bool> TryPublishAsync(WorkflowDefinition definition, Func<IReadOnlyCollection<WorkflowDefinition>, bool> matchesExpected,
+        CancellationToken cancellationToken = default) =>
+        TryWriteLatestAsync(definition, matchesExpected, promoteDraft: false, cancellationToken);
+
+    /// <inheritdoc />
+    public Task<bool> TryPromoteExistingDraftAsync(WorkflowDefinition definition, Func<IReadOnlyCollection<WorkflowDefinition>, bool> matchesExpected,
+        CancellationToken cancellationToken = default) =>
+        TryWriteLatestAsync(definition, matchesExpected, promoteDraft: true, cancellationToken);
+
+    private async Task<bool> TryWriteLatestAsync(WorkflowDefinition definition, Func<IReadOnlyCollection<WorkflowDefinition>, bool> matchesExpected,
+        bool promoteDraft, CancellationToken cancellationToken)
+    {
+        await using var dbContext = await store.CreateDbContextAsync(cancellationToken);
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
+        var versions = dbContext.WorkflowDefinitions.Where(version => version.DefinitionId == definition.DefinitionId &&
+            (version.IsLatest || (promoteDraft ? version.Id == definition.Id : version.IsPublished)));
+        var current = await versions.AsTracking().ToListAsync(cancellationToken);
+        if (current.Count == 0 || await versions.WhereTenantCanWrite(dbContext).CountAsync(cancellationToken) != current.Count)
+            return false;
+
+        foreach (var version in current)
+            await OnLoadAsync(dbContext, version, cancellationToken);
+        if (!matchesExpected(current))
+            return false;
+
+        var replacing = current.SingleOrDefault(version => version.Id == definition.Id);
+        if (promoteDraft && (current.Count != 2 || replacing == null || replacing.IsLatest || replacing.IsPublished || replacing.IsReadonly ||
+                             replacing.IsSystem || current.Any(version => version.TenantId.NormalizeTenantId() != replacing.TenantId.NormalizeTenantId()) ||
+                             !definition.IsLatest || definition.IsPublished))
+        {
+            return false;
+        }
+
+        if (replacing != null)
+        {
+            if (replacing.TenantId != definition.TenantId || replacing.Version != definition.Version)
+                return false;
+
+            var entry = dbContext.Entry(replacing);
+            entry.CurrentValues.SetValues(definition);
+            entry.Property("Data").CurrentValue = SerializeState(definition);
+            entry.Property("UsableAsActivity").CurrentValue = definition.Options.UsableAsActivity;
+        }
+        else
+        {
+            if (definition.TenantId.NormalizeTenantId() != dbContext.TenantId.NormalizeTenantId() &&
+                !(definition.TenantId == Tenant.AgnosticTenantId && SharedTenantWriteScope.IsGranted(typeof(WorkflowDefinition))))
+                return false;
+
+            dbContext.WorkflowDefinitions.Add(definition);
+            await OnSaveAsync(dbContext, definition, cancellationToken);
+        }
+
+        foreach (var version in current.Where(version => version.Id != definition.Id))
+        {
+            if (!promoteDraft)
+            {
+                version.IsPublished = false;
+            }
+            version.IsLatest = false;
+        }
+
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            return true;
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return false;
+        }
+        catch (DbUpdateException exception) when (DbExceptionClassifier.IsDuplicateKey(exception))
+        {
+            return false;
+        }
+    }
+
+    /// <inheritdoc />
+    public bool SupportsDeletion(WorkflowDefinitionDeletionPlan plan) => true;
+
+    /// <inheritdoc />
+    public async Task<bool> TryDeleteAsync(WorkflowDefinitionDeletionPlan plan, CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await store.CreateDbContextAsync(cancellationToken);
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
+        var current = await dbContext.WorkflowDefinitions.AsTracking().Where(version => plan.DefinitionIds.Contains(version.DefinitionId)).ToListAsync(cancellationToken);
+        if (!plan.Matches(current))
+            return false;
+
+        var removedIds = plan.Deleted.Select(version => version.Id).ToArray();
+        var promotedIds = plan.Promoted.Select(version => version.Id).ToArray();
+        var changedIds = removedIds.Concat(promotedIds).ToArray();
+        if (await dbContext.WorkflowDefinitions.WhereTenantCanWrite(dbContext).CountAsync(version => changedIds.Contains(version.Id), cancellationToken) != changedIds.Length)
+            return false;
+
+        dbContext.WorkflowDefinitions.RemoveRange(current.Where(version => removedIds.Contains(version.Id)));
+        foreach (var survivor in current.Where(version => promotedIds.Contains(version.Id)))
+            survivor.IsLatest = true;
+
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            return true;
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return false;
+        }
+    }
+
+    /// <inheritdoc />
     public async Task SaveManyAsync(IEnumerable<WorkflowDefinition> definitions, CancellationToken cancellationToken = default)
     {
         await store.SaveManyAsync(definitions, OnSaveAsync, cancellationToken);
@@ -145,7 +287,7 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
         if (filter.TenantAgnostic)
             queryable = queryable.IgnoreQueryFilters();
 
-        var current = await queryable.OrderBy(x => x.CreatedAt).FirstOrDefaultAsync(cancellationToken);
+        var current = await queryable.WhereTenantCanWrite(dbContext).OrderBy(x => x.CreatedAt).FirstOrDefaultAsync(cancellationToken);
 
         if (current == null)
             return WorkflowDefinitionUpdateResult.NotFound();
@@ -155,11 +297,7 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
         if (!matchesExpected(current))
             return WorkflowDefinitionUpdateResult.Conflict();
 
-        var expectedId = current.Id;
-        var expectedVersion = current.Version;
-        var expectedStringData = current.StringData;
-        var expectedName = current.Name;
-        var expectedDescription = current.Description;
+        var expected = current.ShallowClone();
         var expectedData = (string?)dbContext.Entry(current).Property("Data").CurrentValue;
 
         // Preserve shadow state while loading, then keep the callback outside change tracking.
@@ -169,10 +307,10 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
         var nextData = SerializeState(next);
         var nextUsableAsActivity = next.Options.UsableAsActivity;
 
-        if (next.Id != expectedId)
+        if (next.Id != expected.Id)
         {
-            var unmarked = await dbContext.WorkflowDefinitions
-                .Where(MatchesLoadedSnapshot(expectedId, expectedVersion, expectedStringData, expectedName, expectedDescription, expectedData))
+            var unmarked = await dbContext.WorkflowDefinitions.WhereTenantCanWrite(dbContext)
+                .Where(MatchesLoadedSnapshot(expected, expectedData))
                 .ExecuteUpdateAsync(setters => setters.SetProperty(x => x.IsLatest, false), cancellationToken);
 
             if (unmarked == 0)
@@ -187,13 +325,17 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
             return WorkflowDefinitionUpdateResult.Updated(next);
         }
 
-        var updated = await dbContext.WorkflowDefinitions
-            .Where(MatchesLoadedSnapshot(expectedId, expectedVersion, expectedStringData, expectedName, expectedDescription, expectedData))
+        var updated = await dbContext.WorkflowDefinitions.WhereTenantCanWrite(dbContext)
+            .Where(MatchesLoadedSnapshot(expected, expectedData))
             .ExecuteUpdateAsync(
                 setters => setters
                     .SetProperty(x => x.Name, next.Name)
                     .SetProperty(x => x.Description, next.Description)
                     .SetProperty(x => x.StringData, next.StringData)
+                    .SetProperty(x => x.MaterializerName, next.MaterializerName)
+                    .SetProperty(x => x.OriginalSource, next.OriginalSource)
+                    .SetProperty(x => x.ToolVersion, next.ToolVersion)
+                    .SetProperty(x => x.IsReadonly, next.IsReadonly)
                     .SetProperty(x => EF.Property<string?>(x, "Data"), nextData)
                     .SetProperty(x => EF.Property<bool?>(x, "UsableAsActivity"), nextUsableAsActivity),
                 cancellationToken);
@@ -206,25 +348,22 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
     }
 
     /// <summary>
-    /// The loaded snapshot <see cref="TryUpdateLatestAsync"/> will only overwrite: identity, the ETag-covered
-    /// graph, the serialized <c>Data</c> blob (source XML, variables, options) and the name/description columns
-    /// a metadata-only save changes. The row must still be <c>IsLatest</c> so a published→draft loser
-    /// is Conflict rather than a unique-key failure on <c>(DefinitionId, Version)</c>. Zero rows means
-    /// another writer got there first.
+    /// Compares the stored graph, metadata and access flags before applying a draft mutation.
     /// </summary>
-    private static Expression<Func<WorkflowDefinition, bool>> MatchesLoadedSnapshot(
-        string expectedId,
-        int expectedVersion,
-        string? expectedStringData,
-        string? expectedName,
-        string? expectedDescription,
-        string? expectedData) =>
-        x => x.Id == expectedId
-             && x.Version == expectedVersion
+    private static Expression<Func<WorkflowDefinition, bool>> MatchesLoadedSnapshot(WorkflowDefinition expected, string? expectedData) =>
+        x => x.Id == expected.Id
+             && x.Version == expected.Version
              && x.IsLatest
-             && x.StringData == expectedStringData
-             && x.Name == expectedName
-             && x.Description == expectedDescription
+             && x.StringData == expected.StringData
+             && x.Name == expected.Name
+             && x.Description == expected.Description
+             && x.MaterializerName == expected.MaterializerName
+             && x.OriginalSource == expected.OriginalSource
+             && x.ToolVersion == expected.ToolVersion
+             && x.IsReadonly == expected.IsReadonly
+             && (x.IsSystem == expected.IsSystem || (!expected.IsSystem && x.IsSystem == null!))
+             && x.IsPublished == expected.IsPublished
+             && x.TenantId == expected.TenantId
              && EF.Property<string?>(x, "Data") == expectedData;
 
     /// <inheritdoc />

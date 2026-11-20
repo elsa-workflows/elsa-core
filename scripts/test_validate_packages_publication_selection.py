@@ -35,6 +35,9 @@ REJECTED = (
     ("refs/heads/main", {"npm"}, "requires a release tag"),
     ("refs/heads/3.8.5", {"nuget"}, "requires a release tag"),
     ("refs/tags/3.8.5", {"feedz"}, "limited to 3.10.x prerelease"),
+    ("refs/tags/3.11.0", {"nuget"}, "requires a sealed candidate"),
+    ("refs/tags/03.11.0", {"nuget"}, "requires a sealed candidate"),
+    ("refs/tags/3.11.0-preview.1", {"nuget"}, "requires a sealed candidate"),
     ("refs/tags/3.8.0-rc2", {"feedz"}, "limited to 3.10.x prerelease"),
     ("refs/tags/3.10.0", {"feedz"}, "owned by the candidate promotion mode"),
     ("refs/tags/3.10.0", {"npm"}, "fail-closed"),
@@ -114,6 +117,8 @@ class SelectionErrorsTests(unittest.TestCase):
     def test_candidate_promotion_is_main_only_and_exclusive(self):
         self.assertEqual([], errors("refs/heads/main", set(), promote="3.10.1"))
         self.assertEqual([], errors("refs/heads/main", set(), promote="3.10.2"))
+        self.assertEqual([], errors("refs/heads/main", set(), promote="3.11.0"))
+        self.assertIn("requires refs/heads/main", " ".join(errors("refs/heads/release/3.11.0", set(), promote="3.11.0")))
         for ref in ("refs/heads/release/3.10.0", "refs/heads/feature/x", "refs/tags/3.10.1", "refs/tags/3.10.0"):
             with self.subTest(ref=ref):
                 self.assertIn("requires refs/heads/main", " ".join(errors(ref, set(), promote="3.10.1")))

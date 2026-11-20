@@ -1,0 +1,14 @@
+{
+  "name": "@elsa-workflows/picomatch-build",
+  "version": "4.0.7+elsa.1",
+  "private": true,
+  "description": "Picomatch 4.0.7 with repeated extglobs disabled for Elsa Studio build tooling",
+  "author": "Jon Schlinkert (https://github.com/jonschlinkert)",
+  "repository": "https://github.com/micromatch/picomatch",
+  "license": "MIT",
+  "main": "index.js",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=12"
+  }
+}

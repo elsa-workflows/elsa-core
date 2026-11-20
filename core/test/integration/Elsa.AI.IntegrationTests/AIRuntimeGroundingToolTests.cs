@@ -43,7 +43,9 @@ public class AIRuntimeGroundingToolTests
         using var provider = services.BuildServiceProvider();
         var registry = provider.GetRequiredService<IAIToolRegistry>();
 
-        using var tool = await registry.FindAsync("incidents.search", new AIToolQuery { ActorId = "user-1" });
+        Assert.Null(await registry.FindAsync("incidents.search", new AIToolQuery { ActorId = "user-1", UserPermissions = ["ai/chat:execute"] }));
+
+        using var tool = await registry.FindAsync("incidents.search", new AIToolQuery { ActorId = "user-1", UserPermissions = ["workflows/instances:view"] });
         var result = await tool!.ExecuteAsync(new AIToolExecutionContext
         {
             ActorId = "user-1",

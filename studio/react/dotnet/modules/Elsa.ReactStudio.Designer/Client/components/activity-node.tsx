@@ -109,7 +109,7 @@ function ActivityNodeComponent({ data, selected }: NodeProps<ActivityFlowNode>) 
       className={cn(
         "accent-rail relative min-w-[210px] max-w-[280px] rounded-lg border bg-card text-card-foreground transition-[box-shadow,border-color]",
         "shadow-[0_1px_2px_rgb(15_23_42/0.06),0_8px_24px_-12px_rgb(15_23_42/0.25)] dark:shadow-[0_1px_2px_rgb(0_0_0/0.4)]",
-        selected ? "border-primary ring-2 ring-primary/25" : "border-border hover:border-muted-foreground/40",
+        selected ? "border-primary ring-2 ring-primary" : "border-border hover:border-muted-foreground/40",
         faulted && !selected && "border-status-danger",
         stats?.isBlocked && !selected && "border-status-warning",
         "group/node",

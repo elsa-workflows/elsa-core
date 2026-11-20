@@ -54,6 +54,8 @@ pnpm host                # ASP.NET host on port 5201, mounted at /studio-preview
 # In another terminal: pnpm dev  (Vite on port 5173; config proxied to the host)
 ```
 
+The local build tools reject repeated extglob syntax in file filters. Standard globstars and brace expressions remain available. [Build dependency details](vendor/picomatch-build/README.md)
+
 Point `servers[0].url` in `studio.config.json` at your Elsa API, which is typically something like
 `https://localhost:5001/elsa/api`, then sign in. The default authentication provider is Elsa Identity,
 so a username and password is all you need.
@@ -189,7 +191,7 @@ samples/weather-module/     external consumer compiled against packed packages
 | `pnpm dev` | Vite development server on port 5173; run the configuration host too. |
 | `pnpm host` | ASP.NET host on port 5201; reads the source configuration file per request. |
 | `pnpm build` | Type check and build ESM/CSS for the ASP.NET host. |
-| `pnpm test:browser` | Browser tests against the built ASP.NET host. |
+| `pnpm test:browser` | Test the built ASP.NET host in Chromium, Firefox and WebKit. Install the engines with `pnpm exec playwright install chromium firefox webkit` and select an individual engine with `--project`. |
 | `pnpm test` | Unit tests (Vitest). |
 | `pnpm lint` | ESLint. |
 | `pnpm typecheck` | Type check. |

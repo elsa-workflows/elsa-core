@@ -15,7 +15,13 @@ public class Endpoint(ITenantService tenantService) : ElsaEndpointWithoutRequest
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        var id = Route<string>("id")!;
+        if (!TenantAdministration.HasHostAuthority(User))
+        {
+            await Send.ForbiddenAsync(ct);
+            return;
+        }
+
+        var id = TenantAdministration.NormalizeRouteId(Route<string>("id")!);
         var tenant = await tenantService.FindAsync(id, ct);
         
         if (tenant == null)
@@ -24,6 +30,6 @@ public class Endpoint(ITenantService tenantService) : ElsaEndpointWithoutRequest
             return;
         }
         
-        await Send.OkAsync(tenant, ct);
+        await Send.OkAsync(TenantAdministration.ToDirectoryEntry(tenant), ct);
     }
 }

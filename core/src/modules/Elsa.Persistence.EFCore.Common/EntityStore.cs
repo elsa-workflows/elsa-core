@@ -40,4 +40,15 @@ public class EntityStore<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbCo
     /// <param name="onSaving">The callback to invoke before saving the entities.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     public async Task SaveManyAsync(IEnumerable<TEntity> entities, Func<TDbContext, TEntity, CancellationToken, ValueTask>? onSaving = null, CancellationToken cancellationToken = default) => await SaveManyAsync(entities, x => x.Id, onSaving, cancellationToken);
+
+    // The workflow stores use these overloads with callbacks that only prepare serialized columns.
+    // Arbitrary callbacks and key selectors on the public Store API retain exclusive access.
+    internal Task SaveByIdAsync(TEntity entity, Func<TDbContext, TEntity, CancellationToken, ValueTask> onSaving, CancellationToken cancellationToken) =>
+        SaveAsync(entity, x => x.Id, onSaving, true, cancellationToken);
+
+    internal Task SaveManyByIdAsync(IEnumerable<TEntity> entities, Func<TDbContext, TEntity, CancellationToken, ValueTask> onSaving, CancellationToken cancellationToken) =>
+        SaveManyAsync(entities, x => x.Id, onSaving, true, cancellationToken);
+
+    internal Task AddManyByIdAsync(IEnumerable<TEntity> entities, Func<TDbContext, TEntity, CancellationToken, ValueTask> onSaving, CancellationToken cancellationToken) =>
+        AddManyAsync(entities, onSaving, true, cancellationToken);
 }

@@ -15,7 +15,7 @@
             <MudItem xs="12" md="@GetColumnSpan(descriptor)">
                 <MudStack Spacing="1">
                     <DescriptorField Field="descriptor" Settings="Model.AdapterSettings" ReadOnly="@ReadOnly" Changed="@OnAdapterSettingsChangedAsync" />
-                    @if (DescriptorEditorState.IsUnsafeSettingActive(descriptor, Model.AdapterSettings))
+                    @if (RequiresTrustConfirmation(descriptor))
                     {
                         <MudAlert Severity="Severity.Warning" Dense="true">This provider trust setting can weaken authentication safety. It requires explicit confirmation and the provider-trust permission.</MudAlert>
                     }
@@ -93,7 +93,9 @@
     private IReadOnlyList<ConnectionFieldDescriptor> VisibleSecretFields => Adapter.Fields
         .Where(descriptor => descriptor.IsSecretBinding && DescriptorEditorState.IsVisible(descriptor, Model.AdapterSettings))
         .ToArray();
-    private bool HasActiveUnsafeSettings => Adapter.Fields.Any(descriptor => DescriptorEditorState.IsUnsafeSettingActive(descriptor, Model.AdapterSettings));
+    private bool HasActiveUnsafeSettings => Adapter.Fields.Any(RequiresTrustConfirmation);
+    private bool RequiresTrustConfirmation(ConnectionFieldDescriptor descriptor) =>
+        DescriptorEditorState.RequiresTrustConfirmation(descriptor, Connection.AdapterSettings, Model.AdapterSettings);
 
     private async Task OnAdapterSettingsChangedAsync()
     {

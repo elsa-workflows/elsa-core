@@ -53,6 +53,35 @@ public class ExecutionCycleRegistryTests
         }
     }
 
+    [Fact(DisplayName = "Begin configures the handle before a drain can see it")]
+    public void BeginConfiguresBeforeRegistering()
+    {
+        var sut = new ExecutionCycleRegistry(_sources, _clock, new DefaultTenantAccessor());
+        var listedWhileConfiguring = new List<ExecutionCycleHandle>();
+        ExecutionCycleHandle? configured = null;
+
+        using var handle = sut.BeginCycle("instance-1", ingressSourceName: null, CancellationToken.None, cancelCallback: null, configure: h =>
+        {
+            configured = h;
+            listedWhileConfiguring.AddRange(sut.ListActiveCycles());
+        });
+
+        Assert.Same(handle, configured);
+        Assert.Empty(listedWhileConfiguring);
+        Assert.Contains(handle, sut.ListActiveCycles());
+    }
+
+    [Fact(DisplayName = "A registry that does not override the configure overload still configures the handle it returns")]
+    public void DefaultConfigureOverloadConfiguresReturnedHandle()
+    {
+        IExecutionCycleRegistry sut = new MinimalRegistry();
+        ExecutionCycleHandle? configured = null;
+
+        var handle = sut.BeginCycle("instance-1", ingressSourceName: null, CancellationToken.None, cancelCallback: null, configure: h => configured = h);
+
+        Assert.Same(handle, configured);
+    }
+
     [Fact(DisplayName = "The obsolete constructor records no tenant")]
     public void ObsoleteConstructorRecordsNoTenant()
     {
@@ -357,5 +386,13 @@ public class ExecutionCycleRegistryTests
         handle.Dispose();
         await handle.Disposed.WaitAsync(TimeSpan.FromSeconds(1));
         Assert.True(handle.Disposed.IsCompletedSuccessfully);
+    }
+
+    private sealed class MinimalRegistry : IExecutionCycleRegistry
+    {
+        public int ActiveCount => 0;
+        public ExecutionCycleHandle BeginCycle(string workflowInstanceId, string? ingressSourceName, CancellationToken linkedToken, Action? cancelCallback = null) =>
+            new(Guid.NewGuid(), workflowInstanceId, ingressSourceName, DateTimeOffset.UtcNow, linkedToken, cancelCallback: cancelCallback);
+        public IReadOnlyCollection<ExecutionCycleHandle> ListActiveCycles() => [];
     }
 }

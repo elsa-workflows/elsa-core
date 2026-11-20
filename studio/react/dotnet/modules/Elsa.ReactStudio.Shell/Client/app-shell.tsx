@@ -47,7 +47,7 @@ export function AppShell({ title, children }: { title?: string; children: ReactN
               <UserMenu />
             </div>
           </header>
-          <main className={cn("flex flex-1 flex-col min-h-0", fullBleed ? "" : "p-4 lg:p-6")}>{children}</main>
+          <div className={cn("flex flex-1 flex-col min-h-0", fullBleed ? "" : "p-4 lg:p-6")}>{children}</div>
         </SidebarInset>
       </SidebarProvider>
     </ConfirmProvider>

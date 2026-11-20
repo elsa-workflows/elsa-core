@@ -67,7 +67,7 @@ export function ActivityCard({
       style={{ "--rail-color": accent } as React.CSSProperties}
       className={cn(
         "accent-rail relative w-full rounded-lg border bg-card text-left text-card-foreground shadow-[0_1px_2px_rgb(15_23_42/0.06),0_8px_24px_-12px_rgb(15_23_42/0.25)] outline-none transition-[box-shadow,border-color] dark:shadow-[0_1px_2px_rgb(0_0_0/0.4)]",
-        selected ? "border-primary ring-2 ring-primary/25" : cn("border-border hover:border-muted-foreground/40", tone),
+        selected ? "border-primary ring-2 ring-primary" : cn("border-border hover:border-muted-foreground/40", tone),
         className,
       )}
     >

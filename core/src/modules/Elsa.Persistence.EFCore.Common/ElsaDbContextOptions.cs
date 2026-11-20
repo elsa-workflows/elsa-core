@@ -24,6 +24,12 @@ public class ElsaDbContextOptions
     /// </summary>
     public string? MigrationsAssemblyName { get; set; }
 
+    /// <summary>
+    /// When true, EF store writes in this process take exclusive access instead of per-ID reservations.
+    /// Set this when the database compares keys in a way the folded reservation does not cover, such as a PostgreSQL ICU numeric collation.
+    /// </summary>
+    public bool ExclusiveStoreWrites { get; set; }
+
     public IDictionary<Type, Action<ModelBuilder>> ProviderSpecificConfigurations { get; set; } = new Dictionary<Type, Action<ModelBuilder>>();
 
     public void ConfigureModel<TDbContext>(Action<ModelBuilder> configure) where TDbContext : DbContext

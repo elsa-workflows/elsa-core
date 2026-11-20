@@ -4,6 +4,8 @@ using Elsa.Common.Models;
 using Elsa.Workflows.Api.Constants;
 using Elsa.Workflows.Api.Requirements;
 using Elsa.Workflows.Management;
+using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Exceptions;
 using Elsa.Workflows.Management.Filters;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Authorization;
@@ -22,6 +24,8 @@ internal class BulkRetract(IWorkflowDefinitionStore store, IWorkflowDefinitionPu
 
     public override async Task<Response> ExecuteAsync(Request request, CancellationToken cancellationToken)
     {
+        await using var mutationLock = await WorkflowDefinitionMutationLock.AcquireAsync(HttpContext.RequestServices, cancellationToken);
+
         var authorizationResult = await authorizationService.AuthorizeAsync(User, new NotReadOnlyResource(), AuthorizationPolicies.NotReadOnlyPolicy);
 
         if (!authorizationResult.Succeeded)
@@ -34,6 +38,9 @@ internal class BulkRetract(IWorkflowDefinitionStore store, IWorkflowDefinitionPu
         var notFound = new List<string>();
         var notPublished = new List<string>();
         var skipped = new List<string>();
+
+        var targets = new List<(string DefinitionId, WorkflowDefinition Published)>();
+        var plannedVersionIds = new HashSet<string>();
 
         foreach (var definitionId in request.DefinitionIds)
         {
@@ -50,20 +57,32 @@ internal class BulkRetract(IWorkflowDefinitionStore store, IWorkflowDefinitionPu
             }
 
             var published = definitions.FirstOrDefault(d => d.IsPublished);
-            if (published is null)
+            if (published is null || !plannedVersionIds.Add(published.Id))
             {
                 notPublished.Add(definitionId);
                 continue;
             }
 
-            if (published.IsReadonly)
+            targets.Add((definitionId, published.ShallowClone()));
+        }
+
+        if (!await authorizationService.CanMutateAsync(User, targets.Select(target => target.Published)))
+        {
+            await Send.ForbiddenAsync(cancellationToken);
+            return null!;
+        }
+
+        foreach (var (definitionId, published) in targets)
+        {
+            try
+            {
+                await workflowDefinitionPublisher.RetractAsync(published, cancellationToken);
+                retracted.Add(definitionId);
+            }
+            catch (WorkflowDefinitionEditConflictException)
             {
                 skipped.Add(definitionId);
-                continue;
             }
-
-            await workflowDefinitionPublisher.RetractAsync(published, cancellationToken);
-            retracted.Add(definitionId);
         }
 
         return new Response(retracted, notPublished, notFound, skipped);

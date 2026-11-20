@@ -15,6 +15,7 @@ from validate_packages_id_set import (
     STUDIO_CONTENT,
     apply_exclude_ids,
     exclusion_dependency_errors,
+    expected_ids_file,
     filename_package_id,
     id_set_errors,
     is_stable_310,
@@ -22,6 +23,7 @@ from validate_packages_id_set import (
     packed_ids,
     parse_exclude_ids,
     resolve_exclude_ids,
+    react_preview_errors,
     studio_content_errors,
 )
 
@@ -49,6 +51,50 @@ class Stable310Tests(unittest.TestCase):
         targets = Path(__file__).resolve().parents[1] / "build/ConsolidatedPackageProof.targets"
         self.assertIn(STABLE_310_PATTERN, targets.read_text(encoding="utf-8"))
 
+
+
+class Stable311Tests(unittest.TestCase):
+    def test_inventory_extends_stable_310_with_react_studio_and_bpmn(self):
+        legacy = set(load_expected_ids(DEFAULT_EXPECTED))
+        expected = set(load_expected_ids(expected_ids_file("3.11.0")))
+        additions = expected - legacy
+
+        self.assertEqual(251, len(expected))
+        self.assertTrue(legacy <= expected)
+        self.assertEqual(18, sum(name.startswith("Elsa.ReactStudio") for name in additions))
+        self.assertEqual({"Elsa.Studio.Bpmn", "Elsa.Studio.Bpmn.BpmnJs"},
+                         {name for name in additions if not name.startswith("Elsa.ReactStudio")})
+
+    def test_package_directory_cannot_supply_another_versions_bytes(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            (directory / "Elsa.3.10.1.nupkg").write_bytes(b"nupkg")
+            with self.assertRaises(SystemExit):
+                packed_ids(directory, "3.11.0")
+
+    def test_react_packages_require_preview_metadata_and_root_source_notice(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            package = directory / "Elsa.ReactStudio.Contracts.3.11.0.nupkg"
+            def write_package(tags, license_xml, paths):
+                with zipfile.ZipFile(package, "w") as archive:
+                    archive.writestr("Elsa.ReactStudio.Contracts.nuspec",
+                                     f"<package><metadata>{license_xml}<tags>{tags}</tags></metadata></package>")
+                    for path in paths:
+                        archive.writestr(path, "fixture")
+
+            license_file = '<license type="file">SOURCE-NOTICE.md</license>'
+            paths = ("SOURCE-NOTICE.md", "README.md")
+            for tags, license_xml, assets, valid in (
+                ("Elsa;ReactStudio;Preview", license_file, paths, True),
+                ("Elsa ReactStudio Preview", license_file, paths, True),
+                ("Elsa ReactStudio", license_file, paths, False),
+                ("Elsa;ReactStudio;Preview", '<license type="expression">MIT</license>', paths, False),
+                ("Elsa;ReactStudio;Preview", license_file, ("docs/SOURCE-NOTICE.md", "README.md"), False),
+            ):
+                with self.subTest(tags=tags, license_xml=license_xml, assets=assets):
+                    write_package(tags, license_xml, assets)
+                    self.assertEqual(valid, not react_preview_errors(directory))
 
 class IdSetTests(unittest.TestCase):
     def setUp(self):
@@ -78,6 +124,23 @@ class IdSetTests(unittest.TestCase):
             directory = Path(temporary)
             self.write_packages(directory, ["Elsa", "Elsa.Workflows.Core"], version="3.10.0-preview.1")
             self.assertEqual(["Elsa", "Elsa.Workflows.Core"], packed_ids(directory))
+
+    def test_packed_ids_are_sorted_ordinally_on_every_platform(self):
+        # Windows pathlib sorts case-insensitively, POSIX by code point, so
+        # Elsa.AI.* and Elsa.Actors.* trade places across OSes (#9258). The
+        # guard must order the IDs by name the same way on every platform.
+        self.assertIn("Elsa.AI.Abstractions", self.expected)
+        self.assertIn("Elsa.Actors.ProtoActor", self.expected)
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            self.write_packages(directory, ["Elsa.Actors.ProtoActor", "Elsa.AI.Abstractions"])
+            self.assertEqual(["Elsa.AI.Abstractions", "Elsa.Actors.ProtoActor"], packed_ids(directory))
+
+    def test_expected_list_is_in_ordinal_order(self):
+        # packed_ids order is compared against this list; the explicit
+        # key=lambda path: path.name sorts keep the POSIX file order on
+        # case-insensitive filesystems too (#9258).
+        self.assertEqual(self.expected, sorted(self.expected))
 
     def test_packed_ids_reject_mixed_versions(self):
         with tempfile.TemporaryDirectory() as temporary:

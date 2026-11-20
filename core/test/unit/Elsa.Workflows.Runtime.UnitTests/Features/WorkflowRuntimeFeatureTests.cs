@@ -48,6 +48,18 @@ public class WorkflowRuntimeFeatureTests
     }
 
     [Fact]
+    public void ShellGracefulShutdown_ForwardsInterruptOnHostStop()
+    {
+        var services = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
+        new ShellRuntimeFeature { GracefulShutdown = new() { InterruptOnHostStop = true } }.ConfigureServices(services);
+
+        using var provider = Microsoft.Extensions.DependencyInjection.ServiceCollectionContainerBuilderExtensions.BuildServiceProvider(services);
+        var options = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<Microsoft.Extensions.Options.IOptions<GracefulShutdownOptions>>(provider);
+
+        Assert.True(options.Value.InterruptOnHostStop);
+    }
+
+    [Fact]
     public void AddWorkflow_AllowsClosedGenericWorkflowType()
     {
         var workflowType = typeof(GenericWorkflow<int>);

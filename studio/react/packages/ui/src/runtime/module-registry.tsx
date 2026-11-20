@@ -25,18 +25,18 @@ const ModuleRegistryContext = createContext<ModuleRegistryValue | null>(null);
 export function ModuleRegistryProvider({ modules, children }: { modules: StudioModule[]; children: ReactNode }) {
   const t = useTranslation();
   const config = useStudioConfig();
-  const { catalog, isResolved, isError } = useRemoteFeatures();
+  const { catalog, isResolved, legacyWithoutCatalog } = useRemoteFeatures();
 
   const enabled = useMemo(
     () =>
       modules.filter((m) => {
         if (!m.core && !(config.features[m.id]?.enabled ?? false)) return false;
         if (!m.requiresServerFeatures?.length) return true;
-        // When the catalog can't be read (older backend, 404) fall back to the configuration flag alone.
-        if (isError) return true;
+        // Older backends without a catalogue can still use explicitly configured modules.
+        if (legacyWithoutCatalog) return !m.core && config.features[m.id]?.enabled === true;
         return m.requiresServerFeatures.every((f) => catalog.has(f));
       }).map(module => localizeModule(module, t)),
-    [modules, config.features, catalog, isError, t],
+    [modules, config.features, catalog, legacyWithoutCatalog, t],
   );
 
   const value = useMemo(() => ({ all: modules, enabled, featuresResolved: isResolved }), [modules, enabled, isResolved]);

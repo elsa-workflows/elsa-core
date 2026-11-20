@@ -1,3 +1,4 @@
+using Elsa.Common.DistributedHosting;
 using System.Collections;
 using System.Reflection;
 using Elsa.Common.Models;
@@ -9,12 +10,14 @@ using Elsa.Workflows;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.State;
+using Medallion.Threading;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
@@ -262,11 +265,15 @@ public class HttpWorkflowsMiddlewareTests
             .RunAsync(Arg.Any<WorkflowGraph>(), Arg.Do<RunWorkflowOptions?>(options => runOptions = options), Arg.Any<CancellationToken>())
             // The middleware reads only the resulting state's incidents.
             .Returns(new RunWorkflowResult(null!, new WorkflowState(), workflow, null, Journal.Empty));
-        var serviceProvider = new ServiceCollection()
+        var activationGate = Substitute.For<IWorkflowActivationGate>();
+        activationGate.EvaluateAsync(workflow, Arg.Any<string?>(), Arg.Any<CancellationToken>())
+            .Returns(_ => new WorkflowActivationLease(true, null));
+        using var serviceProvider = new ServiceCollection()
             .AddSingleton<IRouteMatcher, ExactRouteMatcher>()
             .AddSingleton<IRouteTable>(new ListRouteTable([new(BookmarkPath)]))
             .AddSingleton<IStimulusHasher, FixedStimulusHasher>()
             .AddSingleton(Substitute.For<IHttpEndpointAuthorizationHandler>())
+            .AddSingleton(activationGate)
             .AddSingleton(workflowRunner)
             .BuildServiceProvider();
         var httpContext = new DefaultHttpContext
@@ -283,9 +290,75 @@ public class HttpWorkflowsMiddlewareTests
             new FixedHttpWorkflowLookupService(new(new WorkflowGraph(workflow, root, [root]), [trigger])));
 
         Assert.NotNull(runOptions);
+        Assert.True(runOptions.RequireNewInstance);
         Assert.Equal(trigger.ActivityId, runOptions.TriggerActivityId);
         Assert.NotNull(runOptions.Properties);
         Assert.Equal(triggerHash, runOptions.Properties[TriggerWorkflowProperties.StimulusHash]);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_WhenTheBookmarkedInstanceHasFinished_ReturnsNotFoundWithoutResuming()
+    {
+        // Arrange
+        var resume = new ResumeScenario();
+        resume.Instance.Status = WorkflowStatus.Finished;
+
+        // Act
+        var httpContext = await resume.InvokeAsync(_middleware);
+
+        // Assert
+        Assert.Equal(StatusCodes.Status404NotFound, httpContext.Response.StatusCode);
+        Assert.Empty(resume.WorkflowRunner.ReceivedCalls());
+    }
+
+    [Fact]
+    public async Task InvokeAsync_WhenTheInstanceFinishesWhileWaitingForTheInstanceLock_ReturnsNotFoundWithoutResuming()
+    {
+        // Arrange: another resume finishes the instance while this request waits for the lock.
+        var resume = new ResumeScenario();
+        resume.OnLockAcquired = () => resume.Instance.Status = WorkflowStatus.Finished;
+
+        // Act
+        var httpContext = await resume.InvokeAsync(_middleware);
+
+        // Assert
+        Assert.Equal(StatusCodes.Status404NotFound, httpContext.Response.StatusCode);
+        Assert.Empty(resume.WorkflowRunner.ReceivedCalls());
+        resume.LockProvider.Received(1).CreateLock($"workflow-instance:{resume.Instance.Id}");
+    }
+
+    [Fact]
+    public async Task InvokeAsync_WhenTheBookmarkIsConsumedWhileWaitingForTheInstanceLock_ReturnsNotFoundWithoutResuming()
+    {
+        // Arrange: another resume consumes the bookmark while this request waits for the lock.
+        var resume = new ResumeScenario();
+        resume.OnLockAcquired = () => resume.Instance.WorkflowState.Bookmarks.Clear();
+
+        // Act
+        var httpContext = await resume.InvokeAsync(_middleware);
+
+        // Assert
+        Assert.Equal(StatusCodes.Status404NotFound, httpContext.Response.StatusCode);
+        Assert.Empty(resume.WorkflowRunner.ReceivedCalls());
+    }
+
+    [Fact]
+    public async Task InvokeAsync_WhenTheBookmarkedInstanceIsRunning_ResumesItWhileHoldingTheInstanceLock()
+    {
+        // Arrange
+        var resume = new ResumeScenario();
+        var lockHeldDuringRun = false;
+        resume.WorkflowRunner
+            .When(x => x.RunAsync(Arg.Any<Workflow>(), Arg.Any<WorkflowState>(), Arg.Any<RunWorkflowOptions?>(), Arg.Any<CancellationToken>()))
+            .Do(_ => lockHeldDuringRun = resume.LockHeld);
+
+        // Act
+        await resume.InvokeAsync(_middleware);
+
+        // Assert
+        await resume.WorkflowRunner.Received(1).RunAsync(Arg.Any<Workflow>(), resume.Instance.WorkflowState, Arg.Is<RunWorkflowOptions?>(x => x!.BookmarkId == ResumeScenario.BookmarkId), Arg.Any<CancellationToken>());
+        Assert.True(lockHeldDuringRun);
+        Assert.False(resume.LockHeld);
     }
 
     [Fact]
@@ -408,6 +481,173 @@ public class HttpWorkflowsMiddlewareTests
                 query = query.Where(x => x.TenantId == currentTenantId);
 
             return query;
+        }
+    }
+
+    [Fact]
+    public async Task InvokeAsync_WhenTheInstanceLockIsNotAcquiredInTime_ReturnsConflictWithoutResuming()
+    {
+        // Arrange: another run holds the instance lock for longer than this request waits.
+        var resume = new ResumeScenario(requestTimeout: TimeSpan.FromSeconds(5));
+        resume.LockUnavailable = true;
+
+        // Act
+        var httpContext = await resume.InvokeAsync(_middleware);
+
+        // Assert
+        Assert.Equal(StatusCodes.Status409Conflict, httpContext.Response.StatusCode);
+        Assert.Empty(resume.WorkflowRunner.ReceivedCalls());
+    }
+
+    [Fact]
+    public async Task InvokeAsync_WhenTheRequestTimeoutIsShorterThanTheLockTimeout_WaitsForTheInstanceLockNoLongerThanTheRequestTimeout()
+    {
+        // Arrange
+        var resume = new ResumeScenario(requestTimeout: TimeSpan.FromSeconds(5));
+
+        // Act
+        await resume.InvokeAsync(_middleware);
+
+        // Assert
+        Assert.Equal(TimeSpan.FromSeconds(5), resume.RequestedLockTimeout);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_WhenThereIsNoRequestTimeout_WaitsForTheInstanceLockForTheConfiguredLockTimeout()
+    {
+        // Arrange
+        var resume = new ResumeScenario();
+
+        // Act
+        await resume.InvokeAsync(_middleware);
+
+        // Assert
+        Assert.Equal(new DistributedLockingOptions().LockAcquisitionTimeout, resume.RequestedLockTimeout);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)] // Timeout.InfiniteTimeSpan
+    [InlineData(60 * 60 * 1000)] // Longer than the default lock timeout.
+    public async Task InvokeAsync_WhenTheRequestTimeoutIsNotAShorterPositiveValue_WaitsForTheInstanceLockForTheConfiguredLockTimeout(int requestTimeoutMilliseconds)
+    {
+        // Arrange
+        var resume = new ResumeScenario(requestTimeout: TimeSpan.FromMilliseconds(requestTimeoutMilliseconds));
+
+        // Act
+        await resume.InvokeAsync(_middleware);
+
+        // Assert
+        Assert.Equal(new DistributedLockingOptions().LockAcquisitionTimeout, resume.RequestedLockTimeout);
+    }
+
+    /// <summary>
+    /// A request that matches one HTTP bookmark of a running workflow instance, with a fake per-instance lock.
+    /// </summary>
+    private class ResumeScenario
+    {
+        public const string BookmarkId = "bookmark-1";
+        private readonly StoredBookmark _bookmark;
+        private readonly IServiceProvider _serviceProvider;
+
+        public ResumeScenario(TimeSpan? requestTimeout = null)
+        {
+            _bookmark = new()
+            {
+                Id = BookmarkId,
+                Hash = BookmarkHash,
+                WorkflowInstanceId = "instance-1",
+                Payload = new HttpEndpointBookmarkPayload(BookmarkPath, "get", authorize: false, requestTimeout: requestTimeout)
+            };
+            Instance = new()
+            {
+                Id = _bookmark.WorkflowInstanceId,
+                DefinitionVersionId = "workflow-version",
+                Status = WorkflowStatus.Running,
+                WorkflowState = new() { Bookmarks = [new() { Id = BookmarkId }] }
+            };
+
+            var workflow = new Workflow { Id = "workflow" };
+            var root = new ActivityNode(workflow, "Root");
+            var bookmarkStore = Substitute.For<IBookmarkStore>();
+            bookmarkStore.FindManyAsync(Arg.Any<BookmarkFilter>(), Arg.Any<CancellationToken>()).Returns(new ValueTask<IEnumerable<StoredBookmark>>([_bookmark]));
+            var workflowInstanceStore = Substitute.For<IWorkflowInstanceStore>();
+            workflowInstanceStore.FindAsync(Arg.Is<WorkflowInstanceFilter>(x => x.Id == Instance.Id), Arg.Any<CancellationToken>()).Returns(_ => new ValueTask<WorkflowInstance?>(Instance));
+            var workflowDefinitionService = Substitute.For<IWorkflowDefinitionService>();
+            workflowDefinitionService.FindWorkflowGraphAsync(Instance.DefinitionVersionId, Arg.Any<CancellationToken>()).Returns(new WorkflowGraph(workflow, root, [root]));
+            WorkflowRunner
+                .RunAsync(Arg.Any<Workflow>(), Arg.Any<WorkflowState>(), Arg.Any<RunWorkflowOptions?>(), Arg.Any<CancellationToken>())
+                .Returns(new RunWorkflowResult(null!, new WorkflowState(), workflow, null, Journal.Empty));
+
+            var lockHandle = Substitute.For<IDistributedSynchronizationHandle>();
+            lockHandle.DisposeAsync().Returns(_ =>
+            {
+                LockHeld = false;
+                return ValueTask.CompletedTask;
+            });
+            var instanceLock = Substitute.For<IDistributedLock>();
+            instanceLock.TryAcquireAsync(Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>()).Returns(_ =>
+            {
+                RequestedLockTimeout = _.Arg<TimeSpan>();
+                if (LockUnavailable)
+                    return new ValueTask<IDistributedSynchronizationHandle?>((IDistributedSynchronizationHandle?)null);
+
+                LockHeld = true;
+                OnLockAcquired();
+                return new ValueTask<IDistributedSynchronizationHandle?>(lockHandle);
+            });
+            LockProvider.CreateLock($"workflow-instance:{Instance.Id}").Returns(instanceLock);
+
+            _serviceProvider = new ServiceCollection()
+                .AddOptions()
+                .AddSingleton<IRouteMatcher, ExactRouteMatcher>()
+                .AddSingleton<IRouteTable>(new ListRouteTable([new(BookmarkPath)]))
+                .AddSingleton<IStimulusHasher, FixedStimulusHasher>()
+                .AddSingleton(bookmarkStore)
+                .AddSingleton(workflowInstanceStore)
+                .AddSingleton(workflowDefinitionService)
+                .AddSingleton(Substitute.For<IHttpEndpointAuthorizationHandler>())
+                .AddSingleton(WorkflowRunner)
+                .AddSingleton(LockProvider)
+                .BuildServiceProvider();
+        }
+
+        public WorkflowInstance Instance { get; }
+        public IWorkflowRunner WorkflowRunner { get; } = Substitute.For<IWorkflowRunner>();
+        public IDistributedLockProvider LockProvider { get; } = Substitute.For<IDistributedLockProvider>();
+        public bool LockHeld { get; private set; }
+
+        /// <summary>
+        /// Simulates another run holding the instance lock for longer than the caller waits.
+        /// </summary>
+        public bool LockUnavailable { get; set; }
+
+        /// <summary>
+        /// The time the middleware was willing to wait for the instance lock.
+        /// </summary>
+        public TimeSpan RequestedLockTimeout { get; private set; }
+
+        /// <summary>
+        /// Runs right after the instance lock is acquired, to simulate changes made by another request while this one waited.
+        /// </summary>
+        public Action OnLockAcquired { get; set; } = () => { };
+
+        public async Task<HttpContext> InvokeAsync(HttpWorkflowsMiddleware middleware)
+        {
+            var httpContext = new DefaultHttpContext
+            {
+                RequestServices = _serviceProvider
+            };
+            httpContext.Request.Path = BookmarkPath;
+            httpContext.Request.Method = HttpMethod.Get.Method;
+
+            await middleware.InvokeAsync(
+                httpContext,
+                _serviceProvider,
+                Microsoft.Extensions.Options.Options.Create(new HttpActivityOptions { BasePath = null }),
+                new EmptyHttpWorkflowLookupService());
+
+            return httpContext;
         }
     }
 

@@ -1,18 +1,23 @@
 using System.IO.Compression;
 using System.Text.Json;
+using Elsa.Testing.Shared;
 using Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.ImportFiles;
 using Elsa.Workflows.Management.Models;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
+using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Security;
 
 public class WorkflowDefinitionImportFileReaderTests
 {
     private readonly IApiSerializer _apiSerializer = Substitute.For<IApiSerializer>();
+    private readonly ITestOutputHelper _testOutputHelper;
 
-    public WorkflowDefinitionImportFileReaderTests()
+    public WorkflowDefinitionImportFileReaderTests(ITestOutputHelper testOutputHelper)
     {
+        _testOutputHelper = testOutputHelper;
         _apiSerializer.Deserialize<WorkflowDefinitionModel>(Arg.Any<string>())
             .Returns(call => new WorkflowDefinitionModel { DefinitionId = call.Arg<string>() });
     }
@@ -84,6 +89,23 @@ public class WorkflowDefinitionImportFileReaderTests
 
         Assert.Empty(result.Models);
         Assert.Equal("empty.json is not a valid workflow definition.", result.ErrorMessage);
+    }
+
+    [Theory]
+    [InlineData("""{ "version": "abc" }""")]
+    [InlineData("""{ "version": "99999999999" }""")]
+    public async Task ReadAsync_WrongTypeValue_IsTreatedLikeMalformedJson(string json)
+    {
+        // Arrange
+        var realSerializer = new TestApplicationBuilder(_testOutputHelper).Build().GetRequiredService<IApiSerializer>();
+        var files = new FormFileCollection { CreateJsonFile(json, "wrong-type.json") };
+
+        // Act
+        var result = await WorkflowDefinitionImportFileReader.ReadAsync(files, realSerializer, () => false, CancellationToken.None);
+
+        // Assert
+        Assert.Empty(result.Models);
+        Assert.Equal("wrong-type.json is not a valid workflow definition.", result.ErrorMessage);
     }
 
     [Theory]

@@ -1,10 +1,10 @@
 using Elsa.Common.Models;
 using Elsa.Extensions;
+using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
-using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.OrderDefinitions;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
@@ -80,9 +80,16 @@ public class EFBookmarkQueueDeadLetterStore(Store<RuntimeElsaDbContext, Bookmark
     public async Task<BookmarkQueueDeadLetterItem?> TryMarkReplayedAsync(string id, string queueItemId, DateTimeOffset replayedAt, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await store.CreateDbContextAsync(cancellationToken);
-        var affectedRows = await dbContext.Set<BookmarkQueueDeadLetterItem>()
-            .Where(x => x.Id == id && x.CanReplay && x.ReplayedAt == null)
-            .ExecuteUpdateAsync(
+        var query = dbContext.Set<BookmarkQueueDeadLetterItem>().WhereTenantCanWrite(dbContext).Where(x => x.Id == id && x.CanReplay && x.ReplayedAt == null);
+        var entity = await query.FirstOrDefaultAsync(cancellationToken);
+        if (entity == null)
+            return null;
+
+        await OnLoadAsync(dbContext, entity, cancellationToken);
+        if (!entity.CanReplay)
+            return null;
+
+        var affectedRows = await query.ExecuteUpdateAsync(
                 setters => setters
                     .SetProperty(x => x.CanReplay, false)
                     .SetProperty(x => x.ReplayedAt, replayedAt)
@@ -92,11 +99,9 @@ public class EFBookmarkQueueDeadLetterStore(Store<RuntimeElsaDbContext, Bookmark
         if (affectedRows == 0)
             return null;
 
-        var entity = await dbContext.Set<BookmarkQueueDeadLetterItem>().AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
-        if (entity == null)
-            return null;
-
-        await OnLoadAsync(dbContext, entity, cancellationToken);
+        entity.CanReplay = false;
+        entity.ReplayedAt = replayedAt;
+        entity.ReplayedQueueItemId = queueItemId;
         return entity;
     }
 
@@ -152,7 +157,7 @@ public class EFBookmarkQueueDeadLetterStore(Store<RuntimeElsaDbContext, Bookmark
 
     private ValueTask OnSaveAsync(RuntimeElsaDbContext dbContext, BookmarkQueueDeadLetterItem entity, CancellationToken cancellationToken)
     {
-        dbContext.Entry(entity).Property("SerializedOptions").CurrentValue = entity.Options != null ? serializer.Serialize(entity.Options) : default;
+        dbContext.Entry(entity).Property("SerializedOptions").CurrentValue = BookmarkQueueOptionsSerialization.Write(serializer, entity.Options, entity.UnreadableOptions);
         return default;
     }
 
@@ -162,7 +167,9 @@ public class EFBookmarkQueueDeadLetterStore(Store<RuntimeElsaDbContext, Bookmark
             return default;
 
         var optionsJson = dbContext.Entry(entity).Property<string>("SerializedOptions").CurrentValue;
-        entity.Options = !string.IsNullOrEmpty(optionsJson) ? serializer.Deserialize<ResumeBookmarkOptions>(optionsJson) : null;
+        (entity.Options, entity.UnreadableOptions) = BookmarkQueueOptionsSerialization.Read(serializer, optionsJson);
+        if (entity.UnreadableOptions != null)
+            entity.CanReplay = false;
 
         return default;
     }

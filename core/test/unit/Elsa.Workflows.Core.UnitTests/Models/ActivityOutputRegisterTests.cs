@@ -84,6 +84,55 @@ public class ActivityOutputRegisterTests
         Assert.Equal("containerIds", exception.ParamName);
     }
 
+    [Fact(DisplayName = "A prepared record is found by activity ID, by activity instance ID, and only in its own container")]
+    public async Task RecordPrepared_IsFoundLikeALiveRecord()
+    {
+        var scope = await CreateScopeAsync();
+
+        scope.Register.Record(new ActivityOutputRecord(scope.BranchA.Id, ProducerId, "restored-instance", "Value", 1));
+
+        Assert.True(scope.Register.TryFindOutputByActivityId(ProducerId, "Value", [scope.Root.Id, scope.BranchA.Id], out var branchAValue));
+        Assert.False(scope.Register.TryFindOutputByActivityId(ProducerId, "Value", [scope.Root.Id, scope.BranchB.Id], out _));
+        Assert.Equal(1, branchAValue);
+        Assert.Equal(1, scope.Register.FindOutputByActivityId(ProducerId, "Value"));
+        Assert.Equal(1, scope.Register.FindOutputByActivityInstanceId("restored-instance", "Value"));
+        Assert.Single(scope.Register.FindMany(ProducerId, "Value"));
+    }
+
+    [Fact(DisplayName = "A live record made after a prepared record in the same container is the most recent value")]
+    public async Task RecordPrepared_ThenLiveRecord_LiveRecordWins()
+    {
+        var scope = await CreateScopeAsync();
+
+        scope.Register.Record(new ActivityOutputRecord(scope.BranchA.Id, ProducerId, "restored-instance", ActivityOutputRegister.DefaultOutputName, 1));
+        await scope.RecordAsync(scope.BranchA, 2);
+
+        Assert.True(scope.Register.TryFindOutputByActivityId(ProducerId, null, [scope.Root.Id, scope.BranchA.Id], out var value));
+        Assert.Equal(2, value);
+        Assert.Equal(1, scope.Register.FindOutputByActivityInstanceId("restored-instance"));
+    }
+
+    [Fact(DisplayName = "A prepared null value is found as a recorded null")]
+    public async Task RecordPrepared_NullValue_ReturnsTrueWithNull()
+    {
+        var scope = await CreateScopeAsync();
+
+        scope.Register.Record(new ActivityOutputRecord(scope.BranchA.Id, ProducerId, "restored-instance", ActivityOutputRegister.DefaultOutputName, null));
+
+        Assert.True(scope.Register.TryFindOutputByActivityId(ProducerId, null, [scope.Root.Id, scope.BranchA.Id], out var value));
+        Assert.Null(value);
+    }
+
+    [Fact(DisplayName = "Recording a null prepared record throws")]
+    public void RecordPrepared_Null_Throws()
+    {
+        var register = new ActivityOutputRegister();
+
+        var exception = Assert.Throws<ArgumentNullException>(() => register.Record(null!));
+
+        Assert.Equal("record", exception.ParamName);
+    }
+
     private static async Task<OutputScope> CreateScopeAsync()
     {
         var branchA = new Sequence { Id = "BranchA" };

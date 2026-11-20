@@ -502,6 +502,11 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantAccesso
     /// <returns>The number of records updated.</returns>
     public async Task<int> UpdateAsync(T record, Expression<Func<T, object>>[] props, Action<ParameterizedQuery> filter, CancellationToken cancellationToken = default)
     {
+        if (ConsumeForcedAffectedRows() is { } forced)
+        {
+            return forced;
+        }
+
         using var connection = dbConnectionProvider.GetConnection();
         var fields = props.Select(x => x.GetPropertyName()).ToArray();
         var query = dbConnectionProvider.CreateQuery().Update(TableName, record, fields);
@@ -575,7 +580,7 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantAccesso
     /// <param name="tenantAgnostic">Whether to ignore the tenant filter.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns><c>true</c> if any records match the specified query.</returns>
-    public async Task<bool> AnyAsync(Action<ParameterizedQuery> filter, bool tenantAgnostic, CancellationToken cancellationToken = default)
+    public async Task<bool> AnyAsync(Action<ParameterizedQuery> filter, bool tenantAgnostic, CancellationToken cancellationToken)
     {
         var query = dbConnectionProvider.CreateQuery().From(TableName, PrimaryKey);
         ApplyTenantFilter(query, tenantAgnostic);
@@ -656,7 +661,7 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantAccesso
     /// Writes and deletes match the ambient tenant only. Shared <c>*</c> rows stay visible on
     /// reads but cannot be taken over, deleted, or filter-updated by a concrete tenant.
     /// </summary>
-    private void ApplyWriteTenantScope(ParameterizedQuery query)
+    internal void ApplyWriteTenantScope(ParameterizedQuery query)
     {
         var tenantId = tenantAccessor.Tenant?.Id;
         if (string.IsNullOrEmpty(tenantId))

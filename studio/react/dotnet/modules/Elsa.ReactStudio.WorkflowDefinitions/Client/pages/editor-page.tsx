@@ -33,7 +33,7 @@ import { CallContextStatus } from "../components/call-context/call-context-statu
 import { useCallContext } from "../components/call-context/use-call-context";
 import { readCallTarget, useCallGraphService } from "../call-graph";
 import { WorkflowEditorProvider, type WorkflowEditorContextValue } from "../editor-context";
-import { toModel, useWorkflowDefinition, useWorkflowDefinitionMutations } from "../hooks";
+import { toModel, useWorkflowDefinition, useWorkflowDefinitionMutations, useWorkflowDefinitions } from "../hooks";
 import { WorkflowDefinitionRoutes } from "../routes";
 import { href } from "@elsa-workflows/react-studio-sdk/routing";
 import { useUnsavedChanges } from "@elsa-workflows/react-studio-sdk/unsaved-changes";
@@ -113,6 +113,13 @@ function EditorWorkspace({
   const readOnly = viewingOldVersion || initial.isReadonly === true || !canWrite;
 
   const [definition, setDefinition] = useState<WorkflowDefinition>(initial);
+  const published = useWorkflowDefinitions(
+    { definitionIds: [definition.definitionId], versionOptions: "Published", pageSize: 1 },
+    { enabled: canExecute && !definition.isPublished },
+  );
+  const runnableDefinition = definition.isPublished
+    ? definition
+    : published.data?.items.find(item => item.definitionId === definition.definitionId && item.isPublished);
   const [savedSnapshot, setSavedSnapshot] = useState(() => JSON.stringify(toModel(initial)));
   const [saving, setSaving] = useState(false);
   const [runOpen, setRunOpen] = useState(false);
@@ -154,6 +161,7 @@ function EditorWorkspace({
         const result = await mutations.save.mutateAsync({ model, publish: options?.publish ?? false });
         const saved = result.workflowDefinition;
         if (result.validationErrors?.length) toast.warning(_t("Saved with validation errors"), { description: result.validationErrors.join("\n") });
+        if (result.validationWarnings?.length) toast.warning(_t("Published with warnings"), { description: result.validationWarnings.join("\n") });
         // Keep the user's graph; only adopt server-assigned identity/version fields.
         setDefinition((d) => ({ ...d, id: saved.id, version: saved.version, isLatest: saved.isLatest, isPublished: saved.isPublished, createdAt: saved.createdAt }));
         setSavedSnapshot(JSON.stringify(model));
@@ -348,7 +356,7 @@ function EditorWorkspace({
             viewingOldVersion={viewingOldVersion}
             canPublish={canPublish}
             canRetract={canRetract}
-            canExecute={canExecute}
+            canRunPublishedWorkflow={canExecute && !!runnableDefinition}
             onSave={() => void save()}
             onPublish={() => void publish()}
             onUnpublish={() => void unpublish()}
@@ -402,7 +410,7 @@ function EditorWorkspace({
               )}
             </ResizablePanelGroup>
           </div>
-          <RunWorkflowDialog definition={runOpen ? definition : null} onOpenChange={(o) => !o && setRunOpen(false)} />
+          <RunWorkflowDialog definition={runOpen && canExecute ? runnableDefinition ?? null : null} onOpenChange={(o) => !o && setRunOpen(false)} />
         </DesignerProvider>
       </ReactFlowProvider>
     </WorkflowEditorProvider>

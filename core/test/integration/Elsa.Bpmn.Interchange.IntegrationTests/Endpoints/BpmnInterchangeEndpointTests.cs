@@ -19,6 +19,7 @@ using Elsa.Workflows;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Options;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 using FastEndpoints;
@@ -163,6 +164,78 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Equal(["Unbound_1"], UnboundElementIdsOf(await response.Content.ReadAsStringAsync()));
+    }
+
+    [Theory]
+    [InlineData("import", false)]
+    [InlineData("import", true)]
+    [InlineData("document", false)]
+    [InlineData("document", true)]
+    [InlineData("xml", true)]
+    public async Task WritesToProtectedBpmnDefinitionAreForbidden(string operation, bool isSystem)
+    {
+        var definitionId = await ImportCamundaOrderProcessAsync();
+        using var scope = _app!.Services.CreateScope();
+        var store = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionStore>();
+        var filter = WorkflowDefinitionHandle.ByDefinitionId(definitionId, VersionOptions.Latest).ToFilter();
+        var definition = Assert.IsType<WorkflowDefinition>(await store.FindAsync(filter));
+        definition.IsReadonly = !isSystem;
+        definition.IsSystem = isSystem;
+        await store.SaveAsync(definition);
+
+        var before = await LatestStoredAsync(definitionId);
+        var xml = ReadAsset("camunda-order-process.bpmn").Replace("Order Handled", "Updated");
+        HttpResponseMessage response;
+        switch (operation)
+        {
+            case "import":
+                using (var content = new MultipartFormDataContent())
+                {
+                    AddBpmnFile(content, xml, "file");
+                    content.Add(new StringContent(definitionId), "DefinitionId");
+                    response = await PostAuthenticatedAsync("bpmn/import", content, "workflows/definitions:write");
+                }
+                break;
+            case "document":
+                var (etag, json) = await GetDocumentAsync(definitionId);
+                response = await PutDocumentAsync(definitionId, json.Replace("Order Handled", "Updated"), etag);
+                break;
+            default:
+                var (xmlETag, _) = await GetXmlAsync(definitionId);
+                response = await PutXmlAsync(definitionId, xml, xmlETag);
+                break;
+        }
+
+        using (response)
+            Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+
+        Assert.Equal(before, await LatestStoredAsync(definitionId));
+        var after = Assert.Single(await store.FindManyAsync(new() { DefinitionId = definitionId }));
+        Assert.Equal(isSystem, after.IsSystem);
+        Assert.Equal(!isSystem, after.IsReadonly);
+    }
+
+    [Fact]
+    public async Task ReadOnlyModeForbidsBpmnCreationAndReplacement()
+    {
+        var definitionId = await ImportCamundaOrderProcessAsync();
+        var (etag, json) = await GetDocumentAsync(definitionId);
+        var before = await LatestStoredAsync(definitionId);
+        _app!.Services.GetRequiredService<IOptions<ManagementOptions>>().Value.IsReadOnlyMode = true;
+
+        using var create = await CreateAsync("New BPMN");
+        using var content = new MultipartFormDataContent();
+        AddBpmnFile(content, ReadAsset("camunda-order-process.bpmn"), "file");
+        using var import = await PostAuthenticatedAsync("bpmn/import", content, "workflows/definitions:write");
+        using var update = await PutDocumentAsync(definitionId, json.Replace("Order Handled", "Updated"), etag);
+
+        Assert.Equal(HttpStatusCode.Forbidden, create.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, import.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, update.StatusCode);
+        Assert.Equal(before, await LatestStoredAsync(definitionId));
+        using var scope = _app.Services.CreateScope();
+        var store = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionStore>();
+        Assert.Single(await store.FindManyAsync(new()));
     }
 
     [Fact]
@@ -1647,7 +1720,6 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         draft.Outputs = [new OutputDefinition { Name = "OrderId", Type = typeof(string) }];
         draft.Outcomes = ["Fulfilled"];
         draft.ToolVersion = new Version(1, 2, 3);
-        draft.IsReadonly = true;
         draft.CustomProperties["Custom:Owner"] = "fulfillment-team-lead";
 
         await publisher.SaveDraftAsync(draft);

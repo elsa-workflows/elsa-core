@@ -31,9 +31,10 @@ internal class Trigger : ElsaEndpointWithoutRequest
     /// <inheritdoc />
     public override async Task HandleAsync(CancellationToken cancellationToken)
     {
-        var token = Query<string>("t")!;
+        var token = Query<string?>("t", false);
 
-        if (!_tokenService.TryDecryptToken<EventTokenPayload>(token, out var payload))
+        if (string.IsNullOrWhiteSpace(token) || !_tokenService.TryDecryptToken<EventTokenPayload>(token, out var payload)
+            || string.IsNullOrWhiteSpace(payload?.EventName) || string.IsNullOrWhiteSpace(payload.WorkflowInstanceId))
         {
             AddError("Invalid token.");
             await Send.ErrorsAsync(cancellation: cancellationToken);

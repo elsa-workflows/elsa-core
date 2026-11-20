@@ -61,7 +61,7 @@ export interface DataTableProps<T> {
   isLoading?: boolean;
   emptyMessage?: ReactNode;
   /** Optional selection; omit to hide the checkbox column. */
-  selection?: { selected: Set<string>; onChange: (next: Set<string>) => void };
+  selection?: { selected: Set<string>; onChange: (next: Set<string>) => void; rowLabel?: (row: T) => string };
   sort?: SortState;
   onSortChange?: (sort: SortState) => void;
   /** Server-side paging. `page` is 0-based. */
@@ -243,7 +243,7 @@ export function DataTable<T>({
           <TableHeader>
             <TableRow>
               {selection && (
-                <TableHead className="w-8 bg-muted/60">
+                <TableHead scope="col" className="w-8 bg-muted/60">
                   <Checkbox
                     checked={allSelected}
                     indeterminate={!allSelected && someSelected}
@@ -255,8 +255,9 @@ export function DataTable<T>({
               {visibleColumns.map((c) => (
                 <TableHead
                   key={c.id}
+                  scope="col"
                   className={cn(
-                    "bg-muted/60 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground",
+                    "bg-muted/60 text-xs font-semibold uppercase tracking-wider text-muted-foreground",
                     c.headerClassName,
                   )}
                   style={c.width ? { width: c.width } : undefined}
@@ -319,7 +320,7 @@ export function DataTable<T>({
                         <Checkbox
                           checked={selection.selected.has(key)}
                           onCheckedChange={() => toggleOne(key)}
-                          aria-label={_t("Select row")}
+                          aria-label={selection.rowLabel ? _t("Select {{name}}", { name: selection.rowLabel(row) }) : _t("Select row")}
                         />
                       </TableCell>
                     )}
@@ -340,6 +341,7 @@ export function DataTable<T>({
           <div className="flex items-center gap-2">
             <span>{_t("Rows per page")}</span>
             <SimpleSelect
+              aria-label={_t("Rows per page")}
               size="sm"
               className="w-20"
               value={String(paging.pageSize) as (typeof PAGE_SIZES)[number]}

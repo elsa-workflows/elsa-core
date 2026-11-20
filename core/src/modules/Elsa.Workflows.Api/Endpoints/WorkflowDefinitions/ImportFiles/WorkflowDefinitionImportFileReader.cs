@@ -101,6 +101,7 @@ internal static class WorkflowDefinitionImportFileReader
         }
         catch (JsonException)
         {
+            // Malformed JSON and wrong-type values (e.g. "version": "abc") both surface as JsonException.
             return InvalidDefinition();
         }
 

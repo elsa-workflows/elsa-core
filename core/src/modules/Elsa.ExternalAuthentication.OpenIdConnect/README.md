@@ -33,6 +33,8 @@ The adapter uses the authorization-code flow, validates issuer, signature, audie
 
 Manual trust additionally requires `issuer`, `authorizationEndpoint`, and `tokenEndpoint`, plus either `jwksUri` or pinned `signingKeys`.
 
+Setting, changing, or removing provider trust settings on a database-owned connection requires the Provider Trust override permission and explicit confirmation. These settings include the trust mode, discovery URL, provider endpoints, signing keys, client ID, and client authentication method. Connection editors can save presentation changes independently of provider trust.
+
 For a callback with the default Elsa API prefix:
 
 ```text

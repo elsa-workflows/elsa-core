@@ -21,6 +21,9 @@ public class FlowScope
     [JsonInclude]
     private Dictionary<string, bool> ConnectionLastVisitFollowed { get; init; } = new();
 
+    [JsonInclude]
+    private HashSet<string> DeferredConnections { get; init; } = new();
+
     /// <summary>
     /// Registers a visit to the specified activity, incrementing its visit count.
     /// </summary>
@@ -50,7 +53,28 @@ public class FlowScope
         ConnectionVisitCount.TryAdd(connectionId, 0);
         ConnectionVisitCount[connectionId]++;
         ConnectionLastVisitFollowed[connectionId] = followed;
+        DeferredConnections.Remove(connectionId);
     }
+
+    /// <summary>
+    /// Marks a loop exit as deferred: it was not taken, but the loop has not been left yet, so it is registered later.
+    /// </summary>
+    /// <param name="connection">The loop exit.</param>
+    /// <param name="deferred">Whether the exit is deferred.</param>
+    public void SetConnectionDeferred(Connection connection, bool deferred)
+    {
+        if (deferred)
+            DeferredConnections.Add(connection.ToString());
+        else
+            DeferredConnections.Remove(connection.ToString());
+    }
+
+    /// <summary>
+    /// Determines whether the specified loop exit is deferred until its loop is left.
+    /// </summary>
+    /// <param name="connection">The loop exit.</param>
+    /// <returns>True if the exit is deferred, otherwise false.</returns>
+    public bool IsConnectionDeferred(Connection connection) => DeferredConnections.Contains(connection.ToString());
 
     /// <summary>
     /// Gets the number of times the specified connection has been visited.

@@ -4,3 +4,6 @@ packages:
   - dotnet/modules/*/Client
 onlyBuiltDependencies:
   - esbuild
+
+overrides:
+  picomatch: file:./vendor/picomatch-build

@@ -72,15 +72,18 @@ test("a culture switch preserves the current unsaved workflow, selected activity
 });
 
 test("culture preferences are separate for authenticated subjects", async ({ page }) => {
+  const definitions = "/studio-preview/workflows/definitions";
   await fixture(page, "alice");
-  await page.goto("/studio-preview/workflows/definitions");
+  await page.goto(definitions);
   await dutch(page);
   const setUser = (subject: string) => page.evaluate(({ api, jwt }) => localStorage.setItem("elsa-studio:auth:" + encodeURIComponent(api), JSON.stringify({ accessToken: jwt })), { api, jwt: token(subject) });
   await setUser("bob");
-  await page.reload();
+  await page.goto(definitions, { waitUntil: "domcontentloaded" });
+  await expect(page.getByRole("heading", { name: "Workflow definitions", exact: true })).toBeVisible();
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
   await setUser("alice");
-  await page.reload();
+  await page.goto(definitions, { waitUntil: "domcontentloaded" });
+  await expect(page.getByRole("heading", { name: "Werkstroomdefinities", exact: true })).toBeVisible();
   await expect(page.locator("html")).toHaveAttribute("lang", "nl");
 });
 

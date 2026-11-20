@@ -10,6 +10,9 @@ and use `pnpm install --frozen-lockfile` for subsequent builds. Then run
 NuGet package references only. Until the Preview packages are published, use the
 Elsa repository's authoring verification command with its local packed feed.
 
+Keep the private build matcher under `Module/Client/vendor`. It rejects repeated
+extglobs in file filters and is used only while installing and building the client.
+
 Make the module package and Elsa packages available in your NuGet sources, then
 `dotnet run --project Host --urls http://127.0.0.1:5204` and open `/studio-preview/`.
 The sample host uses anonymous development authentication. Configure authentication

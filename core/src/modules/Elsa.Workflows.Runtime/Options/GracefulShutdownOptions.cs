@@ -49,4 +49,14 @@ public class GracefulShutdownOptions
     /// </summary>
     public int MaxForceCancelledInstanceIdsReported { get; set; } = 100;
 
+    /// <summary>
+    /// Whether a host-stop drain interrupts the execution cycles still running at its deadline instead of cancelling
+    /// them. An interrupted workflow is not cancelled and keeps its status; later commits of its cycle are dropped. The
+    /// drain persists it where the interrupted-workflow scan on the next start continues it: a committed checkpoint is
+    /// marked <see cref="WorkflowSubStatus.Interrupted"/>, a resume that never committed is queued again, and a fresh run
+    /// that never committed is persisted as not started. Shell deactivation and operator force keep cancelling.
+    /// Defaults to <c>false</c>.
+    /// </summary>
+    public bool InterruptOnHostStop { get; set; }
+
 }

@@ -58,7 +58,7 @@ public sealed partial class AdmissionWorkflowRuntime : IWorkflowRuntime
                 // The admission execution service serialises resumption of an admitted instance;
                 // keep the same run path, with the pending decision made against the stored state.
                 var state = await inner.ExportStateAsync(cancellationToken);
-                return state.SubStatus == WorkflowSubStatus.Pending
+                return state.SubStatus == WorkflowSubStatus.Pending && WorkflowStartDelivery.Matches(state, request.StartDeliveryId)
                     ? await execution.ResumeAsync(owned, request, cancellationToken)
                     : null;
             }

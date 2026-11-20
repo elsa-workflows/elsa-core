@@ -1,9 +1,11 @@
 ﻿using System.Text.Json;
+using Elsa.Expressions.Helpers;
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.CommitStates;
 using Elsa.Workflows.Exceptions;
+using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Middleware.Activities;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
@@ -187,8 +189,43 @@ public class BackgroundActivityInvokerMiddleware(
             if (outputDescriptor == null)
                 continue;
 
+            if (outputDescriptor.IsDictionaryWithValueOfOutput)
+            {
+                CaptureDictionaryOutput(context, outputDescriptor, outputEntry.Value);
+                continue;
+            }
+
             var output = (Output?)outputDescriptor.ValueGetter(activity);
             context.Set(output, outputEntry.Value, outputDescriptor.Name);
+        }
+    }
+
+    /// <summary>
+    /// Applies the captured entries of a dictionary output to the outputs with the same keys, recording each under its composite name.
+    /// </summary>
+    private static void CaptureDictionaryOutput(ActivityExecutionContext context, OutputDescriptor outputDescriptor, object? capturedValue)
+    {
+        var outputs = InputOutputCollections.ReadDictionary<Output>(outputDescriptor.ValueGetter(context.Activity));
+
+        // A non-serializable output is captured as a placeholder string, so it has no entries to restore.
+        if (outputs == null || outputDescriptor.IsSerializable == false)
+        {
+            return;
+        }
+
+        var capturedEntries = capturedValue.ConvertTo<Dictionary<string, object?>>();
+
+        if (capturedEntries == null)
+        {
+            return;
+        }
+
+        foreach (var (key, value) in capturedEntries)
+        {
+            if (outputs.TryGetValue(key, out var output) && output != null)
+            {
+                context.Set(output, value, DictionaryEntryNames.GetOutputName(outputDescriptor.Name, key));
+            }
         }
     }
 

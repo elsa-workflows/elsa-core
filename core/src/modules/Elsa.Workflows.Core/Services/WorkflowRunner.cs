@@ -100,7 +100,7 @@ public class WorkflowRunner(
             schedulingWorkflowInstanceId: options?.SchedulingWorkflowInstanceId,
             schedulingCallStackDepth: options?.SchedulingCallStackDepth);
 
-        return await RunAsync(workflowExecutionContext);
+        return await RunAsync(workflowExecutionContext, options?.RequireNewInstance == true);
     }
 
     /// <inheritdoc />
@@ -209,11 +209,14 @@ public class WorkflowRunner(
             }
         }
 
-        return await RunAsync(workflowExecutionContext);
+        return await RunAsync(workflowExecutionContext, options?.RequireNewInstance == true);
     }
 
     /// <inheritdoc />
-    public async Task<RunWorkflowResult> RunAsync(WorkflowExecutionContext workflowExecutionContext)
+    public Task<RunWorkflowResult> RunAsync(WorkflowExecutionContext workflowExecutionContext) =>
+        RunAsync(workflowExecutionContext, requireNewInstance: false);
+
+    private async Task<RunWorkflowResult> RunAsync(WorkflowExecutionContext workflowExecutionContext, bool requireNewInstance)
     {
         var guard = serviceProvider.GetService(typeof(IWorkflowExecutionGuard)) as IWorkflowExecutionGuard ?? workflowExecutionContext.GetService<IWorkflowExecutionGuard>();
         IWorkflowExecutionAuthorization? authorization = null;
@@ -237,6 +240,15 @@ public class WorkflowRunner(
         using var loggingScope = logger.BeginScope(loggerState);
         var workflow = workflowExecutionContext.Workflow;
         var cancellationToken = workflowExecutionContext.CancellationToken;
+
+        if (requireNewInstance)
+        {
+            if (workflowExecutionContext.SubStatus != WorkflowSubStatus.Pending)
+                throw new InvalidOperationException("Only a pending workflow instance can be created.");
+
+            var startPersistence = workflowExecutionContext.GetRequiredService<IWorkflowStartPersistence>();
+            await startPersistence.CreateAsync(workflowExecutionContext, cancellationToken);
+        }
 
         await notificationSender.SendAsync(new WorkflowExecuting(workflow, workflowExecutionContext), cancellationToken);
 

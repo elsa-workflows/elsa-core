@@ -1,3 +1,4 @@
+using Elsa.Common;
 using Elsa.Common.Multitenancy;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Filters;
@@ -19,6 +20,7 @@ public sealed class InterruptedRecoveryScanner : IInterruptedRecoveryScanner
     private readonly ITenantService? _tenantService;
     private readonly ITenantAccessor? _tenantAccessor;
     private readonly ITenantScopeFactory? _tenantScopeFactory;
+    private readonly ISystemClock? _systemClock;
 
     [Obsolete("Use the constructor that accepts an ITenantScopeFactory instead. Without it, tenants with their own database are not recovered. Removed in the next major version.")]
     public InterruptedRecoveryScanner(
@@ -27,10 +29,11 @@ public sealed class InterruptedRecoveryScanner : IInterruptedRecoveryScanner
         IOptions<RuntimeOptions> runtimeOptions,
         ILogger<InterruptedRecoveryScanner> logger,
         ITenantService? tenantService = null,
-        ITenantAccessor? tenantAccessor = null) : this(restarter, instanceStore, runtimeOptions, logger, tenantService, tenantAccessor, null)
+        ITenantAccessor? tenantAccessor = null) : this(restarter, instanceStore, runtimeOptions, logger, tenantService, tenantAccessor, null, null)
     {
     }
 
+    [Obsolete("Use the constructor that accepts an ISystemClock instead. Without it, restarts are not stamped, so the recurring RestartInterruptedWorkflowsTask can restart an instance again before its restarted run commits. Removed in the next major version.")]
     public InterruptedRecoveryScanner(
         IWorkflowRestarter restarter,
         IWorkflowInstanceStore instanceStore,
@@ -38,7 +41,20 @@ public sealed class InterruptedRecoveryScanner : IInterruptedRecoveryScanner
         ILogger<InterruptedRecoveryScanner> logger,
         ITenantService? tenantService,
         ITenantAccessor? tenantAccessor,
-        ITenantScopeFactory? tenantScopeFactory = null)
+        ITenantScopeFactory? tenantScopeFactory = null) : this(restarter, instanceStore, runtimeOptions, logger, tenantService, tenantAccessor, tenantScopeFactory, null)
+    {
+    }
+
+    // The clock stamps each instance's UpdatedAt right before its restart, so the recurring RestartInterruptedWorkflowsTask skips it while the restart is in flight.
+    public InterruptedRecoveryScanner(
+        IWorkflowRestarter restarter,
+        IWorkflowInstanceStore instanceStore,
+        IOptions<RuntimeOptions> runtimeOptions,
+        ILogger<InterruptedRecoveryScanner> logger,
+        ITenantService? tenantService,
+        ITenantAccessor? tenantAccessor,
+        ITenantScopeFactory? tenantScopeFactory,
+        ISystemClock? systemClock)
     {
         _restarter = restarter;
         _instanceStore = instanceStore;
@@ -47,6 +63,7 @@ public sealed class InterruptedRecoveryScanner : IInterruptedRecoveryScanner
         _tenantService = tenantService;
         _tenantAccessor = tenantAccessor;
         _tenantScopeFactory = tenantScopeFactory;
+        _systemClock = systemClock;
     }
 
     /// <inheritdoc />
@@ -64,7 +81,8 @@ public sealed class InterruptedRecoveryScanner : IInterruptedRecoveryScanner
             _tenantAccessor,
             _tenantScopeFactory,
             _logger,
-            cancellationToken);
+            cancellationToken,
+            stampClock: _systemClock);
 
         _logger.LogInformation("Interrupted-workflow scan complete; requeued {Count} instance(s).", requeued);
         return requeued;

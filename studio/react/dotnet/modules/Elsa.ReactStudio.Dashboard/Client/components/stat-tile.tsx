@@ -63,7 +63,7 @@ export function StatTile({
       <Link
         href={href}
         aria-label={_t("{{value0}}: {{value1}}", { value0: label, value1: value })}
-        className="block rounded-xl outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+        className="block rounded-xl outline-none focus-visible:ring-3 focus-visible:ring-ring"
       >
         <Card size="sm" className={cn(className, "transition-colors hover:border-primary/50")} style={{ "--rail-color": accent } as React.CSSProperties}>
           {body}

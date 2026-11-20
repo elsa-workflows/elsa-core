@@ -70,7 +70,10 @@ OTEL_BSP_SCHEDULE_DELAY=1000
 OTEL_METRIC_EXPORT_INTERVAL=1000
 ```
 
-If the collector is exposed beyond loopback, also configure the required API key header. The header name is returned by the collector configuration API; do not expose the secret value through Studio or documentation.
+The collector requires a configured API key by default, including requests received over loopback. Set the key on
+the collector and send it in the configured header. The collector configuration API returns the header name.
+Development hosts with a directly bound loopback collector can explicitly enable `AllowUnauthenticatedLoopback`.
+Keep that option disabled when a reverse proxy can forward external requests over loopback.
 
 ### Polyglot Setup
 

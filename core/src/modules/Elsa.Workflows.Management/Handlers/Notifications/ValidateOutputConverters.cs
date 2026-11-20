@@ -7,7 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Elsa.Workflows.Management.Handlers.Notifications;
 
 /// <summary>
-/// Validates output-converter bindings before a workflow definition is accepted.
+/// Runs static graph diagnostics and validates output-converter bindings before a workflow definition is accepted.
 /// </summary>
 public class ValidateOutputConverters(
     IWorkflowGraphBuilder workflowGraphBuilder,
@@ -21,6 +21,9 @@ public class ValidateOutputConverters(
     public async Task HandleAsync(WorkflowDefinitionValidating notification, CancellationToken cancellationToken)
     {
         var graph = await workflowGraphBuilder.BuildAsync(notification.Workflow, cancellationToken);
+
+        foreach (var diagnostic in serviceProvider.GetServices<IWorkflowDiagnosticProvider>().SelectMany(provider => provider.GetDiagnostics(graph)))
+            notification.ValidationErrors.Add(diagnostic);
 
         foreach (var node in graph.Nodes)
         {

@@ -349,6 +349,40 @@ public sealed class SerializationTypeResolverTests
     }
 
     [Fact]
+    public void MaximumLengthAppliesToAliasesAndLeavesPlainJsonValuesIntact()
+    {
+        var longestAlias = new string('a', 4096);
+        var tooLong = longestAlias + "a";
+        _workflowJsonTypeRegistry.RegisterType(typeof(RegisteredPayload), longestAlias);
+        _workflowJsonTypeRegistry.RegisterType(typeof(LateRegisteredPayload), tooLong);
+
+        Assert.Equal(typeof(RegisteredPayload), JsonSerializer.Deserialize<Type>(JsonString(longestAlias), _options));
+        Assert.False(SerializationTypeResolver.TryResolveType(_workflowJsonTypeRegistry, tooLong, out _));
+        Assert.False(SerializationTypeResolver.TryGetAlias(_workflowJsonTypeRegistry, typeof(LateRegisteredPayload), out _));
+
+        var exception = Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<Type>(JsonString(tooLong), _options));
+        Assert.DoesNotContain(tooLong, exception.Message);
+        var plain = JsonSerializer.Deserialize<object>($$"""{"label":{{JsonString(tooLong)}}}""", _options);
+        Assert.Equal(tooLong, Assert.IsAssignableFrom<IDictionary<string, object>>(plain)["label"]);
+    }
+
+    [Fact]
+    public void MaximumCompositionAppliesToCurrentAndLegacyAliases()
+    {
+        var atLimit = "Int32" + string.Concat(Enumerable.Repeat("[]", 64));
+        var expectedType = Enumerable.Range(0, 64).Aggregate(typeof(int), (type, _) => type.MakeArrayType());
+        var tooComplex = atLimit + "[]";
+        var legacyTooComplex = $"System.Int32{tooComplex[5..]}, {typeof(int).Assembly.GetName().Name}";
+
+        Assert.Equal(expectedType, JsonSerializer.Deserialize<Type>(JsonString(atLimit), _options));
+        Assert.True(SerializationTypeResolver.TryGetAlias(_workflowJsonTypeRegistry, expectedType, out var written));
+        Assert.Equal(atLimit, written);
+        Assert.False(SerializationTypeResolver.TryResolveType(_workflowJsonTypeRegistry, tooComplex, out _));
+        Assert.False(SerializationTypeResolver.TryResolveType(_workflowJsonTypeRegistry, legacyTooComplex, out _));
+        Assert.False(SerializationTypeResolver.TryGetAlias(_workflowJsonTypeRegistry, expectedType.MakeArrayType(), out _));
+    }
+
+    [Fact]
     public void When_RegistryChangesAfterLegacyResolutionAttempt_Then_LegacyResolutionUsesCurrentRegistry()
     {
         var typeAlias = typeof(LateRegisteredPayload).GetSimpleAssemblyQualifiedName();

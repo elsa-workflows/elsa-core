@@ -53,6 +53,32 @@ def packages(count=3, version="3.10.1"):
     return result
 
 
+class Stable311PinTests(unittest.TestCase):
+    def test_pin_binds_tooling_branch_and_inventory(self):
+        entry = {
+            **dataclasses.asdict(PIN),
+            "ancestry_branch": "release/3.11.0",
+            "tooling_sha": "d" * 40,
+            "feedz_count": 251, "nuget_count": 251, "exclude_ids": [],
+        }
+        entry.pop("version")
+        pin = verify.validate_pin_entry("3.11.0", entry)
+        run = {**good_run(), "head_sha": pin.tooling_sha, "head_branch": "main",
+               "path": ".github/workflows/prepare-consolidated-release-candidate.yml"}
+        verify.check_run(pin, run)
+        for invalid in (
+            {**entry, "ancestry_branch": "main"},
+            {**entry, "tooling_sha": ""},
+            {**entry, "feedz_count": 231, "nuget_count": 231},
+            {**entry, "nuget_count": 250, "exclude_ids": ["Elsa"]},
+        ):
+            with self.subTest(invalid=invalid), self.assertRaises(SystemExit):
+                verify.validate_pin_entry("3.11.0", invalid)
+        for change in ({"head_sha": "e" * 40}, {"head_branch": "release/3.11.0"}, {"path": good_run()["path"]}):
+            with self.subTest(change=change), self.assertRaises(SystemExit):
+                verify.check_run(pin, {**run, **change})
+
+
 class RunAndArtifactTests(unittest.TestCase):
     def test_pinned_identity_is_accepted(self):
         verify.check_run(PIN, good_run())
@@ -178,6 +204,26 @@ class ArchiveTests(unittest.TestCase):
         self.assertEqual(6, len(staged))
         self.assertEqual(3, len(list((self.dir / "out").glob("*.nupkg"))))
 
+    def test_version_keyed_311_archive_requires_matching_symbol_names(self):
+        version = "3.11.0"
+        content = packages(251, version)
+        for mismatched in (False, True):
+            with self.subTest(mismatched=mismatched):
+                archive = self.dir / "a.zip"
+                if mismatched:
+                    content[f"Other.{version}.snupkg"] = content.pop(f"Pkg1.{version}.snupkg")
+                manifest_sha = build_archive(archive, content, version=version)
+                pin = dataclasses.replace(self.pin_for(archive, manifest_sha, 251), version=version)
+                verify.check_archive(pin, archive)
+                manifest = verify.read_manifest(pin, archive)
+                if mismatched:
+                    with self.assertRaisesRegex(SystemExit, "missing .snupkg pairs"):
+                        verify.sealed_packages(pin, manifest)
+                else:
+                    sealed = verify.sealed_packages(pin, manifest)
+                    self.assertEqual(502, len(sealed))
+                    self.assertEqual(502, len(verify.stage_packages(archive, sealed, self.dir / "out")))
+
     def test_manifest_hash_must_match_the_pin(self):
         archive = self.dir / "a.zip"
         build_archive(archive, packages(3))
@@ -269,9 +315,10 @@ GOOD_ENTRY = {
 class PinEntryTests(unittest.TestCase):
     def test_the_committed_pin_file_is_data_only_and_valid(self):
         document = json.loads(verify.PIN_FILE.read_text(encoding="utf-8"))
-        self.assertEqual({"3.10.1"}, set(document))
         self.assertEqual(GOOD_ENTRY, document["3.10.1"])
-        self.assertEqual(set(document["3.10.1"]), set(verify.PIN_FIELDS))
+        for version in document:
+            with self.subTest(version=version):
+                self.assertEqual(version, verify.load_pin(version).version)
         text = verify.PIN_FILE.read_text(encoding="utf-8")
         for rejected in ("40347931480", "12664519771", "5cff67228"):
             self.assertNotIn(rejected, text)
@@ -311,7 +358,7 @@ class PinEntryTests(unittest.TestCase):
                 verify.validate_pin_entry("3.10.1", {**GOOD_ENTRY, **change})
 
     def test_unknown_and_malformed_versions_are_rejected(self):
-        for version in ("3.10.2", "9.9.9", "", "3.10", "latest", "3.10.1; rm -rf /", "../3.10.1"):
+        for version in ("9.9.9", "", "3.10", "latest", "3.10.1; rm -rf /", "../3.10.1"):
             with self.subTest(version=version), self.assertRaises(SystemExit):
                 verify.load_pin(version)
 
@@ -336,7 +383,7 @@ class PinEntryTests(unittest.TestCase):
     def test_validate_pin_command_needs_no_network_and_rejects_unknown_versions(self):
         self.assertEqual(0, verify.main(["validate-pin", "--version", "3.10.1"]))
         with self.assertRaises(SystemExit):
-            verify.main(["validate-pin", "--version", "3.10.2"])
+            verify.main(["validate-pin", "--version", "9.9.9"])
 
 
 PACKAGES = Path(__file__).resolve().parents[1] / ".github/workflows/packages.yml"

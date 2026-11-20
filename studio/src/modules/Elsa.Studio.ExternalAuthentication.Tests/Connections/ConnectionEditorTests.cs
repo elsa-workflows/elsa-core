@@ -1701,6 +1701,26 @@ public sealed class ConnectionEditorTests : BunitContext, IAsyncLifetime
     }
 
     [Fact]
+    public void ExistingTrustSettingsRequireConfirmationOnlyWhenChanged()
+    {
+        var connection = CreateConnection();
+        var model = CreateMutation();
+        DescriptorEditorState.SetBoolean(connection.AdapterSettings, "allowInsecureMetadata", true);
+        DescriptorEditorState.SetBoolean(model.AdapterSettings, "allowInsecureMetadata", true);
+        var cut = Render<ConnectionEditor>(parameters => parameters
+            .Add(component => component.Connection, connection)
+            .Add(component => component.Adapter, CreateAdapter(includeUnsafe: true))
+            .Add(component => component.Model, model));
+
+        Assert.DoesNotContain("I understand and explicitly confirm", cut.Markup, StringComparison.Ordinal);
+
+        model.AdapterSettings.Remove("allowInsecureMetadata");
+        cut.Render();
+
+        Assert.Contains("I understand and explicitly confirm", cut.Markup, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void UnsafeConfirmation_IsOnlyShownWhenAnUnsafeSettingIsActive()
     {
         var model = CreateMutation();

@@ -20,7 +20,7 @@ public class AIWorkflowProposalToolTests
         provider.GetRequiredService<AIToolEnablementService>().Enable("workflows.proposeCreate");
         var registry = provider.GetRequiredService<IAIToolRegistry>();
 
-        using var tool = await registry.FindAsync("workflows.proposeCreate", new AIToolQuery { ActorId = "user-1" });
+        using var tool = await registry.FindAsync("workflows.proposeCreate", new AIToolQuery { ActorId = "user-1", UserPermissions = ["workflows/definitions:view", "workflows/definitions:write"] });
         var result = await tool!.ExecuteAsync(new AIToolExecutionContext
         {
             ActorId = "user-1",

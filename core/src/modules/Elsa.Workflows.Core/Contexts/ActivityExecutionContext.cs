@@ -5,6 +5,7 @@ using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Exceptions;
+using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
@@ -832,6 +833,35 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
         var converterInvoker = GetRequiredService<IOutputConverterInvoker>();
         var convertedValue = converterInvoker.Invoke(this, output, resolvedOutputName, sourceType, value, destination);
         ExpressionExecutionContext.SetBoundValue(output, convertedValue);
+    }
+
+    /// <summary>
+    /// Sets the value of an entry of a dictionary output, such as <c>Dictionary&lt;string, Output&lt;T&gt;&gt;</c>.
+    /// The value is recorded in the activity output register under <c>{OutputName}:{key}</c> (see <see cref="DictionaryEntryNames.GetOutputName"/>),
+    /// so it can't collide with the activity's other outputs.
+    /// </summary>
+    /// <param name="outputs">The dictionary output.</param>
+    /// <param name="key">The key of the entry.</param>
+    /// <param name="value">The value to set.</param>
+    /// <param name="outputName">The name of the dictionary output. Only used when the dictionary isn't one of the activity's described outputs.</param>
+    /// <typeparam name="T">The type of the entry.</typeparam>
+    /// <exception cref="ArgumentException">The key isn't valid, or the dictionary has no entry with that key.</exception>
+    public void Set<T>(IDictionary<string, Output<T>> outputs, string key, T? value, [CallerArgumentExpression("outputs")] string? outputName = null)
+    {
+        var descriptor = ActivityDescriptor.Outputs.FirstOrDefault(x => x.IsDictionaryWithValueOfOutput && ReferenceEquals(x.ValueGetter(Activity), outputs));
+        var resolvedOutputName = descriptor?.Name ?? outputName ?? throw new ArgumentNullException(nameof(outputName));
+
+        if (!DictionaryEntryNames.IsValidKey(key))
+        {
+            throw new ArgumentException($"Key '{key}' of output '{resolvedOutputName}' must not be empty and must not contain '{DictionaryEntryNames.Separator}'.", nameof(key));
+        }
+
+        if (!outputs.TryGetValue(key, out var output))
+        {
+            throw new ArgumentException($"Output '{resolvedOutputName}' has no entry with key '{key}'.", nameof(key));
+        }
+
+        Set(output, value, DictionaryEntryNames.GetOutputName(resolvedOutputName, key));
     }
 
     private static Type? GetOutputValueType(Type outputType)

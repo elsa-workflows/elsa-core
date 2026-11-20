@@ -20,6 +20,7 @@ using Elsa.Http.UIHints;
 using Elsa.Resilience.Extensions;
 using Elsa.Resilience.Features;
 using Elsa.Workflows;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Options;
 using FluentStorage;
 using Microsoft.AspNetCore.Http;
@@ -165,6 +166,7 @@ public class HttpFeature(IModule module) : FeatureBase(module)
 
         var httpClientBuilder = Services.AddHttpClient<SendHttpRequestBase>(HttpClient);
         HttpClientBuilder(httpClientBuilder);
+        httpClientBuilder.WithResponseBodyLimit();
 
         Services
             .AddScoped<IRouteMatcher, RouteMatcher>()
@@ -177,6 +179,7 @@ public class HttpFeature(IModule module) : FeatureBase(module)
 
             // Handlers.
             .AddNotificationHandler<UpdateRouteTable>()
+            .AddSingleton<IWorkflowDiagnosticProvider, HttpEndpointPolicyDiagnostics>()
 
             // Graceful shutdown: register HTTP ingress for diagnostic visibility in the runtime's IIngressSourceRegistry.
             // The middleware short-circuits to 503 when paused (FR-006).
@@ -240,7 +243,9 @@ public class HttpFeature(IModule module) : FeatureBase(module)
             .AddAuthorization();
 
         // HTTP clients.
-        Services.AddHttpClient<IFileDownloader, HttpClientFileDownloader>();
+        Services.AddHttpClient<IFileDownloader, HttpClientFileDownloader>()
+            .ConfigurePrimaryHttpMessageHandler(HttpClientFileDownloader.CreateHandler)
+            .WithResponseBodyLimit();
 
         // Add selectors.
         foreach (var httpCorrelationIdSelectorType in HttpCorrelationIdSelectorTypes)

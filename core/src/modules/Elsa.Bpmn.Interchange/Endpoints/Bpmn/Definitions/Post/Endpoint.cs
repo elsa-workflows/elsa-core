@@ -3,6 +3,7 @@ using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Bpmn.Interchange.Endpoints.Bpmn.Document;
 using Elsa.Bpmn.Interchange.Services;
+using Elsa.Workflows.Management;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
 using ImportResponse = Elsa.Bpmn.Interchange.Endpoints.Bpmn.Import.Response;
@@ -31,6 +32,8 @@ internal sealed class Post(BpmnInterchangeDocumentService documentService) : Els
     /// <inheritdoc />
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
+        await using var mutationLock = await WorkflowDefinitionMutationLock.AcquireAsync(HttpContext.RequestServices, cancellationToken);
+
         var name = request.Name?.Trim();
 
         if (string.IsNullOrEmpty(name))

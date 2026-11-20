@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using Elsa.ModularServer.Web;
+using Elsa.Secrets.Options;
 using Elsa.Server.Web;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -23,6 +24,9 @@ namespace Elsa.Hosts.SmokeTests;
 /// </remarks>
 public class SigningKeyStartupGuardTests
 {
+    private const string ModularFeatures = "CShells:Shells:Default:Features:";
+    private const string ModularSecretsEncryptionKey = "CShells:Shells:Default:Features:Secrets:EncryptionKey";
+
     [Fact]
     public void ClassicServerFailsToStartInProductionWithPlaceholderSigningKey() =>
         AssertBootFailsAtStartup<ClassicServerHost>();
@@ -35,23 +39,60 @@ public class SigningKeyStartupGuardTests
     public void ModularServerStartsInProductionWithValidSigningKey()
     {
         // A key that is not a known default and survives the validator's rules must boot normally. The in-memory
-        // override adds only the leaf key on top of the shipped appsettings, leaving CShells' object-map
-        // structure (and every other feature entry) exactly as shipped.
-        AssertBootStartsAtStartup<ModularServerHost>(configuration: new Dictionary<string, string>
+        // override supplies the signing and encryption keys while leaving the shipped CShells map in place.
+        AssertBootStartsAtStartup<ModularServerHost>(configuration: new Dictionary<string, string?>
         {
-            ["CShells:Shells:Default:Features:Identity:SigningKey"] = Convert.ToHexString(RandomNumberGenerator.GetBytes(32)),
+            [ModularFeatures + "Identity:SigningKey"] = Convert.ToHexString(RandomNumberGenerator.GetBytes(32)),
+            [ModularSecretsEncryptionKey] = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)),
         });
     }
 
     [Fact]
     public void ModularServerStartsInProductionWhenIdentityFeaturesAreDisabled()
     {
-        // With the identity features disabled there is nothing to validate and the placeholder key stays untouched,
-        // matching how the shell assembles itself: no identity options are registered, so no signing key is needed.
+        // Disabling identity bypasses its signing-key check. The Secrets feature still needs its encryption key.
         AssertBootStartsAtStartup<ModularServerHost>(settings: new Dictionary<string, string>
         {
-            ["CShells:Shells:Default:Features:Identity"] = "false",
-            ["CShells:Shells:Default:Features:DefaultAuthentication"] = "false",
+            [ModularFeatures + "Identity"] = "false",
+            [ModularFeatures + "DefaultAuthentication"] = "false",
+            [ModularFeatures + "SqliteIdentityPersistence"] = "false",
+        }, configuration: new Dictionary<string, string?>
+        {
+            [ModularSecretsEncryptionKey] = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)),
+        });
+    }
+
+    [Fact]
+    public void ModularServerValidatesSecretsConfigurationWhenEnabledByDependency()
+    {
+        using var factory = new PlaceholderSigningKeyHostFixture<ModularServerHost>(
+            settings: new Dictionary<string, string>
+            {
+                [ModularFeatures + "Secrets"] = "false",
+                [ModularFeatures + "SecretsJavaScript"] = "false",
+                [ModularFeatures + "ElsaSecretsExternalAuthentication"] = "true",
+            },
+            configuration: new Dictionary<string, string?>
+            {
+                [ModularFeatures + "Identity:SigningKey"] = Convert.ToHexString(RandomNumberGenerator.GetBytes(32)),
+            });
+
+        var exception = Assert.ThrowsAny<Exception>(() => factory.Services);
+        var validation = Assert.IsType<OptionsValidationException>(exception.GetBaseException());
+        Assert.Equal(typeof(SecretsOptions), validation.OptionsType);
+    }
+
+    [Fact]
+    public void ModularServerStartsInProductionWhenSecretsFeatureIsAbsent()
+    {
+        AssertBootStartsAtStartup<ModularServerHost>(settings: new Dictionary<string, string>
+        {
+            [ModularFeatures + "Secrets"] = "false",
+            [ModularFeatures + "SecretsJavaScript"] = "false",
+            [ModularFeatures + "ElsaSecretsExternalAuthentication"] = "false",
+        }, configuration: new Dictionary<string, string?>
+        {
+            [ModularFeatures + "Identity:SigningKey"] = Convert.ToHexString(RandomNumberGenerator.GetBytes(32)),
         });
     }
 
@@ -73,7 +114,7 @@ public class SigningKeyStartupGuardTests
         Assert.Contains("SigningKey", exception.GetBaseException().Message);
     }
 
-    private static void AssertBootStartsAtStartup<TEntryPoint>(string? environment = null, IReadOnlyDictionary<string, string>? settings = null, IReadOnlyDictionary<string, string>? configuration = null) where TEntryPoint : class
+    private static void AssertBootStartsAtStartup<TEntryPoint>(string? environment = null, IReadOnlyDictionary<string, string>? settings = null, IReadOnlyDictionary<string, string?>? configuration = null) where TEntryPoint : class
     {
         using var factory = new PlaceholderSigningKeyHostFixture<TEntryPoint>(environment, settings, configuration);
 
@@ -93,11 +134,13 @@ public class SigningKeyStartupGuardTests
 public class PlaceholderSigningKeyHostFixture<TEntryPoint>(
     string? environment = null,
     IReadOnlyDictionary<string, string>? settings = null,
-    IReadOnlyDictionary<string, string>? configuration = null) : WebApplicationFactory<TEntryPoint> where TEntryPoint : class
+    IReadOnlyDictionary<string, string?>? configuration = null) : WebApplicationFactory<TEntryPoint> where TEntryPoint : class
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment(environment ?? "Production");
+        // Startup fixtures run in parallel with other hosts and do not need persistent Nuplane state.
+        builder.UseSetting("Nuplane:Setup:UseInMemoryStore", "true");
 
         foreach (var (key, value) in settings ?? new Dictionary<string, string>())
         {

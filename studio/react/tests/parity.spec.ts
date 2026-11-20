@@ -1,10 +1,10 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import type { WorkflowDefinition } from "../packages/api-client/src/types/workflow-definitions";
 
-async function editorFixture(page: Page, published = false) {
+async function editorFixture(page: Page, published = false, hasPublishedHistory = false) {
   let definition: WorkflowDefinition = { id: "version-three", definitionId: "parity", name: "Parity workflow", version: 3, isLatest: true, isPublished: published, createdAt: "2026-10-21T00:00:00Z",
     variables: [{ id: "customer", name: "Customer", typeName: "String", value: "original" }], inputs: [], outputs: [], outcomes: ["Approved"], options: {}, customProperties: {},
-    root: { id: "root", nodeId: "root", type: "Elsa.Flowchart", version: 1, activities: [
+    root: { id: "root", nodeId: "root", type: "Elsa.Flowchart", version: 1, start: "alpha", activities: [
       { id: "alpha", nodeId: "root:alpha", type: "Elsa.WriteLine", version: 1, name: "Alpha1", metadata: { designer: { position: { x: 0, y: 0 } } } },
       { id: "beta", nodeId: "root:beta", type: "Elsa.WriteLine", version: 1, name: "Beta1", metadata: { designer: { position: { x: 280, y: 0 } } } },
     ], connections: [{ source: { activity: "alpha", port: "Done" }, target: { activity: "beta", port: "In" } }] } };
@@ -34,7 +34,13 @@ async function editorFixture(page: Page, published = false) {
     } else if (path.endsWith("workflow-definitions") && request.method() === "POST") {
       definition = { ...definition, ...request.postDataJSON().model };
       json = { workflowDefinition: definition };
-    } else if (path.endsWith("workflow-definitions")) json = { items: [definition], totalCount: 1 };
+    } else if (path.endsWith("workflow-definitions/parity/dispatch")) json = { workflowInstanceId: "published-instance" };
+    else if (path.endsWith("workflow-definitions")) {
+      const items = url.searchParams.get("versionOptions") === "Published"
+        ? definition.isPublished ? [definition] : hasPublishedHistory ? [historical] : []
+        : [definition];
+      json = { items, totalCount: items.length };
+    }
     else if (path.endsWith("workflow-activation-strategies")) json = { items: [{ typeName: "ActivationStrategy", displayName: "Activation choice" }] };
     else if (path.endsWith("incident-strategies")) json = { items: [{ typeName: "IncidentStrategy", displayName: "Incident choice" }] };
     else if (path.endsWith("commit-strategies/workflows")) json = { items: [{ name: "CommitAlways", displayName: "Always commit" }] };
@@ -52,6 +58,101 @@ async function choose(page: Page, panel: Locator, label: string, option: string)
   await field(panel, label).getByRole("combobox").click();
   await page.getByRole("option", { name: option, exact: true }).click();
 }
+
+async function contrast(element: Locator, foreground: string, background?: string) {
+  return element.evaluate((target, { foreground, background }) => {
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = 1;
+    const context = canvas.getContext("2d")!;
+    const style = getComputedStyle(target);
+    const fill = (color: string) => {
+      context.fillStyle = color.trim();
+      context.fillRect(0, 0, 1, 1);
+    };
+    const luminance = () => {
+      const [red, green, blue] = Array.from(context.getImageData(0, 0, 1, 1).data, value => {
+        const channel = value / 255;
+        return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+      });
+      return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+    };
+    if (background) {
+      fill(style.getPropertyValue(background));
+    } else {
+      const ancestors: Element[] = [];
+      for (let element: Element | null = target; element; element = element.parentElement) ancestors.unshift(element);
+      for (const element of ancestors) fill(getComputedStyle(element).backgroundColor);
+    }
+    const adjacent = luminance();
+    fill(style.getPropertyValue(foreground));
+    const indicator = luminance();
+    return (Math.max(adjacent, indicator) + 0.05) / (Math.min(adjacent, indicator) + 0.05);
+  }, { foreground, background });
+}
+
+test("Classic light workflow controls and selected activity have sufficient contrast", async ({ page }) => {
+  await page.emulateMedia({ colorScheme: "light" });
+  await editorFixture(page, true);
+  await expect(page.locator("html")).toHaveAttribute("data-elsa-theme", "classic");
+
+  const create = page.getByRole("button", { name: "New workflow", exact: true });
+  await expect(create).toBeVisible();
+  expect(await contrast(create, "color")).toBeGreaterThanOrEqual(4.5);
+  await create.hover();
+  expect(await contrast(create, "color")).toBeGreaterThanOrEqual(4.5);
+  await page.keyboard.press("Tab");
+  await create.focus();
+  await expect(create).toBeFocused();
+  expect(await contrast(create, "--tw-ring-color", "--sidebar")).toBeGreaterThanOrEqual(3);
+  const publishedBadge = page.getByRole("navigation", { name: "Breadcrumb" }).getByText("Published", { exact: true });
+  expect(await contrast(publishedBadge, "color")).toBeGreaterThanOrEqual(4.5);
+
+  const issues = page.getByRole("button", { name: "Issues", exact: true });
+  await expect(issues).toHaveText("No issues");
+  expect(await contrast(issues, "color")).toBeGreaterThanOrEqual(4.5);
+
+  const activity = page.locator('.react-flow__node[data-id="alpha"]');
+  await activity.click();
+  const selectedCard = activity.locator(".accent-rail");
+  await expect(selectedCard).toHaveClass(/\bring-primary\b/);
+  expect(await contrast(selectedCard, "--tw-ring-color", "--elsa-canvas")).toBeGreaterThanOrEqual(3);
+
+  await page.goto("/studio-preview/workflows/definitions");
+  const column = page.getByRole("columnheader", { name: "Name", exact: true });
+  await expect(column).toBeVisible();
+  expect(await contrast(column, "color")).toBeGreaterThanOrEqual(4.5);
+});
+
+test("a newer draft can run the workflow's published version", async ({ page }) => {
+  await editorFixture(page, false, true);
+  await expect(page.getByRole("navigation", { name: "Breadcrumb" }).getByText("Draft")).toBeVisible();
+  await page.getByRole("button", { name: "Run", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "Run Historical workflow" });
+  const dispatch = page.waitForRequest(request =>
+    request.method() === "POST" && request.url().endsWith("/workflow-definitions/parity/dispatch"));
+  await dialog.getByRole("button", { name: "Run", exact: true }).click();
+  await dispatch;
+  await expect(page.getByText("Workflow started", { exact: true })).toBeVisible();
+});
+
+test("workflow forms and lists expose named controls and one main landmark", async ({ page }) => {
+  await editorFixture(page);
+  await expect(page.getByRole("main")).toHaveCount(1);
+  const invalidMenuChildren = page.locator('[data-slot="sidebar-menu"] > :not(li), [data-slot="sidebar-menu-sub"] > :not(li)');
+  await expect(invalidMenuChildren).toHaveCount(0);
+  const properties = page.getByRole("tabpanel", { name: "Properties", exact: true });
+  await expect(properties.getByRole("textbox", { name: "Name *", exact: true })).toHaveValue("Parity workflow");
+  await expect(properties.getByRole("textbox", { name: "Description", exact: true })).toBeVisible();
+  for (const name of ["Activation strategy", "Incident strategy", "Log persistence strategy", "Commit strategy"]) {
+    await expect(properties.getByRole("combobox", { name, exact: true })).toBeVisible();
+  }
+  await page.goto("/studio-preview/workflows/definitions");
+  await expect(page.getByRole("columnheader", { name: "Actions", exact: true })).toBeVisible();
+  await expect(page.getByRole("checkbox", { name: "Select Parity workflow", exact: true })).toBeVisible();
+  await expect(page.getByRole("combobox", { name: "Rows per page", exact: true })).toBeVisible();
+  await page.goto("/studio-preview/workflows/instances");
+  await expect(page.getByRole("combobox", { name: "Incidents", exact: true })).toBeVisible();
+});
 
 test("unpublishing consumes Core's bare definition response and updates the editor", async ({ page }) => {
   const fixture = await editorFixture(page, true);

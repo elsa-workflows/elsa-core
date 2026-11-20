@@ -3,6 +3,7 @@ import { cpSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync }
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
+import { assertViteUsesHardenedGlobTooling, copyBuildGlobTooling, writeBuildGlobOverrides } from "./build-glob-tooling.mjs";
 import { readBundle } from "./npm-release.mjs";
 
 const root = process.cwd();
@@ -10,10 +11,11 @@ const args = process.argv.slice(2);
 const releasedDirectory = args.includes("--npm-feed") ? resolve(args[args.indexOf("--npm-feed") + 1]) : undefined;
 const released = releasedDirectory ? readBundle(releasedDirectory) : undefined;
 const temporary = mkdtempSync(join(tmpdir(), "elsa-react-studio-consumer-"));
-const pnpm = process.platform === "win32" ? "pnpm.cmd" : "pnpm";
+const pnpm = process.env.npm_execpath ?? (process.platform === "win32" ? "pnpm.cmd" : "pnpm");
+const pnpmIsJavaScript = /\.(?:js|cjs|mjs)$/.test(pnpm);
 function run(args, cwd) {
-  execFileSync(process.env.npm_execpath ? process.execPath : pnpm,
-    process.env.npm_execpath ? [process.env.npm_execpath, ...args] : args,
+  execFileSync(pnpmIsJavaScript ? process.execPath : pnpm,
+    pnpmIsJavaScript ? [pnpm, ...args] : args,
     { cwd, stdio: "inherit" });
 }
 
@@ -32,19 +34,23 @@ try {
   const reactTypes = JSON.parse(readFileSync(join(root, "node_modules/@types/react/package.json"), "utf8"));
   const consumer = join(temporary, "consumer");
   cpSync(join(root, "samples/weather-module"), consumer, { recursive: true });
+  copyBuildGlobTooling(consumer);
+  writeBuildGlobOverrides(consumer, dependencies);
   writeFileSync(join(consumer, "package.json"), JSON.stringify({
     private: true, type: "module", dependencies: {
       ...dependencies, react: installed.dependencies.react, "react-dom": installed.dependencies["react-dom"],
       "lucide-react": installed.dependencies["lucide-react"], "@types/react": reactTypes.version,
     }, devDependencies: { vite: installed.devDependencies.vite,
       "@tailwindcss/vite": installed.devDependencies["@tailwindcss/vite"], tailwindcss: installed.devDependencies.tailwindcss,
-    }, pnpm: { overrides: dependencies },
+    },
+    packageManager: installed.packageManager,
   }));
   writeFileSync(join(consumer, "tsconfig.json"), JSON.stringify({ compilerOptions: {
     target: "ES2022", module: "NodeNext", moduleResolution: "NodeNext", strict: true,
     jsx: "react-jsx", outDir: "dist", skipLibCheck: false,
   }, include: ["entry.tsx"] }));
   run(["install", "--ignore-scripts"], consumer);
+  assertViteUsesHardenedGlobTooling(consumer);
   execFileSync(process.execPath, [resolve("node_modules/typescript/bin/tsc"), "-p", "tsconfig.json"], { cwd: consumer, stdio: "inherit" });
   writeFileSync(join(consumer, "smoke.mjs"), `
 import { createElement } from "react";

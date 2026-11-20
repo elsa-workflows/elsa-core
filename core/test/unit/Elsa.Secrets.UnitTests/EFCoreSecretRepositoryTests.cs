@@ -385,6 +385,7 @@ public class EFCoreSecretRepositoryTests : IAsyncLifetime
         await WithTenantAwareRepositoryAsync(async (repository, tenantAccessor) =>
         {
             using (UseTenant(tenantAccessor, Tenant.AgnosticTenantId))
+            using (SharedTenantWriteScope.Enter<Secret>())
             {
                 await repository.SaveAsync(new Secret
                 {
@@ -420,6 +421,7 @@ public class EFCoreSecretRepositoryTests : IAsyncLifetime
         await WithTenantAwareRepositoryAsync(async (repository, tenantAccessor) =>
         {
             using (UseTenant(tenantAccessor, Tenant.AgnosticTenantId))
+            using (SharedTenantWriteScope.Enter<Secret>())
             {
                 await repository.SaveAsync(new Secret
                 {
@@ -452,11 +454,12 @@ public class EFCoreSecretRepositoryTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task TryAddOrReplaceDeletedAsync_AllowsAgnosticWriterReplacingAgnosticSecret()
+    public async Task TryAddOrReplaceDeletedAsync_AllowsTrustedHostReplacingAgnosticSecret()
     {
         await WithTenantAwareRepositoryAsync(async (repository, tenantAccessor) =>
         {
             using (UseTenant(tenantAccessor, Tenant.AgnosticTenantId))
+            using (SharedTenantWriteScope.Enter<Secret>())
             {
                 await repository.SaveAsync(new Secret
                 {
@@ -485,11 +488,31 @@ public class EFCoreSecretRepositoryTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task SaveAsync_RequiresAnExplicitGrantToCreateAnAgnosticSecret()
+    {
+        await WithTenantAwareRepositoryAsync(async (repository, tenantAccessor) =>
+        {
+            using var tenant = UseTenant(tenantAccessor, Tenant.AgnosticTenantId);
+            var secret = new Secret
+            {
+                Id = "shared-id",
+                Name = "smtp:password",
+                DisplayName = "Shared secret",
+                TenantId = Tenant.AgnosticTenantId
+            };
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() => repository.SaveAsync(secret));
+            Assert.Null(await repository.GetAsync(secret.Name));
+        });
+    }
+
+    [Fact]
     public async Task PreTenancyConstructor_UsesTenantFilteredModelForOwnershipChecks()
     {
         await WithTenantAwareRepositoryAsync(async (repository, tenantAccessor) =>
         {
             using (UseTenant(tenantAccessor, Tenant.AgnosticTenantId))
+            using (SharedTenantWriteScope.Enter<Secret>())
             {
                 await repository.SaveAsync(new Secret
                 {

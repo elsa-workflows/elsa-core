@@ -3,10 +3,13 @@ using Elsa.Common;
 using Elsa.Common.Codecs;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
+using Elsa.Common.Multitenancy;
 using Elsa.Extensions;
+using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Exceptions;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Options;
@@ -160,6 +163,8 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
         var entity = new WorkflowInstance
         {
             Id = workflowInstanceId,
+            // ApplyTenantId skips "*". With a null TenantId it would set the ambient tenant, and the update would write it over the row's tenant.
+            TenantId = Tenant.AgnosticTenantId,
             UpdatedAt = value
         };
 
@@ -204,7 +209,7 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
         // SetTenantIdFilter's global query filter applies to ExecuteUpdateAsync unless
         // IgnoreQueryFilters is used. This store does not ignore it, so a tenant-B
         // caller cannot mark a tenant-A row.
-        var updated = await dbContext.WorkflowInstances
+        var updated = await dbContext.WorkflowInstances.WhereTenantCanWrite(dbContext)
             .Where(x => x.Id == workflowInstanceId && x.Status != WorkflowStatus.Finished)
             .ExecuteUpdateAsync(
                 setters => setters
@@ -230,7 +235,7 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
 
         await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
         // The tenant query filter applies to ExecuteUpdateAsync. Do not ignore it.
-        var query = dbContext.WorkflowInstances.Where(x =>
+        var query = dbContext.WorkflowInstances.WhereTenantCanWrite(dbContext).Where(x =>
             x.Id == workflowInstanceId
             && x.Status == WorkflowStatus.Running
             && x.SubStatus == expected);
@@ -254,13 +259,20 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
     [RequiresUnreferencedCode("Calls Elsa.Workflows.Contracts.IWorkflowStateSerializer.SerializeAsync(WorkflowState, CancellationToken)")]
     public async ValueTask SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
     {
-        await _store.SaveAsync(instance, OnSaveAsync, cancellationToken);
+        await _store.SaveByIdAsync(instance, OnSaveAsync, cancellationToken);
     }
 
     /// <inheritdoc />
     public async ValueTask AddAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
     {
-        await _store.AddAsync(instance, OnSaveAsync, cancellationToken);
+        try
+        {
+            await _store.AddAsync(instance, OnSaveAsync, cancellationToken);
+        }
+        catch (DbUpdateException ex) when (DbExceptionClassifier.IsDuplicateKey(ex))
+        {
+            throw new WorkflowInstanceAlreadyExistsException(instance.Id, ex);
+        }
     }
 
     /// <inheritdoc />
@@ -272,7 +284,7 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
     /// <inheritdoc />
     public async ValueTask SaveManyAsync(IEnumerable<WorkflowInstance> instances, CancellationToken cancellationToken = default)
     {
-        await _store.SaveManyAsync(instances, OnSaveAsync, cancellationToken);
+        await _store.SaveManyByIdAsync(instances, OnSaveAsync, cancellationToken);
     }
 
     [RequiresUnreferencedCode("Calls Elsa.Workflows.Contracts.IWorkflowStateSerializer.SerializeAsync(WorkflowState, CancellationToken)")]

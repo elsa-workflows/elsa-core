@@ -1,5 +1,8 @@
 using Elsa.Common;
 using Elsa.Common.Multitenancy;
+using Elsa.Workflows.Management;
+using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Models;
 
 namespace Elsa.Workflows.Runtime;
 
@@ -21,6 +24,7 @@ public sealed class ExecutionCycleHandle : IDisposable
     private bool _cycleCtsDisposeRequested;
     private bool _cycleCtsDisposed;
     private int _lifecycleState;
+    private volatile bool _isInterrupted;
 
     private const int ActiveState = 0;
     private const int CancellingState = 1;
@@ -75,8 +79,30 @@ public sealed class ExecutionCycleHandle : IDisposable
     /// <summary>
     /// Tenant that was current when the cycle started. The drain does not run in the cycle's tenant, so it reads and
     /// writes the instance in this tenant's scope. Null when no tenant was current or the registry did not record one.
+    /// A custom <see cref="IExecutionCycleRegistry"/> sets it when it creates the handle.
     /// </summary>
-    internal Tenant? Tenant { get; init; }
+    public Tenant? Tenant { get; init; }
+
+    /// <summary>
+    /// The bookmark this cycle resumes and the input it resumes it with, so a host-stop drain can queue a resume that
+    /// never reached a commit again. Recorded only when <c>GracefulShutdownOptions.InterruptOnHostStop</c> is on.
+    /// </summary>
+    internal Bookmark? ResumedBookmark { get; set; }
+
+    /// <inheritdoc cref="ResumedBookmark"/>
+    internal IDictionary<string, object>? ResumeInput { get; set; }
+
+    /// <summary>
+    /// Creates the not-yet-persisted instance of a fresh run that no trigger started, so a host-stop drain can persist it
+    /// as not started when the run never reached a commit. Recorded only when <c>GracefulShutdownOptions.InterruptOnHostStop</c> is on.
+    /// </summary>
+    internal Func<IWorkflowInstanceManager, WorkflowInstance>? CreatePendingInstance { get; set; }
+
+    /// <summary>
+    /// Whether a host-stop drain took the cycle over with <see cref="TryInterrupt"/>. From then on, the drain has
+    /// persisted where the next start continues the instance, and the cycle's own commits are dropped.
+    /// </summary>
+    internal bool IsInterrupted => _isInterrupted;
 
     /// <summary>Cancellation token passed into the workflow execution pipeline for this cycle.</summary>
     public CancellationToken CancellationToken => _cycleCts.Token;
@@ -120,6 +146,20 @@ public sealed class ExecutionCycleHandle : IDisposable
         // Publish cancellation only after its effects complete. Dispose can transition CancellingState directly to
         // DisposedState, making this CAS fail when the cycle completed during the callback or CTS cancellation.
         return Interlocked.CompareExchange(ref _lifecycleState, CancelledState, CancellingState) == CancellingState;
+    }
+
+    /// <summary>
+    /// Takes the cycle over for a host-stop drain without cancelling it: the cancel callback is not invoked and the
+    /// cycle's token is not cancelled, so the workflow keeps its status. Returns <c>true</c> only when this call
+    /// transitioned the handle from active. Afterwards, <see cref="TryCancel"/> returns <c>false</c>.
+    /// </summary>
+    internal bool TryInterrupt()
+    {
+        if (Interlocked.CompareExchange(ref _lifecycleState, CancelledState, ActiveState) != ActiveState)
+            return false;
+
+        _isInterrupted = true;
+        return true;
     }
 
     /// <summary>

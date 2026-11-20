@@ -1,8 +1,10 @@
+using Elsa.Common.DistributedHosting;
 using Elsa.Extensions;
 using Elsa.Http.Bookmarks;
 using Elsa.Http.Options;
 using Elsa.Workflows.Runtime.Filters;
 using JetBrains.Annotations;
+using Medallion.Threading;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -16,6 +18,7 @@ using System.Diagnostics.CodeAnalysis;
 using Elsa.Workflows;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Exceptions;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime;
@@ -86,10 +89,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
 
             if (triggers.Count > 1)
             {
-                await HandleMultipleWorkflowsFoundAsync(httpContext, () => triggers.Select(x => new
-                {
-                    x.WorkflowDefinitionId
-                }), cancellationToken);
+                await HandleMultipleWorkflowsFoundAsync(httpContext, cancellationToken);
                 return;
             }
 
@@ -106,10 +106,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
 
         if (bookmarks.Count > 1)
         {
-            await HandleMultipleWorkflowsFoundAsync(httpContext, () => bookmarks.Select(x => new
-            {
-                x.WorkflowInstanceId
-            }), cancellationToken);
+            await HandleMultipleWorkflowsFoundAsync(httpContext, cancellationToken);
             return;
         }
 
@@ -181,10 +178,34 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
         var serviceProvider = httpContext.RequestServices;
         var cancellationToken = httpContext.RequestAborted;
         var bookmarkPayload = bookmark.GetPayload<HttpEndpointBookmarkPayload>();
+
+        // Take the same per-instance lock the workflow runtime uses (see DistributedWorkflowClient), so that
+        // loading, checking and running the instance can't interleave with another resume of the same instance.
+        // The lock is held until the run completes, so nothing in the run may resume this same instance inline
+        // (for example through IWorkflowClient): it would wait on this lock until its own timeout.
+        // Don't wait for the lock longer than the request is allowed to take (only a positive timeout caps the wait).
+        var lockProvider = serviceProvider.GetRequiredService<IDistributedLockProvider>();
+        var lockTimeout = serviceProvider.GetRequiredService<IOptions<DistributedLockingOptions>>().Value.LockAcquisitionTimeout;
+        if (bookmarkPayload.RequestTimeout is { } requestTimeout && requestTimeout > TimeSpan.Zero && requestTimeout < lockTimeout)
+            lockTimeout = requestTimeout;
+
+        await using var instanceLock = await lockProvider.TryAcquireLockAsync($"workflow-instance:{bookmark.WorkflowInstanceId}", lockTimeout, cancellationToken);
+
+        // The instance is busy: another run holds the lock. The caller can try again later.
+        if (instanceLock == null)
+        {
+            httpContext.Response.StatusCode = StatusCodes.Status409Conflict;
+            return;
+        }
+
         var workflowInstanceStore = serviceProvider.GetRequiredService<IWorkflowInstanceStore>();
         var workflowInstance = await workflowInstanceStore.FindAsync(bookmark.WorkflowInstanceId, cancellationToken);
 
-        if (workflowInstance == null)
+        // The instance may have finished, or another request may have consumed the bookmark, while we waited for the lock.
+        // In both cases there is nothing left to resume, so treat it like a missing instance.
+        if (workflowInstance == null
+            || workflowInstance.Status == WorkflowStatus.Finished
+            || workflowInstance.WorkflowState.Bookmarks.All(x => x.Id != bookmark.Id))
         {
             await httpContext.Response.SendNotFoundAsync(cancellation: cancellationToken);
             return;
@@ -224,13 +245,31 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
         }
 
         var workflowRunner = serviceProvider.GetRequiredService<IWorkflowRunner>();
-        var result = await ExecuteWithinTimeoutAsync(async ct =>
+        try
         {
-            if (workflowInstance == null)
-                return await workflowRunner.RunAsync(workflowGraph, workflowOptions, ct);
-            return await workflowRunner.RunAsync(workflow, workflowInstance.WorkflowState, workflowOptions, ct);
-        }, bookmarkPayload.RequestTimeout, httpContext);
-        await HandleWorkflowFaultAsync(serviceProvider, httpContext, result, cancellationToken);
+            var result = await ExecuteWithinTimeoutAsync<RunWorkflowResult?>(async ct =>
+            {
+                if (workflowInstance != null)
+                    return await workflowRunner.RunAsync(workflow, workflowInstance.WorkflowState, workflowOptions, ct);
+
+                var gate = serviceProvider.GetRequiredService<IWorkflowActivationGate>();
+                await using var lease = await gate.EvaluateAsync(workflow, workflowOptions.CorrelationId, ct);
+                if (!lease.CanStart)
+                {
+                    httpContext.Response.StatusCode = StatusCodes.Status409Conflict;
+                    return null;
+                }
+
+                workflowOptions.RequireNewInstance = true;
+                return await workflowRunner.RunAsync(workflowGraph, workflowOptions, lease.GetEffectiveCancellationToken(ct));
+            }, bookmarkPayload.RequestTimeout, httpContext);
+            if (result != null)
+                await HandleWorkflowFaultAsync(serviceProvider, httpContext, result, cancellationToken);
+        }
+        catch (WorkflowInstanceAlreadyExistsException) when (workflowInstance == null && !httpContext.Response.HasStarted)
+        {
+            httpContext.Response.StatusCode = StatusCodes.Status409Conflict;
+        }
     }
 
     private async Task<T> ExecuteWithinTimeoutAsync<T>(Func<CancellationToken, Task<T>> action, TimeSpan? requestTimeout, HttpContext httpContext)
@@ -383,7 +422,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
     }
 
     [RequiresUnreferencedCode("Calls System.Text.Json.JsonSerializer.Serialize<TValue>(TValue, JsonSerializerOptions)")]
-    private async Task<bool> HandleMultipleWorkflowsFoundAsync(HttpContext httpContext, Func<IEnumerable<object>> workflowMatches, CancellationToken cancellationToken)
+    private static async Task HandleMultipleWorkflowsFoundAsync(HttpContext httpContext, CancellationToken cancellationToken)
     {
         httpContext.Response.ContentType = "application/json";
         httpContext.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
@@ -391,11 +430,10 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
         var responseContent = JsonSerializer.Serialize(new
         {
             errorMessage = "The call is ambiguous and matches multiple workflows.",
-            workflows = workflowMatches().ToArray()
+            correlationId = httpContext.TraceIdentifier
         });
 
         await httpContext.Response.WriteAsync(responseContent, cancellationToken);
-        return true;
     }
 
     private async Task<bool> HandleWorkflowFaultAsync(IServiceProvider serviceProvider, HttpContext httpContext, RunWorkflowResult workflowExecutionResult, CancellationToken cancellationToken)

@@ -25,7 +25,7 @@ public class UserPermissionsExtensionsTests
         { x => x.CanRunActivityTests(), ["workflows/tests:execute"] },
         { x => x.CanDeleteInstances(), ["workflows/instances:delete"] },
         { x => x.CanCancelInstances(), ["workflows/instances:cancel"] },
-        { x => x.CanImportInstances(), ["workflows/instances:write"] },
+        { x => x.CanImportInstances(), ["workflows/instances:restore"] },
         { x => x.CanExecuteAlterations(), ["alterations:execute"] },
         { x => x.CanAlterInstances(), ["alterations:execute", "workflows/instances:view", "workflows/definitions:view"] },
     };

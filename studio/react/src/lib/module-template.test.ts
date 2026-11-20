@@ -1,6 +1,6 @@
 import { afterEach, expect, it } from "vitest";
 import { spawnSync } from "node:child_process";
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, symlinkSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -30,6 +30,16 @@ for (const key of ["studio-version", "npm-version"]) {
   });
 }
 
+it("copies the hardened build matcher and license into a standalone module", () => {
+  const { output, result } = generate("studio-version", "3.11.0");
+  expect(result.status, result.stderr).toBe(0);
+  const client = join(output, "Module/Client");
+  expect(readFileSync(join(client, "pnpm-workspace.yaml"), "utf8")).toBe('overrides:\n  "picomatch": "file:./vendor/picomatch-build"\n');
+  const vendoredLicense = readFileSync(new URL("../../vendor/picomatch-build/LICENSE", import.meta.url), "utf8");
+  expect(readFileSync(join(client, "vendor/picomatch-build/LICENSE"), "utf8")).toBe(vendoredLicense);
+  expect(existsSync(join(client, "vendor/picomatch-build/lib/parse.js"))).toBe(true);
+});
+
 it.each(["nested", "empty", "symlink"])("rejects %s output within the template before writing", mode => {
   const sandbox = mkdtempSync(join(tmpdir(), "elsa-template-output-"));
   temporary.push(sandbox);
@@ -37,6 +47,7 @@ it.each(["nested", "empty", "symlink"])("rejects %s output within the template b
   const template = join(sandbox, "samples/module-template");
   mkdirSync(dirname(script), { recursive: true });
   cpSync(generator, script);
+  cpSync(fileURLToPath(new URL("../../scripts/build-glob-tooling.mjs", import.meta.url)), join(sandbox, "scripts/build-glob-tooling.mjs"));
   cpSync(fileURLToPath(new URL("../../samples/module-template/", import.meta.url)), template, { recursive: true });
   let output = join(template, "Host/Generated");
   if (mode === "empty") mkdirSync(output);

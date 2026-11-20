@@ -6,10 +6,10 @@ namespace Elsa.Workflows.Runtime;
 /// for execution. Runs once per host/shell activation as <c>RecoverInterruptedWorkflowsStartupTask</c>, after all tenants are activated.
 /// </summary>
 /// <remarks>
-/// Disjoint from the timeout-based <c>RestartInterruptedWorkflowsTask</c> recurring task: that task filters
-/// <c>IsExecuting = true</c> with a stale <c>UpdatedAt</c>; this scan filters <see cref="WorkflowSubStatus.Interrupted"/>
-/// and <see cref="WorkflowStatus.Running"/> (Interrupted instances have <c>IsExecuting = false</c>). The two
-/// filters never overlap, so an instance is recovered by exactly one mechanism — see FR-022 and research R4.
+/// This scan filters <see cref="WorkflowSubStatus.Interrupted"/> and <see cref="WorkflowStatus.Running"/>
+/// (Interrupted instances have <c>IsExecuting = false</c>). The timeout-based <c>RestartInterruptedWorkflowsTask</c>
+/// recurring task restarts instances with <c>IsExecuting = true</c> and a stale <c>UpdatedAt</c>, and also Interrupted
+/// instances with a stale <c>UpdatedAt</c>, which a drain on another node can leave behind after this scan ran.
 /// Terminal <c>Finished+Interrupted</c> rows from a drain/runner race are excluded so they are not requeued.
 /// Drain-induced <c>Finished/Cancelled</c> rows are also left alone (#8419) and are not in this filter.
 /// <para>One tenant-agnostic scan covers every tenant of the database it reads. A tenant with a connection string in its configuration is also scanned separately in its own scope.</para>

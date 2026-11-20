@@ -2,6 +2,7 @@
     <ItemGroup>
         <PackageReference Include="CShells.AspNetCore" />
         <PackageReference Include="CShells.FastEndpoints" />
+        <PackageReference Include="Microsoft.Extensions.DependencyModel" />
         <PackageReference Include="Nuplane" />
         <PackageReference Include="Nuplane.Loading" />
         <PackageReference Include="Nuplane.Sources.Directory" />

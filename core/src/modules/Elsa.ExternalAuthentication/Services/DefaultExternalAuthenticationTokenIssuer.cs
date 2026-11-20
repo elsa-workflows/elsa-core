@@ -5,6 +5,7 @@ using Elsa.Common.Multitenancy;
 using Elsa.Extensions;
 using Elsa.ExternalAuthentication.Contracts;
 using Elsa.ExternalAuthentication.Models;
+using Elsa.ExternalAuthentication.Permissions;
 using Elsa.Identity.Contracts;
 using Elsa.ExternalAuthentication.Options;
 using Elsa.Identity.Models;
@@ -72,8 +73,12 @@ public sealed class DefaultExternalAuthenticationTokenIssuer(
         // With no boundary configured, which is the default, every well-formed permission passes and nothing
         // about this changes.
         var boundary = new PermissionGrantBoundary(options.Value.PermissionGrants);
+        // Local role grants are resolved from current roles on every issuance, including for existing sessions.
+        var externalPermissions = session.ExternalGrants
+            .Where(x => !string.Equals(x.SourceType, ElsaRolePermissionGrantSource.SourceType, StringComparison.Ordinal))
+            .Select(x => x.Permission);
         var permissions = roles.SelectMany(x => x.Permissions)
-            .Concat(session.ExternalGrants.Select(x => x.Permission))
+            .Concat(externalPermissions)
             .Where(boundary.Allows)
             .Distinct(StringComparer.Ordinal)
             .ToArray();

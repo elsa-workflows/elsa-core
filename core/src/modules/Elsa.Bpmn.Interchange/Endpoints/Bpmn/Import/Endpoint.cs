@@ -3,6 +3,10 @@ using Bpmn.Semantics;
 using Elsa.Abstractions;
 using Elsa.Bpmn.Interchange.Endpoints.Bpmn;
 using Elsa.Bpmn.Interchange.Services;
+using Elsa.Common.Entities;
+using Elsa.Common.Models;
+using Elsa.Workflows.Management;
+using Elsa.Workflows.Management.Filters;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
 
@@ -18,7 +22,7 @@ namespace Elsa.Bpmn.Interchange.Endpoints.Bpmn.Import;
 /// alongside the bound activity graph.
 /// </remarks>
 [UsedImplicitly]
-internal sealed class Import(BpmnInterchangeDocumentService documentService) : ElsaEndpoint<Request>
+internal sealed class Import(BpmnInterchangeDocumentService documentService, IWorkflowDefinitionStore store) : ElsaEndpoint<Request>
 {
     /// <inheritdoc />
     public override void Configure()
@@ -31,11 +35,26 @@ internal sealed class Import(BpmnInterchangeDocumentService documentService) : E
     /// <inheritdoc />
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
+        await using var mutationLock = await WorkflowDefinitionMutationLock.AcquireAsync(HttpContext.RequestServices, cancellationToken);
+
         if (Files.Count != 1)
         {
             AddError("Upload exactly one .bpmn file.");
             await Send.ErrorsAsync(StatusCodes.Status400BadRequest, cancellationToken);
             return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.DefinitionId))
+        {
+            var filter = new WorkflowDefinitionFilter { DefinitionId = request.DefinitionId, VersionOptions = VersionOptions.Latest };
+            var order = new WorkflowDefinitionOrder<int>(version => version.Version, OrderDirection.Descending);
+            var existing = await store.FindAsync(filter, order, cancellationToken) ?? await store.FindLastVersionAsync(
+                new WorkflowDefinitionFilter { DefinitionId = request.DefinitionId }, cancellationToken);
+            if (existing != null && !HttpContext.OwnsWorkflowDefinition(existing))
+            {
+                await Send.ForbiddenAsync(cancellationToken);
+                return;
+            }
         }
 
         var xml = await BpmnUploadedFileReader.ReadTextAsync(Files[0], cancellationToken);

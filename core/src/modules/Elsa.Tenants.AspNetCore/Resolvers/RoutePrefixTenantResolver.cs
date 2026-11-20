@@ -10,7 +10,7 @@ namespace Elsa.Tenants.AspNetCore;
 /// <summary>
 /// Resolves the tenant based on the route prefix in the request URL. The tenant ID is expected to be part of the route.
 /// </summary>
-public class RoutePrefixTenantResolver(IHttpContextAccessor httpContextAccessor, IServiceProvider serviceProvider) : TenantResolverBase
+public class RoutePrefixTenantResolver(IHttpContextAccessor httpContextAccessor, IServiceProvider serviceProvider) : TenantResolverBase, ITenantRequestHintResolver
 {
     /// <inheritdoc />
     protected override async Task<TenantResolverResult> ResolveAsync(TenantResolverContext context)

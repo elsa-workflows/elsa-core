@@ -25,6 +25,12 @@ public class HttpEndpoint : Trigger<HttpRequest>
     internal const string HttpContextInputKey = "HttpContext";
     internal const string PathInputKey = "Path";
 
+    private static readonly HashSet<string> CredentialHeaders = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "Authorization", "Proxy-Authorization", "Cookie", "Cookie2", "Set-Cookie", "Set-Cookie2",
+        "X-Forwarded-Client-Cert", "X-ARR-ClientCert", "X-Goog-IAP-JWT-Assertion", "X-MS-CLIENT-PRINCIPAL"
+    };
+
     /// <inheritdoc />
     public HttpEndpoint([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
@@ -65,13 +71,13 @@ public class HttpEndpoint : Trigger<HttpRequest>
     /// <summary>
     /// Allow authenticated requests only.
     /// </summary>
-    [Input(Description = "Allow authenticated requests only.", Category = "Security")]
+    [Input(Description = "Require authentication and enforce the configured policy. When off, the Policy setting has no effect.", Category = "Security")]
     public Input<bool> Authorize { get; set; } = new(false);
 
     /// <summary>
-    /// Provide a policy to evaluate. If the policy fails, the request is forbidden.
+    /// The authorization policy evaluated only when Authorize is enabled.
     /// </summary>
-    [Input(Description = "Provide a policy to evaluate. If the policy fails, the request is forbidden.", Category = "Security")]
+    [Input(Description = "Optional authorization policy. Turn on Authorize to enforce this policy for starts and resumes.", Category = "Security")]
     public Input<string?> Policy { get; set; } = new(default(string?));
 
     /// <summary>
@@ -165,9 +171,9 @@ public class HttpEndpoint : Trigger<HttpRequest>
     public Output<IDictionary<string, object>> QueryStringData { get; set; } = null!;
 
     /// <summary>
-    /// The headers, if any.
+    /// The request headers suitable for workflow state and history. Use the live request to access credentials.
     /// </summary>
-    [Output(Description = "The headers, if any.")]
+    [Output(Description = "Request headers with credential headers omitted.")]
     public Output<IDictionary<string, object>> Headers { get; set; } = null!;
 
     /// <inheritdoc />
@@ -224,7 +230,7 @@ public class HttpEndpoint : Trigger<HttpRequest>
         var routeData = GetRouteData(httpContext, path);
         var routeDictionary = routeData.Values.ToDictionary(route => route.Key, route => route.Value!);
         var queryStringDictionary = httpContext.Request.Query.ToObjectDictionary();
-        var headersDictionary = httpContext.Request.Headers.ToObjectDictionary();
+        var headersDictionary = request.Headers.Where(header => !IsCredentialHeader(header.Key)).ToObjectDictionary();
 
         context.Set(RouteData, routeDictionary);
         context.Set(QueryStringData, queryStringDictionary);
@@ -306,6 +312,14 @@ public class HttpEndpoint : Trigger<HttpRequest>
         // Complete.
         await context.CompleteActivityAsync();
     }
+
+    private static bool IsCredentialHeader(string name) =>
+        CredentialHeaders.Contains(name) ||
+        name.Contains("api-key", StringComparison.OrdinalIgnoreCase) ||
+        name.Contains("apikey", StringComparison.OrdinalIgnoreCase) ||
+        name.Contains("token", StringComparison.OrdinalIgnoreCase) ||
+        name.Contains("secret", StringComparison.OrdinalIgnoreCase) ||
+        name.Contains("signature", StringComparison.OrdinalIgnoreCase);
 
     private bool ValidateDeclaredRequestSize(ActivityExecutionContext context, HttpContext httpContext)
     {

@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Elsa.Workflows.Runtime;
 
 /// <summary>
@@ -5,4 +7,5 @@ namespace Elsa.Workflows.Runtime;
 /// </summary>
 /// <param name="EventName">The name of the event.</param>
 /// <param name="WorkflowInstanceId">The ID of the workflow instance to trigger with the event.</param>
-public record EventTokenPayload(string EventName, string WorkflowInstanceId);
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
+public record EventTokenPayload([property: JsonRequired] string EventName, [property: JsonRequired] string WorkflowInstanceId);

@@ -17,5 +17,6 @@
     "@types/react": "19.3.0",
     "typescript": "5.9.3",
     "vite": "7.3.7"
-  }
+  },
+  "packageManager": "pnpm@10.33.0"
 }

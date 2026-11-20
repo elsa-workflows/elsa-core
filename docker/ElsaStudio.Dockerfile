@@ -9,6 +9,7 @@ COPY --from=node /usr/local /usr/local
 COPY core/src/. ./core/src
 COPY extensions/src/. ./extensions/src
 COPY studio/src/. ./studio/src
+COPY studio/react/vendor/picomatch-build ./studio/react/vendor/picomatch-build/
 COPY ./NuGet.Config ./
 COPY *.props *.targets ./
 COPY icon.png ./

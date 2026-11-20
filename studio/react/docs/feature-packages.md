@@ -72,6 +72,12 @@ An explicit file or inline server list and `STUDIO_*` overrides take precedence;
 an explicit empty server list is rejected. Other existing server endpoints keep their
 normal routes. The Blazor Studio remains the default Studio throughout 3.x.
 
+C# appears in the expression editor's syntax menu when the connected Elsa server
+enables `Scripting:CSharp:AllowHostCodeExecution`. The environment variable is
+`Scripting__CSharp__AllowHostCodeExecution=true`. Enable it only for deployments
+where workflow authors are trusted to execute code on the server.
+[Expressions and scripting](../../../core/docs/wiki/expressions-and-scripting.md)
+
 Standalone hosting can target a separate API origin using `STUDIO_SERVER_URL` and
 the existing authentication settings. Configure that API's CORS policy for the
 Studio origin. OIDC callbacks include the Studio mount; see [deployment](deployment.md).

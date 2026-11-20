@@ -1,9 +1,11 @@
 using System.Diagnostics;
+using Elsa.Common.Multitenancy;
 using Elsa.Workflows.ComponentTests.Abstractions;
 using Elsa.Workflows.ComponentTests.Fixtures;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Models;
@@ -20,7 +22,10 @@ public class DeleteWorkflowTests(App app) : AppComponentTest(app)
         EnsureWorkflowInRegistry(Scope, Workflows.DeleteWorkflow.Type);
 
         var workflowDefinitionManager = Scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionManager>();
-        var deletedCount = await workflowDefinitionManager.DeleteByDefinitionIdAsync(Workflows.DeleteWorkflow.DefinitionId);
+        long deletedCount;
+        // The code-defined workflow is provisioned by the host as a shared definition.
+        using (SharedTenantWriteScope.Enter<WorkflowDefinition>())
+            deletedCount = await workflowDefinitionManager.DeleteByDefinitionIdAsync(Workflows.DeleteWorkflow.DefinitionId);
         Assert.True(deletedCount > 0, "Expected workflow definition to be deleted.");
         
         var store = Scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionStore>();

@@ -151,3 +151,40 @@ test("a failing optional provider preserves shell children and navigation", asyn
   await page.getByRole("link", { name: "Definitions", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Workflow definitions", exact: true })).toBeVisible();
 });
+
+test("a failed workflow list offers retry and an unavailable catalogue keeps optional modules hidden", async ({ page }, testInfo) => {
+  let listAvailable = false;
+  await page.route("**/studio-config", async route => {
+    const response = await route.fetch();
+    const config = await response.json();
+    config.features["user-tasks"] = { enabled: true };
+    await route.fulfill({ json: config });
+  });
+  await page.route("**/elsa/api/features/installed", route => route.fulfill({ status: 503, json: { title: "Unavailable" } }));
+  await page.route(/\/elsa\/api\/workflow-definitions(?:\?|$)/, route =>
+    listAvailable
+      ? route.fulfill({ json: { items: [], totalCount: 0 } })
+      : route.fulfill({ status: 500, json: { title: "Definitions unavailable" } })
+  );
+
+  await page.goto("/studio-preview/workflows/definitions");
+  await expect(page.getByRole("alert").filter({ hasText: "Could not load workflow definitions" })).toBeVisible();
+  await expect(page.getByText("No workflow definitions yet. Create one to get started.")).toHaveCount(0);
+  await expect(page.getByRole("link", { name: /user tasks/i })).toHaveCount(0);
+  await page.screenshot({ path: testInfo.outputPath("definitions-unavailable.png") });
+
+  listAvailable = true;
+  await page.getByRole("button", { name: "Retry", exact: true }).click();
+  await expect(page.getByText("No workflow definitions yet. Create one to get started.")).toBeVisible();
+  await expect(page.getByRole("alert").filter({ hasText: "Could not load workflow definitions" })).toHaveCount(0);
+});
+
+test("an unavailable definitions request leaves the loading state by its deadline", async ({ page }) => {
+  await page.route(/\/elsa\/api\/workflow-definitions(?:\?|$)/, () => {});
+  await page.goto("/studio-preview/workflows/definitions");
+
+  await expect(page.getByRole("alert").filter({ hasText: "Could not load workflow definitions" }))
+    .toBeVisible({ timeout: 22_000 });
+  await expect(page.getByRole("button", { name: "Retry", exact: true })).toBeEnabled();
+  await expect(page.getByText("No workflow definitions yet. Create one to get started.")).toHaveCount(0);
+});

@@ -9,7 +9,7 @@ on:
         type: boolean
         default: false
       publish_nuget:
-        description: Publish a release-tag package to NuGet.org for this run (requires publisher approval). Stable 3.10.0 nuget.org publishes the pinned 231-ID candidate.
+        description: Publish a release-tag package to NuGet.org for this run (requires publisher approval). 3.11 NuGet publication is only enabled through promote_candidate_version.
         required: true
         type: boolean
         default: false
@@ -29,7 +29,7 @@ on:
         type: string
         default: ''
       promote_candidate_version:
-        description: Promote the already-built candidate pinned for this version in .github/release-pins/consolidated.json (for example 3.10.1) to Feedz and nuget.org, each behind its environment approval. Main only; no rebuild, no tag. Leave empty for every other run.
+        description: Promote the already-built candidate pinned for this version in .github/release-pins/consolidated.json (for example 3.11.0) to Feedz and nuget.org, each behind its environment approval. Main only; no rebuild, no tag. Leave empty for every other run.
         required: false
         type: string
         default: ''
@@ -57,7 +57,7 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'push' }}
 
 env:
-  base_version: '3.10.0'
+  base_version: '3.11.0'
   feedz_feed_source: 'https://f.feedz.io/elsa-workflows/elsa-3/nuget/index.json'
   nuget_feed_source: 'https://api.nuget.org/v3/index.json'
 
@@ -414,8 +414,7 @@ jobs:
         with:
           python-version: '3.12'
 
-      # NUKE builds the embedded React assets before Compile and Pack. Keep the
-      # existing 3.10 release base; React packages are eligible starting at 3.11.
+      # NUKE builds the embedded React assets before Compile and Pack.
       - name: Set up Node for React Studio assets
         if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-')) }}
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
@@ -491,7 +490,7 @@ jobs:
     timeout-minutes: 30
     # NuGet publication requires an explicit dispatch on a release tag. Stable
     # 3.10.0 stages the pinned candidate; other tags push this run's pack.
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/') }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/') && !startsWith(github.ref, 'refs/tags/3.11.') }}
     permissions:
       contents: read
       actions: read # Stable 3.10.x reads the pinned candidate artifact; unused on other tags.

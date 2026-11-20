@@ -61,7 +61,7 @@ export interface EditorHeaderProps {
   viewingOldVersion: boolean;
   canPublish: boolean;
   canRetract: boolean;
-  canExecute: boolean;
+  canRunPublishedWorkflow: boolean;
   onSave: () => void;
   onPublish: () => void;
   onUnpublish: () => void;
@@ -234,7 +234,7 @@ export function EditorHeader(p: EditorHeaderProps) {
             )}
           </>
         )}
-        {p.canExecute && definition.isPublished && (
+        {p.canRunPublishedWorkflow && (
           <Button
             variant="outline"
             size="sm"
@@ -250,7 +250,7 @@ export function EditorHeader(p: EditorHeaderProps) {
             <MoreHorizontal />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
-            {p.canExecute && definition.isPublished && (
+            {p.canRunPublishedWorkflow && (
               <DropdownMenuItem onClick={p.onRun} className="lg:hidden">
                 <Play /> {_t("Run")}</DropdownMenuItem>
             )}

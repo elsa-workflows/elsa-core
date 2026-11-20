@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
+using Elsa.Common.Multitenancy;
 using Elsa.Persistence.Dapper.Extensions;
 using Elsa.Persistence.Dapper.Models;
 using Elsa.Persistence.Dapper.Modules.Management.Records;
@@ -9,6 +10,7 @@ using Elsa.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Exceptions;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
 using JetBrains.Annotations;
@@ -136,7 +138,14 @@ internal class DapperWorkflowInstanceStore(Store<WorkflowInstanceRecord> store, 
     public async ValueTask AddAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
     {
         var record = Map(instance);
-        await store.AddAsync(record, cancellationToken);
+        try
+        {
+            await store.AddAsync(record, cancellationToken);
+        }
+        catch (System.Data.Common.DbException ex) when (DapperExceptionClassifier.IsDuplicateKey(ex))
+        {
+            throw new WorkflowInstanceAlreadyExistsException(instance.Id, ex);
+        }
     }
 
     /// <inheritdoc />
@@ -167,6 +176,26 @@ internal class DapperWorkflowInstanceStore(Store<WorkflowInstanceRecord> store, 
             Id = workflowInstanceId,
             UpdatedAt = value
         };
+        var updated = await store.UpdateAsync(record, [x => x.UpdatedAt], q => q.Is(nameof(WorkflowInstanceRecord.Id), workflowInstanceId), cancellationToken);
+
+        if (updated > 0)
+            return;
+
+        // A negative count (SQL Server NOCOUNT ON) does not say whether the row matched. Unless it is a "*" row,
+        // the store's own update writes it and checks its tenant, as before.
+        if (updated < 0 && !await store.AnyAsync(q =>
+            {
+                q.Is(nameof(WorkflowInstanceRecord.Id), workflowInstanceId);
+                q.Is(nameof(WorkflowInstanceRecord.TenantId), Tenant.AgnosticTenantId);
+            }, cancellationToken))
+        {
+            await store.UpdateAsync(record, [x => x.UpdatedAt], cancellationToken);
+            return;
+        }
+
+        // Not a row of the current tenant. Write it as tenant-agnostic, so a "*" row keeps its tenant;
+        // a row of another tenant still throws, and a missing row is a no-op.
+        record.TenantId = Tenant.AgnosticTenantId;
         await store.UpdateAsync(record, [x => x.UpdatedAt], cancellationToken);
     }
 

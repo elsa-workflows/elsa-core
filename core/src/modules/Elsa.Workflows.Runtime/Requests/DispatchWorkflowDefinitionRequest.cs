@@ -86,6 +86,12 @@ public class DispatchWorkflowDefinitionRequest
     public bool SkipIfInstanceExists { get; set; }
 
     /// <summary>
+    /// Stable identity of a trusted outbox delivery. An already persisted start may be
+    /// delivered again only by that same operation.
+    /// </summary>
+    public string? StartDeliveryId { get; set; }
+
+    /// <summary>
     /// Name of the ingress source that initiated this dispatch. Carried through to the execution cycle registry for
     /// drain-time accounting and the FR-018 inconsistency detection. Null when no attribution is available.
     /// </summary>

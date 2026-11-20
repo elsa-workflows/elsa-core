@@ -9,7 +9,8 @@ namespace Elsa.Common.Services;
 /// <typeparam name="TEntity">The type of entity to store.</typeparam>
 public class MemoryStore<TEntity>
 {
-    private IDictionary<string, TEntity> Entities { get; set; } = new ConcurrentDictionary<string, TEntity>();
+    private readonly ConcurrentDictionary<string, TEntity> _entries = new();
+    private IDictionary<string, TEntity> Entities => _entries;
 
     /// <summary>
     /// One lock for every scoped wrapper that shares this store. Compare-and-swap
@@ -29,6 +30,11 @@ public class MemoryStore<TEntity>
     /// <param name="entity">The entity to add.</param>
     /// <param name="idAccessor">A function that returns the ID of the entity.</param>
     public void Add(TEntity entity, Func<TEntity, string> idAccessor) => Entities.Add(idAccessor(entity), entity);
+
+    /// <summary>
+    /// Adds an entity only when its exact key is free.
+    /// </summary>
+    public bool TryAdd(TEntity entity, Func<TEntity, string> idAccessor) => _entries.TryAdd(idAccessor(entity), entity);
 
     /// <summary>
     /// Adds many entities.
@@ -72,6 +78,11 @@ public class MemoryStore<TEntity>
     /// <param name="predicate">A predicate to match.</param>
     /// <returns>The matching entity or null if no match was found.</returns>
     public TEntity? Find(Func<TEntity, bool> predicate) => Entities.Values.Where(predicate).FirstOrDefault();
+
+    /// <summary>
+    /// Finds an entity by the key used to store it.
+    /// </summary>
+    public TEntity? FindById(string id) => Entities.TryGetValue(id, out var entity) ? entity : default;
 
     /// <summary>
     /// Finds all entities matching the specified predicate.

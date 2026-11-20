@@ -8,12 +8,14 @@ using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Api.Requirements;
 using Elsa.Workflows.Api.Security;
 using Elsa.Workflows.Management;
+using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Exceptions;
+using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Models;
 using JetBrains.Annotations;
-using Medallion.Threading;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 
@@ -23,8 +25,8 @@ namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Post;
 internal class Post(
     IApiSerializer serializer,
     IWorkflowDefinitionPublisher workflowDefinitionPublisher,
+    IWorkflowDefinitionStore store,
     VariableDefinitionMapper variableDefinitionMapper,
-    IDistributedLockProvider distributedLockProvider,
     IWorkflowDefinitionLinker linker,
     IAuthorizationService authorizationService,
     WorkflowDefinitionScriptAuthorizationService scriptAuthorizationService)
@@ -38,11 +40,17 @@ internal class Post(
 
     public override async Task HandleAsync(SaveWorkflowDefinitionRequest request, CancellationToken cancellationToken)
     {
+        var publish = request.Publish == true;
+        if (publish && EndpointSecurityOptions.SecurityIsEnabled &&
+            !HttpContext.GetPermissionEvaluator().HasPermission(User, Elsa.Workflows.Api.Permissions.WorkflowPermissions.Definitions, "publish"))
+        {
+            await Send.ForbiddenAsync(cancellationToken);
+            return;
+        }
+
         var model = request.Model;
         var definitionId = model.DefinitionId;
-        var resourceName = $"{GetType().FullName}:{(!string.IsNullOrWhiteSpace(definitionId) ? definitionId : Guid.NewGuid().ToString())}";
-
-        await using var handle = await distributedLockProvider.AcquireLockAsync(resourceName, TimeSpan.FromMinutes(1), cancellationToken);
+        await using var mutationLock = await WorkflowDefinitionMutationLock.AcquireAsync(HttpContext.RequestServices, cancellationToken);
 
         var draft = !string.IsNullOrWhiteSpace(definitionId)
             ? await workflowDefinitionPublisher.GetDraftAsync(definitionId, VersionOptions.Latest, cancellationToken)
@@ -59,12 +67,28 @@ internal class Post(
                 draft.DefinitionId = definitionId;
         }
 
-        var authorizationResult = await authorizationService.AuthorizeAsync(User, new NotReadOnlyResource(draft), AuthorizationPolicies.NotReadOnlyPolicy);
+        var authorizationResult = await authorizationService.AuthorizeAsync(User, new NotReadOnlyResource(isNew ? null : draft), AuthorizationPolicies.NotReadOnlyPolicy);
 
         if (!authorizationResult.Succeeded)
         {
             await Send.ForbiddenAsync(cancellationToken);
             return;
+        }
+
+        WorkflowDefinition[] publishTargets = [];
+        if (publish && !string.IsNullOrWhiteSpace(definitionId))
+        {
+            publishTargets = (await store.FindManyAsync(new WorkflowDefinitionFilter
+            {
+                DefinitionId = definitionId,
+                VersionOptions = VersionOptions.LatestOrPublished
+            }, cancellationToken)).Select(version => version.ShallowClone()).ToArray();
+
+            if (!await authorizationService.CanMutateAsync(User, publishTargets))
+            {
+                await Send.ForbiddenAsync(cancellationToken);
+                return;
+            }
         }
 
         var scriptAuthorizationResult = await scriptAuthorizationService.AuthorizeAsync(model, cancellationToken);
@@ -98,28 +122,38 @@ internal class Post(
 
         PublishWorkflowDefinitionResult? result = null;
 
-        if (request.Publish == true)
+        try
         {
-            result = await workflowDefinitionPublisher.PublishAsync(draft, cancellationToken);
-
-            if (!result.Succeeded)
-            {
-                foreach (var validationError in result.ValidationErrors)
-                    AddError(validationError.Message);
-
-                await Send.ErrorsAsync(400, cancellationToken);
-                return;
-            }
+            if (isNew)
+                result = await workflowDefinitionPublisher.CreateInitialAsync(draft, publish, cancellationToken);
+            else if (publish)
+                result = await workflowDefinitionPublisher.PublishAsync(draft, publishTargets, cancellationToken);
+            else
+                await workflowDefinitionPublisher.SaveDraftAsync(draft, cancellationToken);
         }
-        else
+        catch (InvalidOperationException ex) when (ex is WorkflowDefinitionAlreadyExistsException or WorkflowDefinitionEditConflictException)
         {
-            await workflowDefinitionPublisher.SaveDraftAsync(draft, cancellationToken);
+            AddError("The workflow definition changed or is protected.");
+            await Send.ErrorsAsync(StatusCodes.Status409Conflict, cancellationToken);
+            return;
+        }
+
+        if (result is { Succeeded: false })
+        {
+            foreach (var validationError in result.ValidationErrors)
+                AddError(validationError.Message);
+
+            await Send.ErrorsAsync(400, cancellationToken);
+            return;
         }
 
         var mappedDefinition = await linker.MapAsync(draft, cancellationToken);
         var affectedWorkflows = result?.AffectedWorkflows?.WorkflowDefinitions ?? [];
-        var validationErrors = result?.ValidationErrors.Select(e => e.Message).ToList() ?? [];
-        var response = new Response(mappedDefinition, false, affectedWorkflows.Count, validationErrors);
+        var validationErrors = result?.ValidationErrors.Where(error => !error.IsWarning).Select(error => error.Message).ToList() ?? [];
+        var response = new Response(mappedDefinition, false, affectedWorkflows.Count, validationErrors)
+        {
+            ValidationWarnings = result?.ValidationErrors.Where(error => error.IsWarning).Select(error => error.Message).ToList() ?? []
+        };
         await HttpContext.Response.WriteAsJsonAsync(response, serializerOptions, cancellationToken);
     }
 

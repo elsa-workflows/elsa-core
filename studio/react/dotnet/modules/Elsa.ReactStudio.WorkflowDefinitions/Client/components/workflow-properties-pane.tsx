@@ -2,7 +2,7 @@
 import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
 
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Checkbox } from "@elsa-workflows/react-studio-ui/checkbox";
 import { Input } from "@elsa-workflows/react-studio-ui/input";
 import { ScrollArea } from "@elsa-workflows/react-studio-ui/scroll-area";
@@ -50,6 +50,7 @@ export function WorkflowPropertiesPane({ onViewVersion }: { onViewVersion: (vers
 
 function PropertiesTab() {
   const _t = useTranslation();
+  const id = useId();
   const { definition, updateDefinition, readOnly } = useWorkflowEditor();
   const activation = useActivationStrategies();
   const incidents = useIncidentStrategies();
@@ -64,24 +65,25 @@ function PropertiesTab() {
     <div className="flex flex-col gap-5 p-3">
       <section className="flex flex-col gap-3">
         <h3 className="text-sm font-semibold">{_t("Metadata")}</h3>
-        <Field label={_t("Name")} required>
-          <Input value={definition.name ?? ""} readOnly={readOnly} onChange={(e) => updateDefinition({ name: e.target.value })} />
+        <Field htmlFor={`${id}-name`} label={_t("Name")} required>
+          <Input id={`${id}-name`} value={definition.name ?? ""} readOnly={readOnly} onChange={(e) => updateDefinition({ name: e.target.value })} />
         </Field>
-        <Field label={_t("Description")}>
-          <Textarea rows={3} value={definition.description ?? ""} readOnly={readOnly} onChange={(e) => updateDefinition({ description: e.target.value })} />
+        <Field htmlFor={`${id}-description`} label={_t("Description")}>
+          <Textarea id={`${id}-description`} rows={3} value={definition.description ?? ""} readOnly={readOnly} onChange={(e) => updateDefinition({ description: e.target.value })} />
         </Field>
       </section>
 
       <section className="flex flex-col gap-3">
         <h3 className="text-sm font-semibold">{_t("Settings")}</h3>
-        <Field label={_t("Activation strategy")} hint={_t("Controls when a new instance may be created.")}>
-          <SimpleSelect value={options.activationStrategyType} allowEmpty disabled={readOnly} options={strategyOptions(activation.items)} onChange={(v) => setOption({ activationStrategyType: v })} />
+        <Field htmlFor={`${id}-activation`} label={_t("Activation strategy")} hint={_t("Controls when a new instance may be created.")}>
+          <SimpleSelect id={`${id}-activation`} value={options.activationStrategyType} allowEmpty disabled={readOnly} options={strategyOptions(activation.items)} onChange={(v) => setOption({ activationStrategyType: v })} />
         </Field>
-        <Field label={_t("Incident strategy")}>
-          <SimpleSelect value={options.incidentStrategyType} allowEmpty disabled={readOnly} options={strategyOptions(incidents.items)} onChange={(v) => setOption({ incidentStrategyType: v })} />
+        <Field htmlFor={`${id}-incident`} label={_t("Incident strategy")}>
+          <SimpleSelect id={`${id}-incident`} value={options.incidentStrategyType} allowEmpty disabled={readOnly} options={strategyOptions(incidents.items)} onChange={(v) => setOption({ incidentStrategyType: v })} />
         </Field>
-        <Field label={_t("Log persistence strategy")}>
+        <Field htmlFor={`${id}-logs`} label={_t("Log persistence strategy")}>
           <SimpleSelect
+            id={`${id}-logs`}
             value={typeof options.logPersistenceStrategyType === "string" ? options.logPersistenceStrategyType : undefined}
             allowEmpty
             disabled={readOnly}
@@ -89,19 +91,19 @@ function PropertiesTab() {
             onChange={(v) => setOption({ logPersistenceStrategyType: v })}
           />
         </Field>
-        <Field label={_t("Commit strategy")}>
-          <SimpleSelect value={options.commitStrategyName} allowEmpty disabled={readOnly} options={strategyOptions(commit.items)} onChange={(v) => setOption({ commitStrategyName: v })} />
+        <Field htmlFor={`${id}-commit`} label={_t("Commit strategy")}>
+          <SimpleSelect id={`${id}-commit`} value={options.commitStrategyName} allowEmpty disabled={readOnly} options={strategyOptions(commit.items)} onChange={(v) => setOption({ commitStrategyName: v })} />
         </Field>
         <Field inline label={_t("Usable as activity")} hint={_t("Expose this workflow in the activity toolbox of other workflows.")}>
-          <Checkbox checked={options.usableAsActivity === true} disabled={readOnly} onCheckedChange={(c) => setOption({ usableAsActivity: c === true })} />
+          <Checkbox aria-label={_t("Usable as activity")} checked={options.usableAsActivity === true} disabled={readOnly} onCheckedChange={(c) => setOption({ usableAsActivity: c === true })} />
         </Field>
         {options.usableAsActivity && (
           <>
             <Field inline label={_t("Auto-update referencing workflows")} hint={_t("On publish, consumers are updated to this version.")}>
-              <Checkbox checked={options.autoUpdateConsumingWorkflows === true} disabled={readOnly} onCheckedChange={(c) => setOption({ autoUpdateConsumingWorkflows: c === true })} />
+              <Checkbox aria-label={_t("Auto-update referencing workflows")} checked={options.autoUpdateConsumingWorkflows === true} disabled={readOnly} onCheckedChange={(c) => setOption({ autoUpdateConsumingWorkflows: c === true })} />
             </Field>
-            <Field label={_t("Activity category")}>
-              <Input value={options.activityCategory ?? ""} readOnly={readOnly} onChange={(e) => setOption({ activityCategory: e.target.value || undefined })} placeholder={_t("Workflows")} />
+            <Field htmlFor={`${id}-category`} label={_t("Activity category")}>
+              <Input id={`${id}-category`} value={options.activityCategory ?? ""} readOnly={readOnly} onChange={(e) => setOption({ activityCategory: e.target.value || undefined })} placeholder={_t("Workflows")} />
             </Field>
           </>
         )}
