@@ -54,11 +54,12 @@ public static class ActivityExecutionContextExtensions
 
     private static object? ReadOutputValue(ActivityExecutionContext context, string outputName, Output? output)
     {
-        var cachedValue = context.Activity.GetOutput(context.ExpressionExecutionContext, outputName);
+        // An output this execution recorded wins, even when the recorded value is null.
+        var outputRegister = context.WorkflowExecutionContext.GetActivityOutputRegister();
 
-        if (cachedValue != null)
+        if (outputRegister.TryFindOutputByActivityInstanceId(context.Id, outputName, out var recordedValue))
         {
-            return cachedValue;
+            return recordedValue;
         }
 
         if (output != null && context.TryGet(output.MemoryBlockReference(), out var outputValue))
