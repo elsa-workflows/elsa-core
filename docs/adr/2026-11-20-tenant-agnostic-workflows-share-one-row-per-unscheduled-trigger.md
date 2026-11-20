@@ -29,7 +29,9 @@ A trigger is **scheduled** if a trigger scheduler schedules it by its trigger ID
 
 The runtime keeps one set of scheduled trigger names. The module that schedules a trigger type adds its name to that set, and the schedulers select the triggers they schedule from the same set. The scheduling module adds `Elsa.Timer`, `Elsa.Cron` and `Elsa.StartAt`. `DefaultTriggerScheduler`, `CreateSchedulesStartupTask` and `DeleteSchedules` select by the set instead of their own lists. Without the scheduling module, the set is empty and every trigger is unscheduled.
 
-Because selecting and classifying use the same set, a new trigger type cannot end up on the wrong side. A type that no scheduler schedules is unscheduled, which is correct. A new type is scheduled only after its module adds it to the set, and that also makes it scheduled for this classification. A host or module with its own `ITriggerScheduler` must add the names of the triggers it schedules.
+The set classifies and selects; it does not route. Each trigger scheduler adds the names it handles, loads only triggers whose name is in the set, and ignores the names it does not handle. Elsa has one trigger scheduler today, `DefaultTriggerScheduler`, which handles `Elsa.Timer`, `Elsa.Cron` and `Elsa.StartAt` by name; `CreateSchedulesStartupTask` and `DeleteSchedules` load the candidate triggers by the set and hand them to the trigger scheduler. Quartz and Hangfire run the jobs that the trigger scheduler creates and are not trigger schedulers themselves.
+
+Because selecting and classifying use the same set, a new trigger type cannot end up on the wrong side. A type that no scheduler schedules is unscheduled, which is correct. A scheduler that handles a name it did not add to the set never loads those triggers, so the gap shows as triggers that are not scheduled, not as a silently shared trigger. A host or module with its own `ITriggerScheduler` must add the names of the triggers it schedules.
 
 ### 2. Rows of a `"*"` definition
 
@@ -52,7 +54,8 @@ A row of another tenant, or a `"*"` row, never counts as the current row of a te
 This replaces the bullets of 2026-11-11 §2 for `"*"` definitions:
 
 - **Publish, republish, provider import.** The unscheduled rows are replaced once, in whichever tenant the publish or import runs. The scheduled rows are reconciled for every active tenant except a registered `"*"` tenant and the tenants that override the definition (section 5), each in that tenant's context, so that `ScheduleWorkflows` schedules and unschedules there. Provider import runs on every tenant's activation, so the shared step repeats; with nothing changed, its diff is empty and it writes nothing.
-- **Tenant activation.** The tenant's scheduled rows of every `"*"` definition are reconciled. On the first activation after an upgrade, this also removes the tenant's copies of unscheduled triggers (section 7).
+- **Tenant activation.** First, the shared rows of every published `"*"` definition are reconciled, as the provider import already does for provider definitions; with nothing changed, this writes nothing. Then the tenant's scheduled rows of every `"*"` definition are reconciled. The tenant's own copies of unscheduled triggers of `"*"` definitions are removed only after the shared rows exist, so a trigger is never missing (section 7). Activation writes the shared rows inside a `SharedTenantWriteScope` for `StoredTrigger`, as the provider import does.
+- **Activation of a registered `"*"` tenant.** It reconciles the shared rows like any activation. It has no scheduled rows of `"*"` definitions (section 2): rows that exist from before the upgrade are removed and their jobs unscheduled.
 - **Unpublish, retract, delete.** The `"*"` rows are removed once, and the scheduled rows are removed and unscheduled for every active tenant.
 - **Tenant deactivation and deletion.** Unchanged: the tenant's schedules are stopped. The `"*"` rows stay.
 
@@ -75,9 +78,9 @@ This replaces the third sentence of 2026-11-11 §4. A tenant's lookup returns at
 
 Today, each tenant's activation writes tenant-stamped rows for the triggers of `"*"` definitions. After the upgrade:
 
-- each tenant's first activation removes its rows of unscheduled triggers of `"*"` definitions, and the provider import writes the shared rows once;
-- `"*"` definitions authored in the database (by a registered `"*"` tenant) get their shared rows when they are next published, or by a one-time re-index of those definitions that the migration note describes;
-- until a tenant's first activation after the upgrade, that tenant can see both its old row and the new shared row for the same trigger, so HTTP answers 500 for that trigger. The migration note tells hosts that cannot accept this window how to delete the old rows before they start the new version.
+- the first activation writes the shared rows of every published `"*"` definition, whether it comes from a provider or was authored in the database, and each tenant's first activation then removes its own rows of unscheduled triggers of `"*"` definitions (section 4);
+- the first activation of a registered `"*"` tenant removes its scheduled rows of `"*"` definitions and unschedules their jobs;
+- until a tenant's first activation after the upgrade, that tenant can see both its old row and the new shared row for the same trigger. HTTP then answers 500 for that trigger, and a stimulus starts two instances, one per row. Hosts that cannot accept this window delete the tenant-stamped rows of unscheduled triggers of `"*"` definitions before they start the new version; the first activation then writes the shared rows, and until it has, those triggers are not found rather than matched twice.
 
 The migration note in `core/docs/migrations` describes these steps, the cleanup query, and the new rule for custom trigger schedulers (section 1).
 

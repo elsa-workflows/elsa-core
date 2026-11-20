@@ -6,7 +6,7 @@ Date: 2026-11-11
 
 Proposed
 
-Amended by [Tenant-agnostic workflows share one row per unscheduled trigger](2026-11-20-tenant-agnostic-workflows-share-one-row-per-unscheduled-trigger.md): unscheduled triggers (HTTP, events, messages) of a `"*"` definition keep one shared `"*"` row; only scheduled triggers (timers, cron, `StartAt`) fan out per tenant, and a tenant's own definition with the same ID wins over the `"*"` one.
+Amended by [Tenant-agnostic workflows share one row per unscheduled trigger](2026-11-20-tenant-agnostic-workflows-share-one-row-per-unscheduled-trigger.md): unscheduled triggers (HTTP, events, messages) of a `"*"` definition keep one shared `"*"` row; only scheduled triggers (timers, cron, `StartAt`) fan out per tenant, and a tenant's own published definition with the same ID wins over the `"*"` one.
 
 ## Context
 
