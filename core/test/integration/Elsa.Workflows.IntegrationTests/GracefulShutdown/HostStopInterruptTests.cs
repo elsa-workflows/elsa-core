@@ -102,7 +102,10 @@ public class HostStopInterruptTests(ITestOutputHelper testOutputHelper) : IAsync
         var client = await _services.GetRequiredService<IWorkflowRuntime>().CreateClientAsync();
         var run = Task.Run(() => client.CreateAndRunInstanceAsync(new() { WorkflowDefinitionHandle = Handle<HostStopCheckpointWorkflow>() }));
         await _gate.Started.Task.WaitAsync(TimeSpan.FromSeconds(5));
-        Assert.Null(await FindAsync(client.WorkflowInstanceId));
+        // Only the initial, restartable state that a new instance is created with has been stored; the run itself has not committed yet.
+        var created = await FindAsync(client.WorkflowInstanceId);
+        Assert.NotNull(created);
+        Assert.Equal((WorkflowStatus.Running, WorkflowSubStatus.Pending), (created.Status, created.SubStatus));
 
         var instance = await DrainAndReleaseAsync(client.WorkflowInstanceId, run);
 
