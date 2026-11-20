@@ -20,12 +20,14 @@ namespace Elsa.Persistence.EFCore.UnitTests;
 
 public class WorkflowInstanceStoreUpdatedTimestampEfTests
 {
-    [Theory(DisplayName = "UpdateUpdatedTimestampAsync changes only UpdatedAt, never the instance's tenant")]
-    [InlineData(null, Tenant.DefaultTenantId)]
-    [InlineData(Tenant.AgnosticTenantId, Tenant.DefaultTenantId)]
-    [InlineData(Tenant.AgnosticTenantId, "t1")]
-    [InlineData("t2", "t1")]
-    public async Task UpdateUpdatedTimestamp_KeepsTenantId(string? instanceTenantId, string ambientTenantId)
+    [Theory(DisplayName = "UpdateUpdatedTimestampAsync stamps only rows the ambient tenant may write, and never changes their tenant")]
+    [InlineData(null, Tenant.DefaultTenantId, false, true)]
+    [InlineData("t1", "t1", false, true)]
+    [InlineData(Tenant.AgnosticTenantId, "t1", true, true)]
+    [InlineData(Tenant.AgnosticTenantId, Tenant.DefaultTenantId, false, false)]
+    [InlineData(Tenant.AgnosticTenantId, "t1", false, false)]
+    [InlineData("t2", "t1", false, false)]
+    public async Task UpdateUpdatedTimestamp_KeepsTenantId(string? instanceTenantId, string ambientTenantId, bool sharedWriteGranted, bool expectStamped)
     {
         var databasePath = Path.Join(Path.GetTempPath(), $"elsa-instances-{Guid.NewGuid():N}.db");
         var tenantAccessor = new DefaultTenantAccessor();
@@ -59,13 +61,15 @@ public class WorkflowInstanceStoreUpdatedTimestampEfTests
                     CreatedAt = DateTimeOffset.UnixEpoch,
                     UpdatedAt = DateTimeOffset.UnixEpoch
                 });
-                await dbContext.SaveChangesAsync();
+                using (SharedTenantWriteScope.Enter<WorkflowInstance>())
+                    await dbContext.SaveChangesAsync();
                 // Bypasses ApplyTenantId, which would turn a null tenant into the ambient one.
                 await dbContext.WorkflowInstances.IgnoreQueryFilters().Where(x => x.Id == "i").ExecuteUpdateAsync(x => x.SetProperty(i => i.TenantId, instanceTenantId));
             }
 
             using (var scope = services.CreateScope())
             using (tenantAccessor.PushContext(new Tenant { Id = ambientTenantId, Name = ambientTenantId }))
+            using (sharedWriteGranted ? SharedTenantWriteScope.Enter<WorkflowInstance>() : null)
             {
                 var store = new EFCoreWorkflowInstanceStore(
                     scope.ServiceProvider.GetRequiredService<EntityStore<ManagementElsaDbContext, WorkflowInstance>>(),
@@ -80,7 +84,7 @@ public class WorkflowInstanceStoreUpdatedTimestampEfTests
             await using (var dbContext = await dbContextFactory.CreateDbContextAsync())
             {
                 var instance = await dbContext.WorkflowInstances.IgnoreQueryFilters().AsNoTracking().SingleAsync(x => x.Id == "i");
-                Assert.Equal(stampedAt, instance.UpdatedAt);
+                Assert.Equal(expectStamped ? stampedAt : DateTimeOffset.UnixEpoch, instance.UpdatedAt);
                 Assert.Equal(instanceTenantId, instance.TenantId);
             }
         }
