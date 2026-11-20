@@ -33,7 +33,11 @@ public sealed class ExecutionCycleRegistry : IExecutionCycleRegistry
     public int ActiveCount => _active.Count;
 
     /// <inheritdoc />
-    public ExecutionCycleHandle BeginCycle(string workflowInstanceId, string? ingressSourceName, CancellationToken linkedToken, Action? cancelCallback = null)
+    public ExecutionCycleHandle BeginCycle(string workflowInstanceId, string? ingressSourceName, CancellationToken linkedToken, Action? cancelCallback = null) =>
+        BeginCycle(workflowInstanceId, ingressSourceName, linkedToken, cancelCallback, configure: null);
+
+    /// <inheritdoc />
+    public ExecutionCycleHandle BeginCycle(string workflowInstanceId, string? ingressSourceName, CancellationToken linkedToken, Action? cancelCallback, Action<ExecutionCycleHandle>? configure)
     {
         // FR-018: a source that reports Paused but starts an execution cycle is inconsistent — flip it to PauseFailed.
         if (ingressSourceName is not null)
@@ -58,6 +62,7 @@ public sealed class ExecutionCycleRegistry : IExecutionCycleRegistry
             // Recorded before the handle is registered, so a drain never sees it without its tenant.
             Tenant = _tenantAccessor?.Tenant
         };
+        configure?.Invoke(handle);
 
         _active[handle.Id] = handle;
         return handle;

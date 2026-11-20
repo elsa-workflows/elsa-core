@@ -221,6 +221,7 @@ public class WorkflowRuntimeFeature : IShellFeature
             options.OverflowPolicy = GracefulShutdown.OverflowPolicy;
             options.PausePersistence = GracefulShutdown.PausePersistence;
             options.MaxForceCancelledInstanceIdsReported = GracefulShutdown.MaxForceCancelledInstanceIdsReported;
+            options.InterruptOnHostStop = GracefulShutdown.InterruptOnHostStop;
         });
 
         services

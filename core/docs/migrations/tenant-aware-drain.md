@@ -17,4 +17,4 @@
 ## What to do
 
 - Code that creates `DrainOrchestrator` or `ExecutionCycleRegistry` with the `[Obsolete]` constructors keeps the old behavior. Switch to the new constructors, which take an `ITenantScopeFactory` and an `ITenantAccessor`.
-- A custom `IExecutionCycleRegistry` records no tenant, so the drain persists its cycles without a tenant, as before.
+- A custom `IExecutionCycleRegistry` should set `ExecutionCycleHandle.Tenant` to the current tenant when it creates a handle. A handle without a tenant is persisted without a tenant, as before, so the drain does not find the instance of a tenant that has its own database.
