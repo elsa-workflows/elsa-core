@@ -1,3 +1,4 @@
+using Elsa.Common.DistributedHosting;
 using System.Collections;
 using System.Reflection;
 using Elsa.Common.Models;
@@ -483,6 +484,47 @@ public class HttpWorkflowsMiddlewareTests
         }
     }
 
+    [Fact]
+    public async Task InvokeAsync_WhenTheInstanceLockIsNotAcquiredInTime_ReturnsConflictWithoutResuming()
+    {
+        // Arrange: another run holds the instance lock for longer than this request waits.
+        var resume = new ResumeScenario(requestTimeout: TimeSpan.FromSeconds(5));
+        resume.LockUnavailable = true;
+
+        // Act
+        var httpContext = await resume.InvokeAsync(_middleware);
+
+        // Assert
+        Assert.Equal(StatusCodes.Status409Conflict, httpContext.Response.StatusCode);
+        Assert.Empty(resume.WorkflowRunner.ReceivedCalls());
+    }
+
+    [Fact]
+    public async Task InvokeAsync_WhenTheRequestTimeoutIsShorterThanTheLockTimeout_WaitsForTheInstanceLockNoLongerThanTheRequestTimeout()
+    {
+        // Arrange
+        var resume = new ResumeScenario(requestTimeout: TimeSpan.FromSeconds(5));
+
+        // Act
+        await resume.InvokeAsync(_middleware);
+
+        // Assert
+        Assert.Equal(TimeSpan.FromSeconds(5), resume.RequestedLockTimeout);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_WhenThereIsNoRequestTimeout_WaitsForTheInstanceLockForTheConfiguredLockTimeout()
+    {
+        // Arrange
+        var resume = new ResumeScenario();
+
+        // Act
+        await resume.InvokeAsync(_middleware);
+
+        // Assert
+        Assert.Equal(new DistributedLockingOptions().LockAcquisitionTimeout, resume.RequestedLockTimeout);
+    }
+
     /// <summary>
     /// A request that matches one HTTP bookmark of a running workflow instance, with a fake per-instance lock.
     /// </summary>
@@ -492,14 +534,14 @@ public class HttpWorkflowsMiddlewareTests
         private readonly StoredBookmark _bookmark;
         private readonly IServiceProvider _serviceProvider;
 
-        public ResumeScenario()
+        public ResumeScenario(TimeSpan? requestTimeout = null)
         {
             _bookmark = new()
             {
                 Id = BookmarkId,
                 Hash = BookmarkHash,
                 WorkflowInstanceId = "instance-1",
-                Payload = new HttpEndpointBookmarkPayload(BookmarkPath, "get", authorize: false)
+                Payload = new HttpEndpointBookmarkPayload(BookmarkPath, "get", authorize: false, requestTimeout: requestTimeout)
             };
             Instance = new()
             {
@@ -528,11 +570,15 @@ public class HttpWorkflowsMiddlewareTests
                 return ValueTask.CompletedTask;
             });
             var instanceLock = Substitute.For<IDistributedLock>();
-            instanceLock.AcquireAsync(Arg.Any<TimeSpan?>(), Arg.Any<CancellationToken>()).Returns(_ =>
+            instanceLock.TryAcquireAsync(Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>()).Returns(_ =>
             {
+                RequestedLockTimeout = _.Arg<TimeSpan>();
+                if (LockUnavailable)
+                    return new ValueTask<IDistributedSynchronizationHandle?>((IDistributedSynchronizationHandle?)null);
+
                 LockHeld = true;
                 OnLockAcquired();
-                return new ValueTask<IDistributedSynchronizationHandle>(lockHandle);
+                return new ValueTask<IDistributedSynchronizationHandle?>(lockHandle);
             });
             LockProvider.CreateLock($"workflow-instance:{Instance.Id}").Returns(instanceLock);
 
@@ -554,6 +600,16 @@ public class HttpWorkflowsMiddlewareTests
         public IWorkflowRunner WorkflowRunner { get; } = Substitute.For<IWorkflowRunner>();
         public IDistributedLockProvider LockProvider { get; } = Substitute.For<IDistributedLockProvider>();
         public bool LockHeld { get; private set; }
+
+        /// <summary>
+        /// Simulates another run holding the instance lock for longer than the caller waits.
+        /// </summary>
+        public bool LockUnavailable { get; set; }
+
+        /// <summary>
+        /// The time the middleware was willing to wait for the instance lock.
+        /// </summary>
+        public TimeSpan RequestedLockTimeout { get; private set; }
 
         /// <summary>
         /// Runs right after the instance lock is acquired, to simulate changes made by another request while this one waited.
