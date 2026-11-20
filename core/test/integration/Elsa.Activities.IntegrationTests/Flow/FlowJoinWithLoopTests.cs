@@ -337,6 +337,59 @@ public class FlowJoinWithLoopTests(ITestOutputHelper testOutputHelper)
         AssertFinished(state);
     }
 
+    [Theory]
+    [InlineData(FlowJoinMode.WaitAll)]
+    [InlineData(FlowJoinMode.WaitAllActive)]
+    public async Task Join_RunsOnceAfterSiblingLoopsThatShareAStart(FlowJoinMode joinMode)
+    {
+        // Arrange
+        //   Start -> Head -> Body (waits) -> Route; Route A -> LoopA -> Head; Route B -> LoopB -> Head
+        //   Route Done -> Join; Start -> Other -> Join; Join -> Active
+        // The two loops share Head, Body and Route, and neither is inside the other. The first pass goes round loop A.
+        // The second pass leaves loop A and goes round loop B through the shared body. The third pass leaves through Done.
+        var routes = new Queue<string>(["A", "B", "Done"]);
+        var start = new Start();
+        var head = Logger("head");
+        var body = new WaitForResume();
+        var route = new Route(() => Log(routes.Dequeue()));
+        var loopA = Logger("loop A");
+        var loopB = Logger("loop B");
+        var other = Logger("other");
+        var join = new FlowJoin { Mode = new(joinMode) };
+        var active = Logger("ACTIVE");
+        var flowchart = new Flowchart
+        {
+            Start = start,
+            Activities = { start, head, body, route, loopA, loopB, other, join, active },
+            Connections =
+            {
+                new(start, head),
+                new(head, body),
+                new(body, route),
+                new(new Endpoint(route, "A"), new Endpoint(loopA)),
+                new(loopA, head),
+                new(new Endpoint(route, "B"), new Endpoint(loopB)),
+                new(loopB, head),
+                new(new Endpoint(route, "Done"), new Endpoint(join)),
+                new(start, other),
+                new(other, join),
+                new(join, active)
+            }
+        };
+
+        // Act
+        var state = await RunAndResumeAsync(flowchart, FlowchartExecutionMode.CounterBased, body);
+
+        // Assert
+        // Each loop went round once and the shared body ran in all three passes; the join ran once, only after the last pass.
+        Assert.Equal(["A", "B", "Done"], _log.Where(x => x is "A" or "B" or "Done"));
+        Assert.Single(_log, x => x == "loop A");
+        Assert.Single(_log, x => x == "loop B");
+        Assert.Equal(3, _log.Count(x => x == "head"));
+        AssertActiveRanOnceAfter("Done");
+        AssertFinished(state);
+    }
+
     private string Log(string entry)
     {
         _log.Add(entry);
@@ -381,6 +434,14 @@ public class FlowJoinWithLoopTests(ITestOutputHelper testOutputHelper)
     {
         Assert.Equal(WorkflowStatus.Finished, state.Status);
         Assert.Equal(WorkflowSubStatus.Finished, state.SubStatus);
+    }
+
+    /// <summary>
+    /// Completes with the outcome that <paramref name="next"/> returns.
+    /// </summary>
+    private sealed class Route(Func<string> next) : Activity
+    {
+        protected override async ValueTask ExecuteAsync(ActivityExecutionContext context) => await context.CompleteActivityWithOutcomesAsync(next());
     }
 
     /// <summary>
