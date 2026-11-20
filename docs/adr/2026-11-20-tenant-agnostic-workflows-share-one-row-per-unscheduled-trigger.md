@@ -33,8 +33,8 @@ Because selecting and classifying use the same set, a new trigger type cannot en
 
 ### 2. Rows of a `"*"` definition
 
-- **Unscheduled triggers: one row, stamped `"*"`.** The indexer sets `TenantId = "*"` explicitly, with the shared-write grant (`SharedTenantWriteScope`), whatever the ambient tenant is. No tenant gets a copy. Every tenant sees the row through the visibility filter, and the instance it starts belongs to the invoking tenant (2026-11-11 §3, unchanged).
-- **Scheduled triggers: one row per active tenant**, stamped with that tenant, as 2026-11-11 §1 and §6 decide. A registered `"*"` tenant does not get one. Its rows would fire once more and create `"*"` instances that every tenant sees, which is the global cron that 2026-11-11 leaves to a later ADR.
+- **Unscheduled triggers: one row, stamped `"*"`.** The indexer sets `TenantId = "*"` explicitly, whatever the ambient tenant is, and writes the row inside a `SharedTenantWriteScope` for `StoredTrigger`. The trigger rows are derived from the shared definition, so they are written as part of the shared write that put the definition there: the provider import enters the scope itself, as `DefaultWorkflowDefinitionStorePopulator` already does, and a publish of a `"*"` definition runs inside the host's grant for that publish ([2026-11-02](2026-11-02-a-host-may-register-the-asterisk-tenant.md): a `"*"` context alone grants no shared-write authority). No tenant gets a copy. Every tenant sees the row through the visibility filter, and the instance it starts belongs to the invoking tenant (2026-11-11 §3, unchanged).
+- **Scheduled triggers: one row per active tenant**, stamped with that tenant, as 2026-11-11 §1 and §6 decide. A registered `"*"` tenant does not get one: its rows would fire in a `"*"` context, and Elsa does not persist `"*"` instances ([2026-11-02](2026-11-02-a-host-may-register-the-asterisk-tenant.md)). A cron that fires once for all tenants is the global cron that 2026-11-11 leaves to a later ADR.
 
 Definitions that a tenant owns are unchanged: all their triggers are stamped with that tenant.
 
