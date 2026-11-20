@@ -14,7 +14,7 @@ namespace Elsa.Activities.IntegrationTests.Flow;
 
 /// <summary>
 /// A join whose inbound branch contains a loop must wait until the loop is left (#8465).
-/// Every scenario runs until the loop waits, persists and restores the state, and then resumes the wait.
+/// Every scenario runs until a wait suspends the workflow, persists and restores the state, and resumes the wait until it no longer suspends.
 /// </summary>
 public class FlowJoinWithLoopTests(ITestOutputHelper testOutputHelper)
 {
@@ -184,6 +184,159 @@ public class FlowJoinWithLoopTests(ITestOutputHelper testOutputHelper)
         AssertFinished(state);
     }
 
+    [Theory]
+    [InlineData(FlowJoinMode.WaitAll)]
+    [InlineData(FlowJoinMode.WaitAllActive)]
+    public async Task Join_WaitsForTheOuterLoopWhenAnExitLeavesNestedLoops(FlowJoinMode joinMode)
+    {
+        // Arrange
+        //   Start -> Outer (waits) -> Abort; Abort False -> Again; Again True -> Abort (inner loop); Again False -> Repeat
+        //   Repeat True -> Outer (outer loop); Repeat False -> Finish
+        //   Abort True -> Join (leaves both loops); Start -> Other -> Join; Join -> Active
+        // The inner loop runs twice in the first outer pass. The second outer pass aborts out of both loops.
+        var outerPasses = 0;
+        var innerPasses = 0;
+        var start = new Start();
+        var outer = new WaitForResume();
+        var abort = new FlowDecision(_ => outerPasses > 0 && Log("abort") == "abort");
+        var again = new FlowDecision(_ => ++innerPasses % 2 == 1);
+        var repeat = new FlowDecision(_ => ++outerPasses < 2);
+        var finish = Logger("finish");
+        var other = Logger("other");
+        var join = new FlowJoin { Mode = new(joinMode) };
+        var active = Logger("ACTIVE");
+        var flowchart = new Flowchart
+        {
+            Start = start,
+            Activities = { start, outer, abort, again, repeat, finish, other, join, active },
+            Connections =
+            {
+                new(start, outer),
+                new(outer, abort),
+                new(new Endpoint(abort, "False"), new Endpoint(again)),
+                new(new Endpoint(again, "True"), new Endpoint(abort)),
+                new(new Endpoint(again, "False"), new Endpoint(repeat)),
+                new(new Endpoint(repeat, "True"), new Endpoint(outer)),
+                new(new Endpoint(repeat, "False"), new Endpoint(finish)),
+                new(new Endpoint(abort, "True"), new Endpoint(join)),
+                new(start, other),
+                new(other, join),
+                new(join, active)
+            }
+        };
+
+        // Act
+        var state = await RunAndResumeAsync(flowchart, FlowchartExecutionMode.CounterBased, outer);
+
+        // Assert
+        AssertActiveRanOnceAfter("abort");
+        Assert.DoesNotContain("finish", _log);
+        AssertFinished(state);
+    }
+
+    [Theory]
+    [InlineData(FlowJoinMode.WaitAll)]
+    [InlineData(FlowJoinMode.WaitAllActive)]
+    public async Task Join_IsDecidedWhenTheLoopIsLeftPartway(FlowJoinMode joinMode)
+    {
+        // Arrange
+        //   Start -> Gate; Gate True -> Check; Check True -> Rework (waits) -> Gate (loop)
+        //   Gate False -> Broke -> Join (breaks out before the loop end); Check False -> Join
+        //   Start -> Other -> Join; Join -> Active
+        // The second pass breaks out at Gate, so Check is skipped and its exit, deferred in the first pass, is decided only then.
+        var gates = 0;
+        var start = new Start();
+        var gate = new FlowDecision(_ => ++gates < 2);
+        var check = new FlowDecision(_ => true);
+        var rework = new WaitForResume();
+        var broke = Logger("broke");
+        var other = Logger("other");
+        var join = new FlowJoin { Mode = new(joinMode) };
+        var active = Logger("ACTIVE");
+        var flowchart = new Flowchart
+        {
+            Start = start,
+            Activities = { start, gate, check, rework, broke, other, join, active },
+            Connections =
+            {
+                new(start, gate),
+                new(new Endpoint(gate, "True"), new Endpoint(check)),
+                new(new Endpoint(check, "True"), new Endpoint(rework)),
+                new(rework, gate),
+                new(new Endpoint(gate, "False"), new Endpoint(broke)),
+                new(broke, join),
+                new(new Endpoint(check, "False"), new Endpoint(join)),
+                new(start, other),
+                new(other, join),
+                new(join, active)
+            }
+        };
+
+        // Act
+        var state = await RunAndResumeAsync(flowchart, FlowchartExecutionMode.CounterBased, rework);
+
+        // Assert
+        // WaitAll is skipped because Check -> Join was never followed; WaitAllActive runs once, after the break.
+        if (joinMode == FlowJoinMode.WaitAll)
+            Assert.DoesNotContain("ACTIVE", _log);
+        else
+            AssertActiveRanOnceAfter("broke");
+
+        AssertFinished(state);
+    }
+
+    [Theory]
+    [InlineData(FlowJoinMode.WaitAll)]
+    [InlineData(FlowJoinMode.WaitAllActive)]
+    public async Task Join_RunsOnceAfterTwoLoopsThatShareAStart(FlowJoinMode joinMode)
+    {
+        // Arrange
+        //   Start -> Head -> Check; Check True -> Again; Again True -> Head (inner loop)
+        //   Check False -> Merge; Again False -> Merge; Merge (waits) -> Repeat; Repeat True -> Head (outer loop)
+        //   Repeat False -> Join; Start -> Other -> Join; Join -> Active
+        // Both backward connections go into Head. The inner loop runs twice in each of the two outer passes,
+        // and its deferred exit Check -> Merge has to be decided again in the second outer pass.
+        var innerPasses = 0;
+        var outerPasses = 0;
+        var start = new Start();
+        var head = Logger("head");
+        var check = new FlowDecision(_ => true);
+        var again = new FlowDecision(_ => ++innerPasses % 2 == 1);
+        var merge = new WaitForResume();
+        var repeat = new FlowDecision(_ => Log(++outerPasses < 2 ? "repeat" : "done") == "repeat");
+        var other = Logger("other");
+        var join = new FlowJoin { Mode = new(joinMode) };
+        var active = Logger("ACTIVE");
+        var flowchart = new Flowchart
+        {
+            Start = start,
+            Activities = { start, head, check, again, merge, repeat, other, join, active },
+            Connections =
+            {
+                new(start, head),
+                new(head, check),
+                new(new Endpoint(check, "True"), new Endpoint(again)),
+                new(new Endpoint(again, "True"), new Endpoint(head)),
+                new(new Endpoint(check, "False"), new Endpoint(merge)),
+                new(new Endpoint(again, "False"), new Endpoint(merge)),
+                new(merge, repeat),
+                new(new Endpoint(repeat, "True"), new Endpoint(head)),
+                new(new Endpoint(repeat, "False"), new Endpoint(join)),
+                new(start, other),
+                new(other, join),
+                new(join, active)
+            }
+        };
+
+        // Act
+        var state = await RunAndResumeAsync(flowchart, FlowchartExecutionMode.CounterBased, merge);
+
+        // Assert
+        Assert.Equal(4, innerPasses);
+        AssertActiveRanOnceAfter("done");
+        AssertFinished(state);
+    }
+
     private string Log(string entry)
     {
         _log.Add(entry);
@@ -193,7 +346,8 @@ public class FlowJoinWithLoopTests(ITestOutputHelper testOutputHelper)
     private Inline Logger(string entry) => new(() => Log(entry));
 
     /// <summary>
-    /// Runs the flowchart until <paramref name="wait"/> suspends it, persists and restores the state, and resumes <paramref name="wait"/>.
+    /// Runs the flowchart until <paramref name="wait"/> suspends it. Then, for as long as <paramref name="wait"/> suspends it again,
+    /// persists and restores the state and resumes <paramref name="wait"/>.
     /// </summary>
     private async Task<WorkflowState> RunAndResumeAsync(Flowchart flowchart, FlowchartExecutionMode executionMode, IActivity wait)
     {
@@ -202,12 +356,18 @@ public class FlowJoinWithLoopTests(ITestOutputHelper testOutputHelper)
         var serializer = _fixture.Services.GetRequiredService<IWorkflowStateSerializer>();
         var workflow = Workflow.FromActivity(flowchart);
 
-        var suspended = await runner.RunAsync(workflow, new RunWorkflowOptions().WithFlowchartExecutionMode(executionMode));
-        var bookmark = Assert.Single(suspended.WorkflowState.Bookmarks, x => x.ActivityId == wait.Id);
-        var restored = serializer.Deserialize(serializer.Serialize(suspended.WorkflowState));
-        var resumeOptions = new RunWorkflowOptions { BookmarkId = bookmark.Id }.WithFlowchartExecutionMode(executionMode);
+        var state = (await runner.RunAsync(workflow, new RunWorkflowOptions().WithFlowchartExecutionMode(executionMode))).WorkflowState;
+        Assert.Contains(state.Bookmarks, x => x.ActivityId == wait.Id);
 
-        return (await runner.RunAsync(workflow, restored, resumeOptions)).WorkflowState;
+        for (var resumes = 0; state.Bookmarks.FirstOrDefault(x => x.ActivityId == wait.Id) is { } bookmark; resumes++)
+        {
+            Assert.True(resumes < 10, "The workflow kept suspending at the wait.");
+            var restored = serializer.Deserialize(serializer.Serialize(state));
+            var resumeOptions = new RunWorkflowOptions { BookmarkId = bookmark.Id }.WithFlowchartExecutionMode(executionMode);
+            state = (await runner.RunAsync(workflow, restored, resumeOptions)).WorkflowState;
+        }
+
+        return state;
     }
 
     private void AssertActiveRanOnceAfter(string entry)
