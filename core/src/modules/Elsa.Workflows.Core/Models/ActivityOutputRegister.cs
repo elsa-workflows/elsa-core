@@ -138,6 +138,21 @@ public class ActivityOutputRegister
             : record.Value;
     }
 
+    /// <summary>
+    /// Gets the output value that the specified activity instance recorded.
+    /// </summary>
+    /// <param name="activityInstanceId">The activity instance ID.</param>
+    /// <param name="outputName">Name of the output, or <c>null</c> for <see cref="DefaultOutputName"/>.</param>
+    /// <param name="value">The output value, which can be <c>null</c> when the activity recorded <c>null</c>.</param>
+    /// <returns><c>true</c> if the activity instance recorded the output; otherwise, <c>false</c>.</returns>
+    public bool TryFindOutputByActivityInstanceId(string activityInstanceId, string? outputName, out object? value)
+    {
+        var key = CreateActivityInstanceIdLookupKey(activityInstanceId, outputName);
+        var found = _recordsByActivityInstanceIdAndOutputName.TryGetValue(key, out var record);
+        value = record?.Value;
+        return found;
+    }
+
     private string CreateActivityIdLookupKey(string activityId, string? outputName) => $"{activityId}:{outputName ?? DefaultOutputName}";
     private string CreateActivityInstanceIdLookupKey(string activityInstanceId, string? outputName) => $"{activityInstanceId}:{outputName ?? DefaultOutputName}";
 }
