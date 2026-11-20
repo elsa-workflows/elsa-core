@@ -181,9 +181,22 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
 
         // Take the same per-instance lock the workflow runtime uses (see DistributedWorkflowClient), so that
         // loading, checking and running the instance can't interleave with another resume of the same instance.
+        // The lock is held until the run completes, so nothing in the run may resume this same instance inline
+        // (for example through IWorkflowClient): it would wait on this lock until its own timeout.
+        // Don't wait for the lock longer than the request is allowed to take (only a positive timeout caps the wait).
         var lockProvider = serviceProvider.GetRequiredService<IDistributedLockProvider>();
         var lockTimeout = serviceProvider.GetRequiredService<IOptions<DistributedLockingOptions>>().Value.LockAcquisitionTimeout;
-        await using var instanceLock = await lockProvider.AcquireLockAsync($"workflow-instance:{bookmark.WorkflowInstanceId}", lockTimeout, cancellationToken);
+        if (bookmarkPayload.RequestTimeout is { } requestTimeout && requestTimeout > TimeSpan.Zero && requestTimeout < lockTimeout)
+            lockTimeout = requestTimeout;
+
+        await using var instanceLock = await lockProvider.TryAcquireLockAsync($"workflow-instance:{bookmark.WorkflowInstanceId}", lockTimeout, cancellationToken);
+
+        // The instance is busy: another run holds the lock. The caller can try again later.
+        if (instanceLock == null)
+        {
+            httpContext.Response.StatusCode = StatusCodes.Status409Conflict;
+            return;
+        }
 
         var workflowInstanceStore = serviceProvider.GetRequiredService<IWorkflowInstanceStore>();
         var workflowInstance = await workflowInstanceStore.FindAsync(bookmark.WorkflowInstanceId, cancellationToken);
