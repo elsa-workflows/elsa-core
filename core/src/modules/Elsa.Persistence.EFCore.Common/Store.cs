@@ -234,7 +234,7 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
                     return;
                 }
 
-                var canWriteShared = SharedTenantWriteScope.IsGranted(typeof(TEntity));
+                var canWriteShared = SharedTenantWriteScope.IsGranted(typeof(TEntity), tenantId);
                 var keyName = keySelector.GetProperty()!.Name;
                 var entityType = dbContext.Model.FindEntityType(typeof(TEntity));
                 var tenantProperty = entityType?.FindProperty(nameof(Entity.TenantId));
