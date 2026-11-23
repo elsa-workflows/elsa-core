@@ -125,12 +125,30 @@ class PackedLibraryEvidenceTests(unittest.TestCase):
             'targets': {'net10.0/browser-wasm': {'Radzen.Blazor/9.0.5': {'type': 'package'}}},
             'project': {'frameworks': {'net10.0': {'downloadDependencies': []}}}, 'packageFolders': {str(cache): {}}})
         pair.write_json(published / 'staticwebassets.publish.json', {'Assets': [{
-            'OriginalItemSpec': str(static_file), 'Identity': str(static_file), 'SourceType': 'Package',
-            'Integrity': 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='}]})
+            'OriginalItemSpec': str(static_file), 'Identity': str(static_file), 'SourceType': 'Package', 'AssetRole': 'Primary',
+            'Integrity': 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='}, {
+            'OriginalItemSpec': str(static_file), 'Identity': str(obj / 'compressed.br'), 'SourceType': 'Package',
+            'AssetRole': 'Alternative', 'Integrity': 'ERERERERERERERERERERERERERERERERERERERERERE='}]})
         assets = sbom.managed_assets(source, self.proof['version'])
         self.assertEqual({('pkg:nuget/Radzen.Blazor@9.0.5', 'Radzen.Blazor', '9.0.5')},
                          assets[pair.sha256(static_file.read_bytes())])
         self.assertNotIn('0' * 64, assets)
+        self.assertEqual(assets[pair.sha256(static_file.read_bytes())], assets['1' * 64])
+
+    def test_auth_bundle_identifies_oidc_and_patched_cryptography_fragment(self):
+        key = 'package/_content/Microsoft.AspNetCore.Components.WebAssembly.Authentication/AuthenticationService.js'
+        raw = b'OidcClientSettings WebStorageStateStore UserManager e.Version="1.11.5" /*! CryptoJS v3.1.2 core-fix.js'
+        libraries = sbom.bundled_js(self.build, self.build, {key: raw}, pair.WASM)
+        self.assertEqual([{'location': key.removeprefix('package/')}], libraries['pkg:npm/oidc-client@1.11.5']['evidence']['occurrences'])
+        fragment = libraries['vendored:crypto-js:core-fix.js@3.1.2']
+        self.assertNotIn('purl', fragment)
+        self.assertEqual('pkg:npm/crypto-js@3.1.2', fragment['pedigree']['ancestors'][0]['purl'])
+
+    def test_partial_dependency_graph_preserves_unknown_relationships(self):
+        bom = sbom.read(Path(str(self.paths[0]) + '.cdx.json'))
+        self.assertEqual([], bom['dependencies'])
+        root = bom['metadata']['component']['bom-ref']
+        self.assertEqual([{'aggregate': 'incomplete', 'assemblies': [root], 'dependencies': [root]}], bom['compositions'])
 
     def test_packed_monaco_banner_supplies_version(self):
         root = 'package/_content/BlazorMonaco/lib/monaco-editor/min/vs/'

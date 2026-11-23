@@ -159,9 +159,11 @@ The SBOM identifies managed assemblies and static assets associated with NuGet
 restore and publish records, and npm libraries observed in first-party webpack
 source maps, esbuild module metadata and Vite output. Prebundled third-party
 assets retain file hashes and their enclosing NuGet package where available. Monaco
-Editor also exposes its version in shipped language bundles and has a package identity. Their embedded dependency inventories can be incomplete.
+Editor exposes its version in shipped language bundles. The authentication service
+includes an identifiable OIDC client and a patched CryptoJS source fragment. Their embedded dependency inventories can be incomplete.
 CycloneDX dependency edges describe the direct npm declarations. Their properties
-record the declared dependency and peer ranges.
+record the declared dependency and peer ranges. Both inventories mark runtime
+dependency graph coverage as incomplete.
 The React SBOM also names the exact WASM version and integrity selected at build
 time. Consumers should generate a separate deployment SBOM from their own resolved
 application, including installed peers, runtime, base image and configuration.

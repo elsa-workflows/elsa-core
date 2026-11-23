@@ -79,7 +79,8 @@ def managed_assets(source, release_version):
             is_project = canonical == f'{own}/{release_version}' or target.get(canonical, {}).get('type') == 'project'
             item = component('generic' if is_project else 'nuget', name, version)
             digest = base64.b64decode(asset['Integrity'], validate=True).hex()
-            if asset['SourceType'] == 'Package' and any(origin.is_relative_to(folder) for folder in packs):
+            if (asset['SourceType'] == 'Package' and asset['AssetRole'] == 'Primary'
+                    and any(origin.is_relative_to(folder) for folder in packs)):
                 # Packages can ship precomputed integrity from before packaging transforms.
                 # Match against the resolved package file that actually entered this build.
                 with origin.open('rb') as raw:
@@ -138,6 +139,24 @@ def bundled_js(source, trace, members, name):
         editor['evidence'] = {'occurrences': [{'location': key.removeprefix('package/')} for key in sorted(members)
                                                if '/_content/BlazorMonaco/lib/monaco-editor/' in key]}
         result[editor['purl']] = editor
+    for key, raw in members.items():
+        if not key.endswith('/_content/Microsoft.AspNetCore.Components.WebAssembly.Authentication/AuthenticationService.js'):
+            continue
+        locations = {'occurrences': [{'location': key.removeprefix('package/')}]}
+        if all(export in raw for export in (b'OidcClientSettings', b'WebStorageStateStore', b'UserManager')):
+            versions = set(re.findall(rb'\.Version="(\d+\.\d+\.\d+)"', raw))
+            if len(versions) == 1:
+                oidc = component('npm', 'oidc-client', versions.pop().decode())
+                result[oidc['purl']] = oidc | {'evidence': locations}
+        # This is a vendored patched source fragment, distinguish it from an installed npm distribution.
+        banner = re.search(rb'CryptoJS v(\d+\.\d+\.\d+) core-fix\.js', raw)
+        if banner:
+            version = banner.group(1).decode()
+            ref = 'vendored:crypto-js:core-fix.js@' + version
+            ancestor = component('npm', 'crypto-js', version)
+            ancestor.pop('bom-ref')
+            result[ref] = {'type': 'library', 'name': 'CryptoJS core-fix.js', 'version': version, 'bom-ref': ref,
+                           'pedigree': {'ancestors': [ancestor]}, 'evidence': locations}
     if name == pair.REACT:
         package = json.loads(members['package/package.json'])
         for entry in pair.entrypoints(package):
@@ -246,8 +265,8 @@ def generate(build, output, *, release_provenance=False):
         bom = {'bomFormat': 'CycloneDX', 'specVersion': '1.6', 'version': 1,
                'serialNumber': 'urn:uuid:' + str(uuid.uuid5(uuid.NAMESPACE_URL, root['purl'] + root['hashes'][0]['content'])),
                'metadata': {'component': root}, 'components': [components[key] for key in sorted(components)],
-               'dependencies': [{'ref': root['purl'], 'dependsOn': sorted(declared)}],
-               'compositions': [{'aggregate': 'incomplete', 'assemblies': [root['purl']]}]}
+               'dependencies': [{'ref': root['purl'], 'dependsOn': sorted(declared)}] if declared else [],
+               'compositions': [{'aggregate': 'incomplete', 'assemblies': [root['purl']], 'dependencies': [root['purl']]}]}
         pair.write_json(output / (path.name + '.cdx.json'), bom)
     if release_provenance:
         pair.write_json(output / 'provenance.json', provenance(proof))
@@ -280,7 +299,7 @@ def checked_pair(folder, version, commit, run):
         components = {item['bom-ref']: item for item in bom['components']}
         pair.require(len(components) == len(bom['components'])
                      and all(components.get(ref) == item for ref, item in declared.items())
-                     and bom['dependencies'] == [{'ref': root['purl'], 'dependsOn': sorted(declared)}], 'sbom-npm-dependencies')
+                     and bom['dependencies'] == ([{'ref': root['purl'], 'dependsOn': sorted(declared)}] if declared else []), 'sbom-npm-dependencies')
         expected_ranges = {f'elsa:npm:{field}:{dep}': spec for field in ('dependencies', 'optionalDependencies', 'peerDependencies')
                            for dep, spec in manifest.get(field, {}).items()}
         pair.require({k:v for k,v in props.items() if k.startswith(('elsa:npm:dependencies:', 'elsa:npm:optionalDependencies:',

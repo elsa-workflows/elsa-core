@@ -1176,6 +1176,12 @@ class WorkflowGateTests(unittest.TestCase):
             with self.subTest(old=old):
                 self.assert_rejected(self.mutated(old, new), "attest_npm must sign only the verified release pair")
 
+    def test_partial_upload_retry_needs_new_artifact_names(self):
+        for name, evidence in (("studio-npm-pair", "build_npm must upload the studio-npm-pair artifact"),
+                               ("studio-npm-sboms", "build_npm must isolate the SBOM artifact")):
+            with self.subTest(name=name):
+                self.assert_rejected(self.mutated("name: " + name + "-${{ github.run_attempt }}", "name: " + name), evidence)
+
     def test_both_sboms_must_be_checked_before_publishing(self):
         source = self.mutated("studio_npm_sbom.py verify-staged", "studio_npm_sbom.py verify-later")
         self.assert_rejected(source, "publish_npm must verify both staged SBOMs before publishing")

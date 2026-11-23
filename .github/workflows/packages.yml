@@ -602,7 +602,7 @@ jobs:
         id: sboms
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: studio-npm-sboms
+          name: studio-npm-sboms-${{ github.run_attempt }}
           path: ${{ runner.temp }}/studio-npm-pair/sboms/*.json
           if-no-files-found: error
           retention-days: 30
@@ -611,7 +611,7 @@ jobs:
         id: pair
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: studio-npm-pair
+          name: studio-npm-pair-${{ github.run_attempt }}
           path: ${{ runner.temp }}/studio-npm-pair/retained/*.tgz
           if-no-files-found: error
           retention-days: 30

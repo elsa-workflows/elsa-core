@@ -118,7 +118,7 @@ NPM_PAIR = "python3 scripts/integration-program/prove_studio_npm_pair.py"
 BUILD_NPM_JOB = "build_npm"
 SETUP_DOTNET_PIN = "actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9"
 DOTNET_SDK = "10.0.300"
-NPM_ARTIFACT = "studio-npm-pair"
+NPM_ARTIFACT = "studio-npm-pair-${{ github.run_attempt }}"
 NPM_ARTIFACT_IDS = "${{ needs.build_npm.outputs.pair-id }},${{ needs.build_npm.outputs.sboms-id }}"
 DOWNLOAD_BY_ID = "actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093"
 NPM_CHECKSUM_STEP = {"env": {"CHECKSUMS": "${{ needs.build_npm.outputs.checksums }}"},
@@ -876,6 +876,10 @@ def build_npm_violations(jobs: dict) -> list[str]:
         duplicate="build_npm must contain exactly one studio-npm-pair upload",
     )
     violations += extra
+    sbom_uploads = [step for step in steps if step.get("id") == "sboms"
+                    and (step.get("with") or {}).get("name") == "studio-npm-sboms-${{ github.run_attempt }}"]
+    if len(sbom_uploads) != 1:
+        violations.append("build_npm must isolate the SBOM artifact for each build attempt")
     if None not in (build_pair, upload) and not build_pair < upload:
         violations.append("build_npm must build the pair before uploading it")
     return violations
