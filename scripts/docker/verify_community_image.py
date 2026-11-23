@@ -177,16 +177,19 @@ def verify_image(image, output, source_commit, validator, layout=False, image_na
         dockerfile = PROFILES[image_name][0]
         if external.get("configSource", {}).get("path") not in {dockerfile, f"docker/{dockerfile}"}:
             raise ValueError(f"Expected {dockerfile} in SLSA config source for {platform}")
-        deps = definition.get("resolvedDependencies")
-        if not isinstance(deps, list) or not any(
-            isinstance(item, dict) and item.get("uri", "").startswith("pkg:docker/") and
-            item["uri"].split("?")[0] != "pkg:docker/docker/buildkit-syft-scanner" and
-            re.fullmatch(r"[0-9a-f]{64}", item.get("digest", {}).get("sha256", "")) for item in deps
-        ):
-            raise ValueError(f"Expected digest-pinned build inputs for {platform}")
-        # Older BuildKit schema versions omit targetPlatform. builderPlatform refers to the build machine.
+        valid_targets = {platform, platform + {"linux/arm64": "/v8", "linux/amd64": "/v1"}[platform]}
+        # Build and scanner inputs may use the builder architecture. The final ASP.NET base must match the child.
+        bases = []
+        for item in definition.get("resolvedDependencies", []):
+            uri = urlsplit(item["uri"])
+            if uri.scheme == "pkg" and uri.path.split("@", 1)[0] == "docker/mcr.microsoft.com/dotnet/aspnet":
+                if not re.fullmatch(r"[0-9a-f]{64}", item.get("digest", {}).get("sha256", "")):
+                    raise ValueError(f"Invalid ASP.NET base digest for {platform}")
+                bases.append(parse_qs(uri.query).get("platform", []))
+        if not bases or any(len(targets) != 1 or targets[0] not in valid_targets for targets in bases):
+            raise ValueError(f"Expected build inputs with the ASP.NET runtime base for {platform}")
+        # Older BuildKit versions omit targetPlatform. builderPlatform refers to the build machine.
         params = definition.get("internalParameters", {})
-        valid_targets = ("linux/arm64", "linux/arm64/v8") if platform == "linux/arm64" else (platform,)
         if not isinstance(params, dict) or params.get("targetPlatform", platform) not in valid_targets:
             raise ValueError(f"Unexpected provenance target for {platform}")
         if not params.get("buildConfig", {}).get("llbDefinition"):

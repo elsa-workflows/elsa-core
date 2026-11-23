@@ -52,7 +52,7 @@ class PlatformEvidenceTests(unittest.TestCase):
                 "buildDefinition": {"buildType": BUILDKIT_TYPE, "externalParameters": {
                     "request": {"frontend": "dockerfile.v0"}, "configSource": {"path": "ElsaServer.Dockerfile"}},
                     "internalParameters": {"buildConfig": {"llbDefinition": [{"id": "step0"}]}},
-                    "resolvedDependencies": [{"uri": "pkg:docker/ubuntu", "digest": {"sha256": "a"*64}}]},
+                    "resolvedDependencies": [{"uri": f"pkg:docker/mcr.microsoft.com/dotnet/aspnet@10.0?platform=linux%2F{arch}", "digest": {"sha256": "a"*64}}]},
                 "runDetails": {"builder": {"id": PUBLISHER}, "metadata": {"invocationId": "run-1"}},
             }
             for kind, predicate in ((SPDX, sbom), (SLSA, provenance)):
@@ -150,6 +150,13 @@ class PlatformEvidenceTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, message):
                     self.verify()
                 definition[field] = previous
+
+    def test_swapped_base_inputs_rejected_without_target_field(self):
+        arm = self.documents[f"arm64-{SLSA}"]["predicate"]["buildDefinition"]
+        amd = self.documents[f"amd64-{SLSA}"]["predicate"]["buildDefinition"]
+        arm["resolvedDependencies"] = amd["resolvedDependencies"]
+        with self.assertRaisesRegex(ValueError, "base|platform"):
+            self.verify()
 
     def test_missing_invocation_fails(self):
         self.documents[f"amd64-{SLSA}"]["predicate"]["runDetails"]["metadata"] = {}

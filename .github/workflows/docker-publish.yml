@@ -45,8 +45,7 @@ on:
 permissions:
   contents: read
 
-# One group for every version and trigger. The highest-tag decision in
-# prepare and the floating X.Y / latest pushes must not overlap.
+# Serialize version-tag promotion and floating alias updates across all releases and retries.
 concurrency:
   group: docker-publish-floating-tags
   cancel-in-progress: false
@@ -61,10 +60,8 @@ jobs:
       source_ref: ${{ steps.release.outputs.source_ref }}
       source_commit: ${{ steps.release.outputs.source_commit }}
       matrix: ${{ steps.release.outputs.matrix }}
-      move_latest: ${{ steps.release.outputs.move_latest }}
-      move_minor: ${{ steps.release.outputs.move_minor }}
     steps:
-      - name: Validate version, require the matching git tag, and choose floating tags
+      - name: Validate the release ref and resolve the product commit
         id: release
         env:
           EVENT_NAME: ${{ github.event_name }}
@@ -92,11 +89,7 @@ jobs:
           STABLE_RE='^[0-9]+\.[0-9]+\.[0-9]+$'
           PREVIEW_RE='^[0-9]+\.[0-9]+\.[0-9]+-preview\.[0-9]+$'
 
-          if [[ "$VERSION" =~ $STABLE_RE ]]; then
-            STABLE=true
-          elif [[ "$VERSION" =~ $PREVIEW_RE ]]; then
-            STABLE=false
-          else
+          if [[ ! "$VERSION" =~ $STABLE_RE && ! "$VERSION" =~ $PREVIEW_RE ]]; then
             echo "Unsupported version '$VERSION'. Use 3.X.Y or 3.X.Y-preview.N." >&2
             exit 1
           fi
@@ -135,41 +128,14 @@ jobs:
           MATRIX=$(jq -c --arg version "$VERSION" \
             '{include: map(select((.output != "studio") or ($version | startswith("3.10.") | not)))}' <<< "$COMMUNITY_IMAGES")
 
-          MOVE_LATEST=false
-          MOVE_MINOR=false
-          if [ "$STABLE" = true ]; then
-            STABLE_TAGS=$(
-              git ls-remote --tags "$REMOTE" \
-                | awk '$2 ~ /^refs\/tags\/3\.[0-9]+\.[0-9]+$/ { sub(/^refs\/tags\//, "", $2); print $2 }' \
-                | sort -u
-            )
-            STABLE_TAGS=$(printf '%s\n%s\n' "$STABLE_TAGS" "$VERSION" | awk 'NF' | sort -u)
-            HIGHEST=$(printf '%s\n' "$STABLE_TAGS" | sort -V | tail -n1)
-            MINOR="${VERSION%.*}"
-            HIGHEST_LINE=$(printf '%s\n' "$STABLE_TAGS" | grep -E "^${MINOR}\\.[0-9]+$" | sort -V | tail -n1)
-
-            if [ "$VERSION" = "$HIGHEST" ]; then
-              MOVE_LATEST=true
-            fi
-            if [ "$VERSION" = "$HIGHEST_LINE" ]; then
-              MOVE_MINOR=true
-            fi
-
-            echo "Stable 3.x tags considered:"
-            printf '%s\n' "$STABLE_TAGS" | sort -V
-            echo "Highest 3.x=$HIGHEST highest ${MINOR}.=$HIGHEST_LINE"
-          fi
-
           {
             echo "version=$VERSION"
             echo "source_ref=$SOURCE_REF"
             echo "source_commit=$SOURCE_COMMIT"
             echo "matrix=$MATRIX"
-            echo "move_latest=$MOVE_LATEST"
-            echo "move_minor=$MOVE_MINOR"
           } >> "$GITHUB_OUTPUT"
 
-          echo "Publishing Community images as $VERSION from tag $SOURCE_REF (move_minor=$MOVE_MINOR move_latest=$MOVE_LATEST)"
+          echo "Staging Community images for $VERSION from $SOURCE_COMMIT"
 
   publish:
     name: Publish ${{ matrix.name }}
@@ -212,8 +178,6 @@ jobs:
             latest=false
           tags: |
             type=semver,pattern={{version}},value=${{ needs.prepare.outputs.version }}
-            type=semver,pattern={{major}}.{{minor}},value=${{ needs.prepare.outputs.version }},enable=${{ needs.prepare.outputs.move_minor == 'true' }}
-            type=raw,value=latest,enable=${{ needs.prepare.outputs.move_latest == 'true' }}
           labels: |
             org.opencontainers.image.source=https://github.com/elsa-workflows/elsa-core
             org.opencontainers.image.revision=${{ steps.source.outputs.sha }}
@@ -368,13 +332,26 @@ jobs:
           IMAGE: docker.io/${{ matrix.image }}
           DIGEST: ${{ needs.sign.outputs[matrix.output] }}
           VERSION: ${{ needs.prepare.outputs.version }}
-          MOVE_MINOR: ${{ needs.prepare.outputs.move_minor }}
-          MOVE_LATEST: ${{ needs.prepare.outputs.move_latest }}
+          PRODUCT_COMMIT: ${{ needs.prepare.outputs.source_commit }}
         run: |
           set -euo pipefail
           tags=("$VERSION")
-          if [[ "$MOVE_MINOR" == true ]]; then tags+=("${VERSION%.*}"); fi
-          if [[ "$MOVE_LATEST" == true ]]; then tags+=(latest); fi
+          # An individual failed job can be rerun after a newer release, reusing old prepare outputs.
+          # Look up the tag and floating-alias eligibility in this promotion attempt.
+          refs=$(git ls-remote --tags "https://github.com/$GITHUB_REPOSITORY.git" 'refs/tags/3.*')
+          commit=$(awk -v ref="refs/tags/$VERSION" '$2 == ref { object=$1 } $2 == ref "^{}" { peeled=$1 }
+            END { print (peeled ? peeled : object) }' <<< "$refs")
+          if [[ "$commit" != "$PRODUCT_COMMIT" ]]; then
+            echo "Product tag no longer matches the staged commit." >&2
+            exit 1
+          fi
+          if [[ "$VERSION" != *-preview.* ]]; then
+            stable=$(awk '$2 ~ /^refs\/tags\/3\.[0-9]+\.[0-9]+$/ { sub(/^refs\/tags\//, "", $2); print $2 }' <<< "$refs" | sort -Vu)
+            minor=${VERSION%.*}
+            highest_minor=$(awk -F. -v minor="$minor" '$1 "." $2 == minor' <<< "$stable" | tail -1)
+            if [[ "$VERSION" == "$highest_minor" ]]; then tags+=("$minor"); fi
+            if [[ "$VERSION" == "$(tail -1 <<< "$stable")" ]]; then tags+=(latest); fi
+          fi
           for tag in "${tags[@]}"; do
             oras tag "$IMAGE@$DIGEST" "$tag"
             [[ "$(oras resolve "$IMAGE:$tag")" == "$DIGEST" ]]
