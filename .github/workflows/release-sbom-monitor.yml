@@ -1,0 +1,106 @@
+name: Monitor published release SBOMs
+
+on:
+  schedule:
+    - cron: '37 5 * * 2'
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - .github/workflows/release-sbom-monitor.yml
+      - scripts/scan_release_sboms.py
+      - scripts/test_scan_release_sboms.py
+
+permissions: {}
+
+concurrency:
+  group: release-sbom-monitor-${{ github.event.pull_request.number || 'main' }}
+  cancel-in-progress: false
+
+jobs:
+  tests:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - run: python3 -m unittest discover -s scripts -p test_scan_release_sboms.py -v
+
+  scan:
+    needs: tests
+    if: github.event_name != 'pull_request' && github.repository == 'elsa-workflows/elsa-core' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 350
+    permissions:
+      contents: read
+      attestations: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GRYPE_DB_AUTO_UPDATE: 'false'
+      GRYPE_DB_VALIDATE_AGE: 'true'
+      GRYPE_DB_MAX_ALLOWED_BUILT_AGE: 120h
+      GRYPE_CHECK_FOR_APP_UPDATE: 'false'
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Install checksum-pinned tools
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP"
+          curl --fail --silent --show-error --location --retry 3 -o grype.tgz \
+            https://github.com/anchore/grype/releases/download/v0.122.1/grype_0.122.1_linux_amd64.tar.gz
+          curl --fail --silent --show-error --location --retry 3 -o oras.tgz \
+            https://github.com/oras-project/oras/releases/download/v1.4.0/oras_1.4.0_linux_amd64.tar.gz
+          echo 'f1ba7e2917ee1395618de20a98da0aa7c0fb1788927797651047c50502a37538  grype.tgz' | sha256sum -c -
+          echo 'd8e1dce2fd8ce996f1d901845b688eb0cf505a6082897606f053825bb47935d1  oras.tgz' | sha256sum -c -
+          mkdir -p "$RUNNER_TEMP/monitor-tools"
+          tar xzf grype.tgz -C "$RUNNER_TEMP/monitor-tools" grype
+          tar xzf oras.tgz -C "$RUNNER_TEMP/monitor-tools" oras
+          echo "$RUNNER_TEMP/monitor-tools" >> "$GITHUB_PATH"
+          if ! /usr/bin/python3 -c 'from jsonschema import Draft201909Validator'; then
+            sudo apt-get update -qq
+            sudo apt-get install --no-install-recommends -y python3-jsonschema
+          fi
+      - name: Verify public artifacts and scan their signed inventories
+        run: |
+          set -o pipefail
+          /usr/bin/python3 scripts/scan_release_sboms.py scan "$RUNNER_TEMP/report.json" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Record scanner setup failure
+        if: failure()
+        run: |
+          if [[ ! -f "$RUNNER_TEMP/report.json" ]]; then
+            echo '{"scanner":"0.122.1","results":[{"version":"setup","family":"workflow","state":"error","error":"Monitoring setup failed before a report was produced"}]}' > "$RUNNER_TEMP/report.json"
+          fi
+      - name: Retain full report
+        if: '!cancelled()'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: release-monitor-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/report.json
+          if-no-files-found: error
+          retention-days: 90
+
+  receipt:
+    needs: scan
+    if: >-
+      !cancelled() && github.event_name != 'pull_request' && github.repository == 'elsa-workflows/elsa-core' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: release-monitor-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/release-monitor
+      - name: Record new outcomes on the monitoring issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
+        run: python3 scripts/scan_release_sboms.py receipt "$RUNNER_TEMP/release-monitor/report.json" --run-url "$RUN_URL"
