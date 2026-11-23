@@ -74,17 +74,21 @@ def embedded_libraries(package_path, row, client):
         version = packages["node_modules/" + name]["version"]
         resource = path.read_bytes()
         require(resource and version.encode() in resource, f"Embedded {path} does not identify {version}")
-        resources.append((path.name, name, version, resource))
+        components = [[name, version]]
+        # webpack's Node-module decorator is emitted inside these minified UMD bundles.
+        if b".nmd=" in resource or b"__webpack_require__.nmd" in resource:
+            components.append(["webpack", packages["node_modules/webpack"]["version"]])
+        resources.append((path.name, components, resource))
     require(resources, "Missing checked-in browser library resources")
     result = {}
     for item in row["assemblies"]:
         name = item["assembly"]
         observed = assemblies[name]
         shipped = []
-        for filename, package, version, data in resources:
+        for filename, components, data in resources:
             matches = [entry for entry, digest in observed.items() if entry.endswith("." + filename) and digest == sha(data)]
             require(len(matches) == 1, f"Packed CLR resource differs: {name}/{filename}")
-            shipped.append(dict(name=matches[0], sha256=sha(data), components=[[package, version]]))
+            shipped.append(dict(name=matches[0], sha256=sha(data), components=components))
         require(len(shipped) == len(observed), f"Unidentified JavaScript CLR resources: {name}")
         result[name] = dict(method="CLR resource bytes matched to package-lock and entrypoint", resources=shipped)
     return result

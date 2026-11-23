@@ -34,10 +34,10 @@ class ShippedJavaScriptTests(unittest.TestCase):
             client = Path(directory)
             (client / "dist").mkdir()
             (client / "src").mkdir()
-            content = b"exports.version='4.18.1'"
+            content = b"r.nmd=n=>(n.paths=[],n);exports.version='4.18.1'"
             (client / "dist/lodash.js").write_bytes(content)
             (client / "src/lodash.js").write_text("module.exports = require('lodash');")
-            (client / "package-lock.json").write_text(json.dumps({"packages": {"node_modules/lodash": {"version": "4.18.1"}}}))
+            (client / "package-lock.json").write_text(json.dumps({"packages": {"node_modules/lodash": {"version": "4.18.1"}, "node_modules/webpack": {"version": "5.107.2"}}}))
             assembly = "lib/net10.0/Elsa.Expressions.JavaScript.Libraries.dll"
             symbol = "Elsa.Expressions.JavaScript.Libraries.ClientLib.dist.lodash.js"
             row = {"id":"Elsa.Expressions.JavaScript.Libraries", "assemblies":[{"assembly":assembly}]}
@@ -50,7 +50,7 @@ class ShippedJavaScriptTests(unittest.TestCase):
                     else:
                         result = shipped.embedded_libraries(client / "p.nupkg", row, client)
                         self.assertEqual(result[assembly]["resources"][0], {
-                            "name":symbol, "sha256":digest, "components":[["lodash", "4.18.1"]]})
+                            "name":symbol, "sha256":digest, "components":[["lodash", "4.18.1"], ["webpack", "5.107.2"]]})
 
 
     def test_vite_modules_must_match_the_same_emitted_and_embedded_asset(self):
