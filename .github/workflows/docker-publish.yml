@@ -151,7 +151,7 @@ jobs:
     timeout-minutes: 120
     strategy:
       fail-fast: false
-      matrix:
+      matrix: &community_images
         include:
           - name: elsa-server
             dockerfile: docker/ElsaServer.Dockerfile
@@ -251,3 +251,68 @@ jobs:
             echo "Product commit: \`$PRODUCT_COMMIT\`"
             echo "Workflow commit: \`$GITHUB_SHA\`"
           } >> "$GITHUB_STEP_SUMMARY"
+
+          printf '%s\n' "$INDEX_DIGEST" > "$RUNNER_TEMP/verified-index.digest"
+
+      - name: Hand the verified index to the signer
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: verified-index-${{ matrix.name }}
+          path: ${{ runner.temp }}/verified-index.digest
+          if-no-files-found: error
+          overwrite: true
+          retention-days: 7
+
+  sign:
+    name: Attest ${{ matrix.name }} index
+    needs: [prepare, publish]
+    if: >-
+      github.repository == 'elsa-workflows/elsa-core' &&
+      (github.ref == format('refs/tags/{0}', needs.prepare.outputs.version) ||
+       (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    strategy:
+      fail-fast: false
+      matrix: *community_images
+    steps:
+      - name: Retrieve this image's verified build output from this run
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: verified-index-${{ matrix.name }}
+          path: ${{ runner.temp }}/receipt
+
+      - name: Validate index digest
+        id: index
+        run: |
+          digest=$(cat "$RUNNER_TEMP/receipt/verified-index.digest")
+          [[ "$digest" =~ ^sha256:[0-9a-f]{64}$ ]]
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+
+      - name: Attest the published image index with GitHub OIDC
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-name: docker.io/${{ matrix.image }}
+          subject-digest: ${{ steps.index.outputs.digest }}
+          push-to-registry: false
+          create-storage-record: false
+
+      - name: Verify the consumer-visible index attestation
+        env:
+          GH_TOKEN: ${{ github.token }}
+          IMAGE: docker.io/${{ matrix.image }}
+          DIGEST: ${{ steps.index.outputs.digest }}
+        run: |
+          for attempt in 1 2 3 4; do
+            if gh attestation verify "oci://$IMAGE@$DIGEST" --repo "$GITHUB_REPOSITORY" \
+              --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/docker-publish.yml" \
+              --source-ref "$GITHUB_REF" --source-digest "$GITHUB_SHA"; then
+              exit 0
+            fi
+            if [[ $attempt -lt 4 ]]; then sleep 5; fi
+          done
+          exit 1
