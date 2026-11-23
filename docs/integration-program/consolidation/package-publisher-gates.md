@@ -84,3 +84,22 @@ The versions live only in [`.github/release-pins/consolidated.json`](../../../.g
 3. `publish_candidate_feedz` (environment `feedz-publish`, secret `ELSA_CONSOLIDATED_FEEDZ_PUBLISH_KEY`) and `publish_candidate_nuget` (environment `nuget-org`, `NuGet/login` with `NUGET_USER`, `exclude_ids` from the pin) re-verify tokenless (`GITHUB_TOKEN`, `GH_TOKEN` and `ACTIONS_READ_TOKEN` blank) including every per-package seal hash, run `validate_packages_id_set.py`, assert the pinned count, and only then reach the key or login.
 
 The nuget.org Trusted Publishing policy is keyed on the workflow file name, so it must name `packages.yml`.
+
+### Verify a release package and its SBOM
+
+New consolidated candidates include CycloneDX 1.6 JSON per NuGet package and target framework. The producer signs the candidate index after its clean consumer checks. Each inventory records exact producer-resolved NuGet components, packed dependency ranges, shared frameworks, and the hashes of files shipped in the package. Components used only by the producer carry excluded scope. A browser bundle also has an npm CycloneDX build-input inventory where the project uses a ClientLib. Build inputs include development tools and modules removed by bundling. The application that consumes Elsa resolves its own dependency graph.
+
+After the stable release's successful Packages run, **NuGet release evidence** runs from main, checks the public release tag against the reviewed pin, and verifies the original candidate attestation. It reads every selected download from Feedz and nuget.org. Feedz must return candidate bytes. The nuget.org copy must pass NuGet's repository-signature verification against its advertised certificate, match the candidate's signed-content hash, and carry the same files except for the repository signature. Symbol archive hashes describe the producer's matching symbol packages. The release index also identifies the product and tooling commits, producer run and attempt, and candidate pin.
+
+Download `nuget-release-index.json` and `nuget-sboms.zip` from the GitHub Release and the desired `.nupkg` from its registry. From a trusted Core checkout, run the verifier with your actual version, feed, target framework and filenames.
+
+```sh
+python3 scripts/nuget_release_evidence.py verify \
+  --version "$VERSION" --identifier Elsa --framework net10.0 --feed nuget \
+  --package "Elsa.$VERSION.nupkg" \
+  --index-file nuget-release-index.json --bundle nuget-sboms.zip
+```
+
+The verifier uses an authenticated GitHub CLI with read access to public attestations. It checks both workflow identities, the producer tooling commit, the selected registry bytes and the selected BOM. A NuGet signature can also be checked locally with `dotnet nuget verify --all`. The public release assets and GitHub attestations survive expiry of temporary Actions artifacts.
+
+For recovery, dispatch **NuGet release evidence** from main with the published version while its pinned candidate is still available. It reads both feeds, reuses the same candidate, and attaches only missing assets. A differing existing release asset stops attachment. Candidates sealed before this feature retain their original identities and cannot acquire build-time SBOMs through this workflow.

@@ -247,6 +247,8 @@ jobs:
           compression-level: 0
 
   consumers:
+    outputs:
+      candidate-index-sha256: ${{ steps.index.outputs.digest }}
     needs: retrieve
     permissions:
       contents: read
@@ -291,6 +293,11 @@ jobs:
             --envelope "$RUNNER_TEMP/candidate-input/envelope.json" \
             --source "$SOURCE_SHA" --run-sha "$RUN_SHA" --run-id "$RUN_ID" --attempt "$RUN_ATTEMPT" \
             --output "$RUNNER_TEMP/verified-candidate"
+      - name: Identify the consumer-verified candidate SBOM index
+        id: index
+        run: |
+          digest=$(sha256sum "$RUNNER_TEMP/verified-candidate/release-evidence/candidate-index.json" | cut -d ' ' -f 1)
+          echo "digest=sha256:$digest" >> "$GITHUB_OUTPUT"
       - name: Retain representative consumer evidence separately
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -301,3 +308,19 @@ jobs:
             ${{ runner.temp }}/candidate-consumer-receipt.json
           if-no-files-found: warn
           retention-days: 30
+
+  attest_candidate:
+    needs: consumers
+    if: github.repository == 'elsa-workflows/elsa-core' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - name: Attest the exact candidate index verified by the clean consumer
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
+        with:
+          subject-name: nuget-candidate-index.json
+          subject-digest: ${{ needs.consumers.outputs.candidate-index-sha256 }}
+          create-storage-record: false

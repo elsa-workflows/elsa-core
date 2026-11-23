@@ -402,6 +402,7 @@ def build_clientlibs(root: Path, output: Path) -> dict:
         tracked = run(["git", "ls-files", "--", f"{project}/ClientLib"], root).splitlines()
         inputs.update(tracked)
     inputs.update(run(["git", "ls-files", "--",
+                       ":(glob)studio/src/**/ClientLib/package.json",
                        "scripts/integration-program/consolidated-build/studio-clientlib-lockfiles",
                        "studio/react/vendor/picomatch-build"], root).splitlines())
     input_hashes = {path: hashlib.sha256((root / path).read_bytes()).hexdigest() for path in sorted(inputs)}
@@ -1209,6 +1210,10 @@ def main(*, mode: str = "proof") -> None:
     write_json(output / "receipt.json", receipt)
     if mode == "candidate":
         from prepare_consolidated_release_candidate import seal
+        from candidate_package_evidence import generate
+        tooling = Path(__file__).resolve().parents[2]
+        generate(output, root, run(["git", "rev-parse", "HEAD"], tooling).strip(),
+                 int(os.environ.get("GITHUB_RUN_ID", "0")), int(os.environ.get("GITHUB_RUN_ATTEMPT", "0")))
         seal(output, commit, args.version)
     print(f"Package {mode} passed: {output / 'receipt.json'}", flush=True)
 

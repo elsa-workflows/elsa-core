@@ -355,9 +355,18 @@ class CandidateContractsTests(unittest.TestCase):
         workflow = (ROOT / ".github/workflows/prepare-consolidated-release-candidate.yml").read_text()
         self.assertNotIn("pull_request:", workflow)
         self.assertIn("permissions: {}", workflow)
-        self.assertEqual(["prepare", "retrieve", "consumers"], re.findall(r"^  ([a-z]+):$", workflow.split("jobs:", 1)[1], re.M))
+        self.assertEqual(["verify_source", "prepare", "retrieve", "consumers", "attest_candidate"], re.findall(r"^  ([a-z_]+):$", workflow.split("jobs:", 1)[1], re.M))
         for denied in ("secrets.", "packages: write", "deployments:", "environment:", "nuget push", "npm publish", "gh release", "publish_preview", "publish_nuget", "workflow_call:", "workflow_run:"):
             self.assertNotIn(denied, workflow)
+        attest = workflow.split("  attest_candidate:")[1]
+        self.assertIn("needs: consumers", attest)
+        self.assertIn("github.ref == 'refs/heads/main'", attest)
+        self.assertIn("subject-digest: ${{ needs.consumers.outputs.candidate-index-sha256 }}", attest)
+        self.assertNotIn("checkout@", attest)
+        self.assertNotIn("contents: write", attest)
+        for grant in ("id-token: write", "attestations: write"):
+            self.assertEqual(1, workflow.count(grant))
+            self.assertIn(grant, attest)
         retrieve = workflow.split("  retrieve:")[1].split("  consumers:")[0]
         self.assertNotIn("checkout@", retrieve)
         self.assertNotIn("python", retrieve)

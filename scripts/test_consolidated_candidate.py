@@ -643,7 +643,7 @@ class WorkflowShapeTests(unittest.TestCase):
         import yaml
         source = (WORKFLOWS / "prepare-consolidated-release-candidate.yml").read_text(encoding="utf-8")
         jobs = yaml.safe_load(source)["jobs"]
-        self.assertEqual(["verify_source", "prepare", "retrieve", "consumers"], list(jobs))
+        self.assertEqual(["verify_source", "prepare", "retrieve", "consumers", "attest_candidate"], list(jobs))
         verify_job = jobs["verify_source"]
         self.assertEqual("verify_source", jobs["prepare"]["needs"])
         self.assertEqual({"contents": "read", "actions": "none"}, verify_job["permissions"])
