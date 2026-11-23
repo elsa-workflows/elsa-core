@@ -10,6 +10,8 @@ from pathlib import Path
 
 SPDX = "https://spdx.dev/Document"
 SLSA = "https://slsa.dev/provenance/v1"
+BUILDKIT_TYPE = "https://github.com/moby/buildkit/blob/master/docs/attestations/slsa-definitions.md"
+PUBLISHER = "https://github.com/elsa-workflows/elsa-core/actions/workflows/docker-publish.yml"
 
 
 def read_document(repository, digest, *, blob=False, layout=False):
@@ -81,11 +83,22 @@ def verify_image(image, output, source_commit, layout=False):
         purls = {ref["referenceLocator"] for package in sbom["packages"] for ref in package.get("externalRefs", [])
                  if ref.get("referenceType") == "purl"}
         # All three Community hosts use the Ubuntu ASP.NET runtime and an Elsa host assembly.
-        for prefix in ("pkg:deb/", "pkg:nuget/Microsoft.AspNetCore.App.Runtime.", "pkg:nuget/Elsa."):
+        runtime = {"linux/amd64": "linux-x64", "linux/arm64": "linux-arm64"}[platform]
+        for prefix in ("pkg:deb/", f"pkg:nuget/Microsoft.AspNetCore.App.Runtime.{runtime}@", "pkg:nuget/Elsa."):
             if not any(purl.startswith(prefix) for purl in purls):
                 raise ValueError(f"Missing expected {prefix} component in {platform} SBOM")
-        if not documents[SLSA].get("buildDefinition") or not documents[SLSA].get("runDetails"):
-            raise ValueError(f"Missing SLSA build details for {platform}")
+        definition = documents[SLSA].get("buildDefinition")
+        details = documents[SLSA].get("runDetails")
+        if not isinstance(definition, dict) or definition.get("buildType") != BUILDKIT_TYPE:
+            raise ValueError(f"Unexpected SLSA build type for {platform}")
+        # Older BuildKit schema versions omit targetPlatform. builderPlatform refers to the build machine.
+        params = definition.get("internalParameters", {})
+        valid_targets = ("linux/arm64", "linux/arm64/v8") if platform == "linux/arm64" else (platform,)
+        if not isinstance(params, dict) or params.get("targetPlatform", platform) not in valid_targets:
+            raise ValueError(f"Unexpected provenance target for {platform}")
+        builder = details.get("builder") if isinstance(details, dict) else None
+        if not isinstance(builder, dict) or builder.get("id") != PUBLISHER:
+            raise ValueError(f"Unexpected SLSA builder identity for {platform}")
         results[platform] = (child, sbom, documents[SLSA])
 
     output.mkdir(parents=True, exist_ok=True)

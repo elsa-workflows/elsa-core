@@ -28,10 +28,11 @@ class PlatformEvidenceTests(unittest.TestCase):
             }
             self.documents[f"evidence-{arch}"] = {"layers": layers}
             packages = [{"externalRefs": [{"referenceType": "purl", "referenceLocator": purl}]} for purl in
-                        ("pkg:deb/ubuntu/libc6", "pkg:nuget/Microsoft.AspNetCore.App.Runtime.linux-" + arch,
+                        ("pkg:deb/ubuntu/libc6", "pkg:nuget/Microsoft.AspNetCore.App.Runtime.linux-" + {"amd64":"x64","arm64":"arm64"}[arch] + "@10.0.15",
                          "pkg:nuget/Elsa.Server.Web")]
             for kind, predicate in ((SPDX, {"spdxVersion": "SPDX-2.3", "packages": packages}),
-                                    (SLSA, {"buildDefinition": {"buildType": "BuildKit"}, "runDetails": {"builder": {}}})):
+                                    (SLSA, {"buildDefinition": {"buildType": "https://github.com/moby/buildkit/blob/master/docs/attestations/slsa-definitions.md"},
+                                            "runDetails": {"builder": {"id":"https://github.com/elsa-workflows/elsa-core/actions/workflows/docker-publish.yml"}}})):
                 key = f"{arch}-{kind}"
                 layers.append({"digest": key, "mediaType": "application/vnd.in-toto+json",
                                "annotations": {"in-toto.io/predicate-type": kind}})
@@ -51,6 +52,27 @@ class PlatformEvidenceTests(unittest.TestCase):
     def test_swapped_subject_with_correct_descriptor(self):
         self.documents[f"amd64-{SPDX}"]["subject"] = [{"digest": {"sha256": "arm64"}}]
         with self.assertRaisesRegex(ValueError, "Wrong subject"):
+            self.verify()
+
+    def test_runtime_inventory_must_match_platform(self):
+        self.documents[f"arm64-{SPDX}"]["predicate"]["packages"][1] = self.documents[f"amd64-{SPDX}"]["predicate"]["packages"][1]
+        with self.assertRaisesRegex(ValueError, "runtime|Runtime"):
+            self.verify()
+
+    def test_wrong_provenance_target(self):
+        definition = self.documents[f"arm64-{SLSA}"]["predicate"]["buildDefinition"]
+        definition["internalParameters"] = {"targetPlatform": "linux/amd64"}
+        with self.assertRaisesRegex(ValueError, "target"):
+            self.verify()
+
+    def test_missing_builder_identity(self):
+        self.documents[f"amd64-{SLSA}"]["predicate"]["runDetails"] = {"builder": {}}
+        with self.assertRaisesRegex(ValueError, "build|provenance"):
+            self.verify()
+
+    def test_invalid_build_definition(self):
+        self.documents[f"amd64-{SLSA}"]["predicate"]["buildDefinition"] = "placeholder"
+        with self.assertRaisesRegex(ValueError, "build|provenance"):
             self.verify()
 
     def test_incomplete_inventory(self):

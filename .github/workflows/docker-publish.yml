@@ -59,6 +59,7 @@ jobs:
     outputs:
       version: ${{ steps.release.outputs.version }}
       source_ref: ${{ steps.release.outputs.source_ref }}
+      source_commit: ${{ steps.release.outputs.source_commit }}
       move_latest: ${{ steps.release.outputs.move_latest }}
       move_minor: ${{ steps.release.outputs.move_minor }}
     steps:
@@ -105,8 +106,18 @@ jobs:
           esac
 
           REMOTE="https://github.com/${GITHUB_REPOSITORY}.git"
-          if ! git ls-remote --exit-code --tags "$REMOTE" "refs/tags/${VERSION}" >/dev/null; then
+          TAG_REF="refs/tags/$VERSION"
+          if ! TAG_REFS=$(git ls-remote --exit-code --tags "$REMOTE" "$TAG_REF" "$TAG_REF^{}"); then
             echo "Git tag '$VERSION' does not exist on $GITHUB_REPOSITORY." >&2
+            exit 1
+          fi
+
+          TAG_OBJECT=$(awk -v ref="$TAG_REF" '$2 == ref { print $1 }' <<< "$TAG_REFS")
+          PEELED=$(awk -v ref="$TAG_REF^{}" '$2 == ref { print $1 }' <<< "$TAG_REFS")
+          SOURCE_COMMIT=${PEELED:-$TAG_OBJECT}
+          [[ "$SOURCE_COMMIT" =~ ^[a-f0-9]{40}$ ]]
+          if [[ "$EVENT_NAME" == push && "$GITHUB_SHA" != "$TAG_OBJECT" && "$GITHUB_SHA" != "$SOURCE_COMMIT" ]]; then
+            echo "Release tag has moved since the triggering push." >&2
             exit 1
           fi
 
@@ -138,6 +149,7 @@ jobs:
           {
             echo "version=$VERSION"
             echo "source_ref=$SOURCE_REF"
+            echo "source_commit=$SOURCE_COMMIT"
             echo "move_latest=$MOVE_LATEST"
             echo "move_minor=$MOVE_MINOR"
           } >> "$GITHUB_OUTPUT"
@@ -149,24 +161,32 @@ jobs:
     needs: prepare
     runs-on: ubuntu-latest
     timeout-minutes: 120
+    # Each matrix leg sets one uniquely named output after its post-push verification passes.
+    outputs:
+      server: ${{ steps.verify.outputs.server }}
+      combined: ${{ steps.verify.outputs.combined }}
+      studio: ${{ steps.verify.outputs.studio }}
     strategy:
       fail-fast: false
       matrix: &community_images
         include:
           - name: elsa-server
+            output: server
             dockerfile: docker/ElsaServer.Dockerfile
             image: elsaworkflows/elsa-server-v3
           - name: elsa-server-and-studio
+            output: combined
             dockerfile: docker/ElsaServerAndStudio.Dockerfile
             image: elsaworkflows/elsa-server-and-studio-v3
           - name: elsa-studio
+            output: studio
             dockerfile: docker/ElsaStudio.Dockerfile
             image: elsaworkflows/elsa-studio-v3
     steps:
       - name: Checkout ${{ needs.prepare.outputs.source_ref }}
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
-          ref: ${{ needs.prepare.outputs.source_ref }}
+          ref: ${{ needs.prepare.outputs.source_commit }}
           persist-credentials: false
 
       - name: Record source commit
@@ -212,7 +232,7 @@ jobs:
           file: ${{ matrix.dockerfile }}
           platforms: linux/amd64,linux/arm64
           push: true
-          provenance: mode=max,version=v1
+          provenance: mode=max,version=v1,builder-id=https://github.com/elsa-workflows/elsa-core/actions/workflows/docker-publish.yml
           # Docker's BuildKit Syft scanner, stable-1 pinned to the reviewed multi-platform index.
           sbom: generator=docker/buildkit-syft-scanner@sha256:873a7458c3c8ac8e32c7b796c10e1600b07b963d2aa000a72a2d97aaaa2d6315
           tags: ${{ steps.meta.outputs.tags }}
@@ -230,7 +250,9 @@ jobs:
           persist-credentials: false
 
       - name: Verify the published platform evidence and record the immutable image
+        id: verify
         env:
+          OUTPUT_NAME: ${{ matrix.output }}
           IMAGE: docker.io/${{ matrix.image }}
           INDEX_DIGEST: ${{ steps.build.outputs.digest }}
           PRODUCT_COMMIT: ${{ steps.source.outputs.sha }}
@@ -252,21 +274,14 @@ jobs:
             echo "Workflow commit: \`$GITHUB_SHA\`"
           } >> "$GITHUB_STEP_SUMMARY"
 
-          printf '%s\n' "$INDEX_DIGEST" > "$RUNNER_TEMP/verified-index.digest"
-
-      - name: Hand the verified index to the signer
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: verified-index-${{ matrix.name }}
-          path: ${{ runner.temp }}/verified-index.digest
-          if-no-files-found: error
-          overwrite: true
-          retention-days: 7
+          echo "$OUTPUT_NAME=$INDEX_DIGEST" >> "$GITHUB_OUTPUT"
 
   sign:
     name: Attest ${{ matrix.name }} index
     needs: [prepare, publish]
+    # Each verified image can be signed even when a sibling matrix leg failed.
     if: >-
+      !cancelled() && needs.prepare.result == 'success' &&
       github.repository == 'elsa-workflows/elsa-core' &&
       (github.ref == format('refs/tags/{0}', needs.prepare.outputs.version) ||
        (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'))
@@ -280,24 +295,16 @@ jobs:
       fail-fast: false
       matrix: *community_images
     steps:
-      - name: Retrieve this image's verified build output from this run
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-        with:
-          name: verified-index-${{ matrix.name }}
-          path: ${{ runner.temp }}/receipt
-
-      - name: Validate index digest
-        id: index
-        run: |
-          digest=$(cat "$RUNNER_TEMP/receipt/verified-index.digest")
-          [[ "$digest" =~ ^sha256:[0-9a-f]{64}$ ]]
-          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+      - name: Require a verified digest from the matching producer
+        env:
+          DIGEST: ${{ needs.publish.outputs[matrix.output] }}
+        run: '[[ "$DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]'
 
       - name: Attest the published image index with GitHub OIDC
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
           subject-name: docker.io/${{ matrix.image }}
-          subject-digest: ${{ steps.index.outputs.digest }}
+          subject-digest: ${{ needs.publish.outputs[matrix.output] }}
           push-to-registry: false
           create-storage-record: false
 
@@ -305,7 +312,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           IMAGE: docker.io/${{ matrix.image }}
-          DIGEST: ${{ steps.index.outputs.digest }}
+          DIGEST: ${{ needs.publish.outputs[matrix.output] }}
         run: |
           for attempt in 1 2 3 4; do
             if gh attestation verify "oci://$IMAGE@$DIGEST" --repo "$GITHUB_REPOSITORY" \
