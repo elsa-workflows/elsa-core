@@ -1,6 +1,8 @@
 using System.Collections;
 using Elsa.Common.DistributedHosting;
 using Elsa.Common.Models;
+using Elsa.Common.Multitenancy;
+using Elsa.Common.Services;
 using Elsa.Http.Bookmarks;
 using Elsa.Http.Contracts;
 using Elsa.Http.Middleware;
@@ -16,6 +18,7 @@ using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
+using Elsa.Workflows.Runtime.Stores;
 using Elsa.Workflows.State;
 using Medallion.Threading;
 using Medallion.Threading.FileSystem;
@@ -66,6 +69,37 @@ public class HttpWorkflowsMiddlewareTests
         Assert.NotNull(_bookmarkStore.LastFilter);
         var filter = _bookmarkStore.LastFilter!;
         Assert.False(filter.TenantAgnostic);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_WhenOnlyAnotherTenantHasAMatchingBookmark_ReturnsNotFound()
+    {
+        var tenantAccessor = new DefaultTenantAccessor();
+        using var tenantScope = tenantAccessor.PushContext(new Tenant { Id = CurrentTenantId, Name = CurrentTenantId });
+        var bookmarkStore = new MemoryBookmarkStore(new MemoryStore<StoredBookmark>(), tenantAccessor);
+        await bookmarkStore.SaveAsync(CreateBookmark("other-tenant-bookmark", OtherTenantId));
+
+        var workflowRunner = Substitute.For<IWorkflowRunner>();
+        await using var serviceProvider = new ServiceCollection()
+            .AddSingleton<IBookmarkStore>(bookmarkStore)
+            .AddSingleton<IRouteMatcher, ExactRouteMatcher>()
+            .AddSingleton<IRouteTable>(new ListRouteTable([new(BookmarkPath)]))
+            .AddSingleton<IStimulusHasher, FixedStimulusHasher>()
+            .AddSingleton(workflowRunner)
+            .BuildServiceProvider();
+
+        var httpContext = new DefaultHttpContext { RequestServices = serviceProvider };
+        httpContext.Request.Path = "/workflows" + BookmarkPath;
+        httpContext.Request.Method = HttpMethod.Get.Method;
+
+        await _middleware.InvokeAsync(
+            httpContext,
+            serviceProvider,
+            Microsoft.Extensions.Options.Options.Create(new HttpActivityOptions { BasePath = new PathString("/workflows") }),
+            new EmptyHttpWorkflowLookupService());
+
+        Assert.Equal(StatusCodes.Status404NotFound, httpContext.Response.StatusCode);
+        Assert.Empty(workflowRunner.ReceivedCalls());
     }
 
     [Fact]
