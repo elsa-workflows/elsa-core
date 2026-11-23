@@ -34,6 +34,7 @@ jobs:
     timeout-minutes: 350
     outputs:
       report-name: ${{ steps.report.outputs.name }}
+      report-run-url: ${{ steps.report.outputs.run-url }}
     permissions:
       contents: read
       attestations: read
@@ -78,7 +79,9 @@ jobs:
       - name: Identify this scan attempt
         id: report
         if: '!cancelled()'
-        run: echo "name=release-monitor-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "name=release-monitor-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> "$GITHUB_OUTPUT"
+          echo "run-url=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/attempts/$GITHUB_RUN_ATTEMPT" >> "$GITHUB_OUTPUT"
       - name: Retain full report
         if: '!cancelled()'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -108,5 +111,5 @@ jobs:
       - name: Record new outcomes on the monitoring issue
         env:
           GH_TOKEN: ${{ github.token }}
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
+          RUN_URL: ${{ needs.scan.outputs.report-run-url }}
         run: python3 scripts/scan_release_sboms.py receipt "$RUNNER_TEMP/release-monitor/report.json" --run-url "$RUN_URL"

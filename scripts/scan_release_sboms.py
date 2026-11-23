@@ -58,20 +58,23 @@ def release_commit(tag):
     return commit
 
 
-def packages(tag, commit, directory):
+def packages(tag, commit, directory, evidence):
     import nuget_release_evidence as publisher
 
-    for name in (INDEX, BUNDLE):
-        run("gh", "release", "download", tag, "--repo", REPO, "--pattern", name, "--dir", str(directory))
+    download = ["gh", "release", "download", tag, "--repo", REPO, "--dir", str(directory), "--pattern"]
+    run(*download, INDEX)
     index_file = directory / INDEX
     publisher.verify_attestation(index_file, publisher.SIGNER)
     raw = index_file.read_bytes()
     index = json.loads(raw)
     require((index["schema"], index["version"], index["source_commit"]) == (1, tag, commit), "Wrong release index")
+    evidence["release_sha256"] = digest(raw)
+    evidence["source_commit"] = commit
+    run(*download, BUNDLE)
     bundle = directory / BUNDLE
     require(index["sbom_bundle"] == {"name": BUNDLE, "sha256": digest(bundle.read_bytes())}, "Wrong SBOM bundle")
     subjects = []
-    index_sha = digest(raw)
+    errors = {}
     with zipfile.ZipFile(bundle) as archive:
         require(len(set(archive.namelist())) == len(archive.namelist()), "Duplicate SBOM archive member")
         source = directory / publisher.CANDIDATE
@@ -83,35 +86,46 @@ def packages(tag, commit, directory):
         rows = index["packages"]
         require(rows and [{k: v for k, v in row.items() if k != "feeds"} for row in rows]
                 == candidate["packages"], "Candidate and release package mappings differ")
-        seen = set()
-        for row in rows:
-            identifier = row["id"].lower()
-            require(publisher.candidates.PACKAGE_ID.fullmatch(identifier) and identifier not in seen, "Invalid package ID")
-            seen.add(identifier)
+        identifiers = [r["id"].lower() for r in rows]
+        require(len(set(identifiers)) == len(rows) and all(publisher.candidates.PACKAGE_ID.fullmatch(i) for i in identifiers),
+                "Invalid or duplicate package identity")
+        for row, identifier in zip(rows, identifiers):
             feeds = row["feeds"]
-            require("feedz" in feeds and feeds.keys() <= publisher.FEEDS.keys() and row["frameworks"], "Missing feed or framework")
+            if "feedz" not in feeds or not feeds.keys() <= publisher.FEEDS.keys() or not row["frameworks"]:
+                errors[identifier] = "Missing or unexpected package feed or framework"
+                continue
             owners = []
             for feed, record in sorted(feeds.items()):
-                url = f"{publisher.FEEDS[feed]}/{identifier}/{tag}/{identifier}.{tag}.nupkg"
-                require(record["url"] == url and digest(publisher.download(url)) == record["sha256"], "Wrong feed artifact")
-                if feed == "feedz":
-                    require(record["sha256"] == row["candidate_sha256"], "Feedz artifact differs from candidate subject")
-                owners.append({"name": row["id"], "feed": feed, "sha256": record["sha256"]})
+                try:
+                    url = f"{publisher.FEEDS[feed]}/{identifier}/{tag}/{identifier}.{tag}.nupkg"
+                    require(record["url"] == url and digest(publisher.download(url)) == record["sha256"], "Wrong feed artifact")
+                    if feed == "feedz":
+                        require(record["sha256"] == row["candidate_sha256"], "Feedz artifact differs from candidate subject")
+                    owners.append({"name": row["id"], "feed": feed, "sha256": record["sha256"]})
+                except Exception as error:
+                    errors[f"{identifier}/{feed}"] = error_message(error)
+            if not owners:
+                continue
             records = list(row["frameworks"].items()) + [("browser-build-input", r) for r in row["browser_build_inputs"]]
             for context, record in records:
-                content = archive.read(record["path"])
-                checksum = digest(content)
-                require(checksum == record["sha256"], "Wrong inventory digest")
-                if context != "browser-build-input":
-                    publisher.check_bom(content, row, tag, context)
-                path = directory / checksum
-                path.write_bytes(content)
-                subjects.append((path, {"context": context, "inventory": record["path"], "sbom_sha256": checksum,
-                                        "artifacts": owners, "release_sha256": index_sha}))
+                try:
+                    content = archive.read(record["path"])
+                    checksum = digest(content)
+                    require(checksum == record["sha256"], "Wrong inventory digest")
+                    if context != "browser-build-input":
+                        publisher.check_bom(content, row, tag, context)
+                    path = directory / checksum
+                    path.write_bytes(content)
+                    subjects.append((path, {"context": context, "inventory": record["path"], "sbom_sha256": checksum,
+                                            "artifacts": owners, "release_sha256": evidence["release_sha256"]}))
+                except Exception as error:
+                    errors[f"{identifier}/{context}/{record.get('path', '<missing path>')}"] = error_message(error)
+    if errors:
+        evidence["verification_errors"] = errors
     return subjects
 
 
-def image(tag, commit, directory, name):
+def image(tag, commit, directory, name, evidence):
     import verify_community_image as publisher
 
     repository = f"docker.io/elsaworkflows/{name}"
@@ -128,6 +142,7 @@ def image(tag, commit, directory, name):
     require(any(any(s["name"] == repository and s["digest"].get("sha256") == index[7:]
                     for s in proof["verificationResult"]["statement"]["subject"]) for proof in json.loads(proofs)),
             "Attestation subject does not name the official registry repository and digest")
+    evidence["release_sha256"] = index[7:]
     publisher.verify_image(reference, directory, commit, publisher.spdx_validator())
     result = []
     for descriptor in publisher.read_document(repository, index)["manifests"]:
@@ -201,11 +216,11 @@ def attempt(release, family, stage, cache):
     try:
         assets = {a["name"] for a in release["assets"]}
         if family == "nuget":
-            require({INDEX, BUNDLE} <= assets, "Missing signed NuGet release assets")
+            require(INDEX in assets, "Missing signed NuGet release index")
         commit = release_commit(tag)
         with tempfile.TemporaryDirectory(dir=stage) as tmp:
             folder = Path(tmp)
-            subjects = packages(tag, commit, folder) if family == "nuget" else image(tag, commit, folder, family)
+            subjects = packages(tag, commit, folder, record) if family == "nuget" else image(tag, commit, folder, family, record)
             require(subjects, "No verified inventories")
             record["source_commit"] = commit
             record["release_sha256"] = subjects[0][1]["release_sha256"]
@@ -238,6 +253,8 @@ def attempt(release, family, stage, cache):
             if errors:
                 record["inventory_errors"] = errors
                 record["error"] = f"Grype could not scan {len(errors)} verified inventory digest(s)"
+            elif record.get("verification_errors"):
+                record["error"] = "Incomplete verified release coverage"
             else:
                 record["state"] = "findings" if findings else "clean"
     except Exception as error:
@@ -297,7 +314,7 @@ def monitor():
                         reports.append(record)
                         # An older signed subject is a fallback for missing or invalid evidence.
                         # Database and scan failures on verified evidence already identify the latest subject.
-                        if record["state"] != "error" or "inventories" in record:
+                        if record["state"] != "error" or ("inventories" in record and not record.get("verification_errors")):
                             break
         except Exception as error:
             reports.append({"version": "discovery", "family": "releases", "state": "error", "error": str(error)})
@@ -305,7 +322,7 @@ def monitor():
 
 
 def receipt_key(record):
-    fields = ("version", "family", "state", "release_sha256", "database", "inventory_errors")
+    fields = ("version", "family", "state", "release_sha256", "database", "inventory_errors", "verification_errors")
     error = record.get("error")
     if "database_status" in record:
         # Relative age in a stale-DB diagnostic changes between attempts.

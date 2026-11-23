@@ -1,10 +1,13 @@
 import json
+import re
+import sys
+import zipfile
 import subprocess
 import tempfile
 import unittest
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, call, patch
 
 import scan_release_sboms as monitor
 
@@ -68,6 +71,87 @@ class ReleaseMonitorTests(unittest.TestCase):
             self.assertNotIn("findings", record)
             scan.assert_not_called()
 
+    def test_verified_package_inputs_survive_an_independent_feed_failure(self):
+        tag = "3.11.0"
+        commit = "a" * 40
+        producer = Mock()
+        producer.INDEX = monitor.INDEX
+        producer.BUNDLE = monitor.BUNDLE
+        producer.CANDIDATE = "nuget-candidate-index.json"
+        producer.SIGNER = "release-workflow"
+        producer.PRODUCER = "candidate-workflow"
+        producer.candidates.PACKAGE_ID = re.compile(r"[a-z][a-z0-9.]*")
+        producer.FEEDS = {"feedz": "https://feedz.example", "nuget": "https://nuget.example"}
+        tarball = b"published archive"
+        bom = json.dumps({"bomFormat": "CycloneDX", "specVersion": "1.6"}).encode()
+        row = {"id": "Elsa", "candidate_sha256": monitor.digest(tarball),
+               "frameworks": {"net10.0": {"path": "boms/Elsa/net10.0.cdx.json", "sha256": monitor.digest(bom)}},
+               "browser_build_inputs": []}
+        candidate = {"schema": 1, "version": tag, "source_commit": commit, "tooling_commit": "c" * 40,
+                     "producer_run": 3, "producer_attempt": 1, "packages": [row]}
+        feeds = {feed: {"url": f"{base}/elsa/{tag}/elsa.{tag}.nupkg", "sha256": monitor.digest(tarball)}
+                 for feed, base in producer.FEEDS.items()}
+        with tempfile.TemporaryDirectory() as tmp, patch.dict(sys.modules, {"nuget_release_evidence": producer}):
+            folder = Path(tmp)
+            bundle = folder / monitor.BUNDLE
+            with zipfile.ZipFile(bundle, "w") as archive:
+                archive.writestr(producer.CANDIDATE, json.dumps(candidate))
+                archive.writestr("boms/Elsa/net10.0.cdx.json", bom)
+            index = dict(candidate, packages=[dict(row, feeds=feeds)],
+                         sbom_bundle={"name": monitor.BUNDLE, "sha256": monitor.digest(bundle.read_bytes())})
+            index_file = folder / monitor.INDEX
+            index_file.write_text(json.dumps(index))
+            producer.download.side_effect = [tarball, b"unexpected bytes"]
+            with patch.object(monitor, "run"):
+                evidence = {}
+                subjects = monitor.packages(tag, commit, folder, evidence)
+                self.assertEqual(evidence["release_sha256"], monitor.digest(index_file.read_bytes()))
+                self.assertEqual(evidence["verification_errors"], {"elsa/nuget": "Wrong feed artifact"})
+                self.assertEqual([s["feed"] for s in subjects[0][1]["artifacts"]], ["feedz"])
+                self.assertEqual(subjects[0][0].read_bytes(), bom)
+                self.assertEqual(producer.verify_attestation.call_args_list, [
+                    call(index_file, producer.SIGNER), call(folder / producer.CANDIDATE, producer.PRODUCER, "c" * 40)])
+                producer.check_bom.assert_called_once_with(bom, index["packages"][0], tag, "net10.0")
+                producer.verify_attestation.side_effect = ValueError("Wrong signer")
+                producer.download.reset_mock()
+                with self.assertRaisesRegex(ValueError, "Wrong signer"):
+                    monitor.packages(tag, commit, folder, {})
+                producer.download.assert_not_called()
+                producer.verify_attestation.side_effect = None
+                bundle.write_bytes(b"wrong bundle")
+                with self.assertRaisesRegex(ValueError, "Wrong SBOM bundle"):
+                    monitor.packages(tag, commit, folder, {})
+
+    def test_image_subject_and_producer_are_bound_before_inventory_verification(self):
+        name = "elsa-server-v3"
+        repository = "docker.io/elsaworkflows/" + name
+        tag = "3.11.0"
+        commit = "a" * 40
+        checksum = "b" * 64
+        index = "sha256:" + checksum
+        publisher = Mock()
+        publisher.verify_image.side_effect = ValueError("Missing platform evidence")
+        with tempfile.TemporaryDirectory() as tmp, patch.dict(sys.modules, {"verify_community_image": publisher}):
+            for subject_name in ("docker.io/incorrect/name", repository):
+                proof = [{"verificationResult": {"statement": {"subject": [
+                    {"name": subject_name, "digest": {"sha256": checksum}}]}}}]
+                with patch.object(monitor, "run", side_effect=[index, json.dumps(proof)]) as run:
+                    evidence = {}
+                    with self.assertRaisesRegex(ValueError, "Attestation subject|Missing platform evidence"):
+                        monitor.image(tag, commit, Path(tmp), name, evidence)
+                    self.assertEqual(run.call_args_list[0], call("oras", "resolve", f"{repository}:{tag}"))
+                    args = run.call_args_list[1].args
+                    self.assertIn(monitor.IMAGE_WORKFLOW, args)
+                    self.assertIn(f"refs/tags/{tag}", args)
+                    self.assertIn(commit, args)
+                    if subject_name == repository:
+                        publisher.verify_image.assert_called_once_with(f"{repository}@{index}", Path(tmp), commit,
+                                                                      publisher.spdx_validator.return_value)
+                        self.assertEqual(evidence["release_sha256"], checksum)
+                    else:
+                        publisher.verify_image.assert_not_called()
+                        self.assertNotIn("release_sha256", evidence)
+
     def test_database_requires_fresh_valid_revision(self):
         self.assertEqual(monitor.database(status())["sha256"], "d" * 64)
         for data in [status(timedelta(days=6)), status(timedelta(days=-1)), dict(status(), valid=False),
@@ -87,7 +171,7 @@ class ReleaseMonitorTests(unittest.TestCase):
             self.assertNotIn("database", cache)
 
     def test_report_deduplicates_shared_package_components_and_preserves_context(self):
-        def inputs(tag, commit, folder):
+        def inputs(tag, commit, folder, evidence):
             path = folder / "bom"
             path.write_text("{}")
             return [(path, {"release_sha256": "f" * 64, "sbom_sha256": checksum,
