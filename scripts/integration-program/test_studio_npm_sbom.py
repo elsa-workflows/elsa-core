@@ -1,4 +1,5 @@
 """Exercise release inventory binding independently of the real SDK build."""
+import base64
 import json
 import os
 from pathlib import Path
@@ -134,6 +135,33 @@ class PackedLibraryEvidenceTests(unittest.TestCase):
                          assets[pair.sha256(static_file.read_bytes())])
         self.assertNotIn('0' * 64, assets)
         self.assertEqual(assets[pair.sha256(static_file.read_bytes())], assets['1' * 64])
+
+    def test_runtime_boot_data_and_compressed_alternatives_keep_their_runtime_identity(self):
+        source = self.build / 'source'
+        obj = source / pair.HOST / 'obj'
+        published = obj / 'Release/net10.0'
+        published.mkdir(parents=True)
+        cache = self.build / 'packages'
+        name = 'Microsoft.NETCore.App.Runtime.Mono.browser-wasm'
+        template = cache / name.lower() / '10.0.8/runtimes/browser-wasm/native/dotnet.js'
+        template.parent.mkdir(parents=True)
+        template.write_bytes(b'/*! bundlerFriendlyImports */load(/*! dotnetBootConfig */{});')
+        generated = published / 'publish.dotnet.js'
+        generated.write_bytes(b'load(/*json-start*/{"mainAssemblyName":"test"}/*json-end*/);')
+        sha = pair.sha256(generated.read_bytes())
+        pair.write_json(obj / 'project.assets.json', {'targets': {'net10.0/browser-wasm': {}}, 'packageFolders': {str(cache): {}},
+                        'project': {'frameworks': {'net10.0': {'downloadDependencies': [{'name': name, 'version': '[10.0.8, 10.0.8]'}]}}}})
+        def record(target, role, integrity, related):
+            return {'Identity': str(target), 'OriginalItemSpec': str(target), 'AssetRole': role,
+                    'SourceType': 'Computed', 'RelatedAsset': related, 'Integrity': integrity}
+        pair.write_json(published / 'staticwebassets.publish.json', {'Assets': [
+            record(published / 'compressed.br', 'Alternative', 'ERERERERERERERERERERERERERERERERERERERERERE=', str(generated)),
+            record(generated, 'Primary', base64.b64encode(bytes.fromhex(sha)).decode(), '')]})
+        assets = sbom.managed_assets(source, self.proof['version'])
+        self.assertEqual({('pkg:nuget/' + name + '@10.0.8', name, '10.0.8')}, assets[sha])
+        self.assertEqual(assets[sha], assets['1' * 64])
+        generated.write_bytes(b'different loader')
+        self.assertFalse(sbom.published_runtime_loader(template, generated))
 
     def test_vendor_notice_evidence_requires_the_reviewed_path_and_bytes(self):
         catalog = sbom.read(Path(sbom.__file__).with_name('studio-vendor-notices.cdx.json'))

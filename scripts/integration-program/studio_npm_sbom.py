@@ -31,6 +31,23 @@ def component(ecosystem, name, version):
     return item
 
 
+def published_runtime_loader(template, generated):
+    """Confirm the SDK embedded only the browser boot JSON in this exact runtime pack's loader."""
+    marker = b'/*! dotnetBootConfig */{}'
+    original = template.read_bytes().replace(b'/*! bundlerFriendlyImports */', b'')
+    if original.count(marker) != 1:
+        return False
+    prefix, suffix = original.split(marker)
+    raw = generated.read_bytes()
+    start, end = prefix + b'/*json-start*/', b'/*json-end*/' + suffix
+    if not raw.startswith(start) or not raw.endswith(end):
+        return False
+    try:
+        return isinstance(json.loads(raw[len(start):-len(end)]), dict)
+    except (UnicodeError, ValueError):
+        return False
+
+
 def managed_assets(source, release_version):
     """Resolve only assets whose publish-manifest hash is present in the packed file inventory."""
     obj = source / pair.HOST / 'obj'
@@ -45,6 +62,8 @@ def managed_assets(source, release_version):
     framework = assets['project']['frameworks']['net10.0']
     packs = list(map(Path, assets['packageFolders']))
     canonical_names = {key.lower(): key for key in target}
+    generated_loader = obj / 'Release/net10.0/publish.dotnet.js'
+    loader_package = None
     for download in framework['downloadDependencies']:
         name = download['name']
         lower, upper = download['version'].strip('[]').split(', ')
@@ -52,14 +71,18 @@ def managed_assets(source, release_version):
         canonical_names[f'{name}/{lower}'.lower()] = f'{name}/{lower}'
         for folder in packs:
             runtime = folder / name.lower() / lower / 'runtimes/browser-wasm'
+            template = runtime / 'native/dotnet.js'
+            if template.is_file() and generated_loader.is_file() and published_runtime_loader(template, generated_loader):
+                loader_package = f'{name}/{lower}'
             for dll in runtime.rglob('*.dll'):
                 assemblies[dll.stem].add(f'{name}/{lower}')
     own = pair.HOST.name
     assemblies[own].add(f'{own}/{release_version}')
     by_digest = defaultdict(set)
+    by_identity = {}
     published = read(obj / 'Release/net10.0/staticwebassets.publish.json')
     for asset in published['Assets']:
-        package = None
+        package = loader_package if Path(asset['Identity']) == generated_loader else None
         origin = Path(asset['OriginalItemSpec'])
         for folder in packs:
             if origin.is_relative_to(folder):
@@ -85,7 +108,14 @@ def managed_assets(source, release_version):
                 # Match against the resolved package file that actually entered this build.
                 with origin.open('rb') as raw:
                     digest = hashlib.file_digest(raw, 'sha256').hexdigest()
-            by_digest[digest].add((item['purl'], item['name'], version))
+            identity = (item['purl'], item['name'], version)
+            by_digest[digest].add(identity)
+            by_identity[asset['Identity']] = identity
+    # The SDK can list compressed alternatives before the primary/related asset.
+    for asset in published['Assets']:
+        if asset['AssetRole'] == 'Alternative' and asset.get('RelatedAsset') in by_identity:
+            digest = base64.b64decode(asset['Integrity'], validate=True).hex()
+            by_digest[digest].add(by_identity[asset['RelatedAsset']])
     return by_digest
 
 
