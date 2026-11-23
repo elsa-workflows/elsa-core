@@ -81,6 +81,19 @@ jobs:
             --commit "$EXPECTED_HEAD" --version "$version" "${candidate_args[@]}" \
             --run-id "$GITHUB_RUN_ID" --run-attempt "$GITHUB_RUN_ATTEMPT" \
             --output "$RUNNER_TEMP/studio-npm-pair"
+      - name: Generate SBOMs for the original release candidate
+        if: inputs.artifact_mode == 'release-candidate'
+        uses: ./.github/actions/studio-npm-sboms
+
+      - name: Retain release candidate SBOMs alongside the original custody archive
+        if: inputs.artifact_mode == 'release-candidate'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: studio-npm-candidate-sboms-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/studio-npm-pair/sboms/*.cdx.json
+          if-no-files-found: error
+          retention-days: 30
+
       - name: Verify reviewed checkout remained unchanged
         if: always()
         run: |

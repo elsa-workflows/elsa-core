@@ -1176,6 +1176,10 @@ class WorkflowGateTests(unittest.TestCase):
             with self.subTest(old=old):
                 self.assert_rejected(self.mutated(old, new), "attest_npm must sign only the verified release pair")
 
+    def test_both_sboms_must_be_checked_before_publishing(self):
+        source = self.mutated("studio_npm_sbom.py verify-staged", "studio_npm_sbom.py verify-later")
+        self.assert_rejected(source, "publish_npm must verify both staged SBOMs before publishing")
+
     def test_attestation_requires_registry_byte_readback(self):
         self.assert_rejected(self.mutated("      - name: Verify both published tarballs against their staged SBOMs",
                                           "      - if: false\n        name: Verify both published tarballs against their staged SBOMs"),

@@ -121,6 +121,9 @@ DOTNET_SDK = "10.0.300"
 NPM_ARTIFACT = "studio-npm-pair"
 NPM_ARTIFACT_IDS = "${{ needs.build_npm.outputs.pair-id }},${{ needs.build_npm.outputs.sboms-id }}"
 DOWNLOAD_BY_ID = "actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093"
+NPM_CHECKSUM_STEP = {"env": {"CHECKSUMS": "${{ needs.build_npm.outputs.checksums }}"},
+                     "working-directory": "${{ runner.temp }}/studio-npm-pair",
+                     "run": 'sha256sum --strict --check - <<< "$CHECKSUMS"'}
 ATTEST = "actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6"
 WASM_TGZ = "elsa-workflows-elsa-studio-wasm-${GITHUB_REF_NAME}.tgz"
 REACT_TGZ = "elsa-workflows-elsa-studio-wasm-react-${GITHUB_REF_NAME}.tgz"
@@ -884,14 +887,16 @@ def npm_attestation_violations(jobs: dict) -> list[str]:
     permissions = {"contents": "read", "id-token": "write", "attestations": "write"}
     prefix = "${{ runner.temp }}/studio-npm-pair"
     inputs = {"artifact-ids": NPM_ARTIFACT_IDS, "merge-multiple": True, "path": prefix}
-    steps = [(DOWNLOAD_BY_ID, inputs), (ATTEST, {"subject-path": prefix + "/*.tgz"})]
+    provenance = {"subject-path": prefix + "/*.tgz", "predicate-type": "https://slsa.dev/provenance/v1",
+                  "predicate-path": prefix + "/provenance.json"}
+    steps = [{"uses": DOWNLOAD_BY_ID, "with": inputs}, NPM_CHECKSUM_STEP, {"uses": ATTEST, "with": provenance}]
     for leaf in ("elsa-studio-wasm", "elsa-studio-wasm-react"):
         tarball = prefix + "/elsa-workflows-" + leaf + "-${{ github.ref_name }}.tgz"
-        steps.append((ATTEST, {"subject-path": tarball, "sbom-path": tarball + ".cdx.json"}))
+        steps.append({"uses": ATTEST, "with": {"subject-path": tarball, "sbom-path": tarball + ".cdx.json"}})
     actual = [{k: v for k, v in step.items() if k != "name"} for step in job.get("steps", [])]
     if (set(job) != {"name", "needs", "runs-on", "permissions", "steps"} or job.get("runs-on") != "ubuntu-latest"
             or needs(job) != {"build_npm", "publish_npm"} or job.get("permissions") != permissions
-            or actual != [{"uses": action, "with": values} for action, values in steps]):
+            or actual != steps):
         return ["attest_npm must sign only the verified release pair after successful publication"]
     return []
 
@@ -957,6 +962,14 @@ def npm_job_violations(jobs: dict) -> list[str]:
     )
     violations += extra
 
+    if (download is None or verify is None or not download < verify - 1
+            or {k: v for k, v in steps[verify-1].items() if k != "name"} != NPM_CHECKSUM_STEP):
+        violations.append("publish_npm must check original producer checksums after its artifact download")
+    preflight = ('python3 scripts/integration-program/studio_npm_sbom.py verify-staged --folder "$dir" '
+                 '--version "$GITHUB_REF_NAME" --commit "$GITHUB_SHA" --run "$GITHUB_RUN_ID"')
+    if (verify is None or set(steps[verify]) != {"name", "run"} or not _run_command_lines(steps[verify])
+            or _run_command_lines(steps[verify])[-1] != preflight):
+        violations.append("publish_npm must verify both staged SBOMs before publishing")
     readback = ("python3 scripts/integration-program/studio_npm_sbom.py verify-published "
                 '--folder "$RUNNER_TEMP/studio-npm-pair" --version "$GITHUB_REF_NAME" --commit "$GITHUB_SHA" --run "$GITHUB_RUN_ID"')
     if (not steps or set(steps[-1]) != {"name", "run"}

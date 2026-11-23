@@ -558,6 +558,7 @@ jobs:
     outputs:
       pair-id: ${{ steps.pair.outputs.artifact-id }}
       sboms-id: ${{ steps.sboms.outputs.artifact-id }}
+      checksums: ${{ steps.evidence.outputs.checksums }}
     runs-on: ubuntu-latest
     timeout-minutes: 120
     env:
@@ -591,26 +592,18 @@ jobs:
             --run-id "${GITHUB_RUN_ID}" --run-attempt "${GITHUB_RUN_ATTEMPT}" \
             --release-candidate --output "$RUNNER_TEMP/studio-npm-pair"
 
-      - name: Generate and validate a CycloneDX SBOM for each packed library
-        run: |
-          set -euo pipefail
-          dir="$RUNNER_TEMP/studio-npm-pair"
-          python3 scripts/integration-program/studio_npm_sbom.py generate --build "$dir" --output "$dir/sboms"
-          cli="$RUNNER_TEMP/cyclonedx"
-          curl --fail --silent --show-error --location --retry 3 \
-            https://github.com/CycloneDX/cyclonedx-cli/releases/download/v0.33.1/cyclonedx-linux-x64 -o "$cli"
-          echo "bfc8b2538da86fe239bc53658bbb63c1c8c510a293c1e6891aa5bea5d3c58746  $cli" | sha256sum -c -
-          chmod +x "$cli"
-          for file in "$dir"/sboms/*.cdx.json; do
-            "$cli" validate --input-file "$file" --input-version v1_6 --fail-on-errors
-          done
+      - name: Generate and validate the Studio release evidence
+        id: evidence
+        uses: ./.github/actions/studio-npm-sboms
+        with:
+          release-provenance: 'true'
 
       - name: Upload Studio npm SBOMs
         id: sboms
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: studio-npm-sboms
-          path: ${{ runner.temp }}/studio-npm-pair/sboms/*.cdx.json
+          path: ${{ runner.temp }}/studio-npm-pair/sboms/*.json
           if-no-files-found: error
           retention-days: 30
 
@@ -660,6 +653,12 @@ jobs:
           merge-multiple: true
           path: ${{ runner.temp }}/studio-npm-pair
 
+      - name: Check all downloaded bytes against the original producer checksums
+        env:
+          CHECKSUMS: ${{ needs.build_npm.outputs.checksums }}
+        working-directory: ${{ runner.temp }}/studio-npm-pair
+        run: sha256sum --strict --check - <<< "$CHECKSUMS"
+
       - name: Verify Studio npm pair
         run: |
           set -euo pipefail
@@ -670,6 +669,8 @@ jobs:
           test -f "$dir/$react"
           count=$(find "$dir" -maxdepth 1 -name '*.tgz' | wc -l)
           test "$count" -eq 2
+          python3 scripts/integration-program/studio_npm_sbom.py verify-staged \
+            --folder "$dir" --version "$GITHUB_REF_NAME" --commit "$GITHUB_SHA" --run "$GITHUB_RUN_ID"
 
       - name: Publish @elsa-workflows/elsa-studio-wasm to Feedz
         id: publish_wasm
@@ -741,10 +742,18 @@ jobs:
           path: ${{ runner.temp }}/studio-npm-pair
           merge-multiple: true
 
+      - name: Check all downloaded bytes against the original producer checksums
+        env:
+          CHECKSUMS: ${{ needs.build_npm.outputs.checksums }}
+        working-directory: ${{ runner.temp }}/studio-npm-pair
+        run: sha256sum --strict --check - <<< "$CHECKSUMS"
+
       - name: Attest build provenance for the published tarballs
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
         with:
           subject-path: ${{ runner.temp }}/studio-npm-pair/*.tgz
+          predicate-type: https://slsa.dev/provenance/v1
+          predicate-path: ${{ runner.temp }}/studio-npm-pair/provenance.json
 
       - name: Attest the WASM library SBOM
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4

@@ -4,6 +4,7 @@ import base64
 from collections import defaultdict
 import hashlib
 import json
+import re
 from pathlib import Path
 from urllib.parse import quote
 import uuid
@@ -20,9 +21,13 @@ def read(path):
 def component(ecosystem, name, version):
     group, sep, leaf = name.rpartition('/')
     encoded = '/'.join(quote(part, safe='') for part in name.split('/'))
-    ref = f'pkg:{ecosystem}/{encoded}@{quote(version, safe="")}'
-    return {'type': 'library', 'name': leaf, 'version': version, 'bom-ref': ref,
-            'purl': ref} | ({'group': group} if sep else {})
+    ref = f'pkg:{ecosystem}/{encoded}' + ('@' + quote(version, safe='') if version else '')
+    item = {'type': 'library', 'name': leaf, 'bom-ref': ref, 'purl': ref}
+    if version:
+        item['version'] = version
+    if sep:
+        item['group'] = group
+    return item
 
 
 def managed_assets(source, release_version):
@@ -38,10 +43,12 @@ def managed_assets(source, release_version):
                     assemblies[Path(item).stem].add(package)
     framework = assets['project']['frameworks']['net10.0']
     packs = list(map(Path, assets['packageFolders']))
+    canonical_names = {key.lower(): key for key in target}
     for download in framework['downloadDependencies']:
         name = download['name']
         lower, upper = download['version'].strip('[]').split(', ')
         pair.require(lower == upper, 'runtime-pack-version')
+        canonical_names[f'{name}/{lower}'.lower()] = f'{name}/{lower}'
         for folder in packs:
             runtime = folder / name.lower() / lower / 'runtimes/browser-wasm'
             for dll in runtime.rglob('*.dll'):
@@ -50,7 +57,6 @@ def managed_assets(source, release_version):
     assemblies[own].add(f'{own}/{release_version}')
     by_digest = defaultdict(set)
     published = read(obj / 'Release/net10.0/staticwebassets.publish.json')
-    canonical_names = {key.lower(): key for key in target}
     for asset in published['Assets']:
         package = None
         origin = Path(asset['OriginalItemSpec'])
@@ -59,16 +65,18 @@ def managed_assets(source, release_version):
                 name, version, *_ = origin.relative_to(folder).parts
                 package = f'{name}/{version}'
                 break
-        if not package and 'webcil/publish/' in asset['Identity'] and asset['Identity'].endswith('.wasm'):
-            matches = assemblies[Path(asset['Identity']).stem]
-            pair.require(len(matches) == 1, 'unresolved-packed-assembly-' + Path(asset['Identity']).name)
+        webcil = next((Path(value) for value in (asset['Identity'], asset['OriginalItemSpec'])
+                       if '/webcil/' in value and value.endswith('.wasm')), None)
+        if not package and webcil is not None:
+            matches = assemblies[webcil.stem]
+            pair.require(len(matches) == 1, 'unresolved-packed-assembly-' + webcil.name)
             package = next(iter(matches))
         if package:
             # Preserve names from the lock whenever a NuGet cache path supplied lower-case spelling.
             canonical = canonical_names.get(package.lower(), package)
             name, version = canonical.split('/')
             is_project = canonical == f'{own}/{release_version}' or target.get(canonical, {}).get('type') == 'project'
-            item = component('generic' if is_project else 'nuget', name.lower() if not is_project else name, version)
+            item = component('generic' if is_project else 'nuget', name, version)
             by_digest[base64.b64decode(asset['Integrity'], validate=True).hex()].add(
                 (item['purl'], item['name'], version))
     return by_digest
@@ -111,6 +119,19 @@ def bundled_js(source, trace, members, name):
         else:
             continue
         result.update(npm_modules(inputs, client, source))
+    monaco = [raw for key, raw in members.items()
+              if '/_content/BlazorMonaco/lib/monaco-editor/min/vs/nls.messages.' in key and key.endswith('.js')]
+    if monaco:
+        versions = set()
+        for raw in monaco:
+            banner = re.search(rb'\* Version: (\d+\.\d+\.\d+)\([0-9a-f]{40}\)', raw[:1024])
+            pair.require(banner is not None, 'unidentified-monaco-version')
+            versions.add(banner.group(1).decode('ascii'))
+        pair.require(len(versions) == 1, 'inconsistent-monaco-version')
+        editor = component('npm', 'monaco-editor', versions.pop())
+        editor['evidence'] = {'occurrences': [{'location': key.removeprefix('package/')} for key in sorted(members)
+                                               if '/_content/BlazorMonaco/lib/monaco-editor/' in key]}
+        result[editor['purl']] = editor
     if name == pair.REACT:
         package = json.loads(members['package/package.json'])
         for entry in pair.entrypoints(package):
@@ -123,7 +144,44 @@ def property_(name, value):
     return {'name': 'elsa:' + name, 'value': value}
 
 
-def generate(build, output):
+def declared_dependencies(manifest, wasm_integrity):
+    """Represent declared npm ranges independently of the versions embedded in browser bundles."""
+    required = {}
+    for field in ('dependencies', 'optionalDependencies', 'peerDependencies'):
+        for name, requirement in manifest.get(field, {}).items():
+            if name == pair.WASM:
+                item = component('npm', name, requirement)
+                item['hashes'] = [{'alg': 'SHA-512', 'content': base64.b64decode(wasm_integrity[7:]).hex()}]
+            else:
+                item = component('npm', name, None)
+            if field == 'optionalDependencies' or manifest.get('peerDependenciesMeta', {}).get(name, {}).get('optional'):
+                item['scope'] = 'optional'
+            ref = item['bom-ref']
+            props = required.setdefault(ref, item).setdefault('properties', [])
+            props.append(property_('npm:' + field, requirement))
+    return required
+
+
+def provenance(proof):
+    # Use the build attempt embedded in both original tarballs even when signing is retried.
+    repository = 'https://github.com/' + proof['source_repository']
+    tag = 'refs/tags/' + proof['version']
+    workflow = '.github/workflows/packages.yml'
+    git_source = {'uri': 'git+' + repository + '@' + tag, 'digest': {'gitCommit': proof['source_commit']}}
+    return {
+        'buildDefinition': {
+            'buildType': 'https://actions.github.io/buildtypes/workflow/v1',
+            'externalParameters': {'workflow': {'ref': tag, 'repository': repository, 'path': workflow}},
+            'resolvedDependencies': [git_source],
+        },
+        'runDetails': {
+            'builder': {'id': repository + '/' + workflow + '@' + tag},
+            'metadata': {'invocationId': repository + '/actions/runs/' + proof['run_id'] + '/attempts/' + proof['run_attempt']},
+        },
+    }
+
+
+def generate(build, output, *, release_provenance=False):
     retained = build / 'retained'
     receipt = read(retained / 'receipt.json')
     pair.require(receipt['success'] and receipt['source_unchanged'], 'build-incomplete')
@@ -151,25 +209,29 @@ def generate(build, output):
         for field in ('dependencies', 'optionalDependencies', 'peerDependencies'):
             for dep, requirement in sorted(packed.get(field, {}).items()):
                 root['properties'].append(property_('npm:' + field + ':' + dep, requirement))
-        if name == pair.REACT:
-            wasm = component('npm', pair.WASM, proof['version'])
-            wasm['hashes'] = [{'alg': 'SHA-512', 'content': base64.b64decode(receipt['wasm']['sha512_integrity'][7:]).hex()}]
-            components[wasm['purl']] = wasm
+        declared = declared_dependencies(packed, receipt['wasm']['sha512_integrity'])
+        components.update(declared)
         for filename, entry in checked['inventory'].items():
             sha = entry['sha256']
             components['file:' + filename] = {'type': 'file', 'name': filename, 'bom-ref': 'file:' + filename,
                                               'hashes': [{'alg': 'SHA-256', 'content': sha}]}
             for ref, package_name, version in managed.get(sha, ()):
-                components[ref] = {'type': 'library', 'name': package_name, 'version': version, 'purl': ref, 'bom-ref': ref}
+                entry = components.setdefault(ref, {'type': 'library', 'name': package_name, 'version': version,
+                                                    'purl': ref, 'bom-ref': ref, 'evidence': {'occurrences': []}})
+                entry['evidence']['occurrences'].append({'location': filename})
         bom = {'bomFormat': 'CycloneDX', 'specVersion': '1.6', 'version': 1,
                'serialNumber': 'urn:uuid:' + str(uuid.uuid5(uuid.NAMESPACE_URL, root['purl'] + root['hashes'][0]['content'])),
                'metadata': {'component': root}, 'components': [components[key] for key in sorted(components)],
+               'dependencies': [{'ref': root['purl'], 'dependsOn': sorted(declared)}],
                'compositions': [{'aggregate': 'incomplete', 'assemblies': [root['purl']]}]}
         pair.write_json(output / (path.name + '.cdx.json'), bom)
+    if release_provenance:
+        pair.write_json(output / 'provenance.json', provenance(proof))
 
 
 def checked_pair(folder, version, commit, run):
     artifacts = {}
+    first_proof = None
     for name in (pair.WASM, pair.REACT):
         path = folder / (name.removeprefix('@').replace('/', '-') + '-' + version + '.tgz')
         data = path.read_bytes()
@@ -185,11 +247,26 @@ def checked_pair(folder, version, commit, run):
         proof = pair.release_candidate_identity(commit, props['elsa:source_tree'], version, run, props['elsa:run_attempt'])
         report = pair.verify_archive(path, name, proof, integrity=integrity,
                                      wasm_integrity=artifacts.get(pair.WASM, {}).get('report', {}).get('sha512_integrity'))
+        if first_proof is None:
+            first_proof = proof
+        pair.require(proof == first_proof and props['elsa:source_repository'] == proof['source_repository'], 'pair-build-identity')
+        _, members = pair.read_archive(path)
+        manifest = json.loads(members['package/package.json'])
+        declared = declared_dependencies(manifest, artifacts[pair.WASM]['report']['sha512_integrity'] if artifacts else integrity)
+        components = {item['bom-ref']: item for item in bom['components']}
+        pair.require(len(components) == len(bom['components'])
+                     and all(components.get(ref) == item for ref, item in declared.items())
+                     and bom['dependencies'] == [{'ref': root['purl'], 'dependsOn': sorted(declared)}], 'sbom-npm-dependencies')
+        expected_ranges = {f'elsa:npm:{field}:{dep}': spec for field in ('dependencies', 'optionalDependencies', 'peerDependencies')
+                           for dep, spec in manifest.get(field, {}).items()}
+        pair.require({k:v for k,v in props.items() if k.startswith(('elsa:npm:dependencies:', 'elsa:npm:optionalDependencies:',
+                    'elsa:npm:peerDependencies:'))} == expected_ranges, 'sbom-declared-ranges')
         files = {item['name']: item['hashes'] for item in bom['components'] if item['type'] == 'file'}
         expected = {filename: [{'alg': 'SHA-256', 'content': item['sha256']}] for filename, item in report['inventory'].items()}
         pair.require(files == expected, 'sbom-file-inventory')
         artifacts[name] = {'bytes': data, 'report': report}
-    return {'identity': {'version': version}, 'artifacts': artifacts}
+    pair.require(read(folder / 'provenance.json') == provenance(first_proof), 'producer-provenance')
+    return {'identity': first_proof, 'artifacts': artifacts}
 
 
 def verify_published(folder, version, commit, run, registry):
@@ -209,12 +286,16 @@ if __name__ == '__main__':
     gen = commands.add_parser('generate')
     gen.add_argument('--build', type=Path, required=True)
     gen.add_argument('--output', type=Path, required=True)
-    verify = commands.add_parser('verify-published')
-    verify.add_argument('--folder', type=Path, required=True)
-    for key in ('version', 'commit', 'run'):
-        verify.add_argument('--' + key, required=True)
+    gen.add_argument('--release-provenance', action='store_true')
+    for command in ('verify-staged', 'verify-published'):
+        verify = commands.add_parser(command)
+        verify.add_argument('--folder', type=Path, required=True)
+        for key in ('version', 'commit', 'run'):
+            verify.add_argument('--' + key, required=True)
     args = parser.parse_args()
     if args.command == 'generate':
-        generate(args.build.resolve(), args.output.resolve())
+        generate(args.build.resolve(), args.output.resolve(), release_provenance=args.release_provenance)
+    elif args.command == 'verify-staged':
+        checked_pair(args.folder.resolve(), args.version, args.commit, args.run)
     else:
         verify_published(args.folder.resolve(), args.version, args.commit, args.run, 'feedz')

@@ -126,13 +126,15 @@ concrete authority/archival handoff remain separate.
 
 For a Core release built with SBOM support, the tagged Packages workflow generates a
 CycloneDX 1.6 SBOM for each tarball and validates it with the pinned CycloneDX CLI.
-When the selected Feedz publisher succeeds, it reads both packages back from the
+Before either Feedz upload, the publisher checks producer SHA-256 checksums, both
+SBOMs and the embedded pair identity. It then reads both packages back from the
 registry and compares the downloaded bytes and npm SHA-512 integrity. GitHub then
 signs a build-provenance statement and the corresponding SBOM for each tarball.
 The signed SBOM is retrievable by the tarball digest after the temporary Actions
 artifacts expire. If the attestation job fails, the registry may already contain
 the packages. Inspect the publisher's readback and retry the failed jobs using the
-same original build artifacts.
+same original build artifacts. SLSA provenance records the original build attempt even
+when a later signing attempt succeeds.
 
 With GitHub CLI and jq installed, set VERSION to the release, COMMIT to the
 independently trusted commit for that tag, and download both original tarballs.
@@ -156,9 +158,10 @@ npm SHA-512 integrity. Each regular archive member has a SHA-256 entry.
 The SBOM identifies managed assemblies and static assets associated with NuGet
 restore and publish records, and npm libraries observed in first-party webpack
 source maps, esbuild module metadata and Vite output. Prebundled third-party
-assets such as vendor JavaScript retain file hashes and their enclosing NuGet
-package where available. Their embedded dependency inventories can be incomplete.
-The root properties preserve npm dependency and peer ranges as declared.
+assets retain file hashes and their enclosing NuGet package where available. Monaco
+Editor also exposes its version in shipped language bundles and has a package identity. Their embedded dependency inventories can be incomplete.
+CycloneDX dependency edges describe the direct npm declarations. Their properties
+record the declared dependency and peer ranges.
 The React SBOM also names the exact WASM version and integrity selected at build
 time. Consumers should generate a separate deployment SBOM from their own resolved
 application, including installed peers, runtime, base image and configuration.
@@ -168,4 +171,6 @@ Historical npmjs 3.9.0 packages carry npm provenance from
 `npm audit signatures` in an isolated project installed from the exact original
 npmjs versions for that producer. The separate
 [original-pair custody procedure](studio-npm-original-publisher.md) covers
-recovery of previously built artifacts. See [#9316](https://github.com/elsa-workflows/elsa-core/issues/9316).
+recovery of previously built artifacts. For new release candidates, the proof workflow
+retains validated unsigned SBOMs in a companion artifact keyed by source, run and
+attempt. Each root package digest identifies its original tarball. See [#9316](https://github.com/elsa-workflows/elsa-core/issues/9316).
