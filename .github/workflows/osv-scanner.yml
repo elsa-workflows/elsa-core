@@ -30,8 +30,8 @@ jobs:
 
       - name: Install OSV-Scanner
         env:
-          OSV_VERSION: v2.7.0
-          OSV_SHA256: 160c6253e2922e9e0a6a9771c5c4c40a4b3c6090b34a3cdd5e80c96cc2e4218b
+          OSV_VERSION: v2.7.1
+          OSV_SHA256: fb7dab19a8bd9bbe5c3189f09d4b7ee1820c9553a23bac202648a56efd2f6ee8
         working-directory: ${{ runner.temp }}
         run: |
           curl --fail --silent --show-error --location --retry 3 \
@@ -40,6 +40,7 @@ jobs:
           chmod +x osv-scanner
 
       - name: Scan dependencies
+        id: scan
         shell: bash
         run: |
           lock_dir=scripts/integration-program/consolidated-build/studio-clientlib-lockfiles
@@ -77,6 +78,7 @@ jobs:
           retention-days: 5
 
       - name: Upload to code scanning
+        if: ${{ !cancelled() && steps.scan.outcome == 'success' }}
         uses: github/codeql-action/upload-sarif@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4.38.0
         with:
           sarif_file: ${{ runner.temp }}/results.sarif
