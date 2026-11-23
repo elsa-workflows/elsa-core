@@ -415,6 +415,8 @@ def main(argv: list[str] | None = None) -> None:
     verify_and_extract(args.archive, envelope, json.loads(args.metadata.read_text()), args.output,
                        source=args.source, run_id=args.run_id, attempt=args.attempt, version=version,
                        run_sha=args.run_sha)
+    subprocess.run([os.sys.executable, str(Path(__file__).resolve().parents[1] / "nuget_release_evidence.py"),
+                    "check-produced", "--directory", str(args.output)], check=True)
     manifest = json.loads((args.output / "verified-artifacts.json").read_text())
     packages.require(manifest["version"] == version and manifest["source_commit"] == args.source and manifest["published"] is False,
                      "Verified inventory does not identify candidate")

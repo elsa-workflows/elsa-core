@@ -447,7 +447,7 @@ class WorkflowShapeTests(unittest.TestCase):
         self.assertNotIn("environment", retrieve)
         self.assertNotIn("secrets.", job_text(retrieve))
         self.assertNotIn("id-token", retrieve["permissions"])
-        self.assertEqual({"actions": "read", "contents": "read"}, retrieve["permissions"])
+        self.assertEqual({"actions": "read", "attestations": "read", "contents": "read"}, retrieve["permissions"])
 
     def test_only_nuget_job_requests_an_id_token(self):
         self.assertEqual("write", self.jobs["publish_candidate_nuget"]["permissions"]["id-token"])

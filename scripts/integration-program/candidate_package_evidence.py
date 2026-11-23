@@ -8,6 +8,7 @@ import subprocess
 import tempfile
 import zipfile
 
+from shipped_javascript import embedded_libraries, browser_components
 from prove_consolidated_packages import archive_names, dependency_groups, framework_reference_groups, metadata, require, write_json
 
 
@@ -47,12 +48,15 @@ def generate(candidate, source, tooling_commit, run_id, attempt):
     browsers = {}
     rows, packages = [], []
     for row in manifest["packages"]:
-        with zipfile.ZipFile(candidate / "artifacts" / row["nupkg"]) as archive:
+        package = candidate / "artifacts" / row["nupkg"]
+        client = (source / row["project"]).parent / "ClientLib"
+        with zipfile.ZipFile(package) as archive:
             names = sorted(archive_names(archive))
             payload = {name: digest(archive.read(name)) for name in names if not name.endswith("/")}
             nuspec = metadata(archive)
             declared = dependency_groups(nuspec)
             shared_frameworks = framework_reference_groups(nuspec)
+            shipped = embedded_libraries(package, row, client)
         require(declared == row["dependency_groups"], f"Packed dependency groups changed: {row['id']}")
         require(digest((candidate / "artifacts" / row["nupkg"]).read_bytes()) == row["nupkg_sha256"],
                 f"Pack content changed: {row['id']}")
@@ -62,20 +66,22 @@ def generate(candidate, source, tooling_commit, run_id, attempt):
             symbols_hash = digest((candidate / "artifacts" / row["snupkg"]).read_bytes())
             require(symbols_hash == row["snupkg_sha256"], f"Symbols changed: {row['id']}")
             evidence["symbols"] = {"name": row["snupkg"], "sha256": symbols_hash}
-        client = (source / row["project"]).parent / "ClientLib"
         if row.get("browser_assets"):
             require((client / "package.json").is_file(), f"Missing browser package manifest: {client}")
         if (client / "package.json").is_file() and any(name.startswith("staticwebassets/") for name in names):
+            require(row["browser_assets"], f"No verified bundle coverage for {row['id']}")
             clients = [client]
             if row["id"] in {"Elsa.Studio.Bpmn.BpmnJs", "Elsa.Studio.Bpmn.X6"}:
                 clients.append(client.parents[1] / "Elsa.Studio.Bpmn" / "ClientLib")
+            with zipfile.ZipFile(package) as archive:
+                shipped.update(browser_components(archive, row["browser_assets"], client, clients))
             for directory in clients:
                 if directory not in browsers:
                     browsers[directory] = browser_bom(directory, source, browser_inputs, output)
                 evidence["browser_build_inputs"].append(browsers[directory])
         packages.append(evidence)
         rows.append({**{key: row[key] for key in ("id", "frameworks", "restore_assets", "nupkg_sha256")},
-                     "dependency_groups": declared, "shared_frameworks": shared_frameworks, "payload": payload})
+                     "dependency_groups": declared, "shared_frameworks": shared_frameworks, "payload": payload, "shipped": shipped})
     with tempfile.TemporaryDirectory() as scratch:
         input_file = Path(scratch) / "input.json"
         write_json(input_file, {"version": manifest["version"], "packages": rows, "browser": list(browsers.values())})

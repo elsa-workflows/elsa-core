@@ -748,6 +748,7 @@ jobs:
     timeout-minutes: 30
     permissions:
       actions: read
+      attestations: read
       contents: read
     steps:
       - name: Require the reviewed repository and ref

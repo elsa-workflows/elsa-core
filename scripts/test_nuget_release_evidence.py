@@ -33,7 +33,9 @@ class ReleaseEvidenceTests(unittest.TestCase):
         self.original = archive({"Elsa.nuspec": b"package", "lib/Elsa.dll": b"assembly"})
         self.signed = archive({"Elsa.nuspec": b"package", "lib/Elsa.dll": b"assembly", ".signature.p7s": b"marker"})
         self.package.write_bytes(self.original)
-        self.bom = b'{"bomFormat":"CycloneDX"}'
+        self.bom = json.dumps({"bomFormat": "CycloneDX", "specVersion": "1.6", "metadata": {
+            "component": {"name": "Elsa", "version": self.version, "hashes": [{"alg": "SHA-256", "content": evidence.sha(self.original)}]},
+            "properties": [{"name": "elsa:target-framework", "value": "net10.0"}]}}).encode()
         self.row = {"id": "Elsa", "nupkg": self.package.name, "candidate_sha256": evidence.sha(self.original),
                     "frameworks": {"net10.0": {"path": "boms/Elsa/net10.0.cdx.json", "sha256": evidence.sha(self.bom)}}}
         self.index = dict(schema=1, version=self.version, producer_run=123, producer_attempt=1,
@@ -67,6 +69,41 @@ class ReleaseEvidenceTests(unittest.TestCase):
             with self.subTest(invalid=invalid), patch.object(subprocess, "run", return_value=subprocess.CompletedProcess([], 0, stdout=invalid)):
                 with self.assertRaises(ValueError):
                     evidence.verify_nuget_signature(self.package, ["f" * 64], self.original)
+
+    def test_wrong_registry_certificate_fingerprint_is_rejected_by_nuget(self):
+        expected = "c" * 64
+        def check(args, **kwargs):
+            self.assertEqual(args[args.index("--certificate-fingerprint") + 1], expected)
+            raise subprocess.CalledProcessError(1, args)
+        with patch.object(subprocess, "run", side_effect=check):
+            with self.assertRaises(subprocess.CalledProcessError):
+                evidence.verify_nuget_signature(self.package, [expected], self.original)
+
+    def test_producer_verification_requires_the_bom_to_identify_the_framework_and_browser_inventory(self):
+        with self.assertRaisesRegex(ValueError, "target framework"):
+            evidence.check_bom(self.bom, self.row, self.version, "net8.0")
+        self.row.update(browser_build_inputs=[], symbols={"name": "Elsa.snupkg", "sha256": "a"*64})
+        source = {"id": self.row["id"], "frameworks": ["net10.0"], "project": "Elsa/Elsa.csproj",
+                  "nupkg_sha256": self.row["candidate_sha256"], "snupkg": "Elsa.snupkg", "snupkg_sha256": "a"*64,
+                  "browser_assets": [{"package_path":"staticwebassets/library.js", "sha256":"b"*64}]}
+        with self.assertRaisesRegex(ValueError, "Missing browser build inventory"):
+            evidence.check_coverage(self.index, [source], lambda path: self.bom)
+
+    def test_candidate_signing_recovery_requires_the_original_sealed_subject(self):
+        from dataclasses import replace
+        pin = evidence.candidates.load_pin("3.10.2")
+        evidence.candidates.require_producer_attestation(pin, self.root)
+        pin = replace(pin, version=self.version, artifact_id=pin.artifact_id + 1)
+        (self.root / "run.json").write_text(json.dumps({"head_sha": self.index["tooling_commit"], "run_attempt": 1}))
+        subject = json.dumps(self.index).encode()
+        (self.root / "candidate.zip").write_bytes(archive({"release-evidence/candidate-index.json": subject}))
+        def check(path, signer, sha):
+            self.assertEqual((path.read_bytes(), signer, sha), (subject, evidence.PRODUCER, self.index["tooling_commit"]))
+        with patch.object(evidence, "verify_attestation", side_effect=subprocess.CalledProcessError(1, "unsigned")):
+            with self.assertRaises(subprocess.CalledProcessError):
+                evidence.candidates.require_producer_attestation(pin, self.root)
+        with patch.object(evidence, "verify_attestation", side_effect=check):
+            evidence.candidates.require_producer_attestation(pin, self.root)
 
     def make_release(self):
         signed_index = self.root / evidence.INDEX
@@ -138,9 +175,11 @@ else:
         self.assertIn(evidence.PRODUCER, commands[1])
         self.assertIn(self.index["tooling_commit"], commands[1])
         self.assertTrue(all("--deny-self-hosted-runners" in c and "refs/heads/main" in c for c in commands))
-        with patch.object(evidence.subprocess, "run", side_effect=subprocess.CalledProcessError(1, "wrong signer")):
-            with self.assertRaises(subprocess.CalledProcessError):
-                evidence.verify(self.version, "Elsa", "net10.0", "nuget", self.package, signed_index, bundle)
+        for results in ([subprocess.CalledProcessError(1, "wrong release signer")],
+                        [None, subprocess.CalledProcessError(1, "wrong producer signer")]):
+            with self.subTest(results=results), patch.object(evidence.subprocess, "run", side_effect=results):
+                with self.assertRaises(subprocess.CalledProcessError):
+                    evidence.verify(self.version, "Elsa", "net10.0", "nuget", self.package, signed_index, bundle)
 
     def test_wrong_framework_package_or_incomplete_bundle_fails(self):
         signed_index, bundle = self.make_release()

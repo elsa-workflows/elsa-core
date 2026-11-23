@@ -401,6 +401,19 @@ def gh_api(endpoint: str, destination: Path) -> None:
         subprocess.run(["gh", "api", endpoint], check=True, stdout=out)
 
 
+def require_producer_attestation(pin: Pin, output: Path) -> None:
+    # These two immutable artifacts were released before index attestations existed.
+    if (pin.version, pin.artifact_id) in {("3.10.1", 13955429317), ("3.10.2", 14443296246)}:
+        return
+    import tempfile
+    from nuget_release_evidence import CANDIDATE, PRODUCER, verify_attestation
+    run = json.loads((output / "run.json").read_bytes())
+    with tempfile.TemporaryDirectory() as directory, zipfile.ZipFile(output / "candidate.zip") as archive:
+        subject = Path(directory) / CANDIDATE
+        subject.write_bytes(archive.read("release-evidence/candidate-index.json"))
+        verify_attestation(subject, PRODUCER, run["head_sha"])
+
+
 def retrieve(pin: Pin, output: Path) -> None:
     require(any(os.environ.get(name) for name in TOKEN_NAMES), "Retrieve requires GH_TOKEN.")
     output.mkdir(parents=True, exist_ok=True)
@@ -414,6 +427,7 @@ def retrieve(pin: Pin, output: Path) -> None:
     check_ancestry(pin, json.loads((output / "compare.json").read_text()))
     gh_api(f"{base}/actions/artifacts/{pin.artifact_id}/zip", output / "candidate.zip")
     verify_transport(pin, output)
+    require_producer_attestation(pin, output)
     print(f"Fetched and verified candidate {pin.version} run {pin.run_id} artifact {pin.artifact_id} source {pin.source_sha}.")
 
 

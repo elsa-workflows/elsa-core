@@ -359,9 +359,11 @@ class CandidateContractsTests(unittest.TestCase):
         for denied in ("secrets.", "packages: write", "deployments:", "environment:", "nuget push", "npm publish", "gh release", "publish_preview", "publish_nuget", "workflow_call:", "workflow_run:"):
             self.assertNotIn(denied, workflow)
         attest = workflow.split("  attest_candidate:")[1]
-        self.assertIn("needs: consumers", attest)
+        self.assertIn("needs: [retrieve, consumers]", attest)
         self.assertIn("github.ref == 'refs/heads/main'", attest)
-        self.assertIn("subject-digest: ${{ needs.consumers.outputs.candidate-index-sha256 }}", attest)
+        self.assertIn("subject-digest: ${{ needs.retrieve.outputs.candidate-index-sha256 }}", attest)
+        self.assertIn("continue-on-error: true", attest)
+        self.assertIn("steps.sign.outcome == 'failure'", attest)
         self.assertNotIn("checkout@", attest)
         self.assertNotIn("contents: write", attest)
         for grant in ("id-token: write", "attestations: write"):

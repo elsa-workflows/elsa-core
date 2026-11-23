@@ -101,6 +101,67 @@ def readback(row, *, version, excluded, stage, fingerprints):
     return dict(row, feeds=feeds)
 
 
+def check_bom(content, row, version, framework, expected_assets=None):
+    bom = json.loads(content)
+    metadata = bom["metadata"]
+    root = metadata["component"]
+    require(bom.get("bomFormat") == "CycloneDX" and bom.get("specVersion") == "1.6" and
+            (root["name"], root["version"]) == (row["id"], version) and
+            {"alg": "SHA-256", "content": row["candidate_sha256"]} in root["hashes"], "Wrong SBOM package identity")
+    require([p["value"] for p in metadata["properties"] if p["name"] == "elsa:target-framework"] == [framework],
+            "Wrong SBOM target framework")
+    if expected_assets is not None:
+        files = {item["name"]: item for item in root.get("components", []) if item["type"] == "file"}
+        for asset in expected_assets:
+            file = files[asset["package_path"]]
+            require({"alg": "SHA-256", "content": asset["sha256"]} in file["hashes"] and
+                    any(p["name"] == "elsa:composition-evidence" for p in file.get("properties", [])),
+                    "Missing shipped browser bundle evidence")
+
+
+def check_coverage(index, verified_rows, read):
+    verified = {r["id"]: r for r in verified_rows}
+    rows = index["packages"]
+    require(len(rows) == len(verified) and {r["id"] for r in rows} == set(verified), "Candidate SBOM inventory is incomplete")
+    documents = {}
+    for row in rows:
+        original = verified[row["id"]]
+        require(candidates.PACKAGE_ID.fullmatch(row["id"]) and row["nupkg"] == f"{row['id']}.{index['version']}.nupkg"
+                and row["candidate_sha256"] == original["nupkg_sha256"]
+                and row["symbols"] == {"name": original["snupkg"], "sha256": original["snupkg_sha256"]},
+                "Wrong package or symbol association")
+        require(set(row["frameworks"]) == set(original["frameworks"]), "Missing framework SBOM")
+        assets = original["browser_assets"]
+        if assets:
+            expected = {f"browser/{Path(original['project']).parent.name}.cdx.json"}
+            if row["id"] in {"Elsa.Studio.Bpmn.BpmnJs", "Elsa.Studio.Bpmn.X6"}:
+                expected.add("browser/Elsa.Studio.Bpmn.cdx.json")
+            require({r["path"] for r in row["browser_build_inputs"]} == expected, "Missing browser build inventory")
+        for framework, record in row["frameworks"].items():
+            require(record["path"] == f"boms/{row['id']}/{framework}.cdx.json", "Swapped framework SBOM")
+            content = read(record["path"])
+            check_bom(content, row, index["version"], framework, assets)
+            require(sha(content) == record["sha256"], "Changed framework SBOM")
+            documents[record["path"]] = content
+        for record in row["browser_build_inputs"]:
+            path = record["path"]
+            require(path.startswith("browser/") and not Path(path).is_absolute() and ".." not in Path(path).parts
+                    and "\\" not in path, "Invalid browser SBOM path")
+            content = read(path)
+            require(sha(content) == record["sha256"], f"Changed SBOM: {path}")
+            documents[path] = content
+    return documents
+
+
+def check_produced(directory):
+    evidence = directory / "release-evidence"
+    index = json.loads((evidence / "candidate-index.json").read_bytes())
+    manifest = json.loads((directory / "verified-artifacts.json").read_bytes())
+    require((index["version"], index["source_commit"]) == (manifest["version"], manifest["source_commit"]),
+            "Wrong produced index identity")
+    check_coverage(index, manifest["packages"], lambda path: (evidence / path).read_bytes())
+
+
 def extract_index(pin, transport, stage, bundle):
     candidates.verify_transport(pin, transport, stage)
     run = json.loads((transport / "run.json").read_bytes())
@@ -113,27 +174,10 @@ def extract_index(pin, transport, stage, bundle):
                  index["producer_run"], index["producer_attempt"]) ==
                 (1, pin.version, pin.source_sha, run["head_sha"], pin.run_id, run["run_attempt"]),
                 "Wrong producer identity in SBOM index")
-        verified = {r["id"]: r for r in json.loads(archive.read("verified-artifacts.json"))["packages"]}
-        rows = index["packages"]
-        require(len(rows) == len(verified) == pin.feedz_count and {r["id"] for r in rows} == set(verified),
-                "Candidate SBOM inventory is incomplete")
-        documents = {CANDIDATE: archive.read(prefix + "candidate-index.json")}
-        for row in rows:
-            original = verified[row["id"]]
-            require(candidates.PACKAGE_ID.fullmatch(row["id"]) and row["nupkg"] == f"{row['id']}.{pin.version}.nupkg"
-                    and row["candidate_sha256"] == original["nupkg_sha256"]
-                    and row["symbols"] == {"name": original["snupkg"], "sha256": original["snupkg_sha256"]},
-                    "Wrong package or symbol association")
-            require(set(row["frameworks"]) == set(original["frameworks"]), "Missing framework SBOM")
-            for framework, record in row["frameworks"].items():
-                require(record["path"] == f"boms/{row['id']}/{framework}.cdx.json", "Swapped framework SBOM")
-            for record in [*row["frameworks"].values(), *row["browser_build_inputs"]]:
-                path = record["path"]
-                require(not Path(path).is_absolute() and ".." not in Path(path).parts and "\\" not in path,
-                        "Invalid SBOM path")
-                content = archive.read(prefix + path)
-                require(sha(content) == record["sha256"], f"Changed SBOM: {path}")
-                documents[path] = content
+        verified = json.loads(archive.read("verified-artifacts.json"))["packages"]
+        require(len(verified) == pin.feedz_count, "Candidate SBOM count differs from pin")
+        documents = check_coverage(index, verified, lambda path: archive.read(prefix + path))
+        documents[CANDIDATE] = archive.read(prefix + "candidate-index.json")
         # Stable ZIP headers make evidence-only retries byte-identical.
         with zipfile.ZipFile(bundle, "x") as zipped:
             for path, content in sorted(documents.items()):
@@ -198,12 +242,15 @@ def verify(version, identifier, framework, feed, package, index_file, bundle):
         source_row = next(p for p in candidate["packages"] if p["id"] == row["id"])
         require({k: row[k] for k in source_row} == source_row, "Release mapping differs from candidate index")
     require(sha(content) == record["sha256"], "Wrong framework SBOM")
+    check_bom(content, row, version, framework)
     print(f"Verified {row['id']} {version} from {feed} against {record['path']} and source {index['source_commit']}")
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
+    produced = commands.add_parser("check-produced")
+    produced.add_argument("--directory", required=True, type=Path)
     build = commands.add_parser("assemble")
     build.add_argument("--version", required=True)
     build.add_argument("--transport", required=True, type=Path)
@@ -216,7 +263,7 @@ def main():
         consumer.add_argument("--" + name, required=True, type=Path)
     args = vars(parser.parse_args())
     command = args.pop("command")
-    (assemble if command == "assemble" else verify)(**args)
+    {"assemble": assemble, "verify": verify, "check-produced": check_produced}[command](**args)
 
 
 if __name__ == "__main__":

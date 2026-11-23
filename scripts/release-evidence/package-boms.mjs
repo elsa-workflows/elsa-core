@@ -70,10 +70,43 @@ function frameworkBom(row, version, framework, assets, payload) {
     component.properties.add(new Models.Property('elsa:dependency-scope', role));
     if (role === 'producer-only') component.scope = 'excluded';
   }
+  for (const input of assets.project.frameworks?.[framework]?.downloadDependencies ?? []) {
+    const range = /^\[([^,\]]+)(?:,\s*([^\]]+))?\]$/.exec(input.version);
+    assert.ok(range && (!range[2] || range[1] === range[2]), `PackageDownload requires an exact version: ${input.name}`);
+    const existing = resolved.get(input.name.toLowerCase());
+    const component = existing?.version === range[1] ? existing : library(input.name, range[1]);
+    if (component !== existing) {
+      component.scope = 'excluded';
+      component.properties.add(new Models.Property('elsa:dependency-scope', 'producer-only'));
+      bom.components.add(component);
+    }
+    component.properties.add(new Models.Property('elsa:build-input', 'PackageDownload'));
+  }
+  function addBundled(parent, location, components) {
+    for (const [name, npmVersion] of components ?? []) {
+      const [scope, id] = name.startsWith('@') ? name.split('/') : [undefined, name];
+      const purl = new PackageURL('npm', scope, id, npmVersion, undefined, undefined).toString();
+      parent.components.add(new Models.Component('library', name, {
+        version: npmVersion, purl, bomRef: location + '#' + purl
+      }));
+    }
+  }
   // These are contained files, distinct from the above producer-resolved components.
   for (const [name, sha256] of Object.entries(payload)) {
     const file = new Models.Component('file', name, { bomRef: 'file:' + name });
     file.hashes.set('SHA-256', sha256);
+    const shipped = row.shipped?.[name];
+    if (shipped) {
+      file.properties.add(new Models.Property('elsa:composition-evidence', shipped.method));
+      addBundled(file, name, shipped.components);
+      for (const resource of shipped.resources ?? []) {
+        const location = name + '#' + resource.name;
+        const item = new Models.Component('file', resource.name, { bomRef: location });
+        item.hashes.set('SHA-256', resource.sha256);
+        addBundled(item, location, resource.components);
+        file.components.add(item);
+      }
+    }
     root.components.add(file);
   }
   return bom;

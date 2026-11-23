@@ -11,13 +11,16 @@ test('different target frameworks keep their own resolved version and packed ran
   try {
     mkdirSync(join(dir, 'release-evidence'));
     const resolved = { 'net8.0': '8.1.1', 'net10.0': '10.1.1' };
-    const assets = { project: { restore: { projectName: 'Elsa.Example' } }, targets: {} };
+    const assets = { project: { restore: { projectName: 'Elsa.Example' }, frameworks: {} }, targets: {} };
     const row = { id: 'Elsa.Example', nupkg_sha256: '0'.repeat(64), frameworks: Object.keys(resolved),
       shared_frameworks: [], dependency_groups: [], restore_assets: [], payload: { 'example.dll': '1'.repeat(64) } };
     for (const [framework, version] of Object.entries(resolved)) {
+      assets.project.frameworks[framework] = { downloadDependencies: [{ name: 'Schema.Input', version: '[3.2.1, 3.2.1]' }] };
       assets.targets[framework] = { ['Lib/' + version]: { type: 'package' }, 'Build.Input/1': { type: 'package' } };
       row.dependency_groups.push({ framework, dependencies: [{ id: 'Lib', version: '[' + version + ', )' }] });
     }
+    row.shipped = { 'example.dll': { method: 'CLR resource', resources: [
+      { name: 'vendor.js', sha256: '2'.repeat(64), components: [['lodash', '4.18.1']] }] } };
     const bytes = JSON.stringify(assets);
     const sha256 = createHash('sha256').update(bytes).digest('hex');
     writeFileSync(join(dir, 'restore.json'), bytes);
@@ -32,6 +35,12 @@ test('different target frameworks keep their own resolved version and packed ran
       assert.equal(component.version, version);
       assert.ok(component.properties.some(p => p.name === 'elsa:nuspec-version' && p.value === '[' + version + ', )'));
       assert.equal(bom.components.find(item => item.name === 'Build.Input').scope, 'excluded');
+      const download = bom.components.find(item => item.name === 'Schema.Input');
+      assert.equal(download.version, '3.2.1');
+      assert.equal(download.scope, 'excluded');
+      const resource = bom.metadata.component.components.find(file => file.name === 'example.dll').components[0];
+      assert.equal(resource.hashes[0].content, '2'.repeat(64));
+      assert.equal(resource.components[0].purl, 'pkg:npm/lodash@4.18.1');
       assert.ok(bom.metadata.component.components.some(file => file.name === 'example.dll' && file.hashes[0].content === '1'.repeat(64)));
     }
     row.restore_assets.pop();

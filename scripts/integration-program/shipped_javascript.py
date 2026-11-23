@@ -1,0 +1,107 @@
+"""Identify npm components from the exact bundles and embedded resources in a packed NuGet archive."""
+import hashlib
+import json
+from pathlib import Path
+import re
+import subprocess
+import tempfile
+
+
+def require(condition, message):
+    if not condition:
+        raise ValueError(message)
+
+
+def sha(data):
+    return hashlib.sha256(data).hexdigest()
+
+
+def embedded_libraries(package_path, row, client):
+    if row["id"] != "Elsa.Expressions.JavaScript.Libraries":
+        return {}
+    packages = json.loads((client / "package-lock.json").read_bytes())["packages"]
+    inspector = Path(__file__).resolve().parents[1] / "release-evidence/InspectResources.cs"
+    assemblies = json.loads(subprocess.check_output(["dotnet", "run", "--file", str(inspector), "--", str(package_path)],
+                                                   cwd=inspector.parent))
+    resources = []
+    for path in sorted((client / "dist").glob("*.js")):
+        entry = (client / "src" / path.name).read_text().strip()
+        match = re.fullmatch(r"""module\.exports\s*=\s*require\(['"]([^/'"]+)(?:/[^'"]+)?['"]\);?""", entry)
+        require(match, f"Unknown embedded entrypoint: {path}")
+        name = match.group(1)
+        version = packages["node_modules/" + name]["version"]
+        resource = path.read_bytes()
+        require(resource and version.encode() in resource, f"Embedded {path} does not identify {version}")
+        resources.append((path.name, name, version, resource))
+    require(resources, "Missing checked-in browser library resources")
+    result = {}
+    for item in row["assemblies"]:
+        name = item["assembly"]
+        observed = assemblies[name]
+        shipped = []
+        for filename, package, version, data in resources:
+            matches = [entry for entry, digest in observed.items() if entry.endswith("." + filename) and digest == sha(data)]
+            require(len(matches) == 1, f"Packed CLR resource differs: {name}/{filename}")
+            shipped.append(dict(name=matches[0], sha256=sha(data), components=[[package, version]]))
+        require(len(shipped) == len(observed), f"Unidentified JavaScript CLR resources: {name}")
+        result[name] = dict(method="CLR resource bytes matched to package-lock and entrypoint", resources=shipped)
+    return result
+
+
+def modules_from_paths(paths, locks, client):
+    modules = set()
+    for source in paths:
+        source = source.replace("\\", "/").split("?", 1)[0]
+        if "node_modules/" not in source:
+            continue
+        prefix, remainder = source.split("node_modules/", 1)
+        # A dependency imported by the shared BPMN module resolves against its own installation.
+        owner = next((directory for directory in locks if directory != client and directory.parent.name + "/ClientLib/" in prefix), client)
+        parts = ("node_modules/" + remainder).split("/")
+        last = len(parts) - 1 - parts[::-1].index("node_modules")
+        name = "/".join(parts[last + 1:last + (3 if parts[last + 1].startswith("@") else 2)])
+        key = "/".join(parts[:last + 1]) + "/" + name
+        require(key in locks[owner], f"Bundled module {key} is missing from the lock for {owner}")
+        modules.add((name, locks[owner][key]["version"]))
+    return sorted(modules)
+
+
+def esbuild_components(archive, asset, client, locks):
+    # Ask the installed, locked esbuild for its per-output metafile. Reject any replay
+    # whose output differs from the actual shipped bytes, including linked legal comments.
+    name = Path(asset).name
+    css = name.endswith(".css")
+    entry = "src/" + name if css else "src/index.ts"
+    with tempfile.TemporaryDirectory() as tmp:
+        output = Path(tmp) / name
+        metadata = Path(tmp) / "metafile.json"
+        args = [str(client / "node_modules/.bin/esbuild"), str(client / entry), "--bundle", "--minify",
+                "--format=esm", "--target=es2020", "--legal-comments=linked", f"--outfile={output}", f"--metafile={metadata}"]
+        if css and name == "bpmn-js-designer.css":
+            args += ["--asset-names=fonts/[name]", *[f"--loader:{ext}=file" for ext in (".woff", ".woff2", ".ttf", ".eot", ".svg")]]
+        subprocess.run(args, cwd=client, check=True, capture_output=True)
+        require(archive.read(asset) == output.read_bytes(), f"esbuild replay does not match shipped {asset}")
+        outputs = json.loads(metadata.read_bytes())["outputs"]
+        item = next(item for path, item in outputs.items() if (client / path).resolve() == output.resolve())
+        modules = modules_from_paths((p for p, item in item["inputs"].items() if item["bytesInOutput"] > 0), locks, client)
+        return dict(method="esbuild byte-identical replay", components=modules)
+
+
+def browser_components(archive, assets, client, clients):
+    locks = {directory: json.loads((directory / "package-lock.json").read_bytes())["packages"] for directory in clients}
+    result = {}
+    for asset in assets:
+        name = asset["package_path"]
+        if name + ".map" in archive.namelist():
+            mapping = json.loads(archive.read(name + ".map"))
+            require(mapping["version"] == 3 and mapping["file"] == Path(name).name and mapping["sources"],
+                    f"Source map does not identify {name}")
+            result[name] = dict(method="packed source map " + name + ".map",
+                                components=modules_from_paths(mapping["sources"], locks, client))
+        elif (client / "build.mjs").is_file():
+            result[name] = esbuild_components(archive, name, client, locks)
+        else:
+            require(name.endswith(".css") and any(p.read_bytes() == archive.read(name) for p in (client / "css").glob("*.css")),
+                    f"No exact build evidence for {name}")
+            result[name] = dict(method="byte-identical project CSS", components=[])
+    return result
