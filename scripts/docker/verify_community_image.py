@@ -192,10 +192,15 @@ def verify_image(image, output, source_commit, validator, layout=False, image_na
         params = definition.get("internalParameters", {})
         if not isinstance(params, dict) or params.get("targetPlatform", platform) not in valid_targets:
             raise ValueError(f"Unexpected provenance target for {platform}")
-        if not params.get("buildConfig", {}).get("llbDefinition"):
-            raise ValueError(f"Missing BuildKit build configuration for {platform}")
-        if not isinstance(details, dict) or not details.get("metadata", {}).get("invocationId"):
-            raise ValueError(f"Missing BuildKit build invocation for {platform}")
+        steps = params.get("buildConfig", {}).get("llbDefinition")
+        if not isinstance(steps, list) or not steps or not all(
+            isinstance(step, dict) and isinstance(step.get("id"), str) and step["id"].strip()
+            and isinstance(step.get("op"), dict) for step in steps
+        ):
+            raise ValueError(f"Invalid BuildKit build configuration for {platform}")
+        invocation = details.get("metadata", {}).get("invocationId") if isinstance(details, dict) else None
+        if not isinstance(invocation, str) or not invocation.strip():
+            raise ValueError(f"Invalid BuildKit build invocation for {platform}")
         builder = details.get("builder") if isinstance(details, dict) else None
         if not isinstance(builder, dict) or builder.get("id") != PUBLISHER:
             raise ValueError(f"Unexpected SLSA builder identity for {platform}")

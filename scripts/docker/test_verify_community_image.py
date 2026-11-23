@@ -51,7 +51,7 @@ class PlatformEvidenceTests(unittest.TestCase):
             provenance = {
                 "buildDefinition": {"buildType": BUILDKIT_TYPE, "externalParameters": {
                     "request": {"frontend": "dockerfile.v0"}, "configSource": {"path": "ElsaServer.Dockerfile"}},
-                    "internalParameters": {"buildConfig": {"llbDefinition": [{"id": "step0"}]}},
+                    "internalParameters": {"buildConfig": {"llbDefinition": [{"id": "step0", "op": {"Op": {}}}]}},
                     "resolvedDependencies": [{"uri": f"pkg:docker/mcr.microsoft.com/dotnet/aspnet@10.0?platform=linux%2F{arch}", "digest": {"sha256": "a"*64}}]},
                 "runDetails": {"builder": {"id": PUBLISHER}, "metadata": {"invocationId": "run-1"}},
             }
@@ -167,6 +167,20 @@ class PlatformEvidenceTests(unittest.TestCase):
         self.documents[f"amd64-{SLSA}"]["predicate"]["buildDefinition"]["internalParameters"] = {}
         with self.assertRaisesRegex(ValueError, "configuration"):
             self.verify()
+
+    def test_malformed_invocation_id(self):
+        metadata = self.documents[f"amd64-{SLSA}"]["predicate"]["runDetails"]["metadata"]
+        for value in ({"placeholder": True}, " "):
+            with self.subTest(value=value), self.assertRaisesRegex(ValueError, "invocation"):
+                metadata["invocationId"] = value
+                self.verify()
+
+    def test_malformed_build_steps(self):
+        config = self.documents[f"amd64-{SLSA}"]["predicate"]["buildDefinition"]["internalParameters"]["buildConfig"]
+        for value in ("placeholder", ["placeholder"], [{"id": "step0"}], [{"id": " ", "op": {}}]):
+            with self.subTest(value=value), self.assertRaisesRegex(ValueError, "configuration"):
+                config["llbDefinition"] = value
+                self.verify()
 
     def test_wrong_provenance_target(self):
         definition = self.documents[f"arm64-{SLSA}"]["predicate"]["buildDefinition"]
