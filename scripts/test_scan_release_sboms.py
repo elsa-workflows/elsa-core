@@ -1,5 +1,4 @@
 import json
-import re
 import sys
 import zipfile
 import subprocess
@@ -74,16 +73,11 @@ class ReleaseMonitorTests(unittest.TestCase):
     def test_verified_package_inputs_survive_an_independent_feed_failure(self):
         tag = "3.11.0"
         commit = "a" * 40
-        producer = Mock()
-        producer.INDEX = monitor.INDEX
-        producer.BUNDLE = monitor.BUNDLE
-        producer.CANDIDATE = "nuget-candidate-index.json"
-        producer.SIGNER = "release-workflow"
-        producer.PRODUCER = "candidate-workflow"
-        producer.candidates.PACKAGE_ID = re.compile(r"[a-z][a-z0-9.]*")
-        producer.FEEDS = {"feedz": "https://feedz.example", "nuget": "https://nuget.example"}
+        import nuget_release_evidence as producer
         tarball = b"published archive"
-        bom = json.dumps({"bomFormat": "CycloneDX", "specVersion": "1.6"}).encode()
+        bom = json.dumps({"bomFormat": "CycloneDX", "specVersion": "1.6", "metadata": {
+            "component": {"name": "Elsa", "version": tag, "hashes": [{"alg": "SHA-256", "content": monitor.digest(tarball)}]},
+            "properties": [{"name": "elsa:target-framework", "value": "net10.0"}]}}).encode()
         row = {"id": "Elsa", "candidate_sha256": monitor.digest(tarball),
                "frameworks": {"net10.0": {"path": "boms/Elsa/net10.0.cdx.json", "sha256": monitor.digest(bom)}},
                "browser_build_inputs": []}
@@ -91,7 +85,10 @@ class ReleaseMonitorTests(unittest.TestCase):
                      "producer_run": 3, "producer_attempt": 1, "packages": [row]}
         feeds = {feed: {"url": f"{base}/elsa/{tag}/elsa.{tag}.nupkg", "sha256": monitor.digest(tarball)}
                  for feed, base in producer.FEEDS.items()}
-        with tempfile.TemporaryDirectory() as tmp, patch.dict(sys.modules, {"nuget_release_evidence": producer}):
+        with (tempfile.TemporaryDirectory() as tmp,
+              patch.object(producer, "verify_attestation", wraps=producer.verify_attestation) as attest,
+              patch.object(producer, "check_bom", wraps=producer.check_bom) as check_bom,
+              patch.object(subprocess, "run") as gh):
             folder = Path(tmp)
             bundle = folder / monitor.BUNDLE
             with zipfile.ZipFile(bundle, "w") as archive:
@@ -101,26 +98,27 @@ class ReleaseMonitorTests(unittest.TestCase):
                          sbom_bundle={"name": monitor.BUNDLE, "sha256": monitor.digest(bundle.read_bytes())})
             index_file = folder / monitor.INDEX
             index_file.write_text(json.dumps(index))
-            producer.download.side_effect = [tarball, b"unexpected bytes"]
-            with patch.object(monitor, "run"):
+            with (patch.object(monitor, "run"), patch.object(monitor, "read_feed", side_effect=[tarball, b"unexpected bytes"]) as read):
                 evidence = {}
-                subjects = monitor.packages(tag, commit, folder, evidence)
+                subjects = monitor.packages(tag, commit, folder, evidence, {})
                 self.assertEqual(evidence["release_sha256"], monitor.digest(index_file.read_bytes()))
                 self.assertEqual(evidence["verification_errors"], {"elsa/nuget": "Wrong feed artifact"})
                 self.assertEqual([s["feed"] for s in subjects[0][1]["artifacts"]], ["feedz"])
                 self.assertEqual(subjects[0][0].read_bytes(), bom)
-                self.assertEqual(producer.verify_attestation.call_args_list, [
+                self.assertEqual(attest.call_args_list, [
                     call(index_file, producer.SIGNER), call(folder / producer.CANDIDATE, producer.PRODUCER, "c" * 40)])
-                producer.check_bom.assert_called_once_with(bom, index["packages"][0], tag, "net10.0")
-                producer.verify_attestation.side_effect = ValueError("Wrong signer")
-                producer.download.reset_mock()
+                self.assertIn("--deny-self-hosted-runners", gh.call_args.args[0])
+                self.assertIn("refs/heads/main", gh.call_args.args[0])
+                check_bom.assert_called_once_with(bom, index["packages"][0], tag, "net10.0")
+                gh.side_effect = ValueError("Wrong signer")
+                read.reset_mock()
                 with self.assertRaisesRegex(ValueError, "Wrong signer"):
-                    monitor.packages(tag, commit, folder, {})
-                producer.download.assert_not_called()
-                producer.verify_attestation.side_effect = None
+                    monitor.packages(tag, commit, folder, {}, {})
+                read.assert_not_called()
+                gh.side_effect = None
                 bundle.write_bytes(b"wrong bundle")
                 with self.assertRaisesRegex(ValueError, "Wrong SBOM bundle"):
-                    monitor.packages(tag, commit, folder, {})
+                    monitor.packages(tag, commit, folder, {}, {})
 
     def test_image_subject_and_producer_are_bound_before_inventory_verification(self):
         name = "elsa-server-v3"
@@ -152,6 +150,68 @@ class ReleaseMonitorTests(unittest.TestCase):
                         publisher.verify_image.assert_not_called()
                         self.assertNotIn("release_sha256", evidence)
 
+    def test_image_consumer_reads_both_real_publisher_outputs(self):
+        import verify_community_image as publisher
+        from test_verify_community_image import PlatformEvidenceTests
+
+        # Reuse the producer's own platform fixture; only OS/registry and signing I/O is substituted.
+        fixture = PlatformEvidenceTests()
+        fixture.setUp()
+        name = "elsa-server-v3"
+        repository = "docker.io/elsaworkflows/" + name
+        index = "sha256:" + "b" * 64
+        fixture.documents[index] = fixture.index
+        for arch in ("amd64", "arm64"):
+            fixture.documents[f"config-{arch}"]["config"]["Labels"]["org.opencontainers.image.version"] = "3.11.0"
+        proof = [{"verificationResult": {"statement": {"subject": [{"name": repository, "digest": {"sha256": index[7:]}}]}}}]
+        with (tempfile.TemporaryDirectory() as tmp, patch.object(monitor, "run", side_effect=[index, json.dumps(proof)]),
+              patch.object(publisher, "read_document", side_effect=lambda repo, key, **kwargs: fixture.documents[key])):
+            evidence = {}
+            subjects = monitor.image("3.11.0", "source", Path(tmp), name, evidence)
+            self.assertEqual(evidence["release_sha256"], index[7:])
+            self.assertEqual([r["context"] for _, r in subjects], ["linux/amd64", "linux/arm64"])
+            for path, r in subjects:
+                self.assertEqual(monitor.digest(path.read_bytes()), r["sbom_sha256"])
+
+    def test_feed_timeouts_are_bounded_and_do_not_stop_other_feeds(self):
+        failures = {}
+        with patch.object(monitor, "urlopen", side_effect=TimeoutError("too slow")) as fetch:
+            for _ in range(3):
+                with self.assertRaises(TimeoutError):
+                    monitor.read_feed("https://feed.invalid", "nuget", failures)
+            with self.assertRaisesRegex(ValueError, "deferred"):
+                monitor.read_feed("https://feed.invalid", "nuget", failures)
+            with self.assertRaises(TimeoutError):
+                monitor.read_feed("https://other.invalid", "feedz", failures)
+            self.assertEqual(fetch.call_count, 4)
+            fetch.assert_called_with("https://other.invalid", timeout=15)
+
+    def test_interrupted_scan_keeps_previous_outcomes_and_active_subject(self):
+        previous = [{"version": "3.10.0", "family": "nuget", "state": "clean"}]
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "report.json"
+            monitor.checkpoint(path, previous, ("3.11.0", "nuget"))
+            results = json.loads(path.read_bytes())["results"]
+            self.assertEqual(results[0], previous[0])
+            self.assertEqual(results[-1]["state"], "error")
+            self.assertEqual(results[-1]["version"], "3.11.0")
+
+    def test_corrupt_inventory_falls_back_and_receipt_counts_observed_matches(self):
+        records = [release("3.11.1"), release("3.11.0")]
+        def attempt(release, family, *args):
+            row = {"version": release["tag_name"], "family": family, "state": "clean", "findings": []}
+            if row["version"] == "3.11.1":
+                row.update(state="error", inventory_errors={"a"*64: "Invalid inventory"}, inventories=["fixture"],
+                           findings=[{"advisory": "GHSA-x", "subject_sha256": "b"*64, "component": "pkg:nuget/test@1"}])
+            return row
+        with (patch.object(monitor, "run", return_value=json.dumps([records])),
+              patch.object(monitor, "registry_backfills", return_value=set()), patch.object(monitor, "attempt", side_effect=attempt)):
+            rows = [r for r in monitor.monitor() if r["family"] == "nuget"]
+        self.assertEqual([r["state"] for r in rows], ["error", "clean"])
+        with patch.object(monitor, "run", return_value="[[]]") as run:
+            monitor.receipts(rows, "https://example.invalid")
+            self.assertIn("coverage incomplete; 1 observed distinct match", run.call_args.args[-1])
+
     def test_database_requires_fresh_valid_revision(self):
         self.assertEqual(monitor.database(status())["sha256"], "d" * 64)
         for data in [status(timedelta(days=6)), status(timedelta(days=-1)), dict(status(), valid=False),
@@ -171,7 +231,7 @@ class ReleaseMonitorTests(unittest.TestCase):
             self.assertNotIn("database", cache)
 
     def test_report_deduplicates_shared_package_components_and_preserves_context(self):
-        def inputs(tag, commit, folder, evidence):
+        def inputs(tag, commit, folder, evidence, feed_failures):
             path = folder / "bom"
             path.write_text("{}")
             return [(path, {"release_sha256": "f" * 64, "sbom_sha256": checksum,

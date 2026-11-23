@@ -10,6 +10,7 @@ import tempfile
 import zipfile
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from urllib.error import HTTPError, URLError
 from urllib.request import urlopen
 
 REPO = "elsa-workflows/elsa-core"
@@ -58,7 +59,21 @@ def release_commit(tag):
     return commit
 
 
-def packages(tag, commit, directory, evidence):
+def read_feed(url, feed, failures):
+    # Release-publication propagation retries are inappropriate for periodic monitoring.
+    require(failures.get(feed, 0) < 3, f"{feed} readback deferred after three consecutive transient failures")
+    try:
+        with urlopen(url, timeout=15) as response:
+            content = response.read()
+    except (URLError, TimeoutError, ConnectionError) as error:
+        if not isinstance(error, HTTPError) or error.code >= 500 or error.code == 429:
+            failures[feed] = failures.get(feed, 0) + 1
+        raise
+    failures[feed] = 0
+    return content
+
+
+def packages(tag, commit, directory, evidence, feed_failures):
     import nuget_release_evidence as publisher
 
     download = ["gh", "release", "download", tag, "--repo", REPO, "--dir", str(directory), "--pattern"]
@@ -98,7 +113,7 @@ def packages(tag, commit, directory, evidence):
             for feed, record in sorted(feeds.items()):
                 try:
                     url = f"{publisher.FEEDS[feed]}/{identifier}/{tag}/{identifier}.{tag}.nupkg"
-                    require(record["url"] == url and digest(publisher.download(url)) == record["sha256"], "Wrong feed artifact")
+                    require(record["url"] == url and digest(read_feed(url, feed, feed_failures)) == record["sha256"], "Wrong feed artifact")
                     if feed == "feedz":
                         require(record["sha256"] == row["candidate_sha256"], "Feedz artifact differs from candidate subject")
                     owners.append({"name": row["id"], "feed": feed, "sha256": record["sha256"]})
@@ -220,7 +235,10 @@ def attempt(release, family, stage, cache):
         commit = release_commit(tag)
         with tempfile.TemporaryDirectory(dir=stage) as tmp:
             folder = Path(tmp)
-            subjects = packages(tag, commit, folder, record) if family == "nuget" else image(tag, commit, folder, family, record)
+            if family == "nuget":
+                subjects = packages(tag, commit, folder, record, cache.setdefault("feed_failures", {}))
+            else:
+                subjects = image(tag, commit, folder, family, record)
             require(subjects, "No verified inventories")
             record["source_commit"] = commit
             record["release_sha256"] = subjects[0][1]["release_sha256"]
@@ -280,10 +298,21 @@ def registry_backfills(name):
         page += 1
 
 
-def monitor():
+def checkpoint(report_path, reports, active=None):
+    if report_path is None:
+        return
+    results = reports if active is None else [*reports, {"version": active[0], "family": active[1], "state": "error",
+                                                         "error": "Monitoring interrupted before this operation completed"}]
+    temporary = report_path.with_suffix(".tmp")
+    temporary.write_text(json.dumps({"scanner": GRYPE, "results": results}, indent=2) + "\n")
+    temporary.replace(report_path)
+
+
+def monitor(report_path=None):
     with tempfile.TemporaryDirectory() as tmp:
         reports = []
         cache = {}
+        checkpoint(report_path, reports, ("discovery", "releases"))
         try:
             pages = json.loads(run("gh", "api", "--paginate", "--slurp", f"{APIS}/releases?per_page=100"))
             groups = lines([r for page in pages for r in page])
@@ -310,14 +339,15 @@ def monitor():
                                 reports.append({"version": release["tag_name"], "family": family,
                                                 "state": "predates-evidence"})
                             continue
+                        checkpoint(report_path, reports, (release["tag_name"], family))
                         record = attempt(release, family, tmp, cache)
                         reports.append(record)
-                        # An older signed subject is a fallback for missing or invalid evidence.
-                        # Database and scan failures on verified evidence already identify the latest subject.
-                        if record["state"] != "error" or ("inventories" in record and not record.get("verification_errors")):
+                        # Corrupt input can be specific to a release. A shared database failure cannot.
+                        if record["state"] != "error" or "database_error" in cache:
                             break
         except Exception as error:
             reports.append({"version": "discovery", "family": "releases", "state": "error", "error": str(error)})
+        checkpoint(report_path, reports)
         return reports
 
 
@@ -351,11 +381,12 @@ def receipts(records, run_url):
         db = record.get("database", {})
         details = "coverage incomplete"
         markers = f"<!-- elsa-rescan:{key} -->"
-        if record["state"] in {"clean", "findings"}:
+        if "findings" in record:
             ids = sorted((f["subject_sha256"], f["component"], f["advisory"]) for f in record["findings"])
             finding_key = digest(json.dumps([identifier, ids]).encode())
             markers += f"<!-- elsa-findings:{finding_key} -->"
-            details = f"{len(ids)} distinct matches"
+            details = (f"{len(ids)} distinct matches" if record["state"] in {"clean", "findings"}
+                       else f"coverage incomplete; {len(ids)} observed distinct matches in scanned inventories")
             if finding_key in finding_sets:
                 details += " (previously recorded finding set)"
             finding_sets.add(finding_key)
@@ -376,8 +407,7 @@ def main():
     if args.command == "receipt":
         receipts(json.loads(args.report.read_bytes())["results"], args.run_url)
         return
-    reports = monitor()
-    args.report.write_text(json.dumps({"scanner": GRYPE, "results": reports}, indent=2) + "\n")
+    reports = monitor(args.report)
     for record in reports:
         print(record["version"], record["family"], record["state"], len(record.get("findings", []))
               if "findings" in record else "", record.get("error", ""))

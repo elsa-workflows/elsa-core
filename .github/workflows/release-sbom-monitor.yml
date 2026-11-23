@@ -9,6 +9,10 @@ on:
       - .github/workflows/release-sbom-monitor.yml
       - scripts/scan_release_sboms.py
       - scripts/test_scan_release_sboms.py
+      - scripts/nuget_release_evidence.py
+      - scripts/verify_consolidated_candidate.py
+      - scripts/docker/verify_community_image.py
+      - scripts/docker/test_verify_community_image.py
 
 permissions: {}
 
@@ -25,7 +29,13 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
-      - run: python3 -m unittest discover -s scripts -p test_scan_release_sboms.py -v
+      - name: Install image verifier dependency
+        run: |
+          if ! /usr/bin/python3 -c 'from jsonschema import Draft201909Validator'; then
+            sudo apt-get update -qq
+            sudo apt-get install --no-install-recommends -y python3-jsonschema
+          fi
+      - run: /usr/bin/python3 -m unittest discover -s scripts -p test_scan_release_sboms.py -v
 
   scan:
     needs: tests
@@ -49,6 +59,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Install checksum-pinned tools
+        timeout-minutes: 15
         run: |
           set -euo pipefail
           cd "$RUNNER_TEMP"
@@ -69,7 +80,7 @@ jobs:
       - name: Verify public artifacts and scan their signed inventories
         run: |
           set -o pipefail
-          /usr/bin/python3 scripts/scan_release_sboms.py scan "$RUNNER_TEMP/report.json" | tee -a "$GITHUB_STEP_SUMMARY"
+          timeout --kill-after=30s 300m /usr/bin/python3 scripts/scan_release_sboms.py scan "$RUNNER_TEMP/report.json" | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Record scanner setup failure
         if: failure()
         run: |
