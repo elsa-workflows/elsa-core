@@ -100,6 +100,22 @@ Password: password
 
 Do not use development credentials in production.
 
+### Verify a Community image and retrieve its SBOM
+
+Open the successful [Community image publisher run](https://github.com/elsa-workflows/elsa-core/actions/workflows/docker-publish.yml) for the release in the official repository. Check the workflow revision and event against the expected release tag or approved manual dispatch. The matching image job summary gives its Docker Hub repository, immutable index digest and product commit. On a manual dispatch the tooling and product commits can differ. Use the product commit from the release tag and the verifier from the reviewed tooling revision.
+
+With Python 3.9+ and [ORAS 1.4](https://oras.land/docs/installation/) installed, substitute the complete values from that run:
+
+```sh
+python3 scripts/docker/verify_community_image.py \
+  docker.io/elsaworkflows/elsa-server-v3@sha256:<index-digest> \
+  --source-commit <product-commit> --output elsa-image-evidence
+```
+
+Replace both angle-bracket placeholders before running the command. The verifier reads indexed manifests and evidence blobs without pulling the image filesystem. It checks each runnable platform's configuration and source revision, hashes the evidence, and matches its in-toto subject to the corresponding Linux amd64 or arm64 manifest. For each architecture it writes an SPDX JSON package inventory and a SLSA v1 provenance predicate. The SPDX inventory covers the final image, including detectable distribution and application packages. The verifier requires distribution packages, the ASP.NET runtime and an Elsa component. Source-built project references and minified frontend bundles may have less component detail than their producer build inventories. A consumer can pin the verified index or its printed platform digest in a deployment.
+
+The trust anchor in this procedure is the digest recorded by the official GitHub Actions run. An image label or a provenance document retrieved only from Docker Hub cannot authenticate who published the index. A separately signed GitHub index attestation would require an authorized release job with OIDC and attestation-writing permissions. Earlier releases may carry provenance only.
+
 ## ASP.NET Middleware Order
 
 The reference server pipeline is a useful ordering guide:

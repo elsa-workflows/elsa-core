@@ -205,13 +205,49 @@ jobs:
           password: ${{ secrets.DOCKER_PASS }}
 
       - name: Build and push ${{ matrix.name }}
+        id: build
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
           context: .
           file: ${{ matrix.dockerfile }}
           platforms: linux/amd64,linux/arm64
           push: true
+          provenance: mode=max,version=v1
+          # Docker's BuildKit Syft scanner, stable-1 pinned to the reviewed multi-platform index.
+          sbom: generator=docker/buildkit-syft-scanner@sha256:873a7458c3c8ac8e32c7b796c10e1600b07b963d2aa000a72a2d97aaaa2d6315
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=${{ matrix.name }}
           cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+
+      # A dispatch can publish an older product tag. The verifier belongs to the running workflow revision.
+      - name: Checkout release verification tooling
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.sha }}
+          path: release-tooling
+          sparse-checkout: scripts/docker
+          persist-credentials: false
+
+      - name: Verify the published platform evidence and record the immutable image
+        env:
+          IMAGE: docker.io/${{ matrix.image }}
+          INDEX_DIGEST: ${{ steps.build.outputs.digest }}
+          PRODUCT_COMMIT: ${{ steps.source.outputs.sha }}
+          PRODUCT_VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP"
+          curl --fail --silent --show-error --location --retry 3 --output oras.tar.gz \
+            https://github.com/oras-project/oras/releases/download/v1.4.0/oras_1.4.0_linux_amd64.tar.gz
+          echo 'd8e1dce2fd8ce996f1d901845b688eb0cf505a6082897606f053825bb47935d1  oras.tar.gz' | sha256sum --check -
+          tar -xzf oras.tar.gz oras
+          PATH="$RUNNER_TEMP:$PATH" python3 "$GITHUB_WORKSPACE/release-tooling/scripts/docker/verify_community_image.py" \
+            "$IMAGE@$INDEX_DIGEST" --source-commit "$PRODUCT_COMMIT" --output predicates
+          {
+            echo "### Community image $PRODUCT_VERSION"
+            echo
+            echo "Image: \`$IMAGE@$INDEX_DIGEST\`"
+            echo "Product commit: \`$PRODUCT_COMMIT\`"
+            echo "Workflow commit: \`$GITHUB_SHA\`"
+          } >> "$GITHUB_STEP_SUMMARY"
