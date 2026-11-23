@@ -144,6 +144,93 @@
           "url": "https://github.com/microsoft/monaco-editor/blob/v0.54.0/build/importTypescript.ts"
         }
       ]
+    },
+    {
+      "type": "file",
+      "name": "_content/BlazorMonaco/lib/monaco-editor/min/vs/assets/css.worker-cO8rX8Iy.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "e13f4a596ddddb4caef84215148672303c3edd22a1f810bf37e9fe5595e94ec9"
+        }
+      ],
+      "components": [
+        {
+          "type": "library",
+          "name": "vscode-css-languageservice",
+          "version": "6.2.14",
+          "bom-ref": "vendored:monaco/vscode-css-languageservice",
+          "purl": "pkg:npm/vscode-css-languageservice@6.2.14"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/microsoft/monaco-editor/blob/v0.54.0/src/language/css/cssWorker.ts"
+        },
+        {
+          "type": "build-system",
+          "url": "https://github.com/microsoft/monaco-editor/blob/v0.54.0/package.json"
+        }
+      ]
+    },
+    {
+      "type": "file",
+      "name": "_content/BlazorMonaco/lib/monaco-editor/min/vs/assets/html.worker-BruuIJkK.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "e8205d11bd206f42997153298aa1dee26a699fe791db0fb6a0da85946db8c4a6"
+        }
+      ],
+      "components": [
+        {
+          "type": "library",
+          "name": "vscode-html-languageservice",
+          "version": "5.2.0",
+          "bom-ref": "vendored:monaco/vscode-html-languageservice",
+          "purl": "pkg:npm/vscode-html-languageservice@5.2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/microsoft/monaco-editor/blob/v0.54.0/src/language/html/htmlWorker.ts"
+        },
+        {
+          "type": "build-system",
+          "url": "https://github.com/microsoft/monaco-editor/blob/v0.54.0/package.json"
+        }
+      ]
+    },
+    {
+      "type": "file",
+      "name": "_content/BlazorMonaco/lib/monaco-editor/min/vs/assets/json.worker-DghZTZS7.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "d12cd6c159c6c0a2ed25618cadd335d1337201cd1c765bbd527938d0f6d314ba"
+        }
+      ],
+      "components": [
+        {
+          "type": "library",
+          "name": "vscode-json-languageservice",
+          "version": "5.3.11",
+          "bom-ref": "vendored:monaco/vscode-json-languageservice",
+          "purl": "pkg:npm/vscode-json-languageservice@5.3.11"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/microsoft/monaco-editor/blob/v0.54.0/src/language/json/jsonWorker.ts"
+        },
+        {
+          "type": "build-system",
+          "url": "https://github.com/microsoft/monaco-editor/blob/v0.54.0/package.json"
+        }
+      ]
     }
   ]
 }

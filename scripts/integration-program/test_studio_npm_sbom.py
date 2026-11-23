@@ -178,6 +178,22 @@ class PackedLibraryEvidenceTests(unittest.TestCase):
             self.assertEqual({}, sbom.vendor_components(catalog, {'package/' + path: b'new vendor build'}, package))
             self.assertEqual({}, sbom.vendor_components(catalog, {'package/elsewhere.js': b'reviewed'}, package))
 
+    def test_monaco_language_service_evidence_in_both_tarballs(self):
+        catalog = sbom.read(Path(sbom.__file__).with_name('studio-vendor-notices.cdx.json'))
+        versions = {'css': '6.2.14', 'html': '5.2.0', 'json': '5.3.11'}
+        for language, version in versions.items():
+            name = 'vscode-' + language + '-languageservice'
+            worker = next(row for row in catalog['components'] if any(c['name'] == name for c in row['components']))
+            raw = (language + ' worker test bytes').encode()
+            worker['hashes'] = [{'alg': 'SHA-256', 'content': pair.sha256(raw)}]
+            for package, prefix in ((pair.WASM, ''), (pair.REACT, 'dist/')):
+                with self.subTest(package=package, worker=language):
+                    path = prefix + worker['name']
+                    result = sbom.vendor_components(catalog, {'package/' + path: raw}, package)
+                    service = result['vendored:monaco/' + name]
+                    self.assertEqual('pkg:npm/' + name + '@' + version, service['purl'])
+                    self.assertEqual([{'location': path}], service['evidence']['occurrences'])
+
     def test_partial_dependency_graph_preserves_unknown_relationships(self):
         bom = sbom.read(Path(str(self.paths[0]) + '.cdx.json'))
         self.assertEqual([], bom['dependencies'])
