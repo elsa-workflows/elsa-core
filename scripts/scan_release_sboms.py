@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import json
 import re
+import signal
 import subprocess
 import sys
 import tempfile
@@ -90,6 +91,7 @@ def packages(tag, commit, directory, evidence, feed_failures):
     require(index["sbom_bundle"] == {"name": BUNDLE, "sha256": digest(bundle.read_bytes())}, "Wrong SBOM bundle")
     subjects = []
     errors = {}
+    evidence["verification_errors"] = errors
     with zipfile.ZipFile(bundle) as archive:
         require(len(set(archive.namelist())) == len(archive.namelist()), "Duplicate SBOM archive member")
         source = directory / publisher.CANDIDATE
@@ -131,12 +133,14 @@ def packages(tag, commit, directory, evidence, feed_failures):
                         publisher.check_bom(content, row, tag, context)
                     path = directory / checksum
                     path.write_bytes(content)
-                    subjects.append((path, {"context": context, "inventory": record["path"], "sbom_sha256": checksum,
-                                            "artifacts": owners, "release_sha256": evidence["release_sha256"]}))
+                    subject = {"context": context, "inventory": record["path"], "sbom_sha256": checksum,
+                               "artifacts": owners, "release_sha256": evidence["release_sha256"]}
+                    subjects.append((path, subject))
+                    evidence.setdefault("inventories", []).append(subject)
                 except Exception as error:
                     errors[f"{identifier}/{context}/{record.get('path', '<missing path>')}"] = error_message(error)
-    if errors:
-        evidence["verification_errors"] = errors
+    if not errors:
+        del evidence["verification_errors"]
     return subjects
 
 
@@ -169,9 +173,11 @@ def image(tag, commit, directory, name, evidence):
         config = publisher.read_document(repository, manifest["config"]["digest"], blob=True)
         require(config["config"]["Labels"]["org.opencontainers.image.version"] == tag, "Image version mismatch")
         path = directory / (platform["architecture"] + ".spdx.json")
-        result.append((path, {"context": publisher.platform_name(platform), "inventory": name,
-                              "sbom_sha256": digest(path.read_bytes()), "release_sha256": index[7:],
-                              "artifacts": [{"name": repository, "sha256": child[7:]}]}))
+        subject = {"context": publisher.platform_name(platform), "inventory": name,
+                   "sbom_sha256": digest(path.read_bytes()), "release_sha256": index[7:],
+                   "artifacts": [{"name": repository, "sha256": child[7:]}]}
+        result.append((path, subject))
+        evidence.setdefault("inventories", []).append(subject)
     return result
 
 
@@ -197,9 +203,9 @@ def scan(path, expected_db):
     for match in result["matches"]:
         component = match["artifact"]
         advisory = match["vulnerability"]
-        identity = component["purl"] or f"{component['type']}:{component['name']}@{component['version']}"
+        identity = component.get("purl") or f"{component.get('type', 'unknown')}:{component['name']}@{component.get('version') or 'unknown'}"
         matches[identity, advisory["id"]] = {"component": identity, "advisory": advisory["id"],
-                                              "severity": advisory["severity"], "fix": advisory["fix"]}
+                                              "severity": advisory.get("severity") or "Unknown", "fix": advisory.get("fix")}
     return [matches[k] for k in sorted(matches)]
 
 
@@ -225,9 +231,10 @@ def refresh_database(cache):
     cache["database"] = revision
 
 
-def attempt(release, family, stage, cache):
+def attempt(release, family, stage, cache, record=None, progress=None):
     tag = release["tag_name"]
-    record = {"version": tag, "family": family, "state": "error"}
+    if record is None:
+        record = {"version": tag, "family": family, "state": "error"}
     try:
         assets = {a["name"] for a in release["assets"]}
         if family == "nuget":
@@ -243,6 +250,8 @@ def attempt(release, family, stage, cache):
             record["source_commit"] = commit
             record["release_sha256"] = subjects[0][1]["release_sha256"]
             record["inventories"] = [subject for _, subject in subjects]
+            if progress:
+                progress()
             if "database" not in cache and "database_error" not in cache:
                 try:
                     refresh_database(cache)
@@ -254,7 +263,11 @@ def attempt(release, family, stage, cache):
                 raise ValueError(cache["database_error"])
             record["database"] = cache["database"]
             findings = {}
+            record["findings"] = []
             errors = {}
+            record["inventory_errors"] = errors
+            if progress:
+                progress()
             for path, subject in subjects:
                 key = subject["sbom_sha256"]
                 if key not in cache:
@@ -262,14 +275,24 @@ def attempt(release, family, stage, cache):
                         cache[key] = scan(path, cache["database"])
                     except Exception as error:
                         errors[key] = error_message(error)
+                        subject["scan_state"] = "error"
+                        if progress:
+                            progress()
                         continue
                 for owner in subject["artifacts"]:
                     for match in cache[key]:
                         k = owner["sha256"], match["component"], match["advisory"]
-                        findings.setdefault(k, {**match, "subject_sha256": k[0], "inventories": set()})["inventories"].add(key)
-            record["findings"] = [dict(findings[k], inventories=sorted(findings[k]["inventories"])) for k in sorted(findings)]
+                        if k not in findings:
+                            findings[k] = {**match, "subject_sha256": k[0], "inventories": []}
+                            record["findings"].append(findings[k])
+                        if key not in findings[k]["inventories"]:
+                            findings[k]["inventories"].append(key)
+                subject["scan_state"] = "scanned"
+                if progress:
+                    progress()
+            if not errors:
+                del record["inventory_errors"]
             if errors:
-                record["inventory_errors"] = errors
                 record["error"] = f"Grype could not scan {len(errors)} verified inventory digest(s)"
             elif record.get("verification_errors"):
                 record["error"] = "Incomplete verified release coverage"
@@ -301,18 +324,28 @@ def registry_backfills(name):
 def checkpoint(report_path, reports, active=None):
     if report_path is None:
         return
-    results = reports if active is None else [*reports, {"version": active[0], "family": active[1], "state": "error",
-                                                         "error": "Monitoring interrupted before this operation completed"}]
+    results = reports if active is None else [*reports, dict(active, state="error",
+                                                            error="Monitoring interrupted before this operation completed")]
     temporary = report_path.with_suffix(".tmp")
-    temporary.write_text(json.dumps({"scanner": GRYPE, "results": results}, indent=2) + "\n")
+    temporary.write_text(json.dumps({"scanner": GRYPE, "results": results}, separators=(",", ":")) + "\n")
     temporary.replace(report_path)
+
+
+class MonitoringInterrupted(BaseException):
+    """The scan deadline interrupted the active release operation."""
+
+
+def on_deadline(signum, frame):
+    # Bypass per-distribution Exception handlers so the active partial result is immediately finalized.
+    raise MonitoringInterrupted()
 
 
 def monitor(report_path=None):
     with tempfile.TemporaryDirectory() as tmp:
         reports = []
         cache = {}
-        checkpoint(report_path, reports, ("discovery", "releases"))
+        active = None
+        checkpoint(report_path, reports, {"version": "discovery", "family": "releases"})
         try:
             pages = json.loads(run("gh", "api", "--paginate", "--slurp", f"{APIS}/releases?per_page=100"))
             groups = lines([r for page in pages for r in page])
@@ -339,16 +372,27 @@ def monitor(report_path=None):
                                 reports.append({"version": release["tag_name"], "family": family,
                                                 "state": "predates-evidence"})
                             continue
-                        checkpoint(report_path, reports, (release["tag_name"], family))
-                        record = attempt(release, family, tmp, cache)
+                        active = {"version": release["tag_name"], "family": family, "state": "error"}
+                        def progress():
+                            checkpoint(report_path, reports, active)
+                        progress()
+                        record = attempt(release, family, tmp, cache, active, progress)
                         reports.append(record)
+                        active = None
                         # Corrupt input can be specific to a release. A shared database failure cannot.
                         if record["state"] != "error" or "database_error" in cache:
                             break
+        except MonitoringInterrupted:
+            interrupted = active if active is not None else {"version": "discovery", "family": "releases"}
+            reports.append(dict(interrupted, state="error", error="Monitoring deadline interrupted this operation"))
         except Exception as error:
             reports.append({"version": "discovery", "family": "releases", "state": "error", "error": str(error)})
         checkpoint(report_path, reports)
         return reports
+
+
+def finding_ids(record):
+    return sorted((f["subject_sha256"], f["component"], f["advisory"]) for f in record.get("findings", []))
 
 
 def receipt_key(record):
@@ -358,7 +402,10 @@ def receipt_key(record):
         # Relative age in a stale-DB diagnostic changes between attempts.
         status = record["database_status"]
         error = ["database", status.get("valid"), status.get("built"), status.get("from")]
-    return digest(json.dumps([GRYPE, error] + [record.get(k) for k in fields], sort_keys=True).encode())
+    scanned = sorted({s["sbom_sha256"] for s in record.get("inventories", [])
+                      if isinstance(s, dict) and s.get("scan_state") == "scanned"}) if record["state"] == "error" else []
+    key = [GRYPE, error, finding_ids(record), scanned] + [record.get(k) for k in fields]
+    return digest(json.dumps(key, sort_keys=True).encode())
 
 
 def receipts(records, run_url):
@@ -382,7 +429,7 @@ def receipts(records, run_url):
         details = "coverage incomplete"
         markers = f"<!-- elsa-rescan:{key} -->"
         if "findings" in record:
-            ids = sorted((f["subject_sha256"], f["component"], f["advisory"]) for f in record["findings"])
+            ids = finding_ids(record)
             finding_key = digest(json.dumps([identifier, ids]).encode())
             markers += f"<!-- elsa-findings:{finding_key} -->"
             details = (f"{len(ids)} distinct matches" if record["state"] in {"clean", "findings"}
@@ -407,6 +454,7 @@ def main():
     if args.command == "receipt":
         receipts(json.loads(args.report.read_bytes())["results"], args.run_url)
         return
+    signal.signal(signal.SIGTERM, on_deadline)
     reports = monitor(args.report)
     for record in reports:
         print(record["version"], record["family"], record["state"], len(record.get("findings", []))

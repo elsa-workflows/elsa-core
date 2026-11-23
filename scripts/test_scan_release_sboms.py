@@ -153,6 +153,7 @@ class ReleaseMonitorTests(unittest.TestCase):
     def test_image_consumer_reads_both_real_publisher_outputs(self):
         import verify_community_image as publisher
         from test_verify_community_image import PlatformEvidenceTests
+        from jsonschema import Draft201909Validator
 
         # Reuse the producer's own platform fixture; only OS/registry and signing I/O is substituted.
         fixture = PlatformEvidenceTests()
@@ -165,6 +166,8 @@ class ReleaseMonitorTests(unittest.TestCase):
             fixture.documents[f"config-{arch}"]["config"]["Labels"]["org.opencontainers.image.version"] = "3.11.0"
         proof = [{"verificationResult": {"statement": {"subject": [{"name": repository, "digest": {"sha256": index[7:]}}]}}}]
         with (tempfile.TemporaryDirectory() as tmp, patch.object(monitor, "run", side_effect=[index, json.dumps(proof)]),
+              patch.object(publisher, "spdx_validator", return_value=Draft201909Validator(
+                  {"type": "object", "required": ["spdxVersion", "packages"]})),
               patch.object(publisher, "read_document", side_effect=lambda repo, key, **kwargs: fixture.documents[key])):
             evidence = {}
             subjects = monitor.image("3.11.0", "source", Path(tmp), name, evidence)
@@ -190,7 +193,7 @@ class ReleaseMonitorTests(unittest.TestCase):
         previous = [{"version": "3.10.0", "family": "nuget", "state": "clean"}]
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "report.json"
-            monitor.checkpoint(path, previous, ("3.11.0", "nuget"))
+            monitor.checkpoint(path, previous, {"version": "3.11.0", "family": "nuget"})
             results = json.loads(path.read_bytes())["results"]
             self.assertEqual(results[0], previous[0])
             self.assertEqual(results[-1]["state"], "error")
@@ -294,6 +297,40 @@ class ReleaseMonitorTests(unittest.TestCase):
                 self.assertEqual(monitor.scan(path, monitor.database(state)), [])
                 with self.assertRaisesRegex(ValueError, "revision changed"):
                     monitor.scan(path, {})
+
+    def test_missing_advisory_metadata_preserves_the_match(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "inventory"
+            path.write_text(json.dumps({"spdxVersion": "SPDX-2.3"}))
+            state = status()
+            artifact = {"type": "nuget", "name": "Example", "version": "1"}
+            report = {"descriptor": {"version": monitor.GRYPE, "db": {"status": state}},
+                      "matches": [{"artifact": artifact, "vulnerability": {"id": "GHSA-example"}}]}
+            with patch.object(monitor, "run", return_value=json.dumps(report)):
+                result = monitor.scan(path, monitor.database(state))
+            self.assertEqual(result, [{"advisory": "GHSA-example", "component": "nuget:Example@1",
+                                       "severity": "Unknown", "fix": None}])
+
+    def test_deadline_finalizes_active_verified_release_and_partial_findings(self):
+        release_with_assets = release("3.11.0", assets=[monitor.INDEX, monitor.BUNDLE])
+        subjects = [(Path(k), {"release_sha256": "f"*64, "sbom_sha256": k*64,
+                               "artifacts": [{"sha256": "e"*64}], "context": k}) for k in "ab"]
+        def refresh(cache):
+            cache["database"] = monitor.database(status())
+        matched = [{"component": "pkg:nuget/Example@1", "advisory": "GHSA-example"}]
+        with (tempfile.TemporaryDirectory() as tmp, patch.object(monitor, "run", return_value=json.dumps([[release_with_assets]])),
+              patch.object(monitor, "registry_backfills", return_value=set()), patch.object(monitor, "release_commit", return_value="c"*40),
+              patch.object(monitor, "packages", return_value=subjects), patch.object(monitor, "refresh_database", side_effect=refresh),
+              patch.object(monitor, "scan", side_effect=[matched, monitor.MonitoringInterrupted()])):
+            path = Path(tmp) / "report.json"
+            rows = monitor.monitor(path)
+            self.assertEqual(rows, json.loads(path.read_bytes())["results"])
+        row = rows[-1]
+        self.assertEqual(row["state"], "error")
+        self.assertEqual(row["release_sha256"], "f"*64)
+        self.assertEqual(len(row["inventories"]), 2)
+        self.assertEqual(row["database"]["sha256"], "d"*64)
+        self.assertEqual(row["findings"][0]["advisory"], "GHSA-example")
 
     def test_error_receipt_ignores_temporary_paths_and_elapsed_database_age(self):
         keys = []
