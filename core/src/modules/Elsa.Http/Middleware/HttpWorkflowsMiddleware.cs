@@ -183,6 +183,9 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
     private async Task StartWorkflowAsync(HttpContext httpContext, StoredTrigger trigger, WorkflowGraph workflowGraph, IDictionary<string, object> input, string? workflowInstanceId, string? correlationId)
     {
         var bookmarkPayload = trigger.GetPayload<HttpEndpointBookmarkPayload>();
+        if (!await TryAuthorizeAsync(httpContext, workflowGraph.Workflow, bookmarkPayload))
+            return;
+
         var workflowOptions = new RunWorkflowOptions
         {
             Input = input,
@@ -200,6 +203,28 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
         var serviceProvider = httpContext.RequestServices;
         var cancellationToken = httpContext.RequestAborted;
         var bookmarkPayload = bookmark.GetPayload<HttpEndpointBookmarkPayload>();
+        var workflowInstanceStore = serviceProvider.GetRequiredService<IWorkflowInstanceStore>();
+        var workflowInstance = await workflowInstanceStore.FindAsync(bookmark.WorkflowInstanceId, cancellationToken);
+
+        if (workflowInstance == null || workflowInstance.Status == WorkflowStatus.Finished)
+        {
+            await httpContext.Response.SendNotFoundAsync(cancellation: cancellationToken);
+            return;
+        }
+
+        var definitionVersionId = workflowInstance.DefinitionVersionId;
+        var workflowDefinitionService = serviceProvider.GetRequiredService<IWorkflowDefinitionService>();
+        var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(definitionVersionId, cancellationToken);
+
+        if (workflowGraph == null)
+        {
+            await httpContext.Response.SendNotFoundAsync(cancellation: cancellationToken);
+            return;
+        }
+
+        // Require endpoint authorization before the request can contend for the instance lock.
+        if (!await TryAuthorizeAsync(httpContext, workflowGraph.Workflow, bookmarkPayload))
+            return;
 
         // Take the same per-instance lock the workflow runtime uses (see DistributedWorkflowClient), so that
         // loading, checking and running the instance can't interleave with another resume of the same instance.
@@ -220,23 +245,13 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
             return;
         }
 
-        var workflowInstanceStore = serviceProvider.GetRequiredService<IWorkflowInstanceStore>();
-        var workflowInstance = await workflowInstanceStore.FindAsync(bookmark.WorkflowInstanceId, cancellationToken);
+        workflowInstance = await workflowInstanceStore.FindAsync(bookmark.WorkflowInstanceId, cancellationToken);
 
-        // The instance may have finished, or another request may have consumed the bookmark, while we waited for the lock.
-        // In both cases there is nothing left to resume, so treat it like a missing instance.
+        // Resume only the authorized workflow version and recheck the bookmark against current state.
         if (workflowInstance == null
             || workflowInstance.Status == WorkflowStatus.Finished
+            || workflowInstance.DefinitionVersionId != definitionVersionId
             || workflowInstance.WorkflowState.Bookmarks.All(x => x.Id != bookmark.Id))
-        {
-            await httpContext.Response.SendNotFoundAsync(cancellation: cancellationToken);
-            return;
-        }
-
-        var workflowDefinitionService = serviceProvider.GetRequiredService<IWorkflowDefinitionService>();
-        var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(workflowInstance.DefinitionVersionId, cancellationToken);
-
-        if (workflowGraph == null)
         {
             await httpContext.Response.SendNotFoundAsync(cancellation: cancellationToken);
             return;
@@ -259,12 +274,6 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
         var serviceProvider = httpContext.RequestServices;
         var cancellationToken = httpContext.RequestAborted;
         var workflow = workflowGraph.Workflow;
-
-        if (!await AuthorizeAsync(serviceProvider, httpContext, workflow, bookmarkPayload, cancellationToken))
-        {
-            httpContext.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
-            return;
-        }
 
         var workflowRunner = serviceProvider.GetRequiredService<IWorkflowRunner>();
         try
@@ -487,19 +496,17 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
         return true;
     }
 
-    private async Task<bool> AuthorizeAsync(
-        IServiceProvider serviceProvider,
-        HttpContext httpContext,
-        Workflow workflow,
-        HttpEndpointBookmarkPayload bookmarkPayload,
-        CancellationToken cancellationToken)
+    private async Task<bool> TryAuthorizeAsync(HttpContext httpContext, Workflow workflow, HttpEndpointBookmarkPayload bookmarkPayload)
     {
-        var httpEndpointAuthorizationHandler = serviceProvider.GetRequiredService<IHttpEndpointAuthorizationHandler>();
-
         if (bookmarkPayload.Authorize == false)
             return true;
 
-        return await httpEndpointAuthorizationHandler.AuthorizeAsync(new(httpContext, workflow, bookmarkPayload.Policy));
+        var handler = httpContext.RequestServices.GetRequiredService<IHttpEndpointAuthorizationHandler>();
+        if (await handler.AuthorizeAsync(new(httpContext, workflow, bookmarkPayload.Policy)))
+            return true;
+
+        httpContext.Response.StatusCode = StatusCodes.Status401Unauthorized;
+        return false;
     }
 
     private string ComputeBookmarkHash(IServiceProvider serviceProvider, string path, string method)

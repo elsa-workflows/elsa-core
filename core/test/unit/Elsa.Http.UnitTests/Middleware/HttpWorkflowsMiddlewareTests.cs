@@ -18,6 +18,7 @@ using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.State;
 using Medallion.Threading;
+using Medallion.Threading.FileSystem;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
@@ -336,6 +337,93 @@ public class HttpWorkflowsMiddlewareTests
         // Assert
         Assert.Equal(StatusCodes.Status404NotFound, httpContext.Response.StatusCode);
         Assert.Empty(resume.WorkflowRunner.ReceivedCalls());
+    }
+
+    [Fact]
+    public async Task InvokeAsync_WhenResumeAuthorizationIsDenied_DoesNotAcquireTheInstanceLock()
+    {
+        var resume = new ResumeScenario(authorize: true);
+        resume.LockUnavailable = true;
+
+        var httpContext = await resume.InvokeAsync(_middleware);
+
+        Assert.Equal(StatusCodes.Status401Unauthorized, httpContext.Response.StatusCode);
+        Assert.Empty(resume.LockProvider.ReceivedCalls());
+        Assert.Empty(resume.WorkflowRunner.ReceivedCalls());
+    }
+
+    [Fact]
+    public async Task InvokeAsync_WhenTheInstanceVersionChangesWhileWaitingForTheLock_DoesNotResumeIt()
+    {
+        var resume = new ResumeScenario();
+        resume.OnLockAcquired = () => resume.Instance.DefinitionVersionId = "another-version";
+
+        var httpContext = await resume.InvokeAsync(_middleware);
+
+        Assert.Equal(StatusCodes.Status404NotFound, httpContext.Response.StatusCode);
+        Assert.Empty(resume.WorkflowRunner.ReceivedCalls());
+    }
+
+    [Fact]
+    public async Task InvokeAsync_WhenTwoRequestsMatchTheSameBookmark_ResumesItOnce()
+    {
+        var resume = new ResumeScenario();
+        var lockDirectory = Directory.CreateTempSubdirectory();
+        try
+        {
+            var lockName = $"workflow-instance:{resume.Instance.Id}";
+            IDistributedLock fileLock = new FileDistributedSynchronizationProvider(lockDirectory).CreateLock(lockName);
+            var instanceLock = Substitute.For<IDistributedLock>();
+            var secondRequestReachedLock = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var firstRunStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var finishFirstRun = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var timeout = TimeSpan.FromSeconds(10);
+            var lockAttempts = 0;
+            var runs = 0;
+            instanceLock.TryAcquireAsync(Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>()).Returns(call =>
+            {
+                if (Interlocked.Increment(ref lockAttempts) == 2)
+                    secondRequestReachedLock.SetResult();
+
+                return fileLock.TryAcquireAsync(call.Arg<TimeSpan>(), call.Arg<CancellationToken>());
+            });
+            resume.LockProvider.CreateLock(lockName).Returns(instanceLock);
+            resume.WorkflowRunner
+                .RunAsync(Arg.Any<Workflow>(), Arg.Any<WorkflowState>(), Arg.Any<RunWorkflowOptions?>(), Arg.Any<CancellationToken>())
+                .Returns(async call =>
+                {
+                    if (Interlocked.Increment(ref runs) == 1)
+                    {
+                        firstRunStarted.SetResult();
+                        await finishFirstRun.Task.WaitAsync(timeout);
+                        resume.Instance.WorkflowState.Bookmarks.Clear();
+                    }
+
+                    return new RunWorkflowResult(null!, new WorkflowState(), call.Arg<Workflow>(), null, Journal.Empty);
+                });
+
+            var firstRequest = resume.InvokeAsync(_middleware);
+            try
+            {
+                await firstRunStarted.Task.WaitAsync(timeout);
+                var secondRequest = resume.InvokeAsync(_middleware);
+                await Task.WhenAny(secondRequest, secondRequestReachedLock.Task).WaitAsync(timeout);
+                finishFirstRun.TrySetResult();
+                var secondResponse = await secondRequest.WaitAsync(timeout);
+
+                Assert.Equal(1, runs);
+                Assert.Equal(StatusCodes.Status404NotFound, secondResponse.Response.StatusCode);
+            }
+            finally
+            {
+                finishFirstRun.TrySetResult();
+                await firstRequest.WaitAsync(timeout);
+            }
+        }
+        finally
+        {
+            lockDirectory.Delete(recursive: true);
+        }
     }
 
     [Fact]
@@ -1040,14 +1128,14 @@ public class HttpWorkflowsMiddlewareTests
         private readonly StoredBookmark _bookmark;
         private readonly IServiceProvider _serviceProvider;
 
-        public ResumeScenario(TimeSpan? requestTimeout = null)
+        public ResumeScenario(TimeSpan? requestTimeout = null, bool authorize = false)
         {
             _bookmark = new()
             {
                 Id = BookmarkId,
                 Hash = BookmarkHash,
                 WorkflowInstanceId = "instance-1",
-                Payload = new HttpEndpointBookmarkPayload(BookmarkPath, "get", authorize: false, requestTimeout: requestTimeout)
+                Payload = new HttpEndpointBookmarkPayload(BookmarkPath, "get", authorize: authorize, requestTimeout: requestTimeout)
             };
             Instance = new()
             {

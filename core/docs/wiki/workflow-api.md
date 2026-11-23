@@ -31,7 +31,7 @@ With the default prefix, endpoint paths look like `/elsa/api/workflow-definition
 
 With endpoint security enabled, saving a draft requires `workflows/definitions:write`. A save request with `publish: true` also requires `workflows/definitions:publish`. The server rejects unauthorized publication before creating or changing a draft.
 
-New HTTP workflow starts use the configured workflow activation strategy and reserve the instance ID before running activities. A request that cannot start due to activation or an occupied ID receives HTTP 409. A bookmark request still resumes its selected instance. Definition dispatchers reject duplicate instance creation too. An asynchronous dispatcher may accept the request before its worker detects an occupied ID.
+New HTTP workflow starts use the configured workflow activation strategy and reserve the instance ID before running activities. A request that cannot start due to activation or an occupied ID receives HTTP 409. A bookmark request resumes its selected instance under an instance lock. If the instance finishes or the bookmark is consumed before the lock is acquired, the request receives HTTP 404. If the lock cannot be acquired within the configured limit, the request receives HTTP 409. A shorter positive HTTP Endpoint request timeout also caps the lock wait. Definition dispatchers reject duplicate instance creation too. An asynchronous dispatcher may accept the request before its worker detects an occupied ID.
 
 A successfully prepared start has a stored initial execution snapshot. If execution stops before its first commit, the runtime can use its interrupted execution recovery policy. An HTTP caller should use a fresh instance ID for an intentional new execution.
 
