@@ -1170,11 +1170,22 @@ class WorkflowGateTests(unittest.TestCase):
             "publish_npm WASM publish must execute wasm-published output command",
         )
 
+    def test_attestation_requires_successful_published_pair_and_immutable_inputs(self):
+        for old, new in (("needs: [build_npm, publish_npm]", "needs: [build_npm]"),
+                         ("      - name: Attest the WASM library SBOM", "      - run: echo extra\n      - name: Attest the WASM library SBOM")):
+            with self.subTest(old=old):
+                self.assert_rejected(self.mutated(old, new), "attest_npm must sign only the verified release pair")
+
+    def test_attestation_requires_registry_byte_readback(self):
+        self.assert_rejected(self.mutated("      - name: Verify both published tarballs against their staged SBOMs",
+                                          "      - if: false\n        name: Verify both published tarballs against their staged SBOMs"),
+                             "publish_npm must end by verifying both published tarballs")
+
     def test_react_publish_must_use_feedz_registry(self):
         self.assert_rejected(
             self.mutated(
-                '            --registry "https://f.feedz.io/elsa-workflows/elsa-3/npm/" \\\n            --verify-published\n\n  deploy_coverage:',
-                '            --registry "https://registry.npmjs.org/" \\\n            --verify-published\n\n  deploy_coverage:',
+                '            --registry "https://f.feedz.io/elsa-workflows/elsa-3/npm/" \\\n            --verify-published\n\n      - name: Verify both published tarballs',
+                '            --registry "https://registry.npmjs.org/" \\\n            --verify-published\n\n      - name: Verify both published tarballs',
             ),
             "publish_npm React publish must use the Feedz npm registry",
         )
@@ -1199,8 +1210,8 @@ class WorkflowGateTests(unittest.TestCase):
     def test_react_publish_must_pass_registry_argument(self):
         self.assert_rejected(
             self.mutated(
-                '            --registry "https://f.feedz.io/elsa-workflows/elsa-3/npm/" \\\n            --verify-published\n\n  deploy_coverage:',
-                '            --verify-published\n\n  deploy_coverage:',
+                '            --registry "https://f.feedz.io/elsa-workflows/elsa-3/npm/" \\\n            --verify-published\n\n      - name: Verify both published tarballs',
+                '            --verify-published\n\n      - name: Verify both published tarballs',
             ),
             "publish_npm React publish must pass exactly one --registry argument",
         )
@@ -1208,8 +1219,8 @@ class WorkflowGateTests(unittest.TestCase):
     def test_react_publish_must_not_count_verify_in_comment(self):
         self.assert_rejected(
             self.mutated(
-                '            --verify-published\n\n  deploy_coverage:',
-                '            # --verify-published\n\n  deploy_coverage:',
+                '            --verify-published\n\n      - name: Verify both published tarballs',
+                '            # --verify-published\n\n      - name: Verify both published tarballs',
             ),
             "publish_npm React publish must pass --verify-published",
         )

@@ -1,6 +1,6 @@
 // Bundles the bpmn-js designer into the module's wwwroot, and fails when the JavaScript outgrows its size budget.
 import { build } from 'esbuild';
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { brotliCompressSync } from 'node:zlib';
 
@@ -13,7 +13,7 @@ const BUDGET_BROTLI_KIB = 400;
 
 const common = { bundle: true, minify: true, format: 'esm', target: 'es2020', legalComments: 'linked', logLevel: 'warning' };
 
-await build({ ...common, entryPoints: [`${here}src/index.ts`], outfile: `${output}/bpmn-js-designer.js` });
+const javascript = await build({ ...common, metafile: Boolean(process.env.ELSA_BUNDLE_INPUTS), entryPoints: [`${here}src/index.ts`], outfile: `${output}/bpmn-js-designer.js` });
 await build({
     ...common,
     entryPoints: [`${here}src/bpmn-js-designer.css`],
@@ -21,6 +21,12 @@ await build({
     loader: { '.woff': 'file', '.woff2': 'file', '.ttf': 'file', '.eot': 'file', '.svg': 'file' },
     assetNames: 'fonts/[name]'
 });
+
+if (javascript.metafile) {
+    const inputs = Object.values(javascript.metafile.outputs).flatMap(output =>
+        Object.entries(output.inputs).filter(([, item]) => item.bytesInOutput > 0).map(([path]) => path));
+    writeFileSync(process.env.ELSA_BUNDLE_INPUTS + '/Elsa.Studio.Bpmn.BpmnJs.json', JSON.stringify(inputs));
+}
 
 const brotliKib = brotliCompressSync(readFileSync(`${output}/bpmn-js-designer.js`)).length / 1024;
 console.log(`bpmn-js-designer.js: ${brotliKib.toFixed(1)} KiB brotli (budget ${BUDGET_BROTLI_KIB} KiB).`);

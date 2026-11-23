@@ -555,6 +555,9 @@ jobs:
   build_npm:
     name: Build Studio npm pair
     needs: [build, validate_publication_selection]
+    outputs:
+      pair-id: ${{ steps.pair.outputs.artifact-id }}
+      sboms-id: ${{ steps.sboms.outputs.artifact-id }}
     runs-on: ubuntu-latest
     timeout-minutes: 120
     env:
@@ -588,7 +591,31 @@ jobs:
             --run-id "${GITHUB_RUN_ID}" --run-attempt "${GITHUB_RUN_ATTEMPT}" \
             --release-candidate --output "$RUNNER_TEMP/studio-npm-pair"
 
+      - name: Generate and validate a CycloneDX SBOM for each packed library
+        run: |
+          set -euo pipefail
+          dir="$RUNNER_TEMP/studio-npm-pair"
+          python3 scripts/integration-program/studio_npm_sbom.py generate --build "$dir" --output "$dir/sboms"
+          cli="$RUNNER_TEMP/cyclonedx"
+          curl --fail --silent --show-error --location --retry 3 \
+            https://github.com/CycloneDX/cyclonedx-cli/releases/download/v0.33.1/cyclonedx-linux-x64 -o "$cli"
+          echo "bfc8b2538da86fe239bc53658bbb63c1c8c510a293c1e6891aa5bea5d3c58746  $cli" | sha256sum -c -
+          chmod +x "$cli"
+          for file in "$dir"/sboms/*.cdx.json; do
+            "$cli" validate --input-file "$file" --input-version v1_6 --fail-on-errors
+          done
+
+      - name: Upload Studio npm SBOMs
+        id: sboms
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: studio-npm-sboms
+          path: ${{ runner.temp }}/studio-npm-pair/sboms/*.cdx.json
+          if-no-files-found: error
+          retention-days: 30
+
       - name: Upload Studio npm pair
+        id: pair
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: studio-npm-pair
@@ -626,10 +653,11 @@ jobs:
           node-version: '22'
           registry-url: https://f.feedz.io/elsa-workflows/elsa-3/npm/
 
-      - name: Download Studio npm pair
-        uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
+      - name: Download the exact Studio npm pair and SBOMs
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
-          name: studio-npm-pair
+          artifact-ids: ${{ needs.build_npm.outputs.pair-id }},${{ needs.build_npm.outputs.sboms-id }}
+          merge-multiple: true
           path: ${{ runner.temp }}/studio-npm-pair
 
       - name: Verify Studio npm pair
@@ -691,6 +719,44 @@ jobs:
             --tag "$tag" \
             --registry "https://f.feedz.io/elsa-workflows/elsa-3/npm/" \
             --verify-published
+
+      - name: Verify both published tarballs against their staged SBOMs
+        run: >-
+          python3 scripts/integration-program/studio_npm_sbom.py verify-published
+          --folder "$RUNNER_TEMP/studio-npm-pair" --version "$GITHUB_REF_NAME" --commit "$GITHUB_SHA" --run "$GITHUB_RUN_ID"
+
+  attest_npm:
+    name: Attest published Studio npm pair
+    needs: [build_npm, publish_npm]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - name: Download the verified artifacts by immutable ID
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          artifact-ids: ${{ needs.build_npm.outputs.pair-id }},${{ needs.build_npm.outputs.sboms-id }}
+          path: ${{ runner.temp }}/studio-npm-pair
+          merge-multiple: true
+
+      - name: Attest build provenance for the published tarballs
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
+        with:
+          subject-path: ${{ runner.temp }}/studio-npm-pair/*.tgz
+
+      - name: Attest the WASM library SBOM
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
+        with:
+          subject-path: ${{ runner.temp }}/studio-npm-pair/elsa-workflows-elsa-studio-wasm-${{ github.ref_name }}.tgz
+          sbom-path: ${{ runner.temp }}/studio-npm-pair/elsa-workflows-elsa-studio-wasm-${{ github.ref_name }}.tgz.cdx.json
+
+      - name: Attest the React wrapper SBOM
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
+        with:
+          subject-path: ${{ runner.temp }}/studio-npm-pair/elsa-workflows-elsa-studio-wasm-react-${{ github.ref_name }}.tgz
+          sbom-path: ${{ runner.temp }}/studio-npm-pair/elsa-workflows-elsa-studio-wasm-react-${{ github.ref_name }}.tgz.cdx.json
 
   deploy_coverage:
     name: Deploy coverage to GitHub Pages

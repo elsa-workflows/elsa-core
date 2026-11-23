@@ -1,6 +1,6 @@
 // Bundles the X6 designer into the module's wwwroot, and fails when the JavaScript outgrows its size budget.
 import { build } from 'esbuild';
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { brotliCompressSync } from 'node:zlib';
 
@@ -13,8 +13,14 @@ const BUDGET_BROTLI_KIB = 250;
 
 const common = { bundle: true, minify: true, format: 'esm', target: 'es2020', legalComments: 'linked', logLevel: 'warning' };
 
-await build({ ...common, entryPoints: [`${here}src/index.ts`], outfile: `${output}/x6-designer.js` });
+const javascript = await build({ ...common, metafile: Boolean(process.env.ELSA_BUNDLE_INPUTS), entryPoints: [`${here}src/index.ts`], outfile: `${output}/x6-designer.js` });
 await build({ ...common, entryPoints: [`${here}src/x6-designer.css`], outfile: `${output}/x6-designer.css` });
+
+if (javascript.metafile) {
+    const inputs = Object.values(javascript.metafile.outputs).flatMap(output =>
+        Object.entries(output.inputs).filter(([, item]) => item.bytesInOutput > 0).map(([path]) => path));
+    writeFileSync(process.env.ELSA_BUNDLE_INPUTS + '/Elsa.Studio.Bpmn.X6.json', JSON.stringify(inputs));
+}
 
 const brotliKib = brotliCompressSync(readFileSync(`${output}/x6-designer.js`)).length / 1024;
 console.log(`x6-designer.js: ${brotliKib.toFixed(1)} KiB brotli (budget ${BUDGET_BROTLI_KIB} KiB).`);

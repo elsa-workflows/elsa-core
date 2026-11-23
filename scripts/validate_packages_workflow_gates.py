@@ -119,6 +119,9 @@ BUILD_NPM_JOB = "build_npm"
 SETUP_DOTNET_PIN = "actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9"
 DOTNET_SDK = "10.0.300"
 NPM_ARTIFACT = "studio-npm-pair"
+NPM_ARTIFACT_IDS = "${{ needs.build_npm.outputs.pair-id }},${{ needs.build_npm.outputs.sboms-id }}"
+DOWNLOAD_BY_ID = "actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093"
+ATTEST = "actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6"
 WASM_TGZ = "elsa-workflows-elsa-studio-wasm-${GITHUB_REF_NAME}.tgz"
 REACT_TGZ = "elsa-workflows-elsa-studio-wasm-react-${GITHUB_REF_NAME}.tgz"
 NPM_PUBLISH_SCRIPT = "scripts/publish_npm_tarball.py"
@@ -292,7 +295,7 @@ def capability_violations(workflow: dict) -> list[str]:
             found.append("the whole secrets context")
         if any(INDEXED_SECRETS.search(_blank_string_literals(expression)) for expression in expressions):
             found.append("an indexed secrets access")
-        if grants_id_token(node.get("permissions")):
+        if grants_id_token(node.get("permissions")) and scope != "job 'attest_npm'":
             found.append("id-token: write")
         if "environment" in node:
             found.append("an environment")
@@ -875,6 +878,24 @@ def build_npm_violations(jobs: dict) -> list[str]:
     return violations
 
 
+def npm_attestation_violations(jobs: dict) -> list[str]:
+    """Only pinned digest-bound signing actions may run with this job's OIDC identity."""
+    job = jobs.get("attest_npm", {})
+    permissions = {"contents": "read", "id-token": "write", "attestations": "write"}
+    prefix = "${{ runner.temp }}/studio-npm-pair"
+    inputs = {"artifact-ids": NPM_ARTIFACT_IDS, "merge-multiple": True, "path": prefix}
+    steps = [(DOWNLOAD_BY_ID, inputs), (ATTEST, {"subject-path": prefix + "/*.tgz"})]
+    for leaf in ("elsa-studio-wasm", "elsa-studio-wasm-react"):
+        tarball = prefix + "/elsa-workflows-" + leaf + "-${{ github.ref_name }}.tgz"
+        steps.append((ATTEST, {"subject-path": tarball, "sbom-path": tarball + ".cdx.json"}))
+    actual = [{k: v for k, v in step.items() if k != "name"} for step in job.get("steps", [])]
+    if (set(job) != {"name", "needs", "runs-on", "permissions", "steps"} or job.get("runs-on") != "ubuntu-latest"
+            or needs(job) != {"build_npm", "publish_npm"} or job.get("permissions") != permissions
+            or actual != [{"uses": action, "with": values} for action, values in steps]):
+        return ["attest_npm must sign only the verified release pair after successful publication"]
+    return []
+
+
 def npm_job_violations(jobs: dict) -> list[str]:
     """The Studio npm publisher downloads the pair and publishes only to Feedz."""
     job = jobs.get("publish_npm")
@@ -908,8 +929,8 @@ def npm_job_violations(jobs: dict) -> list[str]:
             violations.append("publish_npm fail-closed step must not call always(), failure() or cancelled()")
     download, extra = _unique_step(
         steps,
-        lambda step: str(step.get("uses") or "").startswith("actions/download-artifact@")
-        and str((step.get("with") or {}).get("name") or "") == NPM_ARTIFACT,
+        lambda step: step.get("uses") == DOWNLOAD_BY_ID
+        and (step.get("with") or {}).get("artifact-ids") == NPM_ARTIFACT_IDS,
         missing="publish_npm must download the studio-npm-pair artifact",
         duplicate="publish_npm must contain exactly one studio-npm-pair download",
     )
@@ -936,6 +957,11 @@ def npm_job_violations(jobs: dict) -> list[str]:
     )
     violations += extra
 
+    readback = ("python3 scripts/integration-program/studio_npm_sbom.py verify-published "
+                '--folder "$RUNNER_TEMP/studio-npm-pair" --version "$GITHUB_REF_NAME" --commit "$GITHUB_SHA" --run "$GITHUB_RUN_ID"')
+    if (not steps or set(steps[-1]) != {"name", "run"}
+            or steps[-1].get("run", "").strip() != readback):
+        violations.append("publish_npm must end by verifying both published tarballs against their SBOMs")
     # Reject any real npm publish invocation anywhere in the job.
     for step in steps:
         for line in _run_command_lines(step):
@@ -1231,6 +1257,7 @@ def workflow_violations(workflow: Any) -> list[str]:
         *promotion_job_violations(jobs),
         *build_npm_violations(jobs),
         *npm_job_violations(jobs),
+        *npm_attestation_violations(jobs),
         *defaults,
         *exclude_ids,
     ]
