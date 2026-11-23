@@ -50,9 +50,17 @@ jobs:
             lock_args+=("--lockfile=package-lock.json:$lockfile")
           done
 
+          # OSV 2.7 returns 1 when it finds vulnerabilities even if it also logged
+          # extraction errors. Reject partial inventories before uploading a report.
+          errors="$RUNNER_TEMP/osv-errors.log"
           status=0
           "$RUNNER_TEMP/osv-scanner" scan source --recursive "${lock_args[@]}" \
-            --format sarif --output-file "$RUNNER_TEMP/results.sarif" . || status=$?
+            --verbosity error --format sarif --output-file "$RUNNER_TEMP/results.sarif" . 2>"$errors" || status=$?
+          if [[ -s "$errors" ]]; then
+            cat "$errors" >&2
+            echo "::error::OSV-Scanner emitted errors. The report may be incomplete."
+            exit 1
+          fi
           case "$status" in
             0) echo "OSV scan completed with no findings." ;;
             1) echo "OSV scan completed with findings. See the SARIF report." ;;
