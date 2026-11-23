@@ -60,6 +60,7 @@ jobs:
       version: ${{ steps.release.outputs.version }}
       source_ref: ${{ steps.release.outputs.source_ref }}
       source_commit: ${{ steps.release.outputs.source_commit }}
+      sign: ${{ steps.release.outputs.sign }}
       move_latest: ${{ steps.release.outputs.move_latest }}
       move_minor: ${{ steps.release.outputs.move_minor }}
     steps:
@@ -121,6 +122,12 @@ jobs:
             exit 1
           fi
 
+          # Shell comparisons preserve ref casing. Actions expression string equality is case-insensitive.
+          SIGN=false
+          if [[ "$GITHUB_REF" == "$TAG_REF" || ( "$EVENT_NAME" == workflow_dispatch && "$GITHUB_REF" == refs/heads/main ) ]]; then
+            SIGN=true
+          fi
+
           MOVE_LATEST=false
           MOVE_MINOR=false
           if [ "$STABLE" = true ]; then
@@ -150,6 +157,7 @@ jobs:
             echo "version=$VERSION"
             echo "source_ref=$SOURCE_REF"
             echo "source_commit=$SOURCE_COMMIT"
+            echo "sign=$SIGN"
             echo "move_latest=$MOVE_LATEST"
             echo "move_minor=$MOVE_MINOR"
           } >> "$GITHUB_OUTPUT"
@@ -264,7 +272,11 @@ jobs:
             https://github.com/oras-project/oras/releases/download/v1.4.0/oras_1.4.0_linux_amd64.tar.gz
           echo 'd8e1dce2fd8ce996f1d901845b688eb0cf505a6082897606f053825bb47935d1  oras.tar.gz' | sha256sum --check -
           tar -xzf oras.tar.gz oras
-          PATH="$RUNNER_TEMP:$PATH" python3 "$GITHUB_WORKSPACE/release-tooling/scripts/docker/verify_community_image.py" \
+          if ! /usr/bin/python3 -c 'from jsonschema import Draft201909Validator'; then
+            sudo apt-get update -qq
+            sudo apt-get install --no-install-recommends -y python3-jsonschema
+          fi
+          PATH="$RUNNER_TEMP:$PATH" /usr/bin/python3 "$GITHUB_WORKSPACE/release-tooling/scripts/docker/verify_community_image.py" \
             "$IMAGE@$INDEX_DIGEST" --source-commit "$PRODUCT_COMMIT" --output predicates
           {
             echo "### Community image $PRODUCT_VERSION"
@@ -282,9 +294,7 @@ jobs:
     # Each verified image can be signed even when a sibling matrix leg failed.
     if: >-
       !cancelled() && needs.prepare.result == 'success' &&
-      github.repository == 'elsa-workflows/elsa-core' &&
-      (github.ref == format('refs/tags/{0}', needs.prepare.outputs.version) ||
-       (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'))
+      github.repository == 'elsa-workflows/elsa-core' && needs.prepare.outputs.sign == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:

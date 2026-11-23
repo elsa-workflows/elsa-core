@@ -7,11 +7,29 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+from urllib.request import urlopen
+
+from jsonschema import Draft201909Validator, ValidationError
 
 SPDX = "https://spdx.dev/Document"
 SLSA = "https://slsa.dev/provenance/v1"
 BUILDKIT_TYPE = "https://github.com/moby/buildkit/blob/master/docs/attestations/slsa-definitions.md"
 PUBLISHER = "https://github.com/elsa-workflows/elsa-core/actions/workflows/docker-publish.yml"
+
+
+SPDX_SCHEMA_URL = "https://raw.githubusercontent.com/spdx/spdx-spec/6f2cb47d13db19b12c23885573b22ef32ec1ada5/schemas/spdx-schema.json"
+SPDX_SCHEMA_SHA256 = "4126dc29f15e92feec92e9622f4939131ad58b125d6f578aa93e980a6e6f3212"
+
+
+def spdx_validator(path=None):
+    if path:
+        schema = Path(path).read_bytes()
+    else:
+        with urlopen(SPDX_SCHEMA_URL, timeout=30) as response:
+            schema = response.read()
+    if hashlib.sha256(schema).hexdigest() != SPDX_SCHEMA_SHA256:
+        raise ValueError("SPDX 2.3 schema checksum mismatch")
+    return Draft201909Validator(json.loads(schema))
 
 
 def read_document(repository, digest, *, blob=False, layout=False):
@@ -28,7 +46,16 @@ def read_document(repository, digest, *, blob=False, layout=False):
     return json.loads(data)
 
 
-def verify_image(image, output, source_commit, layout=False):
+def platform_name(platform):
+    arch = platform["architecture"]
+    variant = platform.get("variant", "")
+    baseline = {"arm64": "v8", "amd64": "v1"}.get(arch)
+    if variant and variant != baseline:
+        raise ValueError(f"Unsupported {arch} platform variant {variant}")
+    return f"{platform['os']}/{arch}"
+
+
+def verify_image(image, output, source_commit, validator, layout=False):
     repository, digest = image.rsplit("@", 1)
     index = read_document(repository, digest, layout=layout)
     children = {}
@@ -36,13 +63,14 @@ def verify_image(image, output, source_commit, layout=False):
     for descriptor in index["manifests"]:
         annotations = descriptor.get("annotations", {})
         if annotations.get("vnd.docker.reference.type") == "attestation-manifest":
+            if platform_name(descriptor["platform"]) != "unknown/unknown":
+                raise ValueError("Attestation descriptor must declare a non-runnable platform")
             child = annotations["vnd.docker.reference.digest"]
             if child in attestations:
                 raise ValueError(f"Multiple attestation manifests for {child}")
             attestations[child] = descriptor["digest"]
         else:
-            platform = descriptor["platform"]
-            name = f"{platform['os']}/{platform['architecture']}"
+            name = platform_name(descriptor["platform"])
             if name in children:
                 raise ValueError(f"Duplicate runnable platform {name}")
             children[name] = descriptor["digest"]
@@ -56,11 +84,15 @@ def verify_image(image, output, source_commit, layout=False):
     for platform, child in sorted(children.items()):
         child_manifest = read_document(repository, child, layout=layout)
         config = read_document(repository, child_manifest["config"]["digest"], blob=True, layout=layout)
-        if f"{config['os']}/{config['architecture']}" != platform:
+        if platform_name(config) != platform:
             raise ValueError(f"Runnable image configuration disagrees with platform {platform}")
         if config["config"].get("Labels", {}).get("org.opencontainers.image.revision") != source_commit:
             raise ValueError(f"Unexpected source revision for {platform}")
         manifest = read_document(repository, attestations[child], layout=layout)
+        # BuildKit supports both its original attestation manifests and OCI 1.1 artifact manifests.
+        if "artifactType" in manifest or "subject" in manifest:
+            if manifest.get("subject", {}).get("digest") != child:
+                raise ValueError(f"Wrong attestation manifest OCI subject for {platform}")
         documents = {}
         for layer in manifest["layers"]:
             kind = layer.get("annotations", {}).get("in-toto.io/predicate-type")
@@ -78,6 +110,10 @@ def verify_image(image, output, source_commit, layout=False):
         if set(documents) != {SPDX, SLSA}:
             raise ValueError(f"Missing SPDX SBOM or SLSA provenance for {platform}")
         sbom = documents[SPDX]
+        try:
+            validator.validate(sbom)
+        except ValidationError as error:
+            raise ValueError(f"Invalid SPDX 2.3 inventory for {platform}: {error.message}") from error
         if sbom.get("spdxVersion") != "SPDX-2.3" or not sbom.get("packages"):
             raise ValueError(f"Expected an SPDX 2.3 package inventory for {platform}")
         purls = {ref["referenceLocator"] for package in sbom["packages"] for ref in package.get("externalRefs", [])
@@ -91,6 +127,8 @@ def verify_image(image, output, source_commit, layout=False):
         details = documents[SLSA].get("runDetails")
         if not isinstance(definition, dict) or definition.get("buildType") != BUILDKIT_TYPE:
             raise ValueError(f"Unexpected SLSA build type for {platform}")
+        if not isinstance(definition.get("externalParameters"), dict):
+            raise ValueError(f"Missing SLSA external parameters for {platform}")
         # Older BuildKit schema versions omit targetPlatform. builderPlatform refers to the build machine.
         params = definition.get("internalParameters", {})
         valid_targets = ("linux/arm64", "linux/arm64/v8") if platform == "linux/arm64" else (platform,)
@@ -115,8 +153,9 @@ if __name__ == "__main__":
     parser.add_argument("--source-commit", required=True, help="product commit recorded by the trusted publisher")
     parser.add_argument("--output", type=Path, required=True, help="directory for the extracted predicates")
     parser.add_argument("--oci-layout", action="store_true", help="read a local OCI layout instead of a registry")
+    parser.add_argument("--spdx-schema", type=Path, help="local copy of the pinned SPDX 2.3 JSON schema for offline use")
     args = parser.parse_args()
     try:
-        verify_image(args.image, args.output, args.source_commit, args.oci_layout)
+        verify_image(args.image, args.output, args.source_commit, spdx_validator(args.spdx_schema), args.oci_layout)
     except (ValueError, KeyError, TypeError, OSError, subprocess.CalledProcessError) as error:
         sys.exit(f"Image verification failed: {error}")
