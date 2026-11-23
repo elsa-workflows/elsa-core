@@ -1,0 +1,46 @@
+name: Generate and validate classic Studio npm SBOMs
+description: Inventory the two staged tarballs while the original build evidence is available
+inputs:
+  release-provenance:
+    description: Prepare the original tagged Packages build provenance for post-publication signing
+    default: 'false'
+outputs:
+  checksums:
+    description: SHA-256 checksums of the two original tarballs and validated release evidence
+    value: ${{ steps.hashes.outputs.checksums }}
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        RELEASE_PROVENANCE: ${{ inputs.release-provenance }}
+      run: |
+        set -euo pipefail
+        dir="$RUNNER_TEMP/studio-npm-pair"
+        args=()
+        if [[ "$RELEASE_PROVENANCE" == true ]]; then
+          args+=(--release-provenance)
+        fi
+        python3 scripts/integration-program/studio_npm_sbom.py generate --build "$dir" --output "$dir/sboms" "${args[@]}"
+        cli="$RUNNER_TEMP/cyclonedx"
+        curl --fail --silent --show-error --location --retry 3 \
+          https://github.com/CycloneDX/cyclonedx-cli/releases/download/v0.33.1/cyclonedx-linux-x64 -o "$cli"
+        echo "bfc8b2538da86fe239bc53658bbb63c1c8c510a293c1e6891aa5bea5d3c58746  $cli" | sha256sum -c -
+        chmod +x "$cli"
+        for file in scripts/integration-program/studio-vendor-notices.cdx.json "$dir"/sboms/*.cdx.json; do
+          "$cli" validate --input-file "$file" --input-version v1_6 --fail-on-errors
+        done
+
+    - name: Record producer checksums
+      id: hashes
+      if: inputs.release-provenance == 'true'
+      shell: bash
+      run: |
+        set -euo pipefail
+        dir="$RUNNER_TEMP/studio-npm-pair"
+        {
+          echo 'checksums<<CHECKSUMS'
+          (cd "$dir/retained" && sha256sum -- *.tgz)
+          (cd "$dir/sboms" && sha256sum -- *.json)
+          echo CHECKSUMS
+        } >> "$GITHUB_OUTPUT"

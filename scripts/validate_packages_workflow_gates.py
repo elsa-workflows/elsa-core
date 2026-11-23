@@ -118,7 +118,13 @@ NPM_PAIR = "python3 scripts/integration-program/prove_studio_npm_pair.py"
 BUILD_NPM_JOB = "build_npm"
 SETUP_DOTNET_PIN = "actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9"
 DOTNET_SDK = "10.0.300"
-NPM_ARTIFACT = "studio-npm-pair"
+NPM_ARTIFACT = "studio-npm-pair-${{ github.run_attempt }}"
+NPM_ARTIFACT_IDS = "${{ needs.build_npm.outputs.pair-id }},${{ needs.build_npm.outputs.sboms-id }}"
+DOWNLOAD_BY_ID = "actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093"
+NPM_CHECKSUM_STEP = {"env": {"CHECKSUMS": "${{ needs.build_npm.outputs.checksums }}"},
+                     "working-directory": "${{ runner.temp }}/studio-npm-pair",
+                     "run": 'sha256sum --strict --check - <<< "$CHECKSUMS"'}
+ATTEST = "actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6"
 WASM_TGZ = "elsa-workflows-elsa-studio-wasm-${GITHUB_REF_NAME}.tgz"
 REACT_TGZ = "elsa-workflows-elsa-studio-wasm-react-${GITHUB_REF_NAME}.tgz"
 NPM_PUBLISH_SCRIPT = "scripts/publish_npm_tarball.py"
@@ -292,7 +298,7 @@ def capability_violations(workflow: dict) -> list[str]:
             found.append("the whole secrets context")
         if any(INDEXED_SECRETS.search(_blank_string_literals(expression)) for expression in expressions):
             found.append("an indexed secrets access")
-        if grants_id_token(node.get("permissions")):
+        if grants_id_token(node.get("permissions")) and scope != "job 'attest_npm'":
             found.append("id-token: write")
         if "environment" in node:
             found.append("an environment")
@@ -870,9 +876,33 @@ def build_npm_violations(jobs: dict) -> list[str]:
         duplicate="build_npm must contain exactly one studio-npm-pair upload",
     )
     violations += extra
+    sbom_uploads = [step for step in steps if step.get("id") == "sboms"
+                    and (step.get("with") or {}).get("name") == "studio-npm-sboms-${{ github.run_attempt }}"]
+    if len(sbom_uploads) != 1:
+        violations.append("build_npm must isolate the SBOM artifact for each build attempt")
     if None not in (build_pair, upload) and not build_pair < upload:
         violations.append("build_npm must build the pair before uploading it")
     return violations
+
+
+def npm_attestation_violations(jobs: dict) -> list[str]:
+    """Only pinned digest-bound signing actions may run with this job's OIDC identity."""
+    job = jobs.get("attest_npm", {})
+    permissions = {"contents": "read", "id-token": "write", "attestations": "write"}
+    prefix = "${{ runner.temp }}/studio-npm-pair"
+    inputs = {"artifact-ids": NPM_ARTIFACT_IDS, "merge-multiple": True, "path": prefix}
+    provenance = {"subject-path": prefix + "/*.tgz", "predicate-type": "https://slsa.dev/provenance/v1",
+                  "predicate-path": prefix + "/provenance.json"}
+    steps = [{"uses": DOWNLOAD_BY_ID, "with": inputs}, NPM_CHECKSUM_STEP, {"uses": ATTEST, "with": provenance}]
+    for leaf in ("elsa-studio-wasm", "elsa-studio-wasm-react"):
+        tarball = prefix + "/elsa-workflows-" + leaf + "-${{ github.ref_name }}.tgz"
+        steps.append({"uses": ATTEST, "with": {"subject-path": tarball, "sbom-path": tarball + ".cdx.json"}})
+    actual = [{k: v for k, v in step.items() if k != "name"} for step in job.get("steps", [])]
+    if (set(job) != {"name", "needs", "runs-on", "permissions", "steps"} or job.get("runs-on") != "ubuntu-latest"
+            or needs(job) != {"build_npm", "publish_npm"} or job.get("permissions") != permissions
+            or actual != steps):
+        return ["attest_npm must sign only the verified release pair after successful publication"]
+    return []
 
 
 def npm_job_violations(jobs: dict) -> list[str]:
@@ -908,8 +938,8 @@ def npm_job_violations(jobs: dict) -> list[str]:
             violations.append("publish_npm fail-closed step must not call always(), failure() or cancelled()")
     download, extra = _unique_step(
         steps,
-        lambda step: str(step.get("uses") or "").startswith("actions/download-artifact@")
-        and str((step.get("with") or {}).get("name") or "") == NPM_ARTIFACT,
+        lambda step: step.get("uses") == DOWNLOAD_BY_ID
+        and (step.get("with") or {}).get("artifact-ids") == NPM_ARTIFACT_IDS,
         missing="publish_npm must download the studio-npm-pair artifact",
         duplicate="publish_npm must contain exactly one studio-npm-pair download",
     )
@@ -936,6 +966,19 @@ def npm_job_violations(jobs: dict) -> list[str]:
     )
     violations += extra
 
+    if (download is None or verify is None or not download < verify - 1
+            or {k: v for k, v in steps[verify-1].items() if k != "name"} != NPM_CHECKSUM_STEP):
+        violations.append("publish_npm must check original producer checksums after its artifact download")
+    preflight = ('python3 scripts/integration-program/studio_npm_sbom.py verify-staged --folder "$dir" '
+                 '--version "$GITHUB_REF_NAME" --commit "$GITHUB_SHA" --run "$GITHUB_RUN_ID"')
+    if (verify is None or set(steps[verify]) != {"name", "run"} or not _run_command_lines(steps[verify])
+            or _run_command_lines(steps[verify])[-1] != preflight):
+        violations.append("publish_npm must verify both staged SBOMs before publishing")
+    readback = ("python3 scripts/integration-program/studio_npm_sbom.py verify-published "
+                '--folder "$RUNNER_TEMP/studio-npm-pair" --version "$GITHUB_REF_NAME" --commit "$GITHUB_SHA" --run "$GITHUB_RUN_ID"')
+    if (not steps or set(steps[-1]) != {"name", "run"}
+            or steps[-1].get("run", "").strip() != readback):
+        violations.append("publish_npm must end by verifying both published tarballs against their SBOMs")
     # Reject any real npm publish invocation anywhere in the job.
     for step in steps:
         for line in _run_command_lines(step):
@@ -1231,6 +1274,7 @@ def workflow_violations(workflow: Any) -> list[str]:
         *promotion_job_violations(jobs),
         *build_npm_violations(jobs),
         *npm_job_violations(jobs),
+        *npm_attestation_violations(jobs),
         *defaults,
         *exclude_ids,
     ]

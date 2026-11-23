@@ -462,6 +462,10 @@ def prove(root: Path, output: Path, commit: str, version: str, run: str, attempt
     private.mkdir()
     receipt = proof | {'success': False, 'publisher_authority': False, 'commands': [], 'stage': 'admission'}
     runner = Runner(private, receipt)
+    if release_candidate:
+        trace = private / 'bundle-inputs'
+        trace.mkdir()
+        runner.env['ELSA_BUNDLE_INPUTS'] = str(trace)
     try:
         require(runner.run('node-version', ['node', '--version'], root).strip().split('.')[0] == 'v22', 'node-version')
         receipt['toolchain'] = {'node': runner.run('node-identity', ['node', '--version'], root).strip(),

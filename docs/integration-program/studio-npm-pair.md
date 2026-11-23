@@ -121,3 +121,69 @@ are not artifact proof. Dependabot #8672's broad Nx/Lerna/transitive changes and
 merely to stage the local pair. Later product version/release policy (#8217),
 artifact-only publishers/recovery (#8220), retained maintenance npm paths and
 concrete authority/archival handoff remain separate.
+
+## Verify a published classic Studio npm pair
+
+For a Core release built with SBOM support, the tagged Packages workflow generates a
+CycloneDX 1.6 SBOM for each tarball and validates it with the pinned CycloneDX CLI.
+Before either Feedz upload, the publisher checks producer SHA-256 checksums, both
+SBOMs and the embedded pair identity. It then reads both packages back from the
+registry and compares the downloaded bytes and npm SHA-512 integrity. GitHub then
+signs a build-provenance statement and the corresponding SBOM for each tarball.
+The signed SBOM is retrievable by the tarball digest after the temporary Actions
+artifacts expire. If the attestation job fails, the registry may already contain
+the packages. Inspect the publisher's readback and retry the failed jobs using the
+same original build artifacts. SLSA provenance records the original build attempt even
+when a later signing attempt succeeds.
+
+With GitHub CLI and jq installed, set VERSION to the release, COMMIT to the
+independently trusted commit for that tag, and download both original tarballs.
+Run this in their directory:
+
+```bash
+set -euo pipefail
+repo=elsa-workflows/elsa-core
+policy=(-R "$repo" --signer-workflow "$repo/.github/workflows/packages.yml"
+        --source-ref "refs/tags/$VERSION" --source-digest "$COMMIT" --deny-self-hosted-runners)
+for leaf in elsa-studio-wasm elsa-studio-wasm-react; do
+  tgz="elsa-workflows-${leaf}-${VERSION}.tgz"
+  gh attestation verify "$tgz" "${policy[@]}"
+  gh attestation verify "$tgz" "${policy[@]}" --predicate-type https://cyclonedx.org/bom --format json |
+    jq -e '.[0].verificationResult.statement.predicate' > "$tgz.cdx.json"
+done
+```
+
+The root component identifies the packed library by name, version, SHA-256 and
+npm SHA-512 integrity. Each regular archive member has a SHA-256 entry.
+The SBOM identifies managed assemblies and static assets associated with NuGet
+restore and publish records, and npm libraries observed in first-party webpack
+source maps, esbuild module metadata and Vite output. Prebundled third-party
+assets retain file hashes and their enclosing NuGet package where available. Monaco
+Editor exposes its version in shipped language bundles. The authentication service
+includes an identifiable OIDC client and a patched CryptoJS source fragment. Their embedded dependency inventories can be incomplete.
+CycloneDX dependency edges describe the direct npm declarations. Their properties
+record the declared dependency and peer ranges. Both inventories mark runtime
+dependency graph coverage as incomplete.
+The React SBOM also names the exact WASM version and integrity selected at build
+time. Consumers should generate a separate deployment SBOM from their own resolved
+application, including installed peers, runtime, base image and configuration.
+
+Third-party files sometimes contain libraries whose package manifests were stripped
+upstream. The [reviewed vendor notices](../../scripts/integration-program/studio-vendor-notices.cdx.json)
+record identifiable components from those shipped bytes using CycloneDX. Their
+hashes and paths select the exact embedded file in each tarball. For an updated
+vendor, inspect its license banners, upstream notices and bundler metadata. A
+Retire.js catalog scan can corroborate identities such as DOMPurify. Add a
+version only when the packed code or its matching upstream build establishes it.
+Use CycloneDX pedigree for modified or partial copies. A different file digest
+still gets a file inventory entry and any available enclosing NuGet attribution.
+Review the embedded-component evidence before reusing it for that update.
+
+Historical npmjs 3.9.0 packages carry npm provenance from
+`elsa-workflows/elsa-studio/.github/workflows/packages.yml`. Use
+`npm audit signatures` in an isolated project installed from the exact original
+npmjs versions for that producer. The separate
+[original-pair custody procedure](studio-npm-original-publisher.md) covers
+recovery of previously built artifacts. For new release candidates, the proof workflow
+retains validated unsigned SBOMs in a companion artifact keyed by source, run and
+attempt. Each root package digest identifies its original tarball. See [#9316](https://github.com/elsa-workflows/elsa-core/issues/9316).
