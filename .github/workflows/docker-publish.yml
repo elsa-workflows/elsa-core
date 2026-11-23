@@ -60,7 +60,7 @@ jobs:
       version: ${{ steps.release.outputs.version }}
       source_ref: ${{ steps.release.outputs.source_ref }}
       source_commit: ${{ steps.release.outputs.source_commit }}
-      sign: ${{ steps.release.outputs.sign }}
+      matrix: ${{ steps.release.outputs.matrix }}
       move_latest: ${{ steps.release.outputs.move_latest }}
       move_minor: ${{ steps.release.outputs.move_minor }}
     steps:
@@ -70,6 +70,10 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           VERSION_INPUT: ${{ inputs.version || '' }}
           TAG_NAME: ${{ github.ref_name }}
+          COMMUNITY_IMAGES: >-
+            [{"name":"elsa-server","output":"server","dockerfile":"docker/ElsaServer.Dockerfile","image":"elsaworkflows/elsa-server-v3"},
+             {"name":"elsa-server-and-studio","output":"combined","dockerfile":"docker/ElsaServerAndStudio.Dockerfile","image":"elsaworkflows/elsa-server-and-studio-v3"},
+             {"name":"elsa-studio","output":"studio","dockerfile":"docker/ElsaStudio.Dockerfile","image":"elsaworkflows/elsa-studio-v3"}]
         run: |
           set -euo pipefail
 
@@ -117,16 +121,19 @@ jobs:
           PEELED=$(awk -v ref="$TAG_REF^{}" '$2 == ref { print $1 }' <<< "$TAG_REFS")
           SOURCE_COMMIT=${PEELED:-$TAG_OBJECT}
           [[ "$SOURCE_COMMIT" =~ ^[a-f0-9]{40}$ ]]
-          if [[ "$EVENT_NAME" == push && "$GITHUB_SHA" != "$TAG_OBJECT" && "$GITHUB_SHA" != "$SOURCE_COMMIT" ]]; then
-            echo "Release tag has moved since the triggering push." >&2
+          # Shell comparisons preserve ref casing. A manual main run may target a maintenance tag.
+          if [[ "$GITHUB_REF" == "$TAG_REF" ]]; then
+            if [[ "$GITHUB_SHA" != "$TAG_OBJECT" && "$GITHUB_SHA" != "$SOURCE_COMMIT" ]]; then
+              echo "Release tag moved since the triggering event." >&2
+              exit 1
+            fi
+          elif [[ "$EVENT_NAME" != workflow_dispatch || "$GITHUB_REF" != refs/heads/main ]]; then
+            echo "Dispatch from main or the exact requested version tag." >&2
             exit 1
           fi
-
-          # Shell comparisons preserve ref casing. Actions expression string equality is case-insensitive.
-          SIGN=false
-          if [[ "$GITHUB_REF" == "$TAG_REF" || ( "$EVENT_NAME" == workflow_dispatch && "$GITHUB_REF" == refs/heads/main ) ]]; then
-            SIGN=true
-          fi
+          # The 3.10 maintenance publisher distributes Server and combined only.
+          MATRIX=$(jq -c --arg version "$VERSION" \
+            '{include: map(select((.output != "studio") or ($version | startswith("3.10.") | not)))}' <<< "$COMMUNITY_IMAGES")
 
           MOVE_LATEST=false
           MOVE_MINOR=false
@@ -157,7 +164,7 @@ jobs:
             echo "version=$VERSION"
             echo "source_ref=$SOURCE_REF"
             echo "source_commit=$SOURCE_COMMIT"
-            echo "sign=$SIGN"
+            echo "matrix=$MATRIX"
             echo "move_latest=$MOVE_LATEST"
             echo "move_minor=$MOVE_MINOR"
           } >> "$GITHUB_OUTPUT"
@@ -176,20 +183,7 @@ jobs:
       studio: ${{ steps.verify.outputs.studio }}
     strategy:
       fail-fast: false
-      matrix: &community_images
-        include:
-          - name: elsa-server
-            output: server
-            dockerfile: docker/ElsaServer.Dockerfile
-            image: elsaworkflows/elsa-server-v3
-          - name: elsa-server-and-studio
-            output: combined
-            dockerfile: docker/ElsaServerAndStudio.Dockerfile
-            image: elsaworkflows/elsa-server-and-studio-v3
-          - name: elsa-studio
-            output: studio
-            dockerfile: docker/ElsaStudio.Dockerfile
-            image: elsaworkflows/elsa-studio-v3
+      matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
     steps:
       - name: Checkout ${{ needs.prepare.outputs.source_ref }}
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -232,18 +226,17 @@ jobs:
           username: ${{ secrets.DOCKER_USER }}
           password: ${{ secrets.DOCKER_PASS }}
 
-      - name: Build and push ${{ matrix.name }}
+      - name: Stage ${{ matrix.name }} by digest
         id: build
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
           context: .
           file: ${{ matrix.dockerfile }}
           platforms: linux/amd64,linux/arm64
-          push: true
+          outputs: type=image,name=docker.io/${{ matrix.image }},push-by-digest=true,name-canonical=true,push=true
           provenance: mode=max,version=v1,builder-id=https://github.com/elsa-workflows/elsa-core/actions/workflows/docker-publish.yml
           # Docker's BuildKit Syft scanner, stable-1 pinned to the reviewed multi-platform index.
           sbom: generator=docker/buildkit-syft-scanner@sha256:873a7458c3c8ac8e32c7b796c10e1600b07b963d2aa000a72a2d97aaaa2d6315
-          tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=${{ matrix.name }}
           cache-to: type=gha,mode=max,scope=${{ matrix.name }}
@@ -257,6 +250,17 @@ jobs:
           sparse-checkout: scripts/docker
           persist-credentials: false
 
+      - &install_oras
+        name: Install checksum-pinned ORAS
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP"
+          curl --fail --silent --show-error --location --retry 3 --output oras.tar.gz \
+            https://github.com/oras-project/oras/releases/download/v1.4.0/oras_1.4.0_linux_amd64.tar.gz
+          echo 'd8e1dce2fd8ce996f1d901845b688eb0cf505a6082897606f053825bb47935d1  oras.tar.gz' | sha256sum --check -
+          tar -xzf oras.tar.gz oras
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+
       - name: Verify the published platform evidence and record the immutable image
         id: verify
         env:
@@ -267,16 +271,11 @@ jobs:
           PRODUCT_VERSION: ${{ needs.prepare.outputs.version }}
         run: |
           set -euo pipefail
-          cd "$RUNNER_TEMP"
-          curl --fail --silent --show-error --location --retry 3 --output oras.tar.gz \
-            https://github.com/oras-project/oras/releases/download/v1.4.0/oras_1.4.0_linux_amd64.tar.gz
-          echo 'd8e1dce2fd8ce996f1d901845b688eb0cf505a6082897606f053825bb47935d1  oras.tar.gz' | sha256sum --check -
-          tar -xzf oras.tar.gz oras
           if ! /usr/bin/python3 -c 'from jsonschema import Draft201909Validator'; then
             sudo apt-get update -qq
             sudo apt-get install --no-install-recommends -y python3-jsonschema
           fi
-          PATH="$RUNNER_TEMP:$PATH" /usr/bin/python3 "$GITHUB_WORKSPACE/release-tooling/scripts/docker/verify_community_image.py" \
+          /usr/bin/python3 "$GITHUB_WORKSPACE/release-tooling/scripts/docker/verify_community_image.py" \
             "$IMAGE@$INDEX_DIGEST" --source-commit "$PRODUCT_COMMIT" --output predicates
           {
             echo "### Community image $PRODUCT_VERSION"
@@ -294,16 +293,20 @@ jobs:
     # Each verified image can be signed even when a sibling matrix leg failed.
     if: >-
       !cancelled() && needs.prepare.result == 'success' &&
-      github.repository == 'elsa-workflows/elsa-core' && needs.prepare.outputs.sign == 'true'
+      github.repository == 'elsa-workflows/elsa-core'
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    outputs:
+      server: ${{ steps.verify.outputs.server }}
+      combined: ${{ steps.verify.outputs.combined }}
+      studio: ${{ steps.verify.outputs.studio }}
     permissions:
       contents: read
       id-token: write
       attestations: write
     strategy:
       fail-fast: false
-      matrix: *community_images
+      matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
     steps:
       - name: Require a verified digest from the matching producer
         env:
@@ -319,7 +322,9 @@ jobs:
           create-storage-record: false
 
       - name: Verify the consumer-visible index attestation
+        id: verify
         env:
+          OUTPUT_NAME: ${{ matrix.output }}
           GH_TOKEN: ${{ github.token }}
           IMAGE: docker.io/${{ matrix.image }}
           DIGEST: ${{ needs.publish.outputs[matrix.output] }}
@@ -328,8 +333,50 @@ jobs:
             if gh attestation verify "oci://$IMAGE@$DIGEST" --repo "$GITHUB_REPOSITORY" \
               --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/docker-publish.yml" \
               --source-ref "$GITHUB_REF" --source-digest "$GITHUB_SHA"; then
+              echo "$OUTPUT_NAME=$DIGEST" >> "$GITHUB_OUTPUT"
               exit 0
             fi
             if [[ $attempt -lt 4 ]]; then sleep 5; fi
           done
           exit 1
+
+  promote:
+    name: Tag ${{ matrix.name }} release
+    needs: [prepare, sign]
+    if: ${{ !cancelled() && needs.prepare.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
+    steps:
+      - name: Require the verified signer output
+        env:
+          DIGEST: ${{ needs.sign.outputs[matrix.output] }}
+        run: '[[ "$DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]'
+
+      - *install_oras
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          username: ${{ secrets.DOCKER_USER }}
+          password: ${{ secrets.DOCKER_PASS }}
+
+      - name: Promote the signed index and verify each alias
+        env:
+          IMAGE: docker.io/${{ matrix.image }}
+          DIGEST: ${{ needs.sign.outputs[matrix.output] }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+          MOVE_MINOR: ${{ needs.prepare.outputs.move_minor }}
+          MOVE_LATEST: ${{ needs.prepare.outputs.move_latest }}
+        run: |
+          set -euo pipefail
+          tags=("$VERSION")
+          if [[ "$MOVE_MINOR" == true ]]; then tags+=("${VERSION%.*}"); fi
+          if [[ "$MOVE_LATEST" == true ]]; then tags+=(latest); fi
+          for tag in "${tags[@]}"; do
+            oras tag "$IMAGE@$DIGEST" "$tag"
+            [[ "$(oras resolve "$IMAGE:$tag")" == "$DIGEST" ]]
+            echo "Published \`$IMAGE:$tag\` at \`$DIGEST\`" >> "$GITHUB_STEP_SUMMARY"
+          done

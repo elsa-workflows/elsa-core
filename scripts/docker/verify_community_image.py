@@ -7,6 +7,7 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+from urllib.parse import parse_qs, unquote, urlsplit
 from urllib.request import urlopen
 
 from jsonschema import Draft201909Validator, ValidationError
@@ -55,8 +56,57 @@ def platform_name(platform):
     return f"{platform['os']}/{arch}"
 
 
-def verify_image(image, output, source_commit, validator, layout=False):
+PROFILES = {
+    "elsa-server-v3": ("ElsaServer.Dockerfile", {"Elsa.Server.Web"}),
+    "elsa-server-and-studio-v3": ("ElsaServerAndStudio.Dockerfile", {"Elsa.ServerAndStudio.Web", "Elsa.ModularServer.Web"}),
+    "elsa-studio-v3": ("ElsaStudio.Dockerfile", {"Elsa.Studio.Host.Server"}),
+}
+
+
+def check_components(packages, platform, config, image_name):
+    # Match actual SPDX package identity and version to the PURL, and to the .NET command this image runs.
+    command = config.get("Cmd")
+    if not isinstance(command, list) or len(command) != 2 or command[0] != "dotnet" or not command[1].endswith(".dll"):
+        raise ValueError(f"Unexpected .NET host command for {image_name}")
+    host = command[1][:-4]
+    hosts = PROFILES[image_name][1]
+    version = config.get("Labels", {}).get("org.opencontainers.image.version", "")
+    if image_name == "elsa-studio-v3" and re.fullmatch(r"3\.[0-9]\.\d+(-preview\.\d+)?", version):
+        hosts = hosts | {"Elsa.ModularServer.Web"}  # Legacy Studio image, e.g. 3.9.0.
+    if host not in hosts:
+        raise ValueError(f"Unexpected entry assembly {host} for {image_name}")
+    arch = platform.split("/")[1]
+    runtime = "Microsoft.AspNetCore.App.Runtime." + {"amd64": "linux-x64", "arm64": "linux-arm64"}[arch]
+    required = {host, runtime, "libc6"}
+    found = set()
+    for package in packages:
+        name, version = package["name"], package.get("versionInfo", "")
+        if name not in required or not version:
+            continue
+        for ref in package.get("externalRefs", []):
+            if ref.get("referenceType") != "purl" or ref.get("referenceCategory") != "PACKAGE-MANAGER":
+                continue
+            locator = urlsplit(ref["referenceLocator"])
+            if locator.scheme != "pkg" or locator.netloc or locator.fragment:
+                continue
+            path, _, purl_version = locator.path.rpartition("@")
+            if version != unquote(purl_version):
+                continue
+            if name == "libc6":
+                if (path in {"deb/ubuntu/libc6", "deb/debian/libc6"} and
+                        re.fullmatch(r"[0-9][A-Za-z0-9.+:~\-]*", version) and parse_qs(locator.query).get("arch") == [arch]):
+                    found.add(name)
+            elif path == "nuget/" + name and re.fullmatch(r"[0-9]+(?:\.[0-9]+){0,3}(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?", version):
+                found.add(name)
+    if required != found:
+        raise ValueError(f"Missing versioned packages for {platform}: {', '.join(sorted(required - found))}")
+
+
+def verify_image(image, output, source_commit, validator, layout=False, image_name=None):
     repository, digest = image.rsplit("@", 1)
+    image_name = image_name if layout else repository.rsplit("/", 1)[-1]
+    if image_name not in PROFILES:
+        raise ValueError("Expected a Community image name; use --image-name for a local layout")
     index = read_document(repository, digest, layout=layout)
     children = {}
     attestations = {}
@@ -116,24 +166,33 @@ def verify_image(image, output, source_commit, validator, layout=False):
             raise ValueError(f"Invalid SPDX 2.3 inventory for {platform}: {error.message}") from error
         if sbom.get("spdxVersion") != "SPDX-2.3" or not sbom.get("packages"):
             raise ValueError(f"Expected an SPDX 2.3 package inventory for {platform}")
-        purls = {ref["referenceLocator"] for package in sbom["packages"] for ref in package.get("externalRefs", [])
-                 if ref.get("referenceType") == "purl"}
-        # All three Community hosts use the Ubuntu ASP.NET runtime and an Elsa host assembly.
-        runtime = {"linux/amd64": "linux-x64", "linux/arm64": "linux-arm64"}[platform]
-        for prefix in ("pkg:deb/", f"pkg:nuget/Microsoft.AspNetCore.App.Runtime.{runtime}@", "pkg:nuget/Elsa."):
-            if not any(purl.startswith(prefix) for purl in purls):
-                raise ValueError(f"Missing expected {prefix} component in {platform} SBOM")
+        check_components(sbom["packages"], platform, config["config"], image_name)
         definition = documents[SLSA].get("buildDefinition")
         details = documents[SLSA].get("runDetails")
         if not isinstance(definition, dict) or definition.get("buildType") != BUILDKIT_TYPE:
             raise ValueError(f"Unexpected SLSA build type for {platform}")
-        if not isinstance(definition.get("externalParameters"), dict):
-            raise ValueError(f"Missing SLSA external parameters for {platform}")
+        external = definition.get("externalParameters")
+        if not isinstance(external, dict) or external.get("request", {}).get("frontend") != "dockerfile.v0":
+            raise ValueError(f"Missing Dockerfile build request in SLSA external parameters for {platform}")
+        dockerfile = PROFILES[image_name][0]
+        if external.get("configSource", {}).get("path") not in {dockerfile, f"docker/{dockerfile}"}:
+            raise ValueError(f"Expected {dockerfile} in SLSA config source for {platform}")
+        deps = definition.get("resolvedDependencies")
+        if not isinstance(deps, list) or not any(
+            isinstance(item, dict) and item.get("uri", "").startswith("pkg:docker/") and
+            item["uri"].split("?")[0] != "pkg:docker/docker/buildkit-syft-scanner" and
+            re.fullmatch(r"[0-9a-f]{64}", item.get("digest", {}).get("sha256", "")) for item in deps
+        ):
+            raise ValueError(f"Expected digest-pinned build inputs for {platform}")
         # Older BuildKit schema versions omit targetPlatform. builderPlatform refers to the build machine.
         params = definition.get("internalParameters", {})
         valid_targets = ("linux/arm64", "linux/arm64/v8") if platform == "linux/arm64" else (platform,)
         if not isinstance(params, dict) or params.get("targetPlatform", platform) not in valid_targets:
             raise ValueError(f"Unexpected provenance target for {platform}")
+        if not params.get("buildConfig", {}).get("llbDefinition"):
+            raise ValueError(f"Missing BuildKit build configuration for {platform}")
+        if not isinstance(details, dict) or not details.get("metadata", {}).get("invocationId"):
+            raise ValueError(f"Missing BuildKit build invocation for {platform}")
         builder = details.get("builder") if isinstance(details, dict) else None
         if not isinstance(builder, dict) or builder.get("id") != PUBLISHER:
             raise ValueError(f"Unexpected SLSA builder identity for {platform}")
@@ -154,8 +213,9 @@ if __name__ == "__main__":
     parser.add_argument("--output", type=Path, required=True, help="directory for the extracted predicates")
     parser.add_argument("--oci-layout", action="store_true", help="read a local OCI layout instead of a registry")
     parser.add_argument("--spdx-schema", type=Path, help="local copy of the pinned SPDX 2.3 JSON schema for offline use")
+    parser.add_argument("--image-name", choices=sorted(PROFILES), help="expected Community image when reading a local layout")
     args = parser.parse_args()
     try:
-        verify_image(args.image, args.output, args.source_commit, spdx_validator(args.spdx_schema), args.oci_layout)
-    except (ValueError, KeyError, TypeError, OSError, subprocess.CalledProcessError) as error:
+        verify_image(args.image, args.output, args.source_commit, spdx_validator(args.spdx_schema), args.oci_layout, args.image_name)
+    except (ValueError, KeyError, TypeError, AttributeError, OSError, subprocess.CalledProcessError) as error:
         sys.exit(f"Image verification failed: {error}")

@@ -29,24 +29,31 @@ class PlatformEvidenceTests(unittest.TestCase):
             self.documents[child] = {"config": {"digest": f"config-{arch}"}}
             self.documents[f"config-{arch}"] = {
                 "os": "linux", "architecture": arch,
-                "config": {"Labels": {"org.opencontainers.image.revision": "source"}},
+                "config": {"Cmd": ["dotnet", "Elsa.Server.Web.dll"], "Labels": {"org.opencontainers.image.revision": "source"}},
             }
             self.documents[f"evidence-{arch}"] = {"layers": layers}
             runtime = {"amd64": "x64", "arm64": "arm64"}[arch]
-            purls = ["pkg:deb/ubuntu/libc6", f"pkg:nuget/Microsoft.AspNetCore.App.Runtime.linux-{runtime}@10.0.15",
-                     "pkg:nuget/Elsa.Server.Web"]
+            entries = [
+                ("libc6", "2.39", f"pkg:deb/ubuntu/libc6@2.39?arch={arch}"),
+                (f"Microsoft.AspNetCore.App.Runtime.linux-{runtime}", "10.0.15",
+                 f"pkg:nuget/Microsoft.AspNetCore.App.Runtime.linux-{runtime}@10.0.15"),
+                ("Elsa.Server.Web", "1.0.0", "pkg:nuget/Elsa.Server.Web@1.0.0"),
+            ]
             packages = [{
-                "SPDXID": f"SPDXRef-Package-{i}", "name": purl.split("/")[-1], "downloadLocation": "NOASSERTION",
+                "SPDXID": f"SPDXRef-Package-{i}", "name": name, "versionInfo": version, "downloadLocation": "NOASSERTION",
                 "externalRefs": [{"referenceCategory": "PACKAGE-MANAGER", "referenceType": "purl", "referenceLocator": purl}],
-            } for i, purl in enumerate(purls)]
+            } for i, (name, version, purl) in enumerate(entries)]
             sbom = {
                 "SPDXID": "SPDXRef-DOCUMENT", "name": f"sample-{arch}", "spdxVersion": "SPDX-2.3",
                 "dataLicense": "CC0-1.0", "documentNamespace": f"https://example.com/image/{arch}",
                 "creationInfo": {"created": "2026-01-01T00:00:00Z", "creators": ["Tool: syft"]}, "packages": packages,
             }
             provenance = {
-                "buildDefinition": {"buildType": BUILDKIT_TYPE, "externalParameters": {"request": {"frontend": "dockerfile.v0"}}},
-                "runDetails": {"builder": {"id": PUBLISHER}},
+                "buildDefinition": {"buildType": BUILDKIT_TYPE, "externalParameters": {
+                    "request": {"frontend": "dockerfile.v0"}, "configSource": {"path": "ElsaServer.Dockerfile"}},
+                    "internalParameters": {"buildConfig": {"llbDefinition": [{"id": "step0"}]}},
+                    "resolvedDependencies": [{"uri": "pkg:docker/ubuntu", "digest": {"sha256": "a"*64}}]},
+                "runDetails": {"builder": {"id": PUBLISHER}, "metadata": {"invocationId": "run-1"}},
             }
             for kind, predicate in ((SPDX, sbom), (SLSA, provenance)):
                 key = f"{arch}-{kind}"
@@ -59,7 +66,7 @@ class PlatformEvidenceTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as out, patch(
             "verify_community_image.read_document", side_effect=lambda _, digest, **kwargs: self.documents[digest]
         ):
-            verify_image("sample@index", Path(out), "source", self.schema)
+            verify_image("docker.io/elsaworkflows/elsa-server-v3@index", Path(out), "source", self.schema)
             return sorted(path.name for path in Path(out).glob("*.spdx.json"))
 
     def test_both_platform_inventories(self):
@@ -112,6 +119,48 @@ class PlatformEvidenceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "parameters"):
             self.verify()
 
+    def test_unrelated_elsa_package_or_invalid_version_is_insufficient(self):
+        package = self.documents[f"amd64-{SPDX}"]["predicate"]["packages"][2]
+        for name, version, purl in (("Elsa.Other", "1.0.0", "pkg:nuget/Elsa.Other@1.0.0"),
+                                    ("Elsa.Server.Web", "bad version", "pkg:nuget/Elsa.Server.Web@bad%20version"),
+                                    ("Elsa.Server.Web", "1.0.0", "pkg:nuget/Elsa.Server.Web@2.0.0")):
+            with self.subTest(purl=purl), self.assertRaisesRegex(ValueError, "Elsa.Server.Web"):
+                package.update(name=name, versionInfo=version)
+                package["externalRefs"][0]["referenceLocator"] = purl
+                self.verify()
+
+    def test_empty_debian_locator_does_not_identify_an_os_package(self):
+        self.documents[f"amd64-{SPDX}"]["predicate"]["packages"][0]["externalRefs"][0]["referenceLocator"] = "pkg:deb/"
+        with self.assertRaisesRegex(ValueError, "libc6"):
+            self.verify()
+
+    def test_host_command_belongs_to_image(self):
+        self.documents["config-amd64"]["config"]["Cmd"] = ["dotnet", "Elsa.Studio.Host.Server.dll"]
+        with self.assertRaisesRegex(ValueError, "entry assembly"):
+            self.verify()
+
+    def test_empty_request_wrong_dockerfile_and_missing_build_inputs(self):
+        definition = self.documents[f"amd64-{SLSA}"]["predicate"]["buildDefinition"]
+        external = definition["externalParameters"]
+        for field, value, message in (("externalParameters", {}, "request"), ("resolvedDependencies", [], "inputs"),
+                                      ("externalParameters", dict(external, configSource={"path": "ElsaStudio.Dockerfile"}), "config source")):
+            with self.subTest(field=field, value=value):
+                previous = definition[field]
+                definition[field] = value
+                with self.assertRaisesRegex(ValueError, message):
+                    self.verify()
+                definition[field] = previous
+
+    def test_missing_invocation_fails(self):
+        self.documents[f"amd64-{SLSA}"]["predicate"]["runDetails"]["metadata"] = {}
+        with self.assertRaisesRegex(ValueError, "invocation"):
+            self.verify()
+
+    def test_missing_build_config_fails(self):
+        self.documents[f"amd64-{SLSA}"]["predicate"]["buildDefinition"]["internalParameters"] = {}
+        with self.assertRaisesRegex(ValueError, "configuration"):
+            self.verify()
+
     def test_wrong_provenance_target(self):
         definition = self.documents[f"arm64-{SLSA}"]["predicate"]["buildDefinition"]
         definition["internalParameters"] = {"targetPlatform": "linux/amd64"}
@@ -119,7 +168,7 @@ class PlatformEvidenceTests(unittest.TestCase):
             self.verify()
 
     def test_missing_builder_identity(self):
-        self.documents[f"amd64-{SLSA}"]["predicate"]["runDetails"] = {"builder": {}}
+        self.documents[f"amd64-{SLSA}"]["predicate"]["runDetails"]["builder"] = {}
         with self.assertRaisesRegex(ValueError, "build|provenance"):
             self.verify()
 
@@ -130,7 +179,7 @@ class PlatformEvidenceTests(unittest.TestCase):
 
     def test_incomplete_inventory(self):
         self.documents[f"amd64-{SPDX}"]["predicate"]["packages"].pop()
-        with self.assertRaisesRegex(ValueError, "Missing expected pkg:nuget/Elsa"):
+        with self.assertRaisesRegex(ValueError, "Elsa.Server.Web"):
             self.verify()
 
     def test_missing_platform(self):
