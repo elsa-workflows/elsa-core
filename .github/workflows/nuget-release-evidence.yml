@@ -1,7 +1,8 @@
 name: NuGet release evidence
 on:
   # Release tags can be on an older maintenance branch. Run the evidence tooling
-  # from trusted main after the published release's Packages workflow succeeds.
+  # from trusted main. The release-triggered Packages rebuild can fail or be
+  # cancelled independently after the approved candidate is already on both feeds.
   workflow_run:
     workflows: [Packages]
     types: [completed]
@@ -19,7 +20,7 @@ jobs:
     if: >-
       github.repository == 'elsa-workflows/elsa-core' && github.ref == 'refs/heads/main' &&
       (github.event_name == 'workflow_dispatch' ||
-      (github.event.workflow_run.event == 'release' && github.event.workflow_run.conclusion == 'success' &&
+      (github.event.workflow_run.event == 'release' &&
       github.event.workflow_run.head_repository.full_name == github.repository &&
       github.event.workflow_run.path == '.github/workflows/packages.yml'))
     runs-on: ubuntu-24.04
