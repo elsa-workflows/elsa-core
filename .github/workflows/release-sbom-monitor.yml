@@ -32,6 +32,8 @@ jobs:
     if: github.event_name != 'pull_request' && github.repository == 'elsa-workflows/elsa-core' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     timeout-minutes: 350
+    outputs:
+      report-name: ${{ steps.report.outputs.name }}
     permissions:
       contents: read
       attestations: read
@@ -73,11 +75,15 @@ jobs:
           if [[ ! -f "$RUNNER_TEMP/report.json" ]]; then
             echo '{"scanner":"0.122.1","results":[{"version":"setup","family":"workflow","state":"error","error":"Monitoring setup failed before a report was produced"}]}' > "$RUNNER_TEMP/report.json"
           fi
+      - name: Identify this scan attempt
+        id: report
+        if: '!cancelled()'
+        run: echo "name=release-monitor-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> "$GITHUB_OUTPUT"
       - name: Retain full report
         if: '!cancelled()'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: release-monitor-${{ github.run_id }}-${{ github.run_attempt }}
+          name: ${{ steps.report.outputs.name }}
           path: ${{ runner.temp }}/report.json
           if-no-files-found: error
           retention-days: 90
@@ -97,7 +103,7 @@ jobs:
           persist-credentials: false
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
-          name: release-monitor-${{ github.run_id }}-${{ github.run_attempt }}
+          name: ${{ needs.scan.outputs.report-name }}
           path: ${{ runner.temp }}/release-monitor
       - name: Record new outcomes on the monitoring issue
         env:

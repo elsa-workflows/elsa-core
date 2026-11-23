@@ -21,6 +21,8 @@ INDEX = "nuget-release-index.json"
 BUNDLE = "nuget-sboms.zip"
 DIGEST = re.compile(r"[a-f0-9]{64}")
 APIS = f"repos/{REPO}"
+# Import the repository verifier directly, independent of an installed Docker Python SDK.
+sys.path.insert(0, str(Path(__file__).resolve().parent / "docker"))
 IMAGE_WORKFLOW = f"{REPO}/.github/workflows/docker-publish.yml"
 
 
@@ -108,7 +110,7 @@ def packages(tag, commit, directory):
 
 
 def image(tag, commit, directory, name):
-    from docker import verify_community_image as publisher
+    import verify_community_image as publisher
 
     repository = f"docker.io/elsaworkflows/{name}"
     index = run("oras", "resolve", f"{repository}:{tag}")
@@ -168,6 +170,13 @@ def scan(path, expected_db):
     return [matches[k] for k in sorted(matches)]
 
 
+def error_message(error):
+    if isinstance(error, subprocess.CalledProcessError):
+        # Temporary input paths vary between runs. Full subprocess diagnostics are in the Actions log.
+        return f"{' '.join(error.cmd[:2])} failed (exit {error.returncode})"
+    return str(error)
+
+
 def attempt(release, family, stage, cache):
     tag = release["tag_name"]
     record = {"version": tag, "family": family, "state": "error"}
@@ -182,27 +191,39 @@ def attempt(release, family, stage, cache):
             require(subjects, "No verified inventories")
             record["source_commit"] = commit
             record["release_sha256"] = subjects[0][1]["release_sha256"]
-            if "database" not in cache:
-                run("grype", "db", "update")
-                cache["database"] = database(json.loads(run("grype", "db", "status", "-o", "json")))
+            record["inventories"] = [subject for _, subject in subjects]
+            if "database" not in cache and "database_error" not in cache:
+                try:
+                    run("grype", "db", "update")
+                    cache["database"] = database(json.loads(run("grype", "db", "status", "-o", "json")))
+                except Exception as error:
+                    cache["database_error"] = error_message(error)
+            if "database_error" in cache:
+                raise ValueError(cache["database_error"])
             record["database"] = cache["database"]
-            inventories = []
             findings = {}
+            errors = {}
             for path, subject in subjects:
                 key = subject["sbom_sha256"]
                 if key not in cache:
-                    cache[key] = scan(path, cache["database"])
-                inventories.append(subject)
+                    try:
+                        cache[key] = scan(path, cache["database"])
+                    except Exception as error:
+                        errors[key] = error_message(error)
+                        continue
                 for owner in subject["artifacts"]:
                     for match in cache[key]:
                         k = owner["sha256"], match["component"], match["advisory"]
                         findings.setdefault(k, {**match, "subject_sha256": k[0], "inventories": set()})["inventories"].add(key)
-            record.update(inventories=inventories, findings=[dict(findings[k], inventories=sorted(findings[k]["inventories"]))
-                                                             for k in sorted(findings)])
-            record["state"] = "findings" if findings else "clean"
+            record["findings"] = [dict(findings[k], inventories=sorted(findings[k]["inventories"])) for k in sorted(findings)]
+            if errors:
+                record["inventory_errors"] = errors
+                record["error"] = f"Grype could not scan {len(errors)} verified inventory digest(s)"
+            else:
+                record["state"] = "findings" if findings else "clean"
     except Exception as error:
         # Each independent release family gets an outcome even if another scanner or remote fails.
-        record["error"] = str(error)
+        record["error"] = error_message(error)
     return record
 
 
@@ -246,8 +267,8 @@ def monitor():
                         has_assets = any(a["name"] in {INDEX, BUNDLE} for a in release["assets"])
                         if historical and family != "nuget" and family not in backfills:
                             continue  # Already recorded a registry discovery error.
-                        has_evidence_candidate = has_assets if family == "nuget" else release["tag_name"] in backfills[family]
-                        if historical and not has_evidence_candidate:
+                        has_backfill = has_assets if family == "nuget" else release["tag_name"] in backfills.get(family, set())
+                        if historical and not has_backfill:
                             # Pre-rollout artifacts are never rebuilt by this job.
                             if release == group[0]:
                                 reports.append({"version": release["tag_name"], "family": family,
@@ -255,7 +276,9 @@ def monitor():
                             continue
                         record = attempt(release, family, tmp, cache)
                         reports.append(record)
-                        if record["state"] != "error":
+                        # An older signed subject is a fallback for missing or invalid evidence.
+                        # Database and scan failures on verified evidence already identify the latest subject.
+                        if record["state"] != "error" or "inventories" in record:
                             break
         except Exception as error:
             reports.append({"version": "discovery", "family": "releases", "state": "error", "error": str(error)})
@@ -263,7 +286,7 @@ def monitor():
 
 
 def receipt_key(record):
-    fields = ("version", "family", "state", "release_sha256", "database", "error")
+    fields = ("version", "family", "state", "release_sha256", "database", "error", "inventory_errors")
     return digest(json.dumps([GRYPE] + [record.get(k) for k in fields], sort_keys=True).encode())
 
 
@@ -271,10 +294,12 @@ def receipts(records, run_url):
     path = f"{APIS}/issues/{ISSUE}/comments"
     pages = json.loads(run("gh", "api", "--paginate", "--slurp", path + "?per_page=100"))
     seen = set()
+    finding_sets = set()
     for page in pages:
         for comment in page:
             if comment["user"]["login"] == "github-actions[bot]":
                 seen.update(re.findall(r"<!-- elsa-rescan:([a-f0-9]{64}) -->", comment["body"]))
+                finding_sets.update(re.findall(r"<!-- elsa-findings:([a-f0-9]{64}) -->", comment["body"]))
     updates = []
     for record in records:
         key = receipt_key(record)
@@ -283,9 +308,18 @@ def receipts(records, run_url):
         seen.add(key)
         identifier = record.get("release_sha256", "unavailable")
         db = record.get("database", {})
-        count = len(record["findings"]) if "findings" in record else "unavailable"
-        updates.append(f"<!-- elsa-rescan:{key} -->\n- {record['version']} {record['family']} · {record['state']} · "
-                       f"{count} distinct matches · subject `{identifier}` · database `{db.get('sha256', 'unavailable')}`")
+        details = "coverage incomplete"
+        markers = f"<!-- elsa-rescan:{key} -->"
+        if record["state"] in {"clean", "findings"}:
+            ids = sorted((f["subject_sha256"], f["component"], f["advisory"]) for f in record["findings"])
+            finding_key = digest(json.dumps([identifier, ids]).encode())
+            markers += f"<!-- elsa-findings:{finding_key} -->"
+            details = f"{len(ids)} distinct matches"
+            if finding_key in finding_sets:
+                details += " (previously recorded finding set)"
+            finding_sets.add(finding_key)
+        updates.append(f"{markers}\n- {record['version']} {record['family']} · {record['state']} · {details} · "
+                       f"subject `{identifier}` · database `{db.get('sha256', 'unavailable')}`")
     # The issue API caps each comment at 65,536 characters.
     for offset in range(0, len(updates), 75):
         body = f"Release inventory rescan with Grype {GRYPE}. [Run and report]({run_url})\n\n" + "\n".join(updates[offset:offset + 75])
