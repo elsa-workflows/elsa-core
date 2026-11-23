@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -49,6 +49,28 @@ test('different target frameworks keep their own resolved version and packed ran
     const incomplete = spawnSync(process.execPath, [join(import.meta.dirname, 'package-boms.mjs'), dir, input], { encoding: 'utf8' });
     assert.notEqual(incomplete.status, 0);
     assert.match(incomplete.stderr, /Missing target framework/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('CSS evidence follows resolved imports, peer styles and the vendored source notice', async () => {
+  const { cssComponents } = await import('./capture-vite.mjs');
+  const { parse } = await import('postcss');
+  const dir = realpathSync(mkdtempSync(join(tmpdir(), 'elsa-css-')));
+  try {
+    const entry = join(dir, 'entry.css');
+    const theme = join(dir, 'theme.css');
+    const animation = join(dir, 'animation.css');
+    const vendor = join(dir, 'vendor.css');
+    writeFileSync(entry, '@import "theme" source(none); @import "animation";');
+    writeFileSync(theme, '@import "./vendor.css"; .theme { display: block }');
+    writeFileSync(animation, '.animate { display: block }');
+    writeFileSync(vendor, '/* Source: shadcn 4.21.4, dist/tailwind.css. Vendored with original notice. */');
+    const paths = { theme, animation, './vendor.css': vendor };
+    const versions = new Map([[theme, ['tailwindcss', '4.3.3']], [animation, ['tw-animate-css', '1.4.0']]]);
+    const result = await cssComponents([entry], name => paths[name], parse, path => versions.get(path));
+    assert.deepEqual(result.sort(), [['shadcn', '4.21.4'], ['tailwindcss', '4.3.3'], ['tw-animate-css', '1.4.0']]);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

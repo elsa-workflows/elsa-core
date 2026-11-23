@@ -193,13 +193,17 @@ jobs:
             curl --fail --silent --show-error --location --retry 3 \
               "https://github.com/$GITHUB_REPOSITORY/releases/download/$VERSION/$name" -o "$name"
           done
+          sample=$(python3 "$GITHUB_WORKSPACE/scripts/nuget_release_evidence.py" sample --version "$VERSION" --index-file nuget-release-index.json)
+          identifier=$(jq -er .id <<< "$sample")
+          framework=$(jq -er .framework <<< "$sample")
+          lower=${identifier,,}
           for feed in feedz nuget; do
             case "$feed" in
               feedz) base=https://f.feedz.io/elsa-workflows/elsa-3/nuget/v3/packages ;;
               nuget) base=https://api.nuget.org/v3-flatcontainer ;;
             esac
-            url="$base/elsa/$VERSION/elsa.$VERSION.nupkg"
-            curl --fail --silent --show-error --location --retry 3 "$url" -o Elsa.nupkg
-            python3 "$GITHUB_WORKSPACE/scripts/nuget_release_evidence.py" verify --version "$VERSION" --identifier Elsa \
-              --framework net10.0 --feed "$feed" --package Elsa.nupkg --index-file nuget-release-index.json --bundle nuget-sboms.zip
+            url="$base/$lower/$VERSION/$lower.$VERSION.nupkg"
+            curl --fail --silent --show-error --location --retry 3 "$url" -o sample.nupkg
+            python3 "$GITHUB_WORKSPACE/scripts/nuget_release_evidence.py" verify --version "$VERSION" --identifier "$identifier" \
+              --framework "$framework" --feed "$feed" --package sample.nupkg --index-file nuget-release-index.json --bundle nuget-sboms.zip
           done

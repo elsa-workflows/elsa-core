@@ -8,5 +8,8 @@
     "ajv-formats": "3.0.1",
     "ajv-formats-draft2019": "1.6.1",
     "packageurl-js": "2.0.1"
+  },
+  "devDependencies": {
+    "postcss": "8.5.31"
   }
 }

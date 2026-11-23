@@ -2,7 +2,7 @@
 import { appendFileSync, readFileSync, existsSync, realpathSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { createHash } from 'node:crypto';
-import { registerHooks } from 'node:module';
+import { createRequire, registerHooks } from 'node:module';
 import { pathToFileURL } from 'node:url';
 
 const root = process.env.ELSA_VITE_ROOT && realpathSync(process.env.ELSA_VITE_ROOT);
@@ -43,10 +43,50 @@ function packageIdentity(moduleId) {
   return identity;
 }
 
+export async function cssComponents(entries, resolveStyle, parse, identity) {
+  const visited = new Set();
+  const components = new Map();
+  const add = value => { if (value) components.set(value.join('\0'), value); };
+  async function visit(source) {
+    if (visited.has(source)) return;
+    visited.add(source);
+    add(identity(source));
+    const css = readFileSync(source, 'utf8');
+    const tree = parse(css, { from: source });
+    const imports = [];
+    tree.walkAtRules('import', rule => {
+      const match = /^(?:url\(\s*)?["']([^"']+)["']/.exec(rule.params.trim());
+      if (!match) throw new Error('Unknown CSS import in ' + source + ': ' + rule.params);
+      imports.push(match[1]);
+    });
+    for (const specifier of imports) {
+      const path = await resolveStyle(specifier, source);
+      if (!path) throw new Error('Unresolved CSS import ' + specifier + ' in ' + source);
+      await visit(realpathSync(path));
+    }
+    // The UI's vendored stylesheet carries its upstream name, version and notice.
+    tree.walkComments(comment => {
+      const notice = /Source: ([\w@./-]+) (\d[\w.+-]*), [^\n]+\. Vendored/.exec(comment.text);
+      if (notice) add([notice[1], notice[2]]);
+    });
+  }
+  for (const source of entries) await visit(source);
+  return [...components.values()];
+}
+
 export function capture() {
+  const workspace = createRequire(join(root, 'package.json'));
+  const vitePath = workspace.resolve('vite');
+  const vite = createRequire(vitePath);
+  const virtual = { vite: vitePath, rolldown: vite.resolve('rolldown') };
+  const postcss = vite('postcss');
+  let resolveStyle;
   return {
     name: 'elsa-release-sbom',
-    writeBundle(options, bundle) {
+    configResolved(config) {
+      resolveStyle = config.createResolver({ extensions: ['.css'], mainFields: ['style'], conditions: ['style'], preferRelative: true });
+    },
+    async writeBundle(options, bundle) {
       for (const item of Object.values(bundle)) {
         if (!/\.(?:js|css)$/.test(item.fileName)) continue;
         const file = resolve(options.dir, item.fileName);
@@ -55,8 +95,17 @@ export function capture() {
           : item.originalFileNames ?? [];
         const components = new Map();
         for (const id of ids) {
-          const identity = packageIdentity(id);
+          const generated = /^\0(vite|rolldown)\//.exec(id);
+          const identity = packageIdentity(generated ? virtual[generated[1]] : id);
           if (identity) components.set(identity.join('\0'), identity);
+        }
+        if (item.fileName.endsWith('.css')) {
+          const outputs = Object.values(bundle).filter(asset => asset.fileName.endsWith('.css'));
+          if (outputs.length !== 1) throw new Error('Ambiguous CSS asset attribution in ' + options.dir);
+          const sources = [...this.getModuleIds()].filter(id => id.endsWith('.css') && existsSync(id));
+          for (const identity of await cssComponents(sources, resolveStyle, postcss.parse, packageIdentity)) {
+            components.set(identity.join('\0'), identity);
+          }
         }
         const record = { file: relative(root, file), sha256: createHash('sha256').update(readFileSync(file)).digest('hex'),
           components: [...components.values()].sort(), imports: item.type === 'chunk' ? item.imports : [] };

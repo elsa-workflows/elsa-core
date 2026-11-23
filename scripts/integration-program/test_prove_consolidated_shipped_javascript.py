@@ -64,8 +64,8 @@ class ShippedJavaScriptTests(unittest.TestCase):
             for digest in (record["sha256"], "b" * 64):
                 with patch.object(shipped, "inspected_resources", return_value={"lib/Host.dll": {name: digest}}):
                     if digest == record["sha256"]:
-                        resource = shipped.react_libraries(root / "Host.nupkg", row, root)["lib/Host.dll"]["resources"][0]
+                        resource = shipped.react_libraries(root / "Host.nupkg", row, root, root)["lib/Host.dll"]["resources"][0]
                         self.assertEqual(resource["components"], [["react", "19.3.0"]])
                     else:
                         with self.assertRaisesRegex(ValueError, "CLR resource differs"):
-                            shipped.react_libraries(root / "Host.nupkg", row, root)
+                            shipped.react_libraries(root / "Host.nupkg", row, root, root)

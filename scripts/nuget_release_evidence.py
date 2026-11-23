@@ -281,7 +281,23 @@ def verify_attestation(path, workflow, source=None):
             "--source-ref", "refs/heads/main", "--deny-self-hosted-runners"]
     if source:
         args.extend(["--source-digest", source])
-    subprocess.run(args, check=True)
+    subprocess.run(args, check=True, stdout=sys.stderr)
+
+
+def select_sample(index):
+    eligible = [row for row in index["packages"] if {"feedz", "nuget"} <= row["feeds"].keys() and row["frameworks"]]
+    require(eligible, "Release has no package and framework distributed on both feeds")
+    row = next((row for row in eligible if row["id"] == "Elsa"), eligible[0])
+    require(candidates.PACKAGE_ID.fullmatch(row["id"]), "Invalid sample package identity")
+    framework = "net10.0" if "net10.0" in row["frameworks"] else sorted(row["frameworks"])[0]
+    return {"id": row["id"], "framework": framework}
+
+
+def sample(version, index_file):
+    verify_attestation(index_file, SIGNER)
+    index = json.loads(index_file.read_bytes())
+    require(index["schema"] == 1 and index["version"] == version, "Wrong release index")
+    print(json.dumps(select_sample(index)))
 
 
 def verify(version, identifier, framework, feed, package, index_file, bundle):
@@ -320,6 +336,9 @@ def main():
     build.add_argument("--version", required=True)
     build.add_argument("--transport", required=True, type=Path)
     build.add_argument("--output", required=True, type=Path)
+    selection = commands.add_parser("sample")
+    selection.add_argument("--version", required=True)
+    selection.add_argument("--index-file", required=True, type=Path)
     consumer = commands.add_parser("verify")
     for name in ("version", "identifier", "framework"):
         consumer.add_argument("--" + name, required=True)
@@ -328,7 +347,7 @@ def main():
         consumer.add_argument("--" + name, required=True, type=Path)
     args = vars(parser.parse_args())
     command = args.pop("command")
-    {"assemble": assemble, "verify": verify, "check-produced": check_produced}[command](**args)
+    {"assemble": assemble, "verify": verify, "sample": sample, "check-produced": check_produced}[command](**args)
 
 
 if __name__ == "__main__":

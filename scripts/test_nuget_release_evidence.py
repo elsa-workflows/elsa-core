@@ -97,6 +97,14 @@ class ReleaseEvidenceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "exact producer restore"):
             evidence.check_restored_graph(bom, restore, "net10.0", [])
 
+    def test_clean_sample_uses_eligible_registry_and_framework(self):
+        def record(identifier, feeds):
+            return {"id": identifier, "feeds": dict.fromkeys(feeds), "frameworks": {"net8.0": None}}
+        packages = [record("Elsa", ["feedz"]), record("Elsa.Other", ["feedz", "nuget"])]
+        self.assertEqual(evidence.select_sample({"packages": packages}), {"id": "Elsa.Other", "framework": "net8.0"})
+        with self.assertRaisesRegex(ValueError, "both feeds"):
+            evidence.select_sample({"packages": packages[:1]})
+
     def test_candidate_signing_recovery_requires_the_original_sealed_subject(self):
         from dataclasses import replace
         pin = evidence.candidates.load_pin("3.10.2")

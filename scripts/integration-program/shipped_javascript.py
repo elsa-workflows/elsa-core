@@ -22,7 +22,7 @@ def inspected_resources(package_path):
                                               cwd=inspector.parent))
 
 
-def react_libraries(package_path, row, candidate):
+def react_libraries(package_path, row, candidate, react_root):
     if row["id"] == "Elsa.ReactStudio.Host":
         resource_prefix, bundle = "ReactStudio/", "dist"
     elif row["project"].startswith("studio/react/dotnet/modules/"):
@@ -41,7 +41,13 @@ def react_libraries(package_path, row, candidate):
     for path, resources in assemblies.items():
         shipped = []
         for name, digest in resources.items():
+            require(name.startswith(resource_prefix), f"Unexpected CLR resource prefix: {name}")
             record = records.get(name)
+            if not name.endswith((".js", ".css")):
+                output_file = react_root / bundle / name[len(resource_prefix):]
+                require(output_file.is_file() and sha(output_file.read_bytes()) == digest, f"Packed resource differs from build output: {name}")
+                shipped.append(dict(name=name, sha256=digest, components=[]))
+                continue
             if record is None and name == "ReactStudio.Module/module.css":
                 # The product writes this literal after Vite when the module has no styles.
                 require(digest == sha(b"/* No module-specific styles. */\n"), f"Unrecognised module CSS: {path}")

@@ -58,7 +58,7 @@ def generate(candidate, source, tooling_commit, run_id, attempt):
             declared = dependency_groups(nuspec)
             shared_frameworks = framework_reference_groups(nuspec)
             shipped = embedded_libraries(package, row, client)
-            shipped.update(react_libraries(package, row, candidate))
+            shipped.update(react_libraries(package, row, candidate, source / "studio/react"))
         require(declared == row["dependency_groups"], f"Packed dependency groups changed: {row['id']}")
         require(digest((candidate / "artifacts" / row["nupkg"]).read_bytes()) == row["nupkg_sha256"],
                 f"Pack content changed: {row['id']}")
@@ -97,7 +97,7 @@ def generate(candidate, source, tooling_commit, run_id, attempt):
         input_file = Path(scratch) / "input.json"
         write_json(input_file, {"version": manifest["version"], "packages": rows, "browser": list(browsers.values())})
         script = Path(__file__).resolve().parents[1] / "release-evidence/package-boms.mjs"
-        subprocess.run(["npm", "ci", "--ignore-scripts", "--no-audit", "--no-fund"], cwd=script.parent, check=True)
+        subprocess.run(["npm", "ci", "--omit=dev", "--ignore-scripts", "--no-audit", "--no-fund"], cwd=script.parent, check=True)
         subprocess.run(["node", str(script), str(candidate), str(input_file)], check=True)
     frameworks = json.loads((output / "frameworks.json").read_bytes())
     (output / "frameworks.json").unlink()
