@@ -1,4 +1,5 @@
 import json
+import subprocess
 import tempfile
 import unittest
 from datetime import datetime, timedelta, timezone
@@ -74,6 +75,17 @@ class ReleaseMonitorTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 monitor.database(data)
 
+    def test_failed_db_status_retains_missing_and_stale_diagnostics(self):
+        for reason in ("database does not exist", "database is older than allowed"):
+            result = subprocess.CompletedProcess(["grype", "db", "status"], 1,
+                                                 stdout=json.dumps({"valid": False, "error": reason}))
+            update = subprocess.CompletedProcess(["grype", "db", "update"], 1)
+            cache = {}
+            with patch.object(monitor.subprocess, "run", side_effect=[update, result]), self.assertRaisesRegex(ValueError, reason):
+                monitor.refresh_database(cache)
+            self.assertEqual(cache["database_status"]["error"], reason)
+            self.assertNotIn("database", cache)
+
     def test_report_deduplicates_shared_package_components_and_preserves_context(self):
         def inputs(tag, commit, folder):
             path = folder / "bom"
@@ -134,8 +146,20 @@ class ReleaseMonitorTests(unittest.TestCase):
             result = {"matches": [], "descriptor": {"version": monitor.GRYPE, "db": {"status": state}}}
             with patch.object(monitor, "run", return_value=json.dumps(result)):
                 self.assertEqual(monitor.scan(path, monitor.database(state)), [])
+                path.write_text(json.dumps({"bomFormat": "CycloneDX", "specVersion": "1.5"}))
+                self.assertEqual(monitor.scan(path, monitor.database(state)), [])
                 with self.assertRaisesRegex(ValueError, "revision changed"):
                     monitor.scan(path, {})
+
+    def test_error_receipt_ignores_temporary_paths_and_elapsed_database_age(self):
+        keys = []
+        for directory in ("first", "second"):
+            exc = subprocess.CalledProcessError(1, ["grype", f"sbom:/tmp/{directory}/inventory", "-o", "json"])
+            keys.append(monitor.receipt_key({"state": "error", "inventory_errors": {"a" * 64: monitor.error_message(exc)}}))
+        self.assertEqual(*keys)
+        row = {"state": "error", "database_status": {"valid": False, "built": "2026-01-01T00:00:00Z"}}
+        self.assertEqual(monitor.receipt_key(dict(row, error="built 8 days ago")),
+                         monitor.receipt_key(dict(row, error="built 9 days ago")))
 
     def test_receipts_only_deduplicate_authenticated_bot_receipts(self):
         row = {"version": "3.11.0", "family": "nuget", "state": "clean", "release_sha256": "a" * 64,

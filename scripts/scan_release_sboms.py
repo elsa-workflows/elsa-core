@@ -94,6 +94,8 @@ def packages(tag, commit, directory):
             for feed, record in sorted(feeds.items()):
                 url = f"{publisher.FEEDS[feed]}/{identifier}/{tag}/{identifier}.{tag}.nupkg"
                 require(record["url"] == url and digest(publisher.download(url)) == record["sha256"], "Wrong feed artifact")
+                if feed == "feedz":
+                    require(record["sha256"] == row["candidate_sha256"], "Feedz artifact differs from candidate subject")
                 owners.append({"name": row["id"], "feed": feed, "sha256": record["sha256"]})
             records = list(row["frameworks"].items()) + [("browser-build-input", r) for r in row["browser_build_inputs"]]
             for context, record in records:
@@ -144,7 +146,7 @@ def image(tag, commit, directory, name):
 
 
 def database(status):
-    require(status.get("valid") is True, "Grype database unavailable or invalid")
+    require(status.get("valid") is True, "Grype database unavailable or invalid: " + status.get("error", "unknown reason"))
     built = datetime.fromisoformat(status["built"].replace("Z", "+00:00"))
     require(timedelta(0) <= datetime.now(timezone.utc) - built <= timedelta(days=5), "Grype database stale or future dated")
     checksum = re.search(r"[?&]checksum=sha256(?:%3A|:)([a-f0-9]{64})(?:&|$)", status["from"])
@@ -154,8 +156,9 @@ def database(status):
 
 def scan(path, expected_db):
     content = json.loads(path.read_bytes())
-    require((content.get("bomFormat"), content.get("specVersion")) == ("CycloneDX", "1.6")
-            or content.get("spdxVersion") == "SPDX-2.3", "Unsupported inventory")
+    # npm's bundled build-input inventories use CycloneDX 1.5; framework inventories use 1.6.
+    cyclonedx = content.get("bomFormat") == "CycloneDX" and content.get("specVersion") in {"1.5", "1.6"}
+    require(cyclonedx or content.get("spdxVersion") == "SPDX-2.3", "Unsupported inventory")
     result = json.loads(run("grype", f"sbom:{path}", "--output", "json"))
     descriptor = result["descriptor"]
     require(descriptor["version"] == GRYPE and database(descriptor["db"]["status"]) == expected_db,
@@ -173,8 +176,23 @@ def scan(path, expected_db):
 def error_message(error):
     if isinstance(error, subprocess.CalledProcessError):
         # Temporary input paths vary between runs. Full subprocess diagnostics are in the Actions log.
-        return f"{' '.join(error.cmd[:2])} failed (exit {error.returncode})"
+        command = str(error.cmd[0])
+        operation = str(error.cmd[1]).split(":", 1)[0]
+        return f"{command} {operation} failed (exit {error.returncode})"
     return str(error)
+
+
+def refresh_database(cache):
+    # Grype emits structured status even on a nonzero exit (e.g. no DB or stale DB).
+    # A failed refresh is still an operational error when an older cache is present.
+    update = subprocess.run(["grype", "db", "update"])
+    check = subprocess.run(["grype", "db", "status", "-o", "json"], text=True, stdout=subprocess.PIPE)
+    status = json.loads(check.stdout)
+    cache["database_status"] = {key: status[key] for key in ("schemaVersion", "built", "from", "valid", "error") if key in status}
+    revision = database(status)
+    check.check_returncode()
+    update.check_returncode()
+    cache["database"] = revision
 
 
 def attempt(release, family, stage, cache):
@@ -194,11 +212,12 @@ def attempt(release, family, stage, cache):
             record["inventories"] = [subject for _, subject in subjects]
             if "database" not in cache and "database_error" not in cache:
                 try:
-                    run("grype", "db", "update")
-                    cache["database"] = database(json.loads(run("grype", "db", "status", "-o", "json")))
+                    refresh_database(cache)
                 except Exception as error:
                     cache["database_error"] = error_message(error)
             if "database_error" in cache:
+                if "database_status" in cache:
+                    record["database_status"] = cache["database_status"]
                 raise ValueError(cache["database_error"])
             record["database"] = cache["database"]
             findings = {}
@@ -286,8 +305,13 @@ def monitor():
 
 
 def receipt_key(record):
-    fields = ("version", "family", "state", "release_sha256", "database", "error", "inventory_errors")
-    return digest(json.dumps([GRYPE] + [record.get(k) for k in fields], sort_keys=True).encode())
+    fields = ("version", "family", "state", "release_sha256", "database", "inventory_errors")
+    error = record.get("error")
+    if "database_status" in record:
+        # Relative age in a stale-DB diagnostic changes between attempts.
+        status = record["database_status"]
+        error = ["database", status.get("valid"), status.get("built"), status.get("from")]
+    return digest(json.dumps([GRYPE, error] + [record.get(k) for k in fields], sort_keys=True).encode())
 
 
 def receipts(records, run_url):
