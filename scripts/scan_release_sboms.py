@@ -1,6 +1,7 @@
 """Rescan signed, already-published Elsa 3 releases. See SECURITY.md."""
 
 import argparse
+from contextlib import contextmanager
 import hashlib
 import json
 import re
@@ -17,6 +18,8 @@ from urllib.request import urlopen
 REPO = "elsa-workflows/elsa-core"
 ISSUE = 9315
 GRYPE = "0.122.1"
+COMMAND_TIMEOUT_SECONDS = 300
+DISTRIBUTION_TIMEOUT_SECONDS = 3600
 # Stable releases already published when the release-evidence rollout began.
 ROLLOUT = "2026-11-23T00:00:00Z"
 INDEX = "nuget-release-index.json"
@@ -38,7 +41,7 @@ def digest(data):
 
 
 def run(*args):
-    return subprocess.check_output(args, text=True).strip()
+    return subprocess.check_output(args, text=True, timeout=COMMAND_TIMEOUT_SECONDS).strip()
 
 
 def lines(releases):
@@ -69,6 +72,8 @@ def read_feed(url, feed, failures):
     except (URLError, TimeoutError, ConnectionError) as error:
         if not isinstance(error, HTTPError) or error.code >= 500 or error.code == 429:
             failures[feed] = failures.get(feed, 0) + 1
+        else:
+            failures[feed] = 0
         raise
     failures[feed] = 0
     return content
@@ -210,6 +215,8 @@ def scan(path, expected_db):
 
 
 def error_message(error):
+    if isinstance(error, subprocess.TimeoutExpired):
+        return f"{error.cmd[0]} {str(error.cmd[1]).split(':', 1)[0]} timed out after {error.timeout} seconds"
     if isinstance(error, subprocess.CalledProcessError):
         # Temporary input paths vary between runs. Full subprocess diagnostics are in the Actions log.
         command = str(error.cmd[0])
@@ -221,8 +228,8 @@ def error_message(error):
 def refresh_database(cache):
     # Grype emits structured status even on a nonzero exit (e.g. no DB or stale DB).
     # A failed refresh is still an operational error when an older cache is present.
-    update = subprocess.run(["grype", "db", "update"])
-    check = subprocess.run(["grype", "db", "status", "-o", "json"], text=True, stdout=subprocess.PIPE)
+    update = subprocess.run(["grype", "db", "update"], timeout=900)
+    check = subprocess.run(["grype", "db", "status", "-o", "json"], text=True, stdout=subprocess.PIPE, timeout=60)
     status = json.loads(check.stdout)
     cache["database_status"] = {key: status[key] for key in ("schemaVersion", "built", "from", "valid", "error") if key in status}
     revision = database(status)
@@ -307,7 +314,6 @@ def attempt(release, family, stage, cache, record=None, progress=None):
 def registry_backfills(name):
     # A trusted version tag may be republished for an older GitHub Release. Discovery
     # never supplies a trust decision: each selected index is resolved and verified afresh.
-    tags = set()
     page = 1
     while True:
         url = f"https://hub.docker.com/v2/namespaces/elsaworkflows/repositories/{name}/tags?page_size=100&page={page}"
@@ -315,10 +321,43 @@ def registry_backfills(name):
             data = json.load(response)
         for tag in data["results"]:
             if tag["last_updated"][:10] >= ROLLOUT[:10]:
-                tags.add(tag["name"])
+                yield tag["name"]
         if not data["next"]:
-            return tags
+            return
         page += 1
+
+
+def historical_image_candidate(family, tag):
+    url = f"https://hub.docker.com/v2/namespaces/elsaworkflows/repositories/{family}/tags/{tag}"
+    try:
+        with urlopen(url, timeout=10) as response:
+            return json.load(response)["last_updated"][:10] >= ROLLOUT[:10]
+    except HTTPError as error:
+        if error.code == 404:
+            return False
+    except (OSError, ValueError, KeyError):
+        pass
+    # The metadata service and OCI registry have independent availability. Try the
+    # exact tag through ORAS and require its normal publisher signature in that case.
+    return True
+
+
+class DistributionTimedOut(BaseException):
+    """Stop one distribution, including calls inside the publisher's verifier."""
+
+
+@contextmanager
+def distribution_deadline(seconds):
+    def timeout(signum, frame):
+        raise DistributionTimedOut()
+
+    previous = signal.signal(signal.SIGALRM, timeout)
+    signal.setitimer(signal.ITIMER_REAL, seconds)
+    try:
+        yield
+    finally:
+        signal.setitimer(signal.ITIMER_REAL, 0)
+        signal.signal(signal.SIGALRM, previous)
 
 
 def checkpoint(report_path, reports, active=None):
@@ -350,10 +389,13 @@ def monitor(report_path=None):
             pages = json.loads(run("gh", "api", "--paginate", "--slurp", f"{APIS}/releases?per_page=100"))
             groups = lines([r for page in pages for r in page])
             backfills = {}
+            incomplete_listings = set()
             for name in ("elsa-server-v3", "elsa-server-and-studio-v3", "elsa-studio-v3"):
+                backfills[name] = set()
                 try:
-                    backfills[name] = registry_backfills(name)
+                    backfills[name].update(registry_backfills(name))
                 except Exception as error:
+                    incomplete_listings.add(name)
                     reports.append({"version": "discovery", "family": name, "state": "error", "error": str(error)})
             for group in groups:
                 families = ["nuget", "elsa-server-v3", "elsa-server-and-studio-v3"]
@@ -363,9 +405,9 @@ def monitor(report_path=None):
                     for release in group:
                         historical = release["published_at"] < ROLLOUT
                         has_assets = any(a["name"] in {INDEX, BUNDLE} for a in release["assets"])
-                        if historical and family != "nuget" and family not in backfills:
-                            continue  # Already recorded a registry discovery error.
-                        has_backfill = has_assets if family == "nuget" else release["tag_name"] in backfills.get(family, set())
+                        has_backfill = has_assets if family == "nuget" else release["tag_name"] in backfills[family]
+                        if historical and not has_backfill and family in incomplete_listings:
+                            has_backfill = historical_image_candidate(family, release["tag_name"])
                         if historical and not has_backfill:
                             # Pre-rollout artifacts are never rebuilt by this job.
                             if release == group[0]:
@@ -376,11 +418,16 @@ def monitor(report_path=None):
                         def progress():
                             checkpoint(report_path, reports, active)
                         progress()
-                        record = attempt(release, family, tmp, cache, active, progress)
+                        try:
+                            with distribution_deadline(DISTRIBUTION_TIMEOUT_SECONDS):
+                                record = attempt(release, family, tmp, cache, active, progress)
+                        except DistributionTimedOut:
+                            record = dict(active, state="error", timeout_seconds=DISTRIBUTION_TIMEOUT_SECONDS,
+                                          error="Distribution deadline interrupted verification or scanning")
                         reports.append(record)
                         active = None
                         # Corrupt input can be specific to a release. A shared database failure cannot.
-                        if record["state"] != "error" or "database_error" in cache:
+                        if record["state"] != "error" or "database_error" in cache or "timeout_seconds" in record:
                             break
         except MonitoringInterrupted:
             interrupted = active if active is not None else {"version": "discovery", "family": "releases"}

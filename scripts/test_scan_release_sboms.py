@@ -1,3 +1,4 @@
+import io
 import json
 import sys
 import zipfile
@@ -188,6 +189,60 @@ class ReleaseMonitorTests(unittest.TestCase):
                 monitor.read_feed("https://other.invalid", "feedz", failures)
             self.assertEqual(fetch.call_count, 4)
             fetch.assert_called_with("https://other.invalid", timeout=15)
+
+    def test_nontransient_failure_resets_the_feed_cutoff(self):
+        def response(status):
+            return monitor.HTTPError("https://feed.invalid", status, "fixture", {}, None)
+        failures = {}
+        with patch.object(monitor, "urlopen", side_effect=[response(503), response(404), response(503), response(503), io.BytesIO(b"ok")]):
+            for value in (1, 0, 1, 2):
+                with self.assertRaises(monitor.HTTPError):
+                    monitor.read_feed("https://feed.invalid", "nuget", failures)
+                self.assertEqual(failures["nuget"], value)
+            self.assertEqual(monitor.read_feed("https://feed.invalid", "nuget", failures), b"ok")
+
+    def test_failed_tag_listing_keeps_earlier_pages_and_probes_unlisted_historical_versions(self):
+        def tags(name):
+            if name == "elsa-server-v3":
+                yield "3.9.0"
+                raise OSError("page two unavailable")
+        historical = [release(tag, "2026-01-01T00:00:00Z") for tag in ("3.9.0", "3.10.0")]
+        def attempt(release, family, *args):
+            return {"version": release["tag_name"], "family": family, "state": "clean"}
+        with (patch.object(monitor, "run", return_value=json.dumps([historical])),
+              patch.object(monitor, "registry_backfills", side_effect=tags),
+              patch.object(monitor, "historical_image_candidate", return_value=True) as probe,
+              patch.object(monitor, "attempt", side_effect=attempt)):
+            results = monitor.monitor()
+        self.assertEqual([r["version"] for r in results if r["state"] == "clean"], ["3.9.0", "3.10.0"])
+        self.assertEqual([r["family"] for r in results if r["state"] == "error"], ["elsa-server-v3"])
+        probe.assert_called_once_with("elsa-server-v3", "3.10.0")
+
+    def test_distribution_deadline_keeps_partial_evidence_and_continues_with_siblings(self):
+        release_row = release("3.11.0")
+        def attempt(release, family, stage, cache, record, progress):
+            if family == "nuget":
+                record.update(release_sha256="a"*64, database={"built": "2026-11-23"},
+                              findings=[{"subject_sha256": "b"*64, "component": "fixture", "advisory": "GHSA-test"}])
+                progress()
+                subprocess.run([sys.executable, "-c", "import time; time.sleep(5)"], check=True)
+            return dict(record, state="clean")
+        with (tempfile.TemporaryDirectory() as tmp,
+              patch.object(monitor, "DISTRIBUTION_TIMEOUT_SECONDS", 0.1),
+              patch.object(monitor, "run", return_value=json.dumps([[release_row]])),
+              patch.object(monitor, "registry_backfills", return_value=set()), patch.object(monitor, "attempt", side_effect=attempt)):
+            path = Path(tmp) / "report.json"
+            result = monitor.monitor(path)
+            self.assertEqual(json.loads(path.read_bytes())["results"], result)
+        self.assertEqual([r["state"] for r in result], ["error", "clean", "clean", "clean"])
+        self.assertEqual(result[0]["timeout_seconds"], 0.1)
+        self.assertEqual(result[0]["release_sha256"], "a"*64)
+        self.assertEqual(result[0]["findings"][0]["advisory"], "GHSA-test")
+
+    def test_external_command_has_its_own_shorter_timeout(self):
+        with patch.object(monitor, "COMMAND_TIMEOUT_SECONDS", 0.1), self.assertRaises(subprocess.TimeoutExpired) as timed:
+            monitor.run(sys.executable, "-c", "import time; time.sleep(5)")
+        self.assertIn("timed out after 0.1 seconds", monitor.error_message(timed.exception))
 
     def test_interrupted_scan_keeps_previous_outcomes_and_active_subject(self):
         previous = [{"version": "3.10.0", "family": "nuget", "state": "clean"}]
