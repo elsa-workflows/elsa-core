@@ -1,5 +1,6 @@
 """Exercise release inventory binding independently of the real SDK build."""
 import json
+import os
 from pathlib import Path
 import tempfile
 import unittest
@@ -17,6 +18,10 @@ class PackedLibraryEvidenceTests(unittest.TestCase):
         self.build = Path(self.temporary.name).resolve()
         self.folder = self.build / 'retained'
         self.folder.mkdir()
+        event = self.build / 'event.json'
+        pair.write_json(event, {'inputs': {'publish_npm': 'true'}})
+        self.enterContext(patch.dict(os.environ, {'GITHUB_EVENT_PATH': str(event), 'GITHUB_EVENT_NAME': 'workflow_dispatch',
+                          'GITHUB_REPOSITORY_ID': '123', 'GITHUB_REPOSITORY_OWNER_ID': '456', 'RUNNER_ENVIRONMENT': 'github-hosted'}))
         self.proof = pair.release_candidate_identity('a' * 40, 'b' * 40, '3.10.2-preview.42', '12', '2')
         self.paths = self.stage(self.build, self.folder, self.proof)
 
@@ -95,6 +100,37 @@ class PackedLibraryEvidenceTests(unittest.TestCase):
         pair.write_json(file, data)
         with self.assertRaisesRegex(pair.ProofError, 'producer-provenance'):
             self.check()
+
+    def test_provenance_binds_release_selection_and_native_build_type(self):
+        predicate = sbom.read(self.folder / 'provenance.json')
+        self.assertEqual({'event_name': 'workflow_dispatch', 'repository_id': '123',
+                          'repository_owner_id': '456', 'runner_environment': 'github-hosted'},
+                         predicate['buildDefinition']['internalParameters']['github'])
+        with patch.dict(os.environ, {'GITHUB_REPOSITORY_ID': '321'}), self.assertRaisesRegex(pair.ProofError, 'producer-provenance'):
+            self.check()
+        pair.write_json(Path(os.environ['GITHUB_EVENT_PATH']), {'inputs': {'publish_npm': 'false'}})
+        with self.assertRaisesRegex(pair.ProofError, 'npm-release-not-selected'):
+            self.check()
+
+    def test_static_asset_uses_resolved_package_bytes_after_packaging_transform(self):
+        source = self.build / 'source'
+        obj = source / pair.HOST / 'obj'
+        published = obj / 'Release/net10.0'
+        published.mkdir(parents=True)
+        cache = self.build / 'packages'
+        static_file = cache / 'radzen.blazor/9.0.5/staticwebassets/Radzen.Blazor.min.js'
+        static_file.parent.mkdir(parents=True)
+        static_file.write_bytes(b'shipped javascript')
+        pair.write_json(obj / 'project.assets.json', {
+            'targets': {'net10.0/browser-wasm': {'Radzen.Blazor/9.0.5': {'type': 'package'}}},
+            'project': {'frameworks': {'net10.0': {'downloadDependencies': []}}}, 'packageFolders': {str(cache): {}}})
+        pair.write_json(published / 'staticwebassets.publish.json', {'Assets': [{
+            'OriginalItemSpec': str(static_file), 'Identity': str(static_file), 'SourceType': 'Package',
+            'Integrity': 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='}]})
+        assets = sbom.managed_assets(source, self.proof['version'])
+        self.assertEqual({('pkg:nuget/Radzen.Blazor@9.0.5', 'Radzen.Blazor', '9.0.5')},
+                         assets[pair.sha256(static_file.read_bytes())])
+        self.assertNotIn('0' * 64, assets)
 
     def test_packed_monaco_banner_supplies_version(self):
         root = 'package/_content/BlazorMonaco/lib/monaco-editor/min/vs/'

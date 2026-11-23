@@ -4,6 +4,7 @@ import base64
 from collections import defaultdict
 import hashlib
 import json
+import os
 import re
 from pathlib import Path
 from urllib.parse import quote
@@ -77,8 +78,13 @@ def managed_assets(source, release_version):
             name, version = canonical.split('/')
             is_project = canonical == f'{own}/{release_version}' or target.get(canonical, {}).get('type') == 'project'
             item = component('generic' if is_project else 'nuget', name, version)
-            by_digest[base64.b64decode(asset['Integrity'], validate=True).hex()].add(
-                (item['purl'], item['name'], version))
+            digest = base64.b64decode(asset['Integrity'], validate=True).hex()
+            if asset['SourceType'] == 'Package' and any(origin.is_relative_to(folder) for folder in packs):
+                # Packages can ship precomputed integrity from before packaging transforms.
+                # Match against the resolved package file that actually entered this build.
+                with origin.open('rb') as raw:
+                    digest = hashlib.file_digest(raw, 'sha256').hexdigest()
+            by_digest[digest].add((item['purl'], item['name'], version))
     return by_digest
 
 
@@ -162,6 +168,19 @@ def declared_dependencies(manifest, wasm_integrity):
     return required
 
 
+def publisher_context():
+    """Read the original public release selection and native GitHub workflow build-type parameters."""
+    github = {key: os.environ[variable] for key, variable in (
+        ('event_name', 'GITHUB_EVENT_NAME'), ('repository_id', 'GITHUB_REPOSITORY_ID'),
+        ('repository_owner_id', 'GITHUB_REPOSITORY_OWNER_ID'), ('runner_environment', 'RUNNER_ENVIRONMENT'))}
+    pair.require(github['event_name'] == 'workflow_dispatch' and github['runner_environment'] == 'github-hosted'
+                 and all(re.fullmatch(r'[1-9][0-9]*', github[key]) for key in ('repository_id', 'repository_owner_id')),
+                 'release-build-context')
+    selection = read(Path(os.environ['GITHUB_EVENT_PATH']))['inputs'].get('publish_npm')
+    pair.require(selection in ('true', True), 'npm-release-not-selected')
+    return github
+
+
 def provenance(proof):
     # Use the build attempt embedded in both original tarballs even when signing is retried.
     repository = 'https://github.com/' + proof['source_repository']
@@ -172,10 +191,15 @@ def provenance(proof):
         'buildDefinition': {
             'buildType': 'https://actions.github.io/buildtypes/workflow/v1',
             'externalParameters': {'workflow': {'ref': tag, 'repository': repository, 'path': workflow}},
+            'internalParameters': {'github': publisher_context()},
             'resolvedDependencies': [git_source],
         },
         'runDetails': {
             'builder': {'id': repository + '/' + workflow + '@' + tag},
+            # The GitHub workflow/v1 external parameter contract has only "workflow".
+            # Record the verified npm selection separately as public SLSA byproduct data.
+            'byproducts': [{'name': 'workflow_dispatch.inputs.publish_npm',
+                            'mediaType': 'application/json', 'content': base64.b64encode(b'true').decode()}],
             'metadata': {'invocationId': repository + '/actions/runs/' + proof['run_id'] + '/attempts/' + proof['run_attempt']},
         },
     }
