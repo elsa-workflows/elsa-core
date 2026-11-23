@@ -87,7 +87,15 @@ class ReleaseEvidenceTests(unittest.TestCase):
                   "nupkg_sha256": self.row["candidate_sha256"], "snupkg": "Elsa.snupkg", "snupkg_sha256": "a"*64,
                   "browser_assets": [{"package_path":"staticwebassets/library.js", "sha256":"b"*64}]}
         with self.assertRaisesRegex(ValueError, "Missing browser build inventory"):
-            evidence.check_coverage(self.index, [source], lambda path: self.bom)
+            evidence.check_coverage(self.index, [source], lambda path: self.bom, None, self.root)
+
+    def test_incomplete_bom_rejects_removed_files_and_restore_components(self):
+        bom = json.loads(self.bom)
+        with self.assertRaisesRegex(ValueError, "exact shipped files"):
+            evidence.check_packed_files(bom, {"lib/Elsa.dll": "a"*64}, {}, {})
+        restore = {"targets": {"net10.0": {"Library/1.0": {}}}, "project": {"frameworks": {"net10.0": {}}}}
+        with self.assertRaisesRegex(ValueError, "exact producer restore"):
+            evidence.check_restored_graph(bom, restore, "net10.0", [])
 
     def test_candidate_signing_recovery_requires_the_original_sealed_subject(self):
         from dataclasses import replace
@@ -135,11 +143,17 @@ import json, os, shutil, sys
 from pathlib import Path
 release = Path(os.environ["RELEASE"])
 args = sys.argv[1:]
-if args[0] == "api" and "/commits/" in args[1]:
+def asset(f):
+    return {"name": f.name, "id": 17, "state": "starter" if f.stat().st_size == 0 else "uploaded", "size": f.stat().st_size}
+if args[:3] == ["api", "--method", "DELETE"]:
+    (release / "nuget-release-index.json").unlink()
+elif args[0] == "api" and "/releases/assets/" in args[1]:
+    print(json.dumps(asset(release / "nuget-release-index.json")))
+elif args[0] == "api" and "/commits/" in args[1]:
     print(os.environ["SOURCE"])
 elif args[0] == "api":
     print(json.dumps(dict(tag_name=os.environ["VERSION"], draft=False, prerelease=False,
-                          assets=[{"name": f.name} for f in release.iterdir()])))
+                          assets=[asset(f) for f in release.iterdir()])))
 elif args[:2] == ["release", "download"]:
     sys.stdout.buffer.write((release / args[args.index("--pattern")+1]).read_bytes())
 elif args[:2] == ["release", "upload"]:
@@ -156,6 +170,7 @@ else:
         env = dict(os.environ, PATH=str(binary) + os.pathsep + os.environ["PATH"],
                    RUNNER_TEMP=str(self.root), RELEASE=str(remote), SOURCE="f" * 40, VERSION=self.version,
                    INDEX_DIGEST="sha256:" + evidence.sha(index.read_bytes()), GITHUB_REPOSITORY=evidence.REPO)
+        (remote / index.name).touch()  # Empty GitHub starter left by an interrupted upload.
         for _ in range(2):
             result = subprocess.run(["bash", "-c", script], env=env, capture_output=True, text=True)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)

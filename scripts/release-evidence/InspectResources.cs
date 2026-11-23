@@ -25,7 +25,7 @@ foreach (var entry in package.Entries.Where(entry => entry.FullName.StartsWith("
         if (!item.Implementation.IsNil)
             continue;
         var name = metadata.GetString(item.Name);
-        if (!name.EndsWith(".js", StringComparison.OrdinalIgnoreCase))
+        if (!name.EndsWith(".js", StringComparison.OrdinalIgnoreCase) && !name.EndsWith(".css", StringComparison.OrdinalIgnoreCase))
             continue;
         var blob = reader.GetSectionData(checked(resources.RelativeVirtualAddress + (int)item.Offset)).GetReader();
         var data = blob.ReadBytes(blob.ReadInt32());

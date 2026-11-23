@@ -103,6 +103,9 @@ function frameworkBom(row, version, framework, assets, payload) {
         const location = name + '#' + resource.name;
         const item = new Models.Component('file', resource.name, { bomRef: location });
         item.hashes.set('SHA-256', resource.sha256);
+        for (const specifier of resource.imports ?? []) {
+          item.properties.add(new Models.Property('elsa:emitted-import', specifier));
+        }
         addBundled(item, location, resource.components);
         file.components.add(item);
       }

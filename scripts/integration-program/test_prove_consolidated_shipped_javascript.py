@@ -15,18 +15,19 @@ class ShippedJavaScriptTests(unittest.TestCase):
             client = Path(directory) / "ClientLib"
             client.mkdir()
             lock = {name: {"version": version} for name, version in [
-                ("node_modules/react", "18.3.1"), ("node_modules/unused", "1"),
+                ("node_modules/react", "18.3.1"), ("node_modules/unused", "1"), ("node_modules/webpack", "5.111.1"),
                 ("node_modules/ui/node_modules/react", "17.0.2")]}
             (client / "package-lock.json").write_text(json.dumps({"packages": lock}))
             asset = "staticwebassets/editor.js"
             mapping = {"version": 3, "file": "editor.js", "sources": [
                 "webpack://editor/./node_modules/react/index.js",
-                "webpack://editor/./node_modules/ui/node_modules/react/index.js", "webpack://editor/src/index.ts"]}
+                "webpack://editor/./node_modules/ui/node_modules/react/index.js", "webpack://editor/src/index.ts",
+                "webpack://editor/webpack/runtime/hasOwnProperty shorthand"]}
             with zipfile.ZipFile(io.BytesIO(), "w") as z:
                 z.writestr(asset, "bundled")
                 z.writestr(asset + ".map", json.dumps(mapping))
                 record = shipped.browser_components(z, [{"package_path": asset}], client, [client])[asset]
-            self.assertEqual(record["components"], [("react", "17.0.2"), ("react", "18.3.1")])
+            self.assertEqual(record["components"], [("react", "17.0.2"), ("react", "18.3.1"), ("webpack", "5.111.1")])
 
     def test_clr_resources_must_match_named_locked_entrypoints_and_exact_bytes(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -50,3 +51,21 @@ class ShippedJavaScriptTests(unittest.TestCase):
                         result = shipped.embedded_libraries(client / "p.nupkg", row, client)
                         self.assertEqual(result[assembly]["resources"][0], {
                             "name":symbol, "sha256":digest, "components":[["lodash", "4.18.1"]]})
+
+
+    def test_vite_modules_must_match_the_same_emitted_and_embedded_asset(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            record = {"file": "dist/shared/react.js", "sha256": "a" * 64,
+                      "components": [["react", "19.3.0"]], "imports": ["chunks/shared.js"]}
+            (root / "react-vite-assets.jsonl").write_text(json.dumps(record))
+            row = {"id": "Elsa.ReactStudio.Host"}
+            name = "ReactStudio/shared/react.js"
+            for digest in (record["sha256"], "b" * 64):
+                with patch.object(shipped, "inspected_resources", return_value={"lib/Host.dll": {name: digest}}):
+                    if digest == record["sha256"]:
+                        resource = shipped.react_libraries(root / "Host.nupkg", row, root)["lib/Host.dll"]["resources"][0]
+                        self.assertEqual(resource["components"], [["react", "19.3.0"]])
+                    else:
+                        with self.assertRaisesRegex(ValueError, "CLR resource differs"):
+                            shipped.react_libraries(root / "Host.nupkg", row, root)

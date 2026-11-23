@@ -146,12 +146,22 @@ jobs:
           release=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$VERSION")
           jq -e --arg version "$VERSION" '.tag_name == $version and (.draft or .prerelease | not)' <<< "$release" >/dev/null
           missing=()
+          placeholders=()
           for name in nuget-sboms.zip nuget-release-index.json; do
-            if jq -e --arg name "$name" '.assets | any(.name == $name)' <<< "$release" >/dev/null; then
-              gh release download "$VERSION" --repo "$GITHUB_REPOSITORY" --pattern "$name" --output - | cmp - "$name"
-            else
+            asset=$(jq -c --arg name "$name" '.assets[] | select(.name == $name)' <<< "$release")
+            if [[ -z "$asset" ]]; then
               missing+=("$name")
+            elif jq -e '.state == "starter" and .size == 0' <<< "$asset" >/dev/null; then
+              placeholders+=("$(jq -er .id <<< "$asset")/$name")
+              missing+=("$name")
+            else
+              gh release download "$VERSION" --repo "$GITHUB_REPOSITORY" --pattern "$name" --output - | cmp - "$name"
             fi
+          done
+          for placeholder in "${placeholders[@]}"; do
+            endpoint="repos/$GITHUB_REPOSITORY/releases/assets/${placeholder%%/*}"
+            gh api "$endpoint" | jq -e --arg name "${placeholder#*/}" '.name == $name and .state == "starter" and .size == 0' >/dev/null
+            gh api --method DELETE "$endpoint"
           done
           if (( ${#missing[@]} )); then
             gh release upload "$VERSION" --repo "$GITHUB_REPOSITORY" "${missing[@]}"

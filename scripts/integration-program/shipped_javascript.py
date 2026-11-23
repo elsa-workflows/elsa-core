@@ -16,13 +16,49 @@ def sha(data):
     return hashlib.sha256(data).hexdigest()
 
 
+def inspected_resources(package_path):
+    inspector = Path(__file__).resolve().parents[1] / "release-evidence/InspectResources.cs"
+    return json.loads(subprocess.check_output(["dotnet", "run", "--file", str(inspector), "--", str(package_path)],
+                                              cwd=inspector.parent))
+
+
+def react_libraries(package_path, row, candidate):
+    if row["id"] == "Elsa.ReactStudio.Host":
+        resource_prefix, bundle = "ReactStudio/", "dist"
+    elif row["project"].startswith("studio/react/dotnet/modules/"):
+        resource_prefix = "ReactStudio.Module/"
+        bundle = (Path(row["project"]).relative_to("studio/react").parent / "wwwroot").as_posix()
+    else:
+        return {}
+    records = {}
+    for line in (candidate / "react-vite-assets.jsonl").read_text().splitlines():
+        item = json.loads(line)
+        if item["file"].startswith(bundle + "/"):
+            records[resource_prefix + item["file"][len(bundle) + 1:]] = item
+    require(records, f"No emitted Vite evidence for {row['id']}")
+    assemblies = inspected_resources(package_path)
+    result = {}
+    for path, resources in assemblies.items():
+        shipped = []
+        for name, digest in resources.items():
+            record = records.get(name)
+            if record is None and name == "ReactStudio.Module/module.css":
+                # The product writes this literal after Vite when the module has no styles.
+                require(digest == sha(b"/* No module-specific styles. */\n"), f"Unrecognised module CSS: {path}")
+                shipped.append(dict(name=name, sha256=digest, components=[]))
+                continue
+            require(record and digest == record["sha256"], f"CLR resource differs from emitted Vite asset: {path}/{name}")
+            shipped.append(dict(name=name, sha256=digest, components=record["components"], imports=record["imports"]))
+        require(set(records) <= set(resources), f"Packed assembly is missing emitted Vite assets: {path}")
+        result[path] = dict(method="Vite output modules matched to named CLR resource digests", resources=shipped)
+    return result
+
+
 def embedded_libraries(package_path, row, client):
     if row["id"] != "Elsa.Expressions.JavaScript.Libraries":
         return {}
     packages = json.loads((client / "package-lock.json").read_bytes())["packages"]
-    inspector = Path(__file__).resolve().parents[1] / "release-evidence/InspectResources.cs"
-    assemblies = json.loads(subprocess.check_output(["dotnet", "run", "--file", str(inspector), "--", str(package_path)],
-                                                   cwd=inspector.parent))
+    assemblies = inspected_resources(package_path)
     resources = []
     for path in sorted((client / "dist").glob("*.js")):
         entry = (client / "src" / path.name).read_text().strip()
@@ -53,6 +89,8 @@ def modules_from_paths(paths, locks, client):
     for source in paths:
         source = source.replace("\\", "/").split("?", 1)[0]
         if "node_modules/" not in source:
+            if source.startswith("webpack://") and ("/webpack/runtime/" in source or source.endswith("/webpack/bootstrap")):
+                modules.add(("webpack", locks[client]["node_modules/webpack"]["version"]))
             continue
         prefix, remainder = source.split("node_modules/", 1)
         # A dependency imported by the shared BPMN module resolves against its own installation.

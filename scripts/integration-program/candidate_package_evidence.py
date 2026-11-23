@@ -8,7 +8,7 @@ import subprocess
 import tempfile
 import zipfile
 
-from shipped_javascript import embedded_libraries, browser_components
+from shipped_javascript import embedded_libraries, browser_components, react_libraries
 from prove_consolidated_packages import archive_names, dependency_groups, framework_reference_groups, metadata, require, write_json
 
 
@@ -47,6 +47,7 @@ def generate(candidate, source, tooling_commit, run_id, attempt):
     browser_inputs = json.loads((candidate / "studio-clientlibs.json").read_bytes())["inputs"]
     browsers = {}
     rows, packages = [], []
+    shipped_components = {}
     for row in manifest["packages"]:
         package = candidate / "artifacts" / row["nupkg"]
         client = (source / row["project"]).parent / "ClientLib"
@@ -57,6 +58,7 @@ def generate(candidate, source, tooling_commit, run_id, attempt):
             declared = dependency_groups(nuspec)
             shared_frameworks = framework_reference_groups(nuspec)
             shipped = embedded_libraries(package, row, client)
+            shipped.update(react_libraries(package, row, candidate))
         require(declared == row["dependency_groups"], f"Packed dependency groups changed: {row['id']}")
         require(digest((candidate / "artifacts" / row["nupkg"]).read_bytes()) == row["nupkg_sha256"],
                 f"Pack content changed: {row['id']}")
@@ -68,7 +70,13 @@ def generate(candidate, source, tooling_commit, run_id, attempt):
             evidence["symbols"] = {"name": row["snupkg"], "sha256": symbols_hash}
         if row.get("browser_assets"):
             require((client / "package.json").is_file(), f"Missing browser package manifest: {client}")
-        if (client / "package.json").is_file() and any(name.startswith("staticwebassets/") for name in names):
+        if row["id"] == "Elsa.Studio.Bpmn":
+            # The framework ships this original ES module. Its ClientLib is consumed by the designer bundles.
+            file = "staticwebassets/bpmn-canvas-host.js"
+            require(payload.get(file) == digest((client.parent / "wwwroot/bpmn-canvas-host.js").read_bytes()),
+                    "Packed BPMN host differs from project JavaScript")
+            shipped[file] = dict(method="byte-identical project JavaScript", components=[])
+        elif (client / "package.json").is_file() and any(name.startswith("staticwebassets/") for name in names):
             require(row["browser_assets"], f"No verified bundle coverage for {row['id']}")
             clients = [client]
             if row["id"] in {"Elsa.Studio.Bpmn.BpmnJs", "Elsa.Studio.Bpmn.X6"}:
@@ -79,9 +87,12 @@ def generate(candidate, source, tooling_commit, run_id, attempt):
                 if directory not in browsers:
                     browsers[directory] = browser_bom(directory, source, browser_inputs, output)
                 evidence["browser_build_inputs"].append(browsers[directory])
+        if shipped:
+            shipped_components[row["id"]] = shipped
         packages.append(evidence)
         rows.append({**{key: row[key] for key in ("id", "frameworks", "restore_assets", "nupkg_sha256")},
                      "dependency_groups": declared, "shared_frameworks": shared_frameworks, "payload": payload, "shipped": shipped})
+    write_json(candidate / "shipped-javascript.json", shipped_components)
     with tempfile.TemporaryDirectory() as scratch:
         input_file = Path(scratch) / "input.json"
         write_json(input_file, {"version": manifest["version"], "packages": rows, "browser": list(browsers.values())})

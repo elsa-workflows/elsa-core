@@ -8,6 +8,8 @@ import hashlib
 import io
 import json
 import os
+import re
+import sys
 from pathlib import Path
 import subprocess
 import tempfile
@@ -119,11 +121,56 @@ def check_bom(content, row, version, framework, expected_assets=None):
                     "Missing shipped browser bundle evidence")
 
 
-def check_coverage(index, verified_rows, read):
+def check_restored_graph(bom, restore, framework, groups):
+    target = restore["targets"][framework]
+    resolved = {tuple(key.rsplit("/", 1)): record for key, record in target.items()}
+    downloads = set()
+    for item in restore["project"]["frameworks"][framework].get("downloadDependencies", []):
+        match = re.fullmatch(r"\[([^,\]]+)(?:,\s*([^\]]+))?\]", item["version"])
+        require(match and (not match[2] or match[1] == match[2]), "Ambiguous PackageDownload range")
+        downloads.add((item["name"], match[1]))
+    components = {(c["name"], c["version"]): c for c in bom.get("components", [])}
+    require(set(components) == set(resolved) | downloads, "SBOM does not cover exact producer restore")
+    by_id = {name.lower(): components[name, version]["bom-ref"] for name, version in resolved}
+    edges = {edge["ref"]: set(edge.get("dependsOn", [])) for edge in bom.get("dependencies", [])}
+    root = bom["metadata"]["component"]["bom-ref"]
+    declarations = next(group["dependencies"] for group in groups if group["framework"] == framework)
+    require(edges.get(root, set()) == {by_id[item["id"].lower()] for item in declarations}, "Missing declared dependency edges")
+    for key, record in resolved.items():
+        expected = {by_id[name.lower()] for name in record.get("dependencies", {})}
+        require(edges.get(components[key]["bom-ref"], set()) == expected, "Missing restored dependency edges")
+
+
+def check_packed_files(bom, packaged, resources, shipped):
+    files = {f["name"]: f for f in bom["metadata"]["component"].get("components", []) if f["type"] == "file"}
+    require(set(packaged) == set(files), "SBOM does not cover exact shipped files")
+    for name, digest in packaged.items():
+        require({"alg": "SHA-256", "content": digest} in files[name]["hashes"], "Wrong packed file hash")
+    for path, composition in shipped.items():
+        file = files[path]
+        require(any(p == {"name": "elsa:composition-evidence", "value": composition["method"]} for p in file.get("properties", [])),
+                "Missing bundle composition evidence")
+        def compare_modules(component, expected):
+            actual = {(c["name"], c["version"]) for c in component.get("components", []) if c["type"] == "library"}
+            require(actual == {tuple(item) for item in expected}, "Missing or extra shipped npm components")
+        compare_modules(file, composition.get("components", []))
+        nested = {r["name"]: r for r in file.get("components", []) if r["type"] == "file"}
+        require(set(nested) == {r["name"] for r in composition.get("resources", [])}, "Incorrect resource inventory")
+        for item in composition.get("resources", []):
+            compare_modules(nested[item["name"]], item.get("components", []))
+    for path, expected in resources.items():
+        actual = {entry["name"]: entry for entry in files[path].get("components", [])}
+        require(set(actual) == set(expected), "Missing or extra embedded browser resources")
+        for name, digest in expected.items():
+            require({"alg": "SHA-256", "content": digest} in actual[name]["hashes"], "Wrong embedded browser resource hash")
+
+
+def check_coverage(index, verified_rows, read, read_input, package_directory):
     verified = {r["id"]: r for r in verified_rows}
     rows = index["packages"]
     require(len(rows) == len(verified) and {r["id"] for r in rows} == set(verified), "Candidate SBOM inventory is incomplete")
     documents = {}
+    shipped = json.loads(read_input("shipped-javascript.json")) if read_input else {}
     for row in rows:
         original = verified[row["id"]]
         require(candidates.PACKAGE_ID.fullmatch(row["id"]) and row["nupkg"] == f"{row['id']}.{index['version']}.nupkg"
@@ -137,10 +184,27 @@ def check_coverage(index, verified_rows, read):
             if row["id"] in {"Elsa.Studio.Bpmn.BpmnJs", "Elsa.Studio.Bpmn.X6"}:
                 expected.add("browser/Elsa.Studio.Bpmn.cdx.json")
             require({r["path"] for r in row["browser_build_inputs"]} == expected, "Missing browser build inventory")
+        package = package_directory / row["nupkg"]
+        packaged = payload(package.read_bytes())
+        resources = {}
+        if row["id"] in {"Elsa.Expressions.JavaScript.Libraries", "Elsa.ReactStudio.Host"} or original["project"].startswith("studio/react/dotnet/modules/"):
+            # Read the actual CLR manifest a second time from the sealed archive.
+            tools = str(Path(__file__).resolve().parent / "integration-program")
+            if tools not in sys.path:
+                sys.path.insert(0, tools)
+            from shipped_javascript import inspected_resources
+            resources = inspected_resources(package)
+        snapshots = {item["framework"]: item for item in original["restore_assets"]}
         for framework, record in row["frameworks"].items():
             require(record["path"] == f"boms/{row['id']}/{framework}.cdx.json", "Swapped framework SBOM")
             content = read(record["path"])
             check_bom(content, row, index["version"], framework, assets)
+            bom = json.loads(content)
+            check_packed_files(bom, packaged, resources, shipped.get(row["id"], {}))
+            snapshot = snapshots[framework]
+            restore = read_input(snapshot["retained_path"])
+            require(sha(restore) == snapshot["sha256"], "Wrong restore snapshot")
+            check_restored_graph(bom, json.loads(restore), framework, original["dependency_groups"])
             require(sha(content) == record["sha256"], "Changed framework SBOM")
             documents[record["path"]] = content
         for record in row["browser_build_inputs"]:
@@ -159,7 +223,8 @@ def check_produced(directory):
     manifest = json.loads((directory / "verified-artifacts.json").read_bytes())
     require((index["version"], index["source_commit"]) == (manifest["version"], manifest["source_commit"]),
             "Wrong produced index identity")
-    check_coverage(index, manifest["packages"], lambda path: (evidence / path).read_bytes())
+    check_coverage(index, manifest["packages"], lambda path: (evidence / path).read_bytes(),
+                   lambda path: (directory / path).read_bytes(), directory / "artifacts")
 
 
 def extract_index(pin, transport, stage, bundle):
@@ -176,7 +241,7 @@ def extract_index(pin, transport, stage, bundle):
                 "Wrong producer identity in SBOM index")
         verified = json.loads(archive.read("verified-artifacts.json"))["packages"]
         require(len(verified) == pin.feedz_count, "Candidate SBOM count differs from pin")
-        documents = check_coverage(index, verified, lambda path: archive.read(prefix + path))
+        documents = check_coverage(index, verified, lambda path: archive.read(prefix + path), archive.read, stage)
         documents[CANDIDATE] = archive.read(prefix + "candidate-index.json")
         # Stable ZIP headers make evidence-only retries byte-identical.
         with zipfile.ZipFile(bundle, "x") as zipped:
