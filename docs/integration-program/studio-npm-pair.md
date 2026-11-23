@@ -168,6 +168,17 @@ The React SBOM also names the exact WASM version and integrity selected at build
 time. Consumers should generate a separate deployment SBOM from their own resolved
 application, including installed peers, runtime, base image and configuration.
 
+Third-party files sometimes contain libraries whose package manifests were stripped
+upstream. The [reviewed vendor notices](../../scripts/integration-program/studio-vendor-notices.cdx.json)
+record identifiable components from those shipped bytes using CycloneDX. Their
+hashes and paths select the exact embedded file in each tarball. For an updated
+vendor, inspect its license banners, upstream notices and bundler metadata. A
+Retire.js catalog scan can corroborate identities such as DOMPurify. Add a
+version only when the packed code or its matching upstream build establishes it.
+Use CycloneDX pedigree for modified or partial copies. A different file digest
+still gets a file inventory entry and any available enclosing NuGet attribution.
+Review the embedded-component evidence before reusing it for that update.
+
 Historical npmjs 3.9.0 packages carry npm provenance from
 `elsa-workflows/elsa-studio/.github/workflows/packages.yml`. Use
 `npm audit signatures` in an isolated project installed from the exact original

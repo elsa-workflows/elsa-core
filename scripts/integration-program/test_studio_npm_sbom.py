@@ -135,14 +135,20 @@ class PackedLibraryEvidenceTests(unittest.TestCase):
         self.assertNotIn('0' * 64, assets)
         self.assertEqual(assets[pair.sha256(static_file.read_bytes())], assets['1' * 64])
 
-    def test_auth_bundle_identifies_oidc_and_patched_cryptography_fragment(self):
-        key = 'package/_content/Microsoft.AspNetCore.Components.WebAssembly.Authentication/AuthenticationService.js'
-        raw = b'OidcClientSettings WebStorageStateStore UserManager e.Version="1.11.5" /*! CryptoJS v3.1.2 core-fix.js'
-        libraries = sbom.bundled_js(self.build, self.build, {key: raw}, pair.WASM)
-        self.assertEqual([{'location': key.removeprefix('package/')}], libraries['pkg:npm/oidc-client@1.11.5']['evidence']['occurrences'])
-        fragment = libraries['vendored:crypto-js:core-fix.js@3.1.2']
-        self.assertNotIn('purl', fragment)
-        self.assertEqual('pkg:npm/crypto-js@3.1.2', fragment['pedigree']['ancestors'][0]['purl'])
+    def test_vendor_notice_evidence_requires_the_reviewed_path_and_bytes(self):
+        catalog = sbom.read(Path(sbom.__file__).with_name('studio-vendor-notices.cdx.json'))
+        review = catalog['components'][0]
+        review['hashes'] = [{'alg': 'SHA-256', 'content': pair.sha256(b'reviewed')}]
+        for package, prefix in ((pair.WASM, ''), (pair.REACT, 'dist/')):
+            path = prefix + review['name']
+            found = sbom.vendor_components(catalog, {'package/' + path: b'reviewed'}, package)
+            self.assertEqual('pkg:npm/oidc-client@1.11.5', found['vendored:auth/oidc-client']['purl'])
+            fragment = found['vendored:auth/cryptojs-core-fix']
+            self.assertEqual('pkg:npm/crypto-js@3.1.2', fragment['pedigree']['ancestors'][0]['purl'])
+            self.assertEqual([{'location': path}], fragment['evidence']['occurrences'])
+            self.assertNotIn('version', found['vendored:auth/jsbn'])
+            self.assertEqual({}, sbom.vendor_components(catalog, {'package/' + path: b'new vendor build'}, package))
+            self.assertEqual({}, sbom.vendor_components(catalog, {'package/elsewhere.js': b'reviewed'}, package))
 
     def test_partial_dependency_graph_preserves_unknown_relationships(self):
         bom = sbom.read(Path(str(self.paths[0]) + '.cdx.json'))

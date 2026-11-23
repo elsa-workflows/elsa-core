@@ -27,7 +27,7 @@ runs:
           https://github.com/CycloneDX/cyclonedx-cli/releases/download/v0.33.1/cyclonedx-linux-x64 -o "$cli"
         echo "bfc8b2538da86fe239bc53658bbb63c1c8c510a293c1e6891aa5bea5d3c58746  $cli" | sha256sum -c -
         chmod +x "$cli"
-        for file in "$dir"/sboms/*.cdx.json; do
+        for file in scripts/integration-program/studio-vendor-notices.cdx.json "$dir"/sboms/*.cdx.json; do
           "$cli" validate --input-file "$file" --input-version v1_6 --fail-on-errors
         done
 

@@ -107,6 +107,20 @@ def npm_modules(inputs, base, source):
     return found
 
 
+def vendor_components(catalog, members, name):
+    """Import known nested components only for the exact third-party files whose notices were reviewed."""
+    prefix = 'dist/' if name == pair.REACT else ''
+    result = {}
+    for vendor in catalog['components']:
+        path = prefix + vendor['name']
+        raw = members.get('package/' + path)
+        if raw is None or vendor['hashes'] != [{'alg': 'SHA-256', 'content': pair.sha256(raw)}]:
+            continue
+        for library in vendor['components']:
+            result[library['bom-ref']] = library | {'evidence': {'occurrences': [{'location': path}]}}
+    return result
+
+
 def bundled_js(source, trace, members, name):
     projects = {p.parent.name: p for p in (source / 'studio/src').glob('*/*/ClientLib')}
     result = {}
@@ -139,24 +153,8 @@ def bundled_js(source, trace, members, name):
         editor['evidence'] = {'occurrences': [{'location': key.removeprefix('package/')} for key in sorted(members)
                                                if '/_content/BlazorMonaco/lib/monaco-editor/' in key]}
         result[editor['purl']] = editor
-    for key, raw in members.items():
-        if not key.endswith('/_content/Microsoft.AspNetCore.Components.WebAssembly.Authentication/AuthenticationService.js'):
-            continue
-        locations = {'occurrences': [{'location': key.removeprefix('package/')}]}
-        if all(export in raw for export in (b'OidcClientSettings', b'WebStorageStateStore', b'UserManager')):
-            versions = set(re.findall(rb'\.Version="(\d+\.\d+\.\d+)"', raw))
-            if len(versions) == 1:
-                oidc = component('npm', 'oidc-client', versions.pop().decode())
-                result[oidc['purl']] = oidc | {'evidence': locations}
-        # This is a vendored patched source fragment, distinguish it from an installed npm distribution.
-        banner = re.search(rb'CryptoJS v(\d+\.\d+\.\d+) core-fix\.js', raw)
-        if banner:
-            version = banner.group(1).decode()
-            ref = 'vendored:crypto-js:core-fix.js@' + version
-            ancestor = component('npm', 'crypto-js', version)
-            ancestor.pop('bom-ref')
-            result[ref] = {'type': 'library', 'name': 'CryptoJS core-fix.js', 'version': version, 'bom-ref': ref,
-                           'pedigree': {'ancestors': [ancestor]}, 'evidence': locations}
+    catalog = read(Path(__file__).with_name('studio-vendor-notices.cdx.json'))
+    result.update(vendor_components(catalog, members, name))
     if name == pair.REACT:
         package = json.loads(members['package/package.json'])
         for entry in pair.entrypoints(package):

@@ -1,0 +1,149 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "version": 1,
+  "components": [
+    {
+      "type": "file",
+      "name": "_content/Microsoft.AspNetCore.Components.WebAssembly.Authentication/AuthenticationService.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "9095caa910a5793fc9935c0952152edb8af62c003b21655899da04362cc4dfc3"
+        }
+      ],
+      "components": [
+        {
+          "type": "library",
+          "name": "oidc-client",
+          "bom-ref": "vendored:auth/oidc-client",
+          "version": "1.11.5",
+          "purl": "pkg:npm/oidc-client@1.11.5"
+        },
+        {
+          "type": "library",
+          "name": "CryptoJS core-fix.js",
+          "bom-ref": "vendored:auth/cryptojs-core-fix",
+          "version": "3.1.2",
+          "pedigree": {
+            "ancestors": [
+              {
+                "type": "library",
+                "name": "crypto-js",
+                "version": "3.1.2",
+                "purl": "pkg:npm/crypto-js@3.1.2"
+              }
+            ]
+          }
+        },
+        {
+          "type": "library",
+          "name": "YUI lang fragment",
+          "bom-ref": "vendored:auth/yui-lang",
+          "version": "2.9.0",
+          "pedigree": {
+            "ancestors": [
+              {
+                "type": "library",
+                "name": "YUI",
+                "version": "2.9.0"
+              }
+            ]
+          }
+        },
+        {
+          "type": "library",
+          "name": "JSBN",
+          "bom-ref": "vendored:auth/jsbn"
+        },
+        {
+          "type": "library",
+          "name": "buffer",
+          "bom-ref": "vendored:auth/buffer",
+          "purl": "pkg:npm/buffer"
+        },
+        {
+          "type": "library",
+          "name": "ieee754",
+          "bom-ref": "vendored:auth/ieee754",
+          "purl": "pkg:npm/ieee754"
+        },
+        {
+          "type": "library",
+          "name": "jsrsasign excerpts",
+          "bom-ref": "vendored:auth/jsrsasign",
+          "externalReferences": [
+            {
+              "type": "vcs",
+              "url": "https://github.com/IdentityModel/oidc-client-js/blob/1.11.5/jsrsasign/dist/jsrsasign.js"
+            }
+          ]
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/IdentityModel/oidc-client-js/tree/1.11.5/jsrsasign"
+        }
+      ]
+    },
+    {
+      "type": "file",
+      "name": "_content/BlazorMonaco/lib/monaco-editor/min/vs/editor.api-i0YVFWkl.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "f90a38add8b908f0054e8774cef15c64c2a68b4543498bd92f03d9dd93531f0f"
+        }
+      ],
+      "components": [
+        {
+          "type": "library",
+          "name": "DOMPurify",
+          "bom-ref": "vendored:monaco/dompurify",
+          "version": "3.1.7",
+          "purl": "pkg:npm/dompurify@3.1.7"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "other",
+          "url": "https://github.com/RetireJS/retire.js/blob/8d814f3c023a909b26be6a35a45b54163c2d95fe/repository/jsrepository-v4.json"
+        }
+      ]
+    },
+    {
+      "type": "file",
+      "name": "_content/BlazorMonaco/lib/monaco-editor/min/vs/assets/ts.worker-C4E4vgbE.js",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "a9787920581dfa2e2a8f723383689d21c11b5cbcd246f04e4305f4da36e63790"
+        }
+      ],
+      "components": [
+        {
+          "type": "library",
+          "name": "Monaco TypeScript worker",
+          "bom-ref": "vendored:monaco/typescript",
+          "pedigree": {
+            "ancestors": [
+              {
+                "type": "library",
+                "name": "typescript",
+                "version": "5.4.5",
+                "purl": "pkg:npm/typescript@5.4.5"
+              }
+            ]
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/microsoft/monaco-editor/blob/v0.54.0/build/importTypescript.ts"
+        }
+      ]
+    }
+  ]
+}
