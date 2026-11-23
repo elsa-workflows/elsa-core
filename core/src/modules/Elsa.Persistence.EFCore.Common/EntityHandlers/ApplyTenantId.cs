@@ -30,15 +30,18 @@ public class ApplyTenantId(IOptions<TenantsOptions> tenantsOptions) : IEntitySav
         var tenantId = dbContext.TenantId.NormalizeTenantId();
         var canWriteShared = SharedTenantWriteScope.IsGranted(entry.Metadata.ClrType);
 
-        if (entity.TenantId == Tenant.AgnosticTenantId && !canWriteShared)
-            throw new InvalidOperationException("Writing a shared record requires trusted host authority.");
+        // Stamp a missing tenant first, so a record stamped with the shared tenant is checked like any other shared record.
+        if (string.IsNullOrEmpty(entity.TenantId))
+            entity.TenantId = tenantId;
 
-        if (entity.TenantId != Tenant.AgnosticTenantId)
+        if (entity.TenantId == Tenant.AgnosticTenantId)
         {
-            if (string.IsNullOrEmpty(entity.TenantId))
-                entity.TenantId = tenantId;
-            else if (dbContext.HasTenantContext && entity.TenantId != tenantId)
-                throw new InvalidOperationException("The record belongs to a different tenant.");
+            if (!canWriteShared)
+                throw new InvalidOperationException("Writing a shared record requires trusted host authority.");
+        }
+        else if (dbContext.HasTenantContext && entity.TenantId != tenantId)
+        {
+            throw new InvalidOperationException("The record belongs to a different tenant.");
         }
 
         if (entry.State != EntityState.Modified)

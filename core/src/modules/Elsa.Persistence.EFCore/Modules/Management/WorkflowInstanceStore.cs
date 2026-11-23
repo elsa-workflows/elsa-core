@@ -3,6 +3,7 @@ using Elsa.Common;
 using Elsa.Common.Codecs;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
+using Elsa.Common.Multitenancy;
 using Elsa.Extensions;
 using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Workflows;
@@ -159,40 +160,12 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
 
     public async Task UpdateUpdatedTimestampAsync(string workflowInstanceId, DateTimeOffset value, CancellationToken cancellationToken = default)
     {
-        var entity = new WorkflowInstance
-        {
-            Id = workflowInstanceId,
-            UpdatedAt = value
-        };
-
         await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
-        dbContext.Attach(entity);
-        dbContext.Entry(entity).Property(x => x.UpdatedAt).IsModified = true;
-
-        try
-        {
-            await dbContext.SaveChangesAsync(cancellationToken);
-        }
-        catch (DbUpdateConcurrencyException e)
-        {
-            foreach (var entry in e.Entries)
-            {
-                var proposedValues = entry.CurrentValues;
-                var databaseValues = await entry.GetDatabaseValuesAsync(cancellationToken);
-                
-                if(databaseValues == null)
-                    continue;
-                
-                var updatedAtProperty = entry.Metadata.GetProperty(nameof(WorkflowInstance.UpdatedAt));
-                var proposedValue = (DateTimeOffset)proposedValues[updatedAtProperty]!;
-                var databaseValue = (DateTimeOffset)databaseValues[updatedAtProperty]!;
-
-                if (proposedValue > databaseValue)
-                    proposedValues[updatedAtProperty] = proposedValue;
-
-                entry.OriginalValues.SetValues(databaseValues);
-            }
-        }
+        // Updates only UpdatedAt, so the row keeps its tenant. WhereTenantCanWrite limits the update to rows the ambient
+        // tenant may write: its own rows, and "*" rows only with shared-write authority. Another row is left as it is.
+        await dbContext.WorkflowInstances.WhereTenantCanWrite(dbContext)
+            .Where(x => x.Id == workflowInstanceId)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(x => x.UpdatedAt, value), cancellationToken);
     }
 
     /// <inheritdoc />
