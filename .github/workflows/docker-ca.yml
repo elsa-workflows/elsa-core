@@ -62,6 +62,64 @@ jobs:
       - name: Build ${{ matrix.name }} image
         run: docker build -f ${{ matrix.dockerfile }} -t ${{ matrix.image }} .
 
+      - name: Require the combined image command to be the Server+Studio host
+        if: matrix.name == 'elsa-server-and-studio'
+        run: |
+          set -euo pipefail
+          cmd="$(docker inspect -f '{{json .Config.Cmd}}' "${{ matrix.image }}")"
+          echo "$cmd"
+          test "$cmd" = '["dotnet","Elsa.ServerAndStudio.Web.dll"]'
+
+      - name: Require the combined image to serve Studio assets and the Server API
+        if: matrix.name == 'elsa-server-and-studio'
+        run: |
+          set -euo pipefail
+          cid="$(docker run -d --rm \
+            -e ASPNETCORE_ENVIRONMENT=Development \
+            -e HTTP_PORTS=8080 \
+            -e HTTP__BASEURL=http://127.0.0.1:8080 \
+            -e Backend__Url=http://127.0.0.1:8080/elsa/api \
+            -p 18080:8080 \
+            "${{ matrix.image }}")"
+          trap 'status=$?; if [ "$status" -ne 0 ]; then docker logs "$cid" || true; fi; docker rm -f "$cid" >/dev/null 2>&1 || true' EXIT
+          ok=0
+          for _ in $(seq 1 60); do
+            if curl -fsS "http://127.0.0.1:18080/health/live" >/dev/null; then
+              ok=1
+              break
+            fi
+            sleep 2
+          done
+          test "$ok" = 1
+          curl -fsS "http://127.0.0.1:18080/_content/Elsa.Studio.Workflows.Designer/designer.css" -o /tmp/combined-designer.css
+          test -s /tmp/combined-designer.css
+          curl -fsS "http://127.0.0.1:18080/login" -o /tmp/combined-login.html
+          grep -F -q '_content/Elsa.Studio.Workflows.Designer/designer.css' /tmp/combined-login.html
+          grep -F -q '_framework/blazor.server.js' /tmp/combined-login.html
+          curl -fsS "http://127.0.0.1:18080/workflows/definitions" -o /tmp/combined-workflows.html
+          grep -F -q '_content/Elsa.Studio.Workflows.Designer/designer.css' /tmp/combined-workflows.html
+          if curl -fsS "http://127.0.0.1:18080/" -o /tmp/combined-root.html; then
+            if grep -qx 'Healthy' /tmp/combined-root.html; then
+              echo 'GET / must not be the health-check body.' >&2
+              exit 1
+            fi
+            grep -F -q '_content/Elsa.Studio.Workflows.Designer/designer.css' /tmp/combined-root.html
+          fi
+          login_ok=0
+          for _ in $(seq 1 30); do
+            if curl -fsS -X POST "http://127.0.0.1:18080/elsa/api/identity/login" \
+              -H 'Content-Type: application/json' \
+              -d '{"username":"admin","password":"password"}' \
+              -o /tmp/combined-login.json; then
+              if python3 -c 'import json,sys; data=json.load(open("/tmp/combined-login.json")); assert data.get("isAuthenticated") is True and data.get("accessToken")'; then
+                login_ok=1
+                break
+              fi
+            fi
+            sleep 2
+          done
+          test "$login_ok" = 1
+
       - name: Run TLS smoke tests
         env:
           SKIP_OTEL: ${{ matrix.skip_otel }}

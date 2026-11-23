@@ -11,6 +11,9 @@ namespace Elsa.Common.Serialization;
 /// </summary>
 public static class SerializationTypeResolver
 {
+    private const int MaxAliasLength = 4096;
+    private const int MaxAliasComponents = 64;
+
     private static readonly IDictionary<string, Type> GenericCollectionTypes = new Dictionary<string, Type>(StringComparer.Ordinal)
     {
         ["IEnumerable"] = typeof(IEnumerable<>),
@@ -56,10 +59,17 @@ public static class SerializationTypeResolver
     /// </summary>
     public static Type ResolveType(ISerializationTypeRegistry serializationTypeRegistry, string? typeAlias)
     {
+        if (typeAlias == null || typeAlias.Length == 0)
+            throw new JsonException("The serialization type alias is missing.");
+
+        if (!IsWithinAliasBudget(typeAlias))
+            throw new JsonException("The serialization type alias exceeds the maximum length or type composition limit.");
+
         if (string.IsNullOrWhiteSpace(typeAlias))
             throw new JsonException("The serialization type alias is missing.");
 
-        if (TryResolveType(serializationTypeRegistry, typeAlias, out var type))
+        IReadOnlyList<Type>? registeredTypes = null;
+        if (TryResolveType(serializationTypeRegistry, typeAlias, ref registeredTypes, out var type))
             return type;
 
         throw new JsonException(
@@ -71,8 +81,26 @@ public static class SerializationTypeResolver
     /// </summary>
     public static bool TryResolveType(ISerializationTypeRegistry serializationTypeRegistry, string typeAlias, out Type type)
     {
+        type = null!;
         IReadOnlyList<Type>? registeredTypes = null;
-        return TryResolveType(serializationTypeRegistry, typeAlias, ref registeredTypes, out type);
+        return IsWithinAliasBudget(typeAlias) && TryResolveType(serializationTypeRegistry, typeAlias, ref registeredTypes, out type);
+    }
+
+    private static bool IsWithinAliasBudget(string typeAlias)
+    {
+        if (typeAlias.Length > MaxAliasLength)
+            return false;
+
+        // Count both the alias syntax and the modifiers used by legacy CLR names before
+        // either our recursive resolver or the CLR type-name parser sees the input.
+        var components = 0;
+        foreach (var character in typeAlias)
+        {
+            if (character is '<' or '[' or '*' or '&' && ++components > MaxAliasComponents)
+                return false;
+        }
+
+        return true;
     }
 
     private static bool TryResolveType(ISerializationTypeRegistry serializationTypeRegistry, string typeAlias, ref IReadOnlyList<Type>? registeredTypes, out Type type)
@@ -110,14 +138,29 @@ public static class SerializationTypeResolver
     /// </summary>
     public static bool TryGetAlias(ISerializationTypeRegistry serializationTypeRegistry, Type type, out string alias)
     {
+        if (TryBuildAlias(serializationTypeRegistry, type, MaxAliasComponents, out alias) && IsWithinAliasBudget(alias))
+            return true;
+
+        alias = null!;
+        return false;
+    }
+
+    private static bool TryBuildAlias(ISerializationTypeRegistry serializationTypeRegistry, Type type, int remainingComponents, out string alias)
+    {
         if (serializationTypeRegistry.TryGetAlias(type, out alias!))
             return true;
+
+        if (remainingComponents == 0)
+        {
+            alias = null!;
+            return false;
+        }
 
         if (type.IsArray)
         {
             var elementType = type.GetElementType()!;
 
-            if (TryGetAlias(serializationTypeRegistry, elementType, out var elementTypeAlias))
+            if (TryBuildAlias(serializationTypeRegistry, elementType, remainingComponents - 1, out var elementTypeAlias))
             {
                 alias = $"{elementTypeAlias}[]";
                 return true;
@@ -129,7 +172,7 @@ public static class SerializationTypeResolver
             var genericTypeDefinition = type.GetGenericTypeDefinition();
 
             if (TryGetWritableGenericCollectionAlias(genericTypeDefinition, out var genericTypeAlias) &&
-                TryGetAlias(serializationTypeRegistry, type.GenericTypeArguments[0], out var elementTypeAlias))
+                TryBuildAlias(serializationTypeRegistry, type.GenericTypeArguments[0], remainingComponents - 1, out var elementTypeAlias))
             {
                 alias = $"{genericTypeAlias}<{elementTypeAlias}>";
                 return true;

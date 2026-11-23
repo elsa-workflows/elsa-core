@@ -4,9 +4,11 @@ using Elsa.Common.Codecs;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Extensions;
+using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Exceptions;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Options;
@@ -204,7 +206,7 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
         // SetTenantIdFilter's global query filter applies to ExecuteUpdateAsync unless
         // IgnoreQueryFilters is used. This store does not ignore it, so a tenant-B
         // caller cannot mark a tenant-A row.
-        var updated = await dbContext.WorkflowInstances
+        var updated = await dbContext.WorkflowInstances.WhereTenantCanWrite(dbContext)
             .Where(x => x.Id == workflowInstanceId && x.Status != WorkflowStatus.Finished)
             .ExecuteUpdateAsync(
                 setters => setters
@@ -226,7 +228,14 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
     /// <inheritdoc />
     public async ValueTask AddAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
     {
-        await _store.AddAsync(instance, OnSaveAsync, cancellationToken);
+        try
+        {
+            await _store.AddAsync(instance, OnSaveAsync, cancellationToken);
+        }
+        catch (DbUpdateException ex) when (DbExceptionClassifier.IsDuplicateKey(ex))
+        {
+            throw new WorkflowInstanceAlreadyExistsException(instance.Id, ex);
+        }
     }
 
     /// <inheritdoc />

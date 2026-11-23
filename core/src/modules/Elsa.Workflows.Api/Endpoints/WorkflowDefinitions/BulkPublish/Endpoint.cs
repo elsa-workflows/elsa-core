@@ -6,7 +6,9 @@ using Elsa.Workflows.Api.Requirements;
 using Elsa.Workflows.Api.Security;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Exceptions;
 using Elsa.Workflows.Management.Filters;
+using Elsa.Workflows.Management.Models;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Authorization;
 
@@ -29,6 +31,8 @@ internal class BulkPublish(
 
     public override async Task<Response> ExecuteAsync(Request request, CancellationToken cancellationToken)
     {
+        await using var mutationLock = await WorkflowDefinitionMutationLock.AcquireAsync(HttpContext.RequestServices, cancellationToken);
+
         var authorizationResult = await authorizationService.AuthorizeAsync(User, new NotReadOnlyResource(), AuthorizationPolicies.NotReadOnlyPolicy);
 
         if (!authorizationResult.Succeeded)
@@ -44,19 +48,25 @@ internal class BulkPublish(
         var updatedConsumers = new List<string>();
         var failed = new List<string>();
         var warnings = new Dictionary<string, ICollection<string>>();
-        var publishableDefinitions = new List<(string DefinitionId, WorkflowDefinition Definition)>();
+        var publishableDefinitions = new List<WorkflowDefinition>();
 
-        var definitions = (await store.FindManyAsync(new WorkflowDefinitionFilter
+        var targets = (await store.FindManyAsync(new WorkflowDefinitionFilter
         {
             DefinitionIds = request.DefinitionIds,
-            VersionOptions = VersionOptions.Latest
-        }, cancellationToken: cancellationToken))
-            .DistinctBy(x => x.DefinitionId)
-            .ToDictionary(x => x.DefinitionId);
+            VersionOptions = VersionOptions.LatestOrPublished
+        }, cancellationToken: cancellationToken)).Select(version => version.ShallowClone()).ToArray();
+        if (!await authorizationService.CanMutateAsync(User, targets))
+        {
+            await Send.ForbiddenAsync(cancellationToken);
+            return null!;
+        }
+
+        var targetsByDefinitionId = targets.ToLookup(version => version.DefinitionId, StringComparer.Ordinal);
 
         foreach (var definitionId in request.DefinitionIds)
         {
-            if (!definitions.TryGetValue(definitionId, out var definition))
+            var definition = targetsByDefinitionId[definitionId].FirstOrDefault(version => version.IsLatest);
+            if (definition == null)
             {
                 notFound.Add(definitionId);
                 continue;
@@ -68,16 +78,10 @@ internal class BulkPublish(
                 continue;
             }
 
-            if (definition.IsReadonly)
-            {
-                skipped.Add(definitionId);
-                continue;
-            }
-
-            publishableDefinitions.Add((definitionId, definition));
+            publishableDefinitions.Add(definition.ShallowClone());
         }
 
-        foreach (var (_, definition) in publishableDefinitions)
+        foreach (var definition in publishableDefinitions)
         {
             var workflowGraph = await workflowDefinitionService.MaterializeWorkflowAsync(definition, cancellationToken);
             var scriptAuthorizationResult = await scriptAuthorizationService.AuthorizeAsync(workflowGraph.Workflow, cancellationToken);
@@ -88,9 +92,19 @@ internal class BulkPublish(
             }
         }
 
-        foreach (var (definitionId, definition) in publishableDefinitions)
+        foreach (var definition in publishableDefinitions)
         {
-            var result = await workflowDefinitionPublisher.PublishAsync(definition, cancellationToken);
+            var definitionId = definition.DefinitionId;
+            PublishWorkflowDefinitionResult result;
+            try
+            {
+                result = await workflowDefinitionPublisher.PublishAsync(definition, targetsByDefinitionId[definitionId].ToArray(), cancellationToken);
+            }
+            catch (WorkflowDefinitionEditConflictException)
+            {
+                skipped.Add(definitionId);
+                continue;
+            }
 
             if (!result.Succeeded)
             {

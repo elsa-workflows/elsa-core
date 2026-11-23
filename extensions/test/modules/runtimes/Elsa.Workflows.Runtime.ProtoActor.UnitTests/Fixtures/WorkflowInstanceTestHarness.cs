@@ -1,5 +1,6 @@
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management;
+using Elsa.Workflows.Management.Options;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime.ProtoActor.Mappers;
@@ -11,6 +12,8 @@ using Proto;
 using Proto.Cluster;
 using Empty = Google.Protobuf.WellKnownTypes.Empty;
 using ProtoActorMappers = Elsa.Workflows.Runtime.ProtoActor.Mappers.Mappers;
+using ProtoCreateAndRunWorkflowInstanceRequest = Elsa.Workflows.Runtime.ProtoActor.ProtoBuf.CreateAndRunWorkflowInstanceRequest;
+using ProtoCreateWorkflowInstanceRequest = Elsa.Workflows.Runtime.ProtoActor.ProtoBuf.CreateWorkflowInstanceRequest;
 using ProtoImportWorkflowStateRequest = Elsa.Workflows.Runtime.ProtoActor.ProtoBuf.ImportWorkflowStateRequest;
 using ProtoRunWorkflowInstanceRequest = Elsa.Workflows.Runtime.ProtoActor.ProtoBuf.RunWorkflowInstanceRequest;
 using ProtoWorkflowInstanceActor = Elsa.Workflows.Runtime.ProtoActor.ProtoBuf.WorkflowInstanceActor;
@@ -23,18 +26,24 @@ internal sealed class WorkflowInstanceTestHarness : IAsyncDisposable
 {
     public const string DefinitionId = "definition";
     public const string DefinitionVersionId = "definition-version";
-    private const string InstanceId = "instance";
+    private const string DefaultInstanceId = "instance";
+    private const int CreateMethodIndex = 0;
     private const int RunMethodIndex = 1;
+    private const int CreateAndRunMethodIndex = 2;
     private const int CancelMethodIndex = 4;
     private const int ImportStateMethodIndex = 7;
+    private const int InstanceExistsMethodIndex = 8;
+    private const int RunIfPendingMethodIndex = 9;
 
     private readonly ActorSystem _actorSystem = new();
     private readonly ServiceProvider _serviceProvider;
     private readonly PID _workflowInstanceActor;
     private readonly Mock<IWorkflowStateSerializer> _workflowStateSerializer = new();
+    private readonly string _instanceId;
 
-    public WorkflowInstanceTestHarness(IServiceScopeFactory? executionScopeFactory = null)
+    public WorkflowInstanceTestHarness(IServiceScopeFactory? executionScopeFactory = null, string instanceId = DefaultInstanceId)
     {
+        _instanceId = instanceId;
         WorkflowGraph = CreateWorkflowGraph(DefinitionVersionId, 1);
         WorkflowDefinitionService
             .Setup(x => x.FindWorkflowGraphAsync(It.IsAny<WorkflowDefinitionHandle>(), It.IsAny<CancellationToken>()))
@@ -46,9 +55,13 @@ internal sealed class WorkflowInstanceTestHarness : IAsyncDisposable
             .Setup(x => x.RunAsync(It.IsAny<WorkflowGraph>(), It.IsAny<WorkflowState>(), It.IsAny<RunWorkflowOptions?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((WorkflowGraph graph, WorkflowState state, RunWorkflowOptions? _, CancellationToken _) =>
                 new RunWorkflowResult(null!, state, graph.Workflow, null, Journal.Empty));
+        WorkflowCanceler
+            .Setup(x => x.CancelWorkflowAsync(It.IsAny<WorkflowGraph>(), It.IsAny<WorkflowState>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((WorkflowGraph _, WorkflowState state, CancellationToken _) => state);
 
         var services = new ServiceCollection();
         services.AddSingleton(WorkflowRunner.Object);
+        services.AddSingleton(WorkflowCanceler.Object);
         services.AddSingleton(WorkflowInstanceManager.Object);
         services.AddSingleton(WorkflowDefinitionService.Object);
         _serviceProvider = services.BuildServiceProvider();
@@ -61,17 +74,18 @@ internal sealed class WorkflowInstanceTestHarness : IAsyncDisposable
             (context, _) => new WorkflowInstanceActorImplementation(context, scopeFactory, mappers)));
         _workflowInstanceActor = _actorSystem.Root.Spawn(
             props,
-            context => context.Set(ClusterIdentity.Create(InstanceId, ProtoWorkflowInstanceActor.Kind)));
+            context => context.Set(ClusterIdentity.Create("WorkflowInstanceActor-" + instanceId, ProtoWorkflowInstanceActor.Kind)));
     }
 
     public Mock<IWorkflowRunner> WorkflowRunner { get; } = new();
+    public Mock<IWorkflowCanceler> WorkflowCanceler { get; } = new();
     public Mock<IWorkflowInstanceManager> WorkflowInstanceManager { get; } = new();
     public Mock<IWorkflowDefinitionService> WorkflowDefinitionService { get; } = new();
     public WorkflowGraph WorkflowGraph { get; set; }
 
-    public static WorkflowState CreateState(string definitionVersionId = DefinitionVersionId, int definitionVersion = 1) => new()
+    public static WorkflowState CreateState(string definitionVersionId = DefinitionVersionId, int definitionVersion = 1, string instanceId = DefaultInstanceId) => new()
     {
-        Id = InstanceId,
+        Id = instanceId,
         DefinitionId = DefinitionId,
         DefinitionVersionId = definitionVersionId,
         DefinitionVersion = definitionVersion,
@@ -91,8 +105,36 @@ internal sealed class WorkflowInstanceTestHarness : IAsyncDisposable
     }
 
     public void SetupExistingInstance(WorkflowState state) => WorkflowInstanceManager
-        .Setup(x => x.FindByIdAsync(InstanceId, It.IsAny<CancellationToken>()))
+        .Setup(x => x.FindByIdAsync(_instanceId, It.IsAny<CancellationToken>()))
         .ReturnsAsync(CreateWorkflowInstance(state));
+
+    public void SetupNewInstance(WorkflowState state) => WorkflowInstanceManager
+        .Setup(x => x.CreateAndCommitWorkflowInstanceAsync(WorkflowGraph.Workflow,
+            It.Is<WorkflowInstanceOptions>(options => options.WorkflowInstanceId == state.Id), It.IsAny<CancellationToken>()))
+        .ReturnsAsync(CreateWorkflowInstance(state));
+
+    public Task<object> CreateAsync(CancellationToken cancellationToken) => RequestAsync(
+        CreateMethodIndex,
+        new ProtoCreateWorkflowInstanceRequest
+        {
+            WorkflowInstanceId = _instanceId,
+            WorkflowDefinitionHandle = new() { DefinitionVersionId = DefinitionVersionId },
+            Input = new(),
+            Properties = new()
+        },
+        cancellationToken);
+
+    public Task<object> CreateAndRunAsync(CancellationToken cancellationToken) => RequestAsync(
+        CreateAndRunMethodIndex,
+        new ProtoCreateAndRunWorkflowInstanceRequest
+        {
+            WorkflowInstanceId = _instanceId,
+            WorkflowDefinitionHandle = new() { DefinitionVersionId = DefinitionVersionId },
+            Input = new(),
+            Properties = new(),
+            ActivityHandle = new()
+        },
+        cancellationToken);
 
     public Task<object> ImportStateAsync(WorkflowState state, CancellationToken cancellationToken)
     {
@@ -110,7 +152,19 @@ internal sealed class WorkflowInstanceTestHarness : IAsyncDisposable
         new ProtoRunWorkflowInstanceRequest { ActivityHandle = new() },
         cancellationToken);
 
+    public Task<object> RunIfPendingAsync(string? deliveryId, CancellationToken cancellationToken)
+    {
+        var request = new ProtoRunWorkflowInstanceRequest { ActivityHandle = new() };
+        if (deliveryId != null)
+            request.StartDeliveryId = deliveryId;
+
+        return RequestAsync(RunIfPendingMethodIndex, request, cancellationToken);
+    }
+
     public Task<object> CancelAsync(CancellationToken cancellationToken) => RequestAsync(CancelMethodIndex, new Empty(), cancellationToken);
+
+    public Task<object> InstanceExistsAsync(CancellationToken cancellationToken) =>
+        RequestAsync(InstanceExistsMethodIndex, new Empty(), cancellationToken);
 
     public async ValueTask DisposeAsync()
     {

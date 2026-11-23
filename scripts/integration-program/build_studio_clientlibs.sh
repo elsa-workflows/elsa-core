@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 # Build the two Studio browser bundles from mapped or pinned standalone source.
+# Set STUDIO_CLIENTLIB_SKIP_TESTS=1 to build the bundles without running the ClientLib tests (image builds).
 set -euo pipefail
+
+skip_tests="${STUDIO_CLIENTLIB_SKIP_TESTS:-0}"
 
 root="${1:-.}"
 root="$(cd "$root" && pwd -P)"
@@ -74,7 +77,9 @@ dotnet restore "$designer/Elsa.Studio.Workflows.Designer.csproj"
     cd "$designer/ClientLib"
     npm ci --force
     npm run check:generated
-    npm test
+    if [[ "$skip_tests" != 1 ]]; then
+        npm test
+    fi
     npm run build
 )
 (
@@ -90,4 +95,8 @@ for asset in "${assets[@]}"; do
     fi
 done
 
-echo "Studio ClientLib proof passed: generated BPMN types, Designer tests, both bundles, six required assets."
+if [[ "$skip_tests" == 1 ]]; then
+    echo "Studio ClientLib proof passed: generated BPMN types, Designer tests skipped, both bundles, six required assets."
+else
+    echo "Studio ClientLib proof passed: generated BPMN types, Designer tests, both bundles, six required assets."
+fi

@@ -47,6 +47,21 @@ public class DefaultWorkflowDefinitionStorePopulatorTests
         await CheckIfWorkflowWasSaved(workflow.Workflow.Identity, wd => wd.IsLatest);
     }
 
+    [Fact]
+    public async Task TenantWorkflowWithAUsedProviderVersionIdReceivesAFreshId()
+    {
+        var materialized = new MaterializedWorkflow(new()
+        {
+            Identity = new("shared-definition", 1, "used-version", "tenant-a"),
+            Publication = new(true, true)
+        }, "Test", "Test");
+        _storeMock.AnyAsync(Arg.Is<WorkflowDefinitionFilter>(filter => filter.TenantAgnostic && filter.Id == "used-version"), Arg.Any<CancellationToken>()).Returns(true);
+
+        await _populator.AddAsync(materialized);
+
+        await CheckIfWorkflowWasSaved(definition => definition.DefinitionId == "shared-definition" && definition.Id != "used-version" && definition.TenantId == "tenant-a");
+    }
+
     [Fact(DisplayName = "When adding a workflow with the same version, ignore it")]
     public async Task AddOrUpdateCoreAsync_ExistingWorkflowDefinition_KeepsExistingWorkflow()
     {

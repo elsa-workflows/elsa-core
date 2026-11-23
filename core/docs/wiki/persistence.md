@@ -55,6 +55,10 @@ Provider packages configure database-specific EF Core options and migrations:
 
 Combined provider shell features such as `SqliteWorkflowPersistenceShellFeature` let modular hosts configure workflow persistence once and share settings with dependent definition, instance, and runtime persistence features.
 
+### MySQL target frameworks
+
+`Elsa.Persistence.EFCore.MySql` and the module MySQL providers (User Tasks, Secrets, AI, External Authentication) target `net8.0;net9.0` only. `Pomelo.EntityFrameworkCore.MySql` 9.0.0 has no EF Core 10 / net10.0 build. Combined net10 hosts that still reference MySQL (Agents, Quartz, kitchen-sink samples) restore Pomelo 9 against EF Core 10 and emit NU1608. That restore warning is not a supported runtime, and NuGet's net9 asset fallback is not MySQL-on-net10 support. SQLite, SQL Server, PostgreSQL, and Oracle remain on net8/net9/net10. Wait for a Pomelo 10.x before advertising net10 MySQL.
+
 ## Typical Host Configuration
 
 The reference server configures SQLite persistence for management and runtime separately:

@@ -23,6 +23,7 @@ public static class ServiceCollectionExtensions
 
         return services
             .AddScoped<IFeature, Feature>()
+            .AddScoped<IPlatformSubmissionAuthorization, PlatformSubmissionAuthorization>()
             .AddScoped<IWidget, WorkflowDefinitionEditorSubmitWidget>()
             .AddScoped<IWidget, WorkflowDefinitionListBulkSubmitWidget>()
             .AddScoped<IWidget, WorkflowDefinitionListRowSubmitWidget>()

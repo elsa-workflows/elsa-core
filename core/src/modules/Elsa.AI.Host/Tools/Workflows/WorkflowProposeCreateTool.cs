@@ -12,7 +12,8 @@ public class WorkflowProposeCreateTool(IServiceProvider serviceProvider, Workflo
         "Create a reviewable AI workflow creation proposal. This never persists a workflow definition.",
         GroundingToolSchemas.WithProperties(
             ("draft", GroundingToolSchemas.Object("Workflow draft JSON payload.")),
-            ("rationale", GroundingToolSchemas.String("Why the draft should be created."))));
+            ("rationale", GroundingToolSchemas.String("Why the draft should be created."))),
+        AIGroundingPermissions.DefinitionView, AIGroundingPermissions.DefinitionWrite);
 
     public override async ValueTask<AIToolResult> ExecuteAsync(AIToolExecutionContext context, CancellationToken cancellationToken = default)
     {

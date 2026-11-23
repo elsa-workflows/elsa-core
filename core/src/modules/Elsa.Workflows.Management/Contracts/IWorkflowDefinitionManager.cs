@@ -1,4 +1,5 @@
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Models;
 
 namespace Elsa.Workflows.Management;
 
@@ -7,6 +8,10 @@ namespace Elsa.Workflows.Management;
 /// </summary>
 public interface IWorkflowDefinitionManager
 {
+    /// <summary>Removes the exact versions in an authorized deletion plan and updates any surviving latest flags.</summary>
+    Task<long> DeleteAuthorizedAsync(WorkflowDefinitionDeletionPlan plan, CancellationToken cancellationToken = default) =>
+        throw new Exceptions.WorkflowDefinitionEditConflictException();
+
     /// <summary>
     /// Deletes all workflow definition versions with the specified definition ID.
     /// </summary>

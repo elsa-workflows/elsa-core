@@ -84,3 +84,29 @@ dotnet build src/modules/Elsa.Secrets/Elsa.Secrets.csproj
 dotnet test test/unit/Elsa.Secrets.UnitTests/Elsa.Secrets.UnitTests.csproj
 dotnet build /Users/sipke/.codex/worktrees/ae40/elsa-studio/src/modules/Elsa.Studio.Secrets/Elsa.Studio.Secrets.csproj
 ```
+
+## Rotate the encrypted store key
+
+For a hosted production deployment with the Elsa Secrets feature, supply a new random key from external
+configuration before starting the service. For ModularServer the default shell setting is
+`CShells__Shells__Default__Features__Secrets__EncryptionKey`, with a base64 value. Configure each enabled shell.
+The sample key is rejected in Production.
+
+For retained encrypted data, rehearse against a restored backup first. Stop all writers to the repository,
+keep a verified backup and retain the old key in a separate secret store. Put the replacement in `EncryptionKey`
+and the old key in `PreviousEncryptionKeys` temporarily. Previous keys decrypt existing envelopes only.
+New writes always use the current key.
+
+Resolve `SecretKeyRotation` in a private maintenance process using the same repository and tenant configuration
+as the server. Activate each tenant scope that owns encrypted records, including the default or shared scope
+where applicable. Run `ReencryptAsync()` to validate and count old-key envelopes without writing. Then run
+`ReencryptAsync(dryRun: false)` with exclusive repository access. For a shared EF Core record, the trusted
+maintenance process must also hold `SharedTenantWriteScope.Enter<Secret>()` around the write pass. Dispose
+the scope before returning to normal tenant operations. Rotation preserves retained version metadata,
+including status, expiry and managed ownership. If interrupted, keep the previous key active and rerun the same
+operation. Writes are committed per secret, so an interrupted run may contain envelopes under both keys.
+
+Repeat the dry run until it reports zero and verify representative reads with only the new key. Remove the previous
+key and restart all writers only after those checks pass. To roll back, restore the intact backup and its matching key.
+Keep the new key protected for any mixed-key backups. The operation rewrites ciphertext and cannot undo prior
+disclosure of the underlying credentials.

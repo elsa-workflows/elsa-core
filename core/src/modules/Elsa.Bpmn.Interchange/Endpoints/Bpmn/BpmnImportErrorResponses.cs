@@ -34,6 +34,12 @@ internal static class BpmnImportErrorResponses
         {
             result = await import();
         }
+        catch (BpmnWriteForbiddenException)
+        {
+            httpResponse.StatusCode = StatusCodes.Status403Forbidden;
+            await httpResponse.StartAsync(cancellationToken);
+            return null;
+        }
         catch (BpmnDefinitionNotFoundException exception)
         {
             await BpmnErrorResponse.SendAsync(httpResponse, NotFoundResponseFor(exception), cancellationToken);

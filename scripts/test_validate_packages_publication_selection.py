@@ -18,7 +18,6 @@ ACCEPTED = (
     ("refs/tags/3.8.5", {"nuget"}),
     ("refs/tags/3.8.0-rc2", {"nuget"}),
     ("refs/tags/2.17.0", {"nuget"}),
-    ("refs/tags/3.10.0", {"nuget"}),
     ("refs/tags/3.10.0-rc1", {"nuget"}),
     ("refs/tags/3.10.0-rc1", {"npm"}),
     ("refs/tags/3.10.0-rc1", {"feedz"}),
@@ -38,6 +37,8 @@ REJECTED = (
     ("refs/tags/3.8.0-rc2", {"feedz"}, "limited to 3.10.x prerelease"),
     ("refs/tags/3.10.0", {"feedz"}, "owned by publish-consolidated-original-candidate"),
     ("refs/tags/3.10.0", {"npm"}, "fail-closed"),
+    ("refs/tags/3.10.0", {"nuget"}, "must not be promoted"),
+    ("refs/tags/3.10.1", {"nuget"}, "blocked until a distinct"),
     ("refs/tags/3.10.1", {"feedz"}, "owned by publish-consolidated-original-candidate"),
     ("refs/tags/3.10.0", {"feedz", "nuget"}, "owned by publish-consolidated-original-candidate"),
     ("refs/tags/03.10.0", {"nuget"}, "canonical 3.10."),
@@ -91,11 +92,12 @@ class SelectionErrorsTests(unittest.TestCase):
             with self.subTest(selector=selector), self.assertRaises(TypeError):
                 selection_errors("refs/tags/3.10.0", **{selector: True})
         self.assertIn("owned by publish-consolidated-original-candidate", " ".join(errors("refs/tags/3.10.0", {"feedz"})))
-        self.assertEqual([], errors("refs/tags/3.10.0", {"nuget"}))
+        self.assertIn("must not be promoted", " ".join(errors("refs/tags/3.10.0", {"nuget"})))
+        self.assertIn("blocked until a distinct", " ".join(errors("refs/tags/3.10.1", {"nuget"})))
         self.assertEqual([], errors("refs/tags/3.10.0-rc1", {"feedz"}))
         self.assertEqual([], errors("refs/tags/3.8.5", {"nuget"}))
         self.assertEqual([], errors("refs/tags/3.9.1", {"nuget"}))
-        self.assertEqual([], errors("refs/tags/3.10.0", {"nuget"}, exclude_ids="Elsa"))
+        self.assertIn("must not be promoted", " ".join(errors("refs/tags/3.10.0", {"nuget"}, exclude_ids="Elsa")))
         self.assertIn(
             "exclude_ids is only accepted",
             " ".join(errors("refs/tags/3.10.0-rc1", {"nuget"}, exclude_ids="Elsa")),
@@ -132,7 +134,7 @@ class SelectionScriptTests(unittest.TestCase):
 
     def test_accepted_selection_exits_zero(self):
         cases = (
-            ("refs/tags/3.10.0", {"nuget": "true"}),
+            ("refs/tags/3.8.5", {"nuget": "true"}),
             ("refs/tags/3.10.0-rc1", {"feedz": "true"}),
         )
         for ref, kwargs in cases:
@@ -153,8 +155,9 @@ class SelectionScriptTests(unittest.TestCase):
                 self.assertIn("PUBLISH_NUGET must be 'true' or 'false'", result.stderr)
 
     def test_exclude_ids_is_rejected_except_on_stable_310_nuget(self):
-        accepted = self.run_script("refs/tags/3.10.0", nuget="true", exclude_ids="Elsa")
-        self.assertEqual(0, accepted.returncode, accepted.stderr)
+        blocked = self.run_script("refs/tags/3.10.0", nuget="true", exclude_ids="Elsa")
+        self.assertEqual(1, blocked.returncode)
+        self.assertIn("must not be promoted", blocked.stderr)
         rejected = self.run_script("refs/tags/3.10.0-rc1", nuget="true", exclude_ids="Elsa")
         self.assertEqual(1, rejected.returncode)
         self.assertIn("exclude_ids is only accepted", rejected.stderr)

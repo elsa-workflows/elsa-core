@@ -14,6 +14,8 @@
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="Testcontainers.MySql" />
+        <ProjectReference Include="..\..\..\src\common\Elsa.Testing.Shared\Elsa.Testing.Shared.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.Persistence.EFCore.MySql\Elsa.Persistence.EFCore.MySql.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.Secrets.Persistence.EFCore.MySql\Elsa.Secrets.Persistence.EFCore.MySql.csproj" />
     </ItemGroup>

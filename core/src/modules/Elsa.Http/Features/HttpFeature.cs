@@ -165,6 +165,7 @@ public class HttpFeature(IModule module) : FeatureBase(module)
 
         var httpClientBuilder = Services.AddHttpClient<SendHttpRequestBase>(HttpClient);
         HttpClientBuilder(httpClientBuilder);
+        httpClientBuilder.WithResponseBodyLimit();
 
         Services
             .AddScoped<IRouteMatcher, RouteMatcher>()
@@ -179,7 +180,7 @@ public class HttpFeature(IModule module) : FeatureBase(module)
             .AddNotificationHandler<UpdateRouteTable>()
 
             // Graceful shutdown: register HTTP ingress for diagnostic visibility in the runtime's IIngressSourceRegistry.
-            // The middleware short-circuits to 503 when paused (FR-006).
+            // Default hosts 503 before lookup when paused; combined unmatched-handler hosts defer until after lookup (FR-006).
             .AddSingleton<Elsa.Workflows.Runtime.IIngressSource, Elsa.Http.IngressSources.HttpTriggerIngressSource>()
 
             // Content parsers.
@@ -239,7 +240,9 @@ public class HttpFeature(IModule module) : FeatureBase(module)
             .AddAuthorization();
 
         // HTTP clients.
-        Services.AddHttpClient<IFileDownloader, HttpClientFileDownloader>();
+        Services.AddHttpClient<IFileDownloader, HttpClientFileDownloader>()
+            .ConfigurePrimaryHttpMessageHandler(HttpClientFileDownloader.CreateHandler)
+            .WithResponseBodyLimit();
 
         // Add selectors.
         foreach (var httpCorrelationIdSelectorType in HttpCorrelationIdSelectorTypes)

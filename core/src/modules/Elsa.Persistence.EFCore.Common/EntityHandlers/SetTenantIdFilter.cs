@@ -22,9 +22,11 @@ public class SetTenantIdFilter : IEntityModelCreatingHandler
     /// </remarks>
     public void Handle(ElsaDbContextBase dbContext, ModelBuilder modelBuilder, IMutableEntityType entityType)
     {
-        if (!typeof(Entity).IsAssignableFrom(entityType.ClrType))
+        // Tenant registry rows are host configuration and must be enumerated as a single registry.
+        if (!typeof(Entity).IsAssignableFrom(entityType.ClrType) || typeof(Tenant).IsAssignableFrom(entityType.ClrType))
             return;
 
+        modelBuilder.Entity(entityType.ClrType).Property(nameof(Entity.TenantId)).IsConcurrencyToken();
         var tenantFilter = CreateTenantFilterExpression(dbContext, entityType.ClrType);
         var existingFilter = entityType.GetQueryFilter();
         if (existingFilter is not null)

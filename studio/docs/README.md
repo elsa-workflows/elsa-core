@@ -23,6 +23,27 @@ dotnet build Elsa.Studio.slnf
 dotnet test studio/src/modules/Elsa.Studio.Workflows.Designer.Tests/Elsa.Studio.Workflows.Designer.Tests.csproj
 ```
 
+The Community combined image host is
+[`Elsa.ServerAndStudio.Web`](../src/hosts/Elsa.ServerAndStudio.Web). It serves
+the Elsa Server API and Blazor Server Studio in one process. Same-process Studio
+must call the in-container API (`Backend__Url=http://127.0.0.1:8080/elsa/api`),
+not a host-mapped port. HTTP endpoint start/resume stays on `/workflows/{path}`,
+including existing `definitions/...` and `instances/...` callbacks. When no HTTP
+trigger or bookmark matches, exact Studio pages (`/workflows/definitions`,
+`/workflows/definitions/{id}/edit`, `/workflows/instances`,
+`/workflows/instances/{id}/view`) fall through to Blazor. A published HTTP
+workflow at an exact Studio page URL hides that Studio page for the matching
+method; choose a distinct HTTP path if both are needed. The combined host
+registers a single unmatched handler (last registration wins). That registration
+opts this host into lookup-then-reject during pause or drain: matched HTTP start
+and resume still return 503 without executing work, unmatched Studio pages remain
+available, and unmatched non-page paths stay 404. Hosts without the handler keep
+the original pre-lookup 503.
+The dashboard is `/` and `/dashboard`. Workflow and identity persistence share
+`elsa_workflows.db`.
+`docker/ElsaServerAndStudio.Dockerfile` publishes this host after generating
+Studio ClientLib assets.
+
 Start a backend such as [`Elsa.Server.Web`](../../core/src/apps/Elsa.Server.Web)
 and run the [`Elsa.Studio.Host.Server`](../src/hosts/Elsa.Studio.Host.Server)
 project in separate terminals to work on the Blazor UI. Its default backend URL is
@@ -67,3 +88,12 @@ import dispositions and verification are recorded in the
 ## Planned native compensation
 
 The [Native compensation authoring, inspection and recovery program](../../core/docs/compensation/README.md) is the current program entrypoint for scope, ownership and readiness. The [Studio interaction plan](specs/native-compensation/plan.md) records Studio design details within the reviewed [Elsa 3 adaptation packet](../../core/docs/specs/native-compensation/README.md). Standing owner authorization permits delivery through the remaining technical gates; these plans do not claim implementation or proof.
+
+[Workflow import limits](workflow-import-limits.md) describes the limits applied to ZIP uploads and nested archives.
+
+## Platform submission
+
+Run credentialed Platform submission from a trusted Blazor Server host. The submit client verifies
+`workflows/definitions:deploy` with the current backend before constructing an outbound request.
+Grant that permission separately from workflow editing and publishing. Keep request credential configuration
+and Platform integration credentials out of WebAssembly hosts.

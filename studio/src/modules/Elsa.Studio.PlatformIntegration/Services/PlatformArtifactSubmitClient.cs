@@ -9,12 +9,15 @@ using Elsa.Studio.PlatformIntegration.Serialization;
 
 namespace Elsa.Studio.PlatformIntegration.Services;
 
-internal sealed class PlatformArtifactSubmitClient(HttpClient httpClient) : IPlatformArtifactSubmitClient
+internal sealed class PlatformArtifactSubmitClient(HttpClient httpClient, IPlatformSubmissionAuthorization authorization) : IPlatformArtifactSubmitClient
 {
     private readonly PlatformArtifactEnvelopeValidator _validator = new();
 
     public async Task<PlatformSubmitResult> SubmitAsync(PlatformWorkflowSubmitPackage package, PlatformSubmitOptions options, CancellationToken cancellationToken = default)
     {
+        if (!await authorization.CanSubmitAsync(cancellationToken))
+            return new(PlatformSubmitStatus.Unauthorized, "Platform deployment permission is required.");
+
         ValidateOptions(options);
 
         var artifact = BuildArtifactZip(package);

@@ -50,7 +50,8 @@ def selection_errors(
             return [f"Tag {tag!r} is not a release version such as 3.8.4 or 3.8.0-rc2."]
         # 3.10.x prerelease tags may still publish to Feedz at the tag version.
         # Stable 3.10.x Feedz is owned only by publish-consolidated-original-candidate.yml.
-        # nuget.org still accepts any release-version tag, including stable 3.10.x.
+        # Stable 3.10.0 nuget.org must not promote the staged candidate. Later stable
+        # 3.10.x nuget.org stays blocked until a distinct pin exists for that tag.
         major, minor = (int(part) for part in tag.split(".")[:2])
         feedz_from_tag = (major, minor) == (3, 10)
         if feedz_from_tag and not tag.startswith("3.10."):
@@ -64,6 +65,14 @@ def selection_errors(
             errors.append("Feedz publication from a tag is limited to 3.10.x prerelease tags; publish previews from a branch.")
         if npm and is_stable_310(tag):
             errors.append("Studio npm publication for stable 3.10.x stays fail-closed until the 231-ID nuget.org promote guard can pass.")
+        if nuget and is_stable_310(tag):
+            if tag == "3.10.0":
+                errors.append("Staged 3.10.0 candidate must not be promoted to NuGet.org.")
+            else:
+                errors.append(
+                    f"Stable {tag} nuget.org publication is blocked until a distinct {tag} pin exists; "
+                    "the 3.10.0 candidate must not be reused."
+                )
     else:
         return [f"Ref {ref!r} is neither a branch nor a tag."]
     if coverage and ref not in COVERAGE_REFS:

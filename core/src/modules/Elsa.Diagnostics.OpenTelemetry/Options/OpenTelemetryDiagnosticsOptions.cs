@@ -17,7 +17,7 @@ public class OpenTelemetryDiagnosticsOptions
     public bool EnableGrpc { get; set; }
     public string? ApiKey { get; set; }
     public string ApiKeyHeaderName { get; set; } = "x-otlp-api-key";
-    public bool AllowUnauthenticatedLoopback { get; set; } = true;
+    public bool AllowUnauthenticatedLoopback { get; set; }
 
     public ICollection<string> SensitiveNames { get; set; } =
     [

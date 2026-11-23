@@ -21,14 +21,14 @@ public class UrlDownloadableContentHandler : DownloadableContentHandlerBase
     }
     
     /// <inheritdoc />
-    public override bool GetSupportsContent(object content) => (content is string url && url.StartsWith("http", StringComparison.OrdinalIgnoreCase)) || content is Uri;
+    public override bool GetSupportsContent(object content) => content is Uri;
 
     /// <inheritdoc />
     protected override Func<ValueTask<Downloadable>> GetDownloadableAsync(DownloadableContext context) => async () => await DownloadAsync(context);
 
     private async ValueTask<Downloadable> DownloadAsync(DownloadableContext context)
     {
-        var url = context.Content is string s ? new Uri(s) : (Uri)context.Content;
+        var url = (Uri)context.Content;
         var cancellationToken = context.CancellationToken;
         var options = new FileDownloadOptions
         {
@@ -38,7 +38,7 @@ public class UrlDownloadableContentHandler : DownloadableContentHandlerBase
         };
         var response = await _fileDownloader.DownloadAsync(url, options, cancellationToken);
         var eTag = response.Headers.ETag?.Tag;
-        var filename = GetFilename(response) ?? url.Segments.Last();
+        var filename = GetFilename(response) ?? url.Segments.LastOrDefault() ?? "download";
         var contentType = response.Content.Headers.ContentType?.MediaType ?? GetContentType(filename);
         var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
         

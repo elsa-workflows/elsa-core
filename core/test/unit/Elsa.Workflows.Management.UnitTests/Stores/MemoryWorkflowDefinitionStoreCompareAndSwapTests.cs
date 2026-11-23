@@ -15,6 +15,58 @@ namespace Elsa.Workflows.Management.UnitTests.Stores;
 /// </summary>
 public class MemoryWorkflowDefinitionStoreCompareAndSwapTests
 {
+    [Fact]
+    public async Task PublicationChangesBothVersionsOnlyAfterTheExpectedSetMatches()
+    {
+        var store = new MemoryWorkflowDefinitionStore(new MemoryStore<WorkflowDefinition>());
+        var published = Definition("definition", "published", name: "Published", stringData: "graph-1");
+        published.IsLatest = false;
+        published.IsPublished = true;
+        var draft = Definition("definition", "draft", name: "Draft", stringData: "graph-2");
+        draft.Version = 2;
+        await store.SaveManyAsync([published, draft]);
+        var proposed = draft.ShallowClone();
+        proposed.IsPublished = true;
+
+        Assert.False(await store.TryPublishAsync(proposed, versions => versions.Count == 1));
+        Assert.True((await store.FindAsync(new() { Id = published.Id }))!.IsPublished);
+        Assert.False((await store.FindAsync(new() { Id = draft.Id }))!.IsPublished);
+        Assert.True(await store.TryPublishAsync(proposed, versions => versions.Count == 2));
+
+        var saved = await store.FindManyAsync(new() { DefinitionId = "definition" });
+        Assert.Equal("draft", Assert.Single(saved, version => version.IsPublished).Id);
+        Assert.Equal("draft", Assert.Single(saved, version => version.IsLatest).Id);
+    }
+
+    [Fact]
+    public async Task RetractionRequiresTheExpectedVersionAndChangesOnlyThePublishedFlag()
+    {
+        var store = new MemoryWorkflowDefinitionStore(new MemoryStore<WorkflowDefinition>());
+        var published = Definition("definition", "published", name: "Original", stringData: "graph");
+        published.IsLatest = false;
+        published.IsPublished = true;
+        await store.SaveAsync(published);
+
+        var expected = published.ShallowClone();
+        expected.Name = "Older name";
+        var mismatched = expected.ShallowClone();
+        mismatched.IsReadonly = true;
+
+        Assert.False(await store.TryRetractAsync(mismatched));
+        Assert.True(await store.TryRetractAsync(expected));
+        Assert.False(await store.TryRetractAsync(expected));
+        Assert.True(published.IsPublished);
+
+        var stored = Assert.Single(await store.FindManyAsync(new()));
+        Assert.False(stored.IsPublished);
+        Assert.False(stored.IsLatest);
+        Assert.Equal("Original", stored.Name);
+
+        await store.DeleteAsync(new() { Id = published.Id });
+        Assert.False(await store.TryRetractAsync(expected));
+        Assert.Empty(await store.FindManyAsync(new()));
+    }
+
     [Fact(DisplayName = "A matching latest row is updated and the callback sees that just-loaded row")]
     public async Task TryUpdateLatestAsync_WhenTheRowMatches_SavesTheUpdateBuiltFromTheLoadedRow()
     {
@@ -174,6 +226,34 @@ public class MemoryWorkflowDefinitionStoreCompareAndSwapTests
         var stored = await store.FindAsync(LatestOf("def-1"));
         Assert.Equal("id-2", stored!.Id);
         Assert.Equal("winner-draft", stored.StringData);
+    }
+
+    [Fact]
+    public async Task CreatingDraft_CannotReplaceAnOccupiedVersionId()
+    {
+        var store = new MemoryWorkflowDefinitionStore(new MemoryStore<WorkflowDefinition>());
+        var published = Definition("source", "published", "Source", "source-graph");
+        published.IsPublished = true;
+        var protectedVersion = Definition("other-definition", "occupied", "Protected", "protected-graph");
+        protectedVersion.IsReadonly = true;
+        await store.SaveAsync(published);
+        await store.SaveAsync(protectedVersion);
+
+        var result = await store.TryUpdateLatestAsync(
+            LatestOf("source"),
+            _ => true,
+            current =>
+            {
+                var draft = current.ShallowClone();
+                draft.Id = "occupied";
+                draft.Version++;
+                draft.IsPublished = false;
+                return draft;
+            });
+
+        Assert.Equal(WorkflowDefinitionUpdateOutcome.Conflict, result.Outcome);
+        Assert.Equal("published", (await store.FindAsync(LatestOf("source")))!.Id);
+        Assert.Equal("protected-graph", (await store.FindAsync(new WorkflowDefinitionFilter { Id = "occupied" }))!.StringData);
     }
 
     private static WorkflowDefinitionFilter LatestOf(string definitionId) =>

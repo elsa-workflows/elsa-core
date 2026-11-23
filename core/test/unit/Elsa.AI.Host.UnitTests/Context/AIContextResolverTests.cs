@@ -20,6 +20,7 @@ public class AIContextResolverTests
         var result = await resolver.ResolveAsync(new AIChatRequest
         {
             UserId = "user-1",
+            UserPermissions = ["workflows/definitions:view"],
             Attachments =
             [
                 new AIContextAttachment
@@ -34,6 +35,24 @@ public class AIContextResolverTests
         Assert.Equal("WorkflowDefinition", context.Kind);
         Assert.Equal("workflow-1", context.ReferenceId);
         Assert.Empty(context.Data);
+    }
+
+    [Theory]
+    [InlineData("WorkflowDefinition")]
+    [InlineData("WorkflowInstance")]
+    public async Task ChatPermissionAloneCannotResolveWorkflowResources(string kind)
+    {
+        using var provider = CreateProvider(services => services.AddSingleton<IAIContextProvider>(new DuplicateContextProvider("private resource", kind)));
+        var resolver = provider.GetRequiredService<AIContextResolver>();
+
+        var result = await resolver.ResolveAsync(new AIChatRequest
+        {
+            UserId = "user-1",
+            UserPermissions = ["ai/chat:execute"],
+            Attachments = [new AIContextAttachment { Kind = kind, ReferenceId = "example" }]
+        });
+
+        Assert.Empty(result);
     }
 
     [Fact(DisplayName = "Context resolver redacts sensitive data and metadata keys")]
@@ -95,6 +114,7 @@ public class AIContextResolverTests
         var result = await resolver.ResolveAsync(new AIChatRequest
         {
             UserId = "user-1",
+            UserPermissions = ["workflows/*:view"],
             Attachments = [new AIContextAttachment { Kind = "WorkflowDefinition", ReferenceId = "workflow-1" }]
         });
 

@@ -6,7 +6,7 @@ namespace Elsa.Tenants.AspNetCore;
 /// <summary>
 /// Resolves the tenant based on the host in the request.
 /// </summary>
-public class HostTenantResolver(IHttpContextAccessor httpContextAccessor) : TenantResolverBase
+public class HostTenantResolver(IHttpContextAccessor httpContextAccessor) : TenantResolverBase, ITenantRequestHintResolver
 {
     protected override TenantResolverResult Resolve(TenantResolverContext context)
     {

@@ -25,6 +25,12 @@ public class HttpEndpoint : Trigger<HttpRequest>
     internal const string HttpContextInputKey = "HttpContext";
     internal const string PathInputKey = "Path";
 
+    private static readonly HashSet<string> CredentialHeaders = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "Authorization", "Proxy-Authorization", "Cookie", "Cookie2", "Set-Cookie", "Set-Cookie2",
+        "X-Forwarded-Client-Cert", "X-ARR-ClientCert", "X-Goog-IAP-JWT-Assertion", "X-MS-CLIENT-PRINCIPAL"
+    };
+
     /// <inheritdoc />
     public HttpEndpoint([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
@@ -65,13 +71,13 @@ public class HttpEndpoint : Trigger<HttpRequest>
     /// <summary>
     /// Allow authenticated requests only.
     /// </summary>
-    [Input(Description = "Allow authenticated requests only.", Category = "Security")]
+    [Input(Description = "Require authentication and enforce the configured policy. When off, the Policy setting has no effect.", Category = "Security")]
     public Input<bool> Authorize { get; set; } = new(false);
 
     /// <summary>
-    /// Provide a policy to evaluate. If the policy fails, the request is forbidden.
+    /// The authorization policy evaluated only when Authorize is enabled.
     /// </summary>
-    [Input(Description = "Provide a policy to evaluate. If the policy fails, the request is forbidden.", Category = "Security")]
+    [Input(Description = "Optional authorization policy. Turn on Authorize to enforce this policy for starts and resumes.", Category = "Security")]
     public Input<string?> Policy { get; set; } = new(default(string?));
 
     /// <summary>
@@ -165,9 +171,9 @@ public class HttpEndpoint : Trigger<HttpRequest>
     public Output<IDictionary<string, object>> QueryStringData { get; set; } = null!;
 
     /// <summary>
-    /// The headers, if any.
+    /// The request headers suitable for workflow state and history. Use the live request to access credentials.
     /// </summary>
-    [Output(Description = "The headers, if any.")]
+    [Output(Description = "Request headers with credential headers omitted.")]
     public Output<IDictionary<string, object>> Headers { get; set; } = null!;
 
     /// <inheritdoc />
@@ -180,9 +186,8 @@ public class HttpEndpoint : Trigger<HttpRequest>
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
-        var path = Path.Get(context);
-        var methods = SupportedMethods.GetOrDefault(context) ?? new List<string> { HttpMethods.Get };
-        await context.WaitForHttpRequestAsync(path, methods, OnResumeAsync, Elsa.Http.HttpStimulusNames.HttpEndpoint);
+        var options = GetEndpointOptions(context.ExpressionExecutionContext);
+        await context.WaitForHttpRequestAsync(options, OnResumeAsync, Elsa.Http.HttpStimulusNames.HttpEndpoint);
     }
 
     private async ValueTask OnResumeAsync(ActivityExecutionContext context)
@@ -195,6 +200,16 @@ public class HttpEndpoint : Trigger<HttpRequest>
             // We're executing in a non-HTTP context (e.g. in a virtual actor).
             // Create a bookmark to allow the invoker to export the state and resume execution from there.
             context.CreateCrossBoundaryBookmark();
+            return;
+        }
+
+        // Bookmarks created by earlier versions may carry default options, so enforce the activity's current options on resume.
+        if (!context.IsTriggerOfWorkflow() && !await AuthorizeAsync(context, httpContext))
+        {
+            httpContext.Response.StatusCode = StatusCodes.Status401Unauthorized;
+
+            // Keep the existing bookmark so that the workflow stays suspended without creating duplicates.
+            context.WorkflowExecutionContext.ResumedBookmarkContext = null;
             return;
         }
 
@@ -215,7 +230,7 @@ public class HttpEndpoint : Trigger<HttpRequest>
         var routeData = GetRouteData(httpContext, path);
         var routeDictionary = routeData.Values.ToDictionary(route => route.Key, route => route.Value!);
         var queryStringDictionary = httpContext.Request.Query.ToObjectDictionary();
-        var headersDictionary = httpContext.Request.Headers.ToObjectDictionary();
+        var headersDictionary = request.Headers.Where(header => !IsCredentialHeader(header.Key)).ToObjectDictionary();
 
         context.Set(RouteData, routeDictionary);
         context.Set(QueryStringData, queryStringDictionary);
@@ -297,6 +312,14 @@ public class HttpEndpoint : Trigger<HttpRequest>
         // Complete.
         await context.CompleteActivityAsync();
     }
+
+    private static bool IsCredentialHeader(string name) =>
+        CredentialHeaders.Contains(name) ||
+        name.Contains("api-key", StringComparison.OrdinalIgnoreCase) ||
+        name.Contains("apikey", StringComparison.OrdinalIgnoreCase) ||
+        name.Contains("token", StringComparison.OrdinalIgnoreCase) ||
+        name.Contains("secret", StringComparison.OrdinalIgnoreCase) ||
+        name.Contains("signature", StringComparison.OrdinalIgnoreCase);
 
     private bool ValidateDeclaredRequestSize(ActivityExecutionContext context, HttpContext httpContext)
     {
@@ -500,20 +523,27 @@ public class HttpEndpoint : Trigger<HttpRequest>
         return httpRequest.ContentLength == null && !string.IsNullOrWhiteSpace(httpRequest.ContentType);
     }
 
-    private IEnumerable<object> GetBookmarkPayloads(ExpressionExecutionContext context)
-    {
-        // Generate bookmark data for path and selected methods.
-        var normalizedRoute = context.Get(Path)!.NormalizeRoute();
-        var methods = SupportedMethods.GetOrDefault(context) ?? new List<string> { HttpMethods.Get };
-        var authorize = Authorize.GetOrDefault(context);
-        var policy = Policy.GetOrDefault(context);
-        var requestTimeout = RequestTimeout.GetOrDefault(context);
-        var requestSizeLimit = RequestSizeLimit.GetOrDefault(context);
+    private IEnumerable<object> GetBookmarkPayloads(ExpressionExecutionContext context) => context.GetHttpEndpointStimuli(GetEndpointOptions(context));
 
-        return methods
-            .Select(x => new HttpEndpointBookmarkPayload(normalizedRoute, x.ToLowerInvariant(), authorize, policy, requestTimeout, requestSizeLimit))
-            .Cast<object>()
-            .ToArray();
+    private HttpEndpointOptions GetEndpointOptions(ExpressionExecutionContext context) => new()
+    {
+        Path = context.Get(Path)!,
+        Methods = SupportedMethods.GetOrDefault(context) ?? new List<string> { HttpMethods.Get },
+        Authorize = Authorize.GetOrDefault(context),
+        Policy = Policy.GetOrDefault(context),
+        RequestTimeout = RequestTimeout.GetOrDefault(context),
+        RequestSizeLimit = RequestSizeLimit.GetOrDefault(context)
+    };
+
+    private async Task<bool> AuthorizeAsync(ActivityExecutionContext context, HttpContext httpContext)
+    {
+        var options = GetEndpointOptions(context.ExpressionExecutionContext);
+
+        if (!options.Authorize)
+            return true;
+
+        var authorizationHandler = context.GetRequiredService<IHttpEndpointAuthorizationHandler>();
+        return await authorizationHandler.AuthorizeAsync(new(httpContext, context.WorkflowExecutionContext.Workflow, options.Policy));
     }
 
     private static RouteData GetRouteData(HttpContext httpContext, string path)

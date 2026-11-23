@@ -27,6 +27,44 @@ public class LocalWorkflowClientTests
     private readonly ILogger<LocalWorkflowClient> _logger = Substitute.For<ILogger<LocalWorkflowClient>>();
 
     [Fact]
+    public async Task ConcurrentPendingDeliveriesRunOnlyOnce()
+    {
+        var firstClient = CreateClient();
+        var secondClient = CreateClient();
+        SetupWorkflowGraph("test-definition");
+        var instance = CreateRunningInstance();
+        instance.SubStatus = WorkflowSubStatus.Pending;
+        instance.WorkflowState.SubStatus = WorkflowSubStatus.Pending;
+        instance.WorkflowState.Properties[WorkflowStartDelivery.IdProperty] = "delivery";
+        _workflowInstanceManager.FindByIdAsync(firstClient.WorkflowInstanceId, Arg.Any<CancellationToken>()).Returns(instance);
+
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var resume = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _workflowRunner.RunAsync(Arg.Any<WorkflowGraph>(), Arg.Any<WorkflowState>(), Arg.Any<RunWorkflowOptions>(), Arg.Any<CancellationToken>())
+            .Returns(async call =>
+            {
+                started.TrySetResult();
+                await resume.Task;
+                instance.SubStatus = WorkflowSubStatus.Suspended;
+                instance.WorkflowState.SubStatus = WorkflowSubStatus.Suspended;
+                return new RunWorkflowResult(null!, instance.WorkflowState, call.Arg<WorkflowGraph>().Workflow, null, Journal.Empty);
+            });
+
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        Assert.Null(await firstClient.RunInstanceIfPendingAsync(new() { StartDeliveryId = "different" }, timeout.Token));
+        var request = new RunWorkflowInstanceRequest { StartDeliveryId = "delivery" };
+        var first = firstClient.RunInstanceIfPendingAsync(request, timeout.Token);
+        await started.Task.WaitAsync(timeout.Token);
+        var duplicate = secondClient.RunInstanceIfPendingAsync(request, timeout.Token);
+        resume.SetResult();
+
+        Assert.NotNull(await first);
+        Assert.Null(await duplicate);
+        await _workflowRunner.Received(1).RunAsync(Arg.Any<WorkflowGraph>(), Arg.Any<WorkflowState>(),
+            Arg.Any<RunWorkflowOptions>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task CreateInstanceAsync_ThrowsWorkflowDefinitionNotFoundException_WhenDefinitionDoesNotExist()
     {
         // Arrange
@@ -137,7 +175,7 @@ public class LocalWorkflowClientTests
         var response = await client.CreateInstanceAsync(request);
 
         Assert.True(response.CannotStart);
-        await _workflowInstanceManager.DidNotReceiveWithAnyArgs().SaveAsync(default(WorkflowInstance)!, default);
+        await _workflowInstanceManager.DidNotReceiveWithAnyArgs().CreateAsync(default(WorkflowInstance)!, default);
     }
 
     [Fact]
@@ -159,7 +197,7 @@ public class LocalWorkflowClientTests
             WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionId("test-definition")
         }));
 
-        await _workflowInstanceManager.DidNotReceiveWithAnyArgs().SaveAsync(default(WorkflowInstance)!, default);
+        await _workflowInstanceManager.DidNotReceiveWithAnyArgs().CreateAsync(default(WorkflowInstance)!, default);
         Assert.Equal(1, lockHandle.DisposeCount);
     }
 
@@ -173,7 +211,7 @@ public class LocalWorkflowClientTests
         _workflowActivationGate.EvaluateAsync(Arg.Any<Workflow>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
             .Returns(_ => Task.FromResult(new WorkflowActivationLease(true, lockHandle, handleLostSource.Token)));
         var saveStarted = new TaskCompletionSource<CancellationToken>(TaskCreationOptions.RunContinuationsAsynchronously);
-        _workflowInstanceManager.SaveAsync(Arg.Any<WorkflowInstance>(), Arg.Any<CancellationToken>())
+        _workflowInstanceManager.CreateAsync(Arg.Any<WorkflowInstance>(), Arg.Any<CancellationToken>())
             .Returns(call =>
             {
                 var cancellationToken = call.Arg<CancellationToken>();
@@ -192,7 +230,7 @@ public class LocalWorkflowClientTests
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => save);
         Assert.True(persistenceToken.IsCancellationRequested);
-        await _workflowInstanceManager.Received(1).SaveAsync(Arg.Any<WorkflowInstance>(), Arg.Any<CancellationToken>());
+        await _workflowInstanceManager.Received(1).CreateAsync(Arg.Any<WorkflowInstance>(), Arg.Any<CancellationToken>());
         Assert.Equal(1, lockHandle.DisposeCount);
     }
 
@@ -205,7 +243,7 @@ public class LocalWorkflowClientTests
         _workflowActivationGate.EvaluateAsync(Arg.Any<Workflow>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(new WorkflowActivationLease(true, null)));
         var saveStarted = new TaskCompletionSource<CancellationToken>(TaskCreationOptions.RunContinuationsAsynchronously);
-        _workflowInstanceManager.SaveAsync(Arg.Any<WorkflowInstance>(), Arg.Any<CancellationToken>())
+        _workflowInstanceManager.CreateAsync(Arg.Any<WorkflowInstance>(), Arg.Any<CancellationToken>())
             .Returns(call =>
             {
                 var cancellationToken = call.Arg<CancellationToken>();

@@ -5,9 +5,12 @@ using Elsa.Workflows.Api.Constants;
 using Elsa.Workflows.Api.Requirements;
 using Elsa.Workflows.Api.Security;
 using Elsa.Workflows.Management;
+using Elsa.Workflows.Management.Exceptions;
 using Elsa.Workflows.Management.Filters;
+using Elsa.Workflows.Management.Models;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Publish;
 
@@ -29,13 +32,16 @@ internal class Publish(
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
+        await using var mutationLock = await WorkflowDefinitionMutationLock.AcquireAsync(HttpContext.RequestServices, cancellationToken);
+
         var filter = new WorkflowDefinitionFilter
         {
             DefinitionId = request.DefinitionId,
-            VersionOptions = VersionOptions.Latest
+            VersionOptions = VersionOptions.LatestOrPublished
         };
 
-        var definition = await store.FindAsync(filter, cancellationToken);
+        var targets = (await store.FindManyAsync(filter, cancellationToken)).Select(version => version.ShallowClone()).ToArray();
+        var definition = targets.FirstOrDefault(version => version.IsLatest)?.ShallowClone();
 
         if (definition == null)
         {
@@ -51,6 +57,15 @@ internal class Publish(
             return;
         }
 
+        if (!definition.IsPublished)
+        {
+            if (!await authorizationService.CanMutateAsync(User, targets))
+            {
+                await Send.ForbiddenAsync(cancellationToken);
+                return;
+            }
+        }
+
         var workflowGraph = await workflowDefinitionService.MaterializeWorkflowAsync(definition, cancellationToken);
         var scriptAuthorizationResult = await scriptAuthorizationService.AuthorizeAsync(workflowGraph.Workflow, cancellationToken);
         if (!scriptAuthorizationResult.Succeeded)
@@ -60,7 +75,17 @@ internal class Publish(
         }
 
         var isPublished = definition.IsPublished;
-        var result = !isPublished ? await workflowDefinitionPublisher.PublishAsync(definition, cancellationToken) : null;
+        PublishWorkflowDefinitionResult? result;
+        try
+        {
+            result = !isPublished ? await workflowDefinitionPublisher.PublishAsync(definition, targets, cancellationToken) : null;
+        }
+        catch (WorkflowDefinitionEditConflictException)
+        {
+            AddError("The workflow definition changed or is protected.");
+            await Send.ErrorsAsync(StatusCodes.Status409Conflict, cancellationToken);
+            return;
+        }
 
         if (result is { Succeeded: false })
         {

@@ -4,6 +4,7 @@
 @using Elsa.Studio.Extensions
 @using Elsa.Studio.Localization
 @using Elsa.Studio.PlatformIntegration.Contracts
+@using Elsa.Studio.PlatformIntegration.Services
 @using Elsa.Studio.Workflows.Domain.Contracts
 @using Microsoft.AspNetCore.Components
 @using Microsoft.Extensions.Options
@@ -13,8 +14,9 @@
 @inject IWorkflowDefinitionService WorkflowDefinitionService
 @inject IPlatformWorkflowSubmissionService SubmissionService
 @inject IOptions<PlatformSubmitOptions> Options
+@inject IPlatformSubmissionAuthorization Authorization
 
-@if (Options.Value.Enabled)
+@if (_authorized)
 {
     @if (RenderAsMenuItem)
     {
@@ -49,12 +51,18 @@
     /// </summary>
     [Parameter] public bool Disabled { get; set; }
 
+    private bool _authorized;
     private bool _isSubmitting;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _authorized = Options.Value.Enabled && Options.Value.IsConfigured && await Authorization.CanSubmitAsync();
+    }
     private bool IsDisabled => Disabled || _isSubmitting || !Options.Value.IsConfigured;
 
     private async Task SubmitAsync()
     {
-        if (IsDisabled)
+        if (IsDisabled || !_authorized)
             return;
 
         _isSubmitting = true;

@@ -607,14 +607,8 @@
         _pollingLifetime = null;
     }
 
-    private void NavigateBack()
-    {
-        var returnUrl = ReturnUrl;
-        if (!string.IsNullOrWhiteSpace(returnUrl) && Uri.TryCreate(returnUrl, UriKind.Absolute, out var parsed) && parsed.Host == new Uri(NavigationManager.BaseUri).Host)
-            NavigationManager.NavigateTo(parsed.PathAndQuery);
-        else
-            NavigationManager.NavigateTo("workflows/user-tasks");
-    }
+    private void NavigateBack() =>
+        NavigationManager.NavigateTo(UserTaskUrlState.GetBackDestination(NavigationManager.BaseUri, ReturnUrl));
 
     public async ValueTask DisposeAsync()
     {

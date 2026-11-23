@@ -1,5 +1,7 @@
 using Elsa.Common.Models;
 using Elsa.Workflows.Activities;
+using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Exceptions;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Management.Models;
@@ -13,10 +15,27 @@ namespace Elsa.Workflows.Management.Services
         private readonly IActivitySerializer _serializer;
         private readonly IWorkflowDefinitionPublisher _workflowDefinitionPublisher;
         private readonly VariableDefinitionMapper _variableDefinitionMapper;
+        private readonly IWorkflowDefinitionStore? _workflowDefinitionStore;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="WorkflowDefinitionImporter"/> class.
         /// </summary>
+        public WorkflowDefinitionImporter(
+            IActivitySerializer serializer,
+            IWorkflowDefinitionPublisher workflowDefinitionPublisher,
+            VariableDefinitionMapper variableDefinitionMapper,
+            IWorkflowDefinitionStore workflowDefinitionStore)
+        {
+            _serializer = serializer;
+            _workflowDefinitionPublisher = workflowDefinitionPublisher;
+            _variableDefinitionMapper = variableDefinitionMapper;
+            _workflowDefinitionStore = workflowDefinitionStore;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="WorkflowDefinitionImporter"/> class.
+        /// </summary>
+        [Obsolete("Use the constructor that accepts an IWorkflowDefinitionStore. This overload always generates a version id for a new workflow.")]
         public WorkflowDefinitionImporter(
             IActivitySerializer serializer,
             IWorkflowDefinitionPublisher workflowDefinitionPublisher,
@@ -39,17 +58,19 @@ namespace Elsa.Workflows.Management.Services
                 : null;
 
             var isNew = draft == null;
+            string? generatedId = null;
 
             // Create a new workflow in case no existing definition was found.
             if (isNew)
             {
                 draft = await _workflowDefinitionPublisher.NewAsync(cancellationToken: cancellationToken);
+                generatedId = draft.Id;
 
                 if (!string.IsNullOrWhiteSpace(definitionId))
                     draft.DefinitionId = definitionId;
                 
-                if (!string.IsNullOrWhiteSpace(model.Id))
-                    draft.Id = model.Id;
+                if (_workflowDefinitionStore != null)
+                    draft.Id = await _workflowDefinitionStore.ResolveVersionIdAsync(model.Id, draft.Id, cancellationToken);
             }
 
             // Update the draft with the received model.
@@ -71,14 +92,50 @@ namespace Elsa.Workflows.Management.Services
             draft.Options = model.Options ?? new WorkflowOptions();
             draft.ToolVersion = model.ToolVersion;
 
-            if (request.Publish ?? model.IsPublished)
+            var publish = request.Publish ?? model.IsPublished;
+            if (isNew)
+                return await CreateInitialAsync(draft, generatedId!, publish, cancellationToken);
+
+            if (publish)
             {
                 var result = await _workflowDefinitionPublisher.PublishAsync(draft, cancellationToken);
                 return new ImportWorkflowResult(result.Succeeded, draft, result.ValidationErrors);
             }
 
-            await _workflowDefinitionPublisher.SaveDraftAsync(draft, cancellationToken);
-            return new ImportWorkflowResult(true, draft, new List<WorkflowValidationError>());
+            try
+            {
+                await _workflowDefinitionPublisher.SaveDraftAsync(draft, cancellationToken);
+                return new(true, draft, []);
+            }
+            catch (WorkflowDefinitionEditConflictException)
+            {
+                return new(false, draft, [new("The workflow definition changed or is protected.")]);
+            }
+        }
+
+        private async Task<ImportWorkflowResult> CreateInitialAsync(WorkflowDefinition draft, string generatedId, bool publish, CancellationToken cancellationToken)
+        {
+            try
+            {
+                PublishWorkflowDefinitionResult result;
+                try
+                {
+                    result = await _workflowDefinitionPublisher.CreateInitialAsync(draft, publish, cancellationToken);
+                }
+                catch (WorkflowDefinitionAlreadyExistsException) when (draft.Id != generatedId)
+                {
+                    // Another tenant or version may have claimed the exported ID after we looked it up.
+                    // Retry once with the original server-generated version identity.
+                    draft.Id = generatedId;
+                    result = await _workflowDefinitionPublisher.CreateInitialAsync(draft, publish, cancellationToken);
+                }
+
+                return new(result.Succeeded, draft, result.ValidationErrors);
+            }
+            catch (WorkflowDefinitionAlreadyExistsException)
+            {
+                return new(false, draft, [new("A workflow definition with the same identity already exists.")]);
+            }
         }
     }
 }

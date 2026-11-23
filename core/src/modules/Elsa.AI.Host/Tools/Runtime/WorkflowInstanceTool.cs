@@ -11,7 +11,8 @@ public class WorkflowInstanceTool(IServiceProvider serviceProvider, RuntimeGroun
         "Get a redacted workflow instance summary and bounded state evidence.",
         GroundingToolSchemas.WithProperties(
             ("instanceId", GroundingToolSchemas.String("Workflow instance ID.")),
-            ("id", GroundingToolSchemas.String("Workflow instance ID."))));
+            ("id", GroundingToolSchemas.String("Workflow instance ID."))),
+        AIGroundingPermissions.InstanceView);
 
     public override async ValueTask<AIToolResult> ExecuteAsync(AIToolExecutionContext context, CancellationToken cancellationToken = default)
     {

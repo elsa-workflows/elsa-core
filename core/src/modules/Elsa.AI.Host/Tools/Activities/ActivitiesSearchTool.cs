@@ -18,7 +18,8 @@ public class ActivitiesSearchTool(IServiceProvider serviceProvider, ActivityGrou
             ("version", GroundingToolSchemas.Integer("Activity version.")),
             ("input", GroundingToolSchemas.String("Input name or display name.")),
             ("output", GroundingToolSchemas.String("Output name or display name.")),
-            ("trigger", GroundingToolSchemas.Boolean("Whether the activity can start a workflow."))));
+            ("trigger", GroundingToolSchemas.Boolean("Whether the activity can start a workflow."))),
+        AIGroundingPermissions.DefinitionView);
 
     public override ValueTask<AIToolResult> ExecuteAsync(AIToolExecutionContext context, CancellationToken cancellationToken = default)
     {

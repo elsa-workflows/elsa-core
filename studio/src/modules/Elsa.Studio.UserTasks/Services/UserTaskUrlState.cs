@@ -75,6 +75,21 @@ public static class UserTaskUrlState
         return navigationManager.GetUriWithQueryParameters(values);
     }
 
+    /// <summary>Returns the queue URL within this Studio installation, preserving its filter query.</summary>
+    public static string GetBackDestination(string studioBaseUri, string? returnUrl)
+    {
+        var queueUri = new Uri(new Uri(studioBaseUri, UriKind.Absolute), "workflows/user-tasks");
+        if (!Uri.TryCreate(returnUrl, UriKind.Absolute, out var target) ||
+            !string.Equals(target.Scheme, queueUri.Scheme, StringComparison.OrdinalIgnoreCase) ||
+            !string.Equals(target.IdnHost, queueUri.IdnHost, StringComparison.OrdinalIgnoreCase) ||
+            target.Port != queueUri.Port ||
+            target.UserInfo.Length != 0 ||
+            !string.Equals(target.AbsolutePath, queueUri.AbsolutePath, StringComparison.Ordinal))
+            return queueUri.AbsoluteUri;
+
+        return target.AbsoluteUri;
+    }
+
     /// <summary>Changing a filter always returns to the first page; a carried-over cursor would be meaningless.</summary>
     public static UserTaskListQuery ResetPage(UserTaskListQuery query) => query with { Cursor = null };
 

@@ -53,7 +53,7 @@ ElsaScript DSL tests:
 
 The NUKE build lives in [build/Build.cs](../../../build/Build.cs). It defines clean, restore, compile, test, and package behavior through NUKE components. Test projects are discovered as solution projects whose names end with `Tests`.
 
-Source projects multi-target `net8.0`, `net9.0`, and `net10.0` through [core/src/Directory.Build.props](../../src/Directory.Build.props). Central package versions are in [Directory.Packages.props](../../../Directory.Packages.props), including conditional version blocks for .NET 8/9 and .NET 10.
+Source projects multi-target `net8.0`, `net9.0`, and `net10.0` through [core/src/Directory.Build.props](../../src/Directory.Build.props). The EF Core MySQL providers are the exception: they target `net8.0;net9.0` only until Pomelo ships for EF Core 10. Combined net10 MySQL restores are unsupported (NU1608). Central package versions are in [Directory.Packages.props](../../../Directory.Packages.props), including conditional version blocks for .NET 8/9 and .NET 10.
 
 ## Run The Reference Server
 
@@ -86,6 +86,8 @@ The root [README](../../../README.md) documents the public Docker quick start:
 docker pull elsaworkflows/elsa-server-and-studio-v3:latest
 docker run -t -i -e ASPNETCORE_ENVIRONMENT='Development' -e HTTP_PORTS=8080 -e HTTP__BASEURL=http://localhost:13000 -p 13000:8080 elsaworkflows/elsa-server-and-studio-v3:latest
 ```
+
+That image is built from [`Elsa.ServerAndStudio.Web`](../../../studio/src/hosts/Elsa.ServerAndStudio.Web): Elsa Server API plus Elsa Studio in one process. Leave `Backend__Url` at the in-container API (`http://127.0.0.1:8080/elsa/api`) unless you are intentionally pointing Studio at a different server. `HTTP__BASEURL` is the public URL for HTTP activities, not Studio's API client. HTTP endpoint activities listen under `/workflows` as they did on the previous combined image, including paths under `definitions/` and `instances/`. After trigger and bookmark lookup miss, the combined host falls through only to the exact Studio pages (`/workflows/definitions`, `/workflows/definitions/{id}/edit`, `/workflows/instances`, `/workflows/instances/{id}/view`); unmatched HTTP trigger paths still 404. A published HTTP workflow at an exact Studio page URL hides that Studio page for the matching method. The combined host registers one unmatched handler; the last DI registration wins. That registration is what defers pause/drain 503 until after lookup on this host: matched HTTP start and resume still return 503 without executing work, and unmatched Studio pages remain available. Hosts without the handler keep the original pre-lookup 503 and do not query trigger or bookmark stores or build a workflow graph while paused or draining. Workflow and identity data share `elsa_workflows.db` in the container working directory (`Data Source=elsa_workflows.db;Cache=Shared`), matching the prior combined-image SQLite file. Do not copy that file without its WAL/SHM sidecars; open it in place.
 
 The same source-built Community images are also published as `elsaworkflows/elsa-server-v3`. Every accepted tag publishes that exact version. Stable `3.X.Y` also moves `X.Y` when it is the highest stable tag on that line, and `latest` when it is the highest stable 3.x tag. Preview tags never move `X.Y` or `latest`. The publisher is [`.github/workflows/docker-publish.yml`](../../../.github/workflows/docker-publish.yml); `docker-ca.yml` builds the same Dockerfiles for TLS smoke tests without pushing.
 
@@ -142,6 +144,17 @@ Console log diagnostics endpoints include (when `Elsa.Diagnostics.ConsoleLogs` i
 - `GET /elsa/api/diagnostics/console-logs/sources`
 
 Health checks are mapped to `/` and `/health/live` for process liveness and `/health/ready` for Elsa runtime readiness in the reference server. See [Health Checks](health-checks.md) for Kubernetes liveness/readiness recommendations and Elsa-specific runtime readiness probes.
+
+## Signed workflow links
+
+The built-in SAS token service issues links scoped to their payload type. Bookmark resume links
+apply to one bookmark on one workflow instance. Event links apply to one named event on one
+instance. Older Elsa-issued links with complete identifiers continue to work until their original
+expiry. Regenerate a link from the intended activity if its original target is incomplete.
+
+When upgrading a cluster, move public workflow-link traffic to upgraded nodes together. Older
+nodes cannot read newly issued version 2 links. Keep the deployment's ASP.NET Core Data
+Protection keys and application discriminator consistent across nodes.
 
 ## Runtime Knobs
 

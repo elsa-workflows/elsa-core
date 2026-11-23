@@ -69,7 +69,7 @@ class MongoAtomicProofTests(unittest.TestCase):
 
     def test_bpmn_manifest_includes_all_four_sqlite_theory_cases(self):
         self.assertEqual(4, proof.BPMN_CASES["SqliteDocumentPut_PreservesTheConcurrentWinner"])
-        self.assertEqual(10, sum(proof.BPMN_CASES.values()))
+        self.assertEqual(12, sum(proof.BPMN_CASES.values()))
 
     def identity(self, label, modes, image_id="sha256:" + "a" * 64):
         directory = self.directory / "service-identity" / label
@@ -120,6 +120,10 @@ class MongoAtomicProofTests(unittest.TestCase):
         proof.git(checkout, "add", ".")
         proof.git(checkout, "commit", "-qm", "baseline")
         baseline = proof.git(checkout, "rev-parse", "HEAD")
+        (checkout / proof.FIXTURE).write_text("pinned regression fixture")
+        proof.git(checkout, "add", ".")
+        proof.git(checkout, "commit", "-qm", "pinned regression fixture")
+        fixture_revision = proof.git(checkout, "rev-parse", "HEAD")
         (checkout / proof.FIXTURE).write_text("candidate regression fixture")
         proof.git(checkout, "add", ".")
         proof.git(checkout, "commit", "-qm", "candidate")
@@ -132,6 +136,8 @@ class MongoAtomicProofTests(unittest.TestCase):
             if command[1] != "test":
                 return {"exitCode": 0, "status": "passed"}
             baseline_run = root != checkout
+            if baseline_run:
+                self.assertEqual("pinned regression fixture", (root / proof.BASELINE_FIXTURE).read_text())
             mongo = command[2] == proof.MONGO_TEST
             methods = (dict.fromkeys(proof.REGRESSIONS, 1) if baseline_run else
                        {proof.PREFIX + key: count for key, count in proof.MONGO_CASES.items()} if mongo else
@@ -140,7 +146,8 @@ class MongoAtomicProofTests(unittest.TestCase):
             self.write_trx(log.parent / trx_name, methods, "Failed" if baseline_run else "Passed", proof.REGRESSIONS)
             return {"exitCode": 1 if baseline_run else 0, "status": "failed" if baseline_run else "passed"}
 
-        with patch.object(proof, "BASELINE", baseline), patch.object(proof, "execute", side_effect=execute), \
+        with patch.object(proof, "BASELINE", baseline), patch.object(proof, "BASELINE_FIXTURE_REVISION", fixture_revision), \
+                patch.object(proof, "execute", side_effect=execute), \
                 patch.object(proof, "service_identity", return_value={"tested": True}):
             result = proof.run(checkout, output, head)
         self.assertTrue(result["verificationComplete"])
@@ -153,6 +160,8 @@ class MongoAtomicProofTests(unittest.TestCase):
         self.assertFalse((output / "baseline-source").exists())
         self.assertEqual("", proof.git(checkout, "status", "--porcelain"))
         self.assertEqual(hashlib.sha256((checkout / proof.FIXTURE).read_bytes()).hexdigest(), result["inputSha256"][proof.FIXTURE])
+        self.assertEqual(fixture_revision, result["baselineFixtureRevision"])
+        self.assertEqual(hashlib.sha256(b"pinned regression fixture").hexdigest(), result["baselineFixtureSha256"])
 
 
 if __name__ == "__main__":

@@ -12,7 +12,8 @@ public class WorkflowValidateDraftTool(WorkflowDraftValidationService validation
         GroundingToolSchemas.WithProperties(
             ("draft", GroundingToolSchemas.Object("Workflow draft JSON payload.")),
             ("baselineVersionId", GroundingToolSchemas.String("Baseline workflow version ID.")),
-            ("expectedBaselineVersionId", GroundingToolSchemas.String("Expected current baseline version ID."))));
+            ("expectedBaselineVersionId", GroundingToolSchemas.String("Expected current baseline version ID."))),
+        AIGroundingPermissions.DefinitionView);
 
     public override ValueTask<AIToolResult> ExecuteAsync(AIToolExecutionContext context, CancellationToken cancellationToken = default)
     {

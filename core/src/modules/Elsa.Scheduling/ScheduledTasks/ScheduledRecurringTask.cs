@@ -18,6 +18,7 @@ public class ScheduledRecurringTask : IScheduledTask, IDisposable
     private readonly ILogger<ScheduledRecurringTask> _logger;
     private readonly TimeSpan _interval;
     private readonly CancellationTokenSource _cancellationTokenSource;
+    private readonly CancellationToken _cancellationToken;
     private readonly SemaphoreSlim _executionSemaphore = new(1, 1);
     private DateTimeOffset _startAt;
     private Timer? _timer;
@@ -37,6 +38,8 @@ public class ScheduledRecurringTask : IScheduledTask, IDisposable
         _startAt = startAt;
         _interval = interval;
         _cancellationTokenSource = new();
+        // Captured once so the timer callback never reads Token from a disposed source.
+        _cancellationToken = _cancellationTokenSource.Token;
 
         Schedule();
     }
@@ -86,59 +89,84 @@ public class ScheduledRecurringTask : IScheduledTask, IDisposable
             delay = TimeSpan.FromMilliseconds(1);
         }
 
-        _timer = new(delay.TotalMilliseconds)
+        _timer = new(TimerInterval.Clamp(delay).TotalMilliseconds)
         {
             Enabled = true
         };
 
         _timer.Elapsed += async (_, _) =>
         {
-            _timer?.Dispose();
-            _timer = null;
-
-            // Check if disposed before proceeding
-            if (_disposed) return;
-
-            _startAt = _systemClock.UtcNow + _interval;
-
-            using var scope = _scopeFactory.CreateScope();
-            var commandSender = scope.ServiceProvider.GetRequiredService<ICommandSender>();
-
-            // Check disposed again before accessing CancellationTokenSource
-            if (_disposed) return;
-
-            var cancellationToken = _cancellationTokenSource.Token;
-            if (!cancellationToken.IsCancellationRequested)
+            // An async Elapsed handler is effectively async void: any exception that escapes it crashes the process.
+            try
             {
-                var acquired = false;
-                try
-                {
-                    acquired = await _executionSemaphore.WaitAsync(0, cancellationToken);
-                    if (!acquired) return;
-                    _executing = true;
-                    await commandSender.SendAsync(new RunScheduledTask(_task), cancellationToken);
+                await OnTimerElapsedAsync();
+            }
+            catch (Exception e)
+            {
+                if (!_disposed)
+                    _logger.LogError(e, "Unhandled error in scheduled task timer callback");
+            }
+        };
+    }
 
-                    if (_cancellationRequested)
-                    {
-                        _cancellationRequested = false;
-                        _cancellationTokenSource.Cancel();
-                    }
-                }
-                catch (Exception e)
+    private async Task OnTimerElapsedAsync()
+    {
+        _timer?.Dispose();
+        _timer = null;
+
+        // Check if disposed before proceeding
+        if (_disposed) return;
+
+        // System.Timers.Timer cannot handle intervals greater than int.MaxValue milliseconds.
+        // For longer intervals, keep scheduling capped intervals until the next start arrives.
+        if (_startAt > _systemClock.UtcNow)
+        {
+            if (_disposed || _cancellationToken.IsCancellationRequested)
+                return;
+
+            Schedule();
+            return;
+        }
+
+        _startAt = _systemClock.UtcNow + _interval;
+
+        using var scope = _scopeFactory.CreateScope();
+        var commandSender = scope.ServiceProvider.GetRequiredService<ICommandSender>();
+
+        // Check disposed again before running the task
+        if (_disposed) return;
+
+        var cancellationToken = _cancellationToken;
+        if (!cancellationToken.IsCancellationRequested)
+        {
+            var acquired = false;
+            try
+            {
+                acquired = await _executionSemaphore.WaitAsync(0, cancellationToken);
+                if (!acquired) return;
+                _executing = true;
+                await commandSender.SendAsync(new RunScheduledTask(_task), cancellationToken);
+
+                if (_cancellationRequested)
                 {
-                    _logger.LogError(e, "Error executing scheduled task");
-                }
-                finally
-                {
-                    _executing = false;
-                    if (acquired && !_disposed)
-                        _executionSemaphore.Release();
+                    _cancellationRequested = false;
+                    _cancellationTokenSource.Cancel();
                 }
             }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Error executing scheduled task");
+            }
+            finally
+            {
+                _executing = false;
+                if (acquired && !_disposed)
+                    _executionSemaphore.Release();
+            }
+        }
 
-            if (!cancellationToken.IsCancellationRequested && !_disposed)
-                Schedule();
-        };
+        if (!cancellationToken.IsCancellationRequested && !_disposed)
+            Schedule();
     }
 
     void IDisposable.Dispose()

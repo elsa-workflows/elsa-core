@@ -1,6 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <ItemGroup>
+        <Compile Include="../../../../../core/src/common/Elsa.Testing.Shared/RestoredPackageVersionReader.cs"
+                 Link="Support/RestoredPackageVersionReader.cs" />
         <ProjectReference Include="../../../../src/scheduling/Elsa.Scheduling.Hangfire/Elsa.Scheduling.Hangfire.csproj" />
     </ItemGroup>
 

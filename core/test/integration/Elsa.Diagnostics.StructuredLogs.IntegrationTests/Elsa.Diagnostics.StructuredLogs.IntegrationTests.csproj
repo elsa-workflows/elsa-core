@@ -11,4 +11,8 @@
         <ProjectReference Include="..\..\..\src\modules\Elsa.Diagnostics.StructuredLogs\Elsa.Diagnostics.StructuredLogs.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+        <Compile Include="..\..\unit\Shared\FastEndpoints\*.cs" LinkBase="Shared\FastEndpoints" />
+    </ItemGroup>
+
 </Project>

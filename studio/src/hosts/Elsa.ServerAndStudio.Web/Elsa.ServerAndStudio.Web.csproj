@@ -1,0 +1,54 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+        <Description>Same-process Elsa Server API and Elsa Studio Blazor Server host used by the Community combined Docker image.</Description>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Content Include="..\.dockerignore">
+            <Link>.dockerignore</Link>
+        </Content>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\..\core\src\modules\Elsa\Elsa.csproj" />
+        <ProjectReference Include="..\..\..\..\core\src\modules\Elsa.Caching\Elsa.Caching.csproj" />
+        <ProjectReference Include="..\..\..\..\core\src\modules\Elsa.Common\Elsa.Common.csproj" />
+        <ProjectReference Include="..\..\..\..\core\src\modules\Elsa.Dashboard.Api\Elsa.Dashboard.Api.csproj" />
+        <ProjectReference Include="..\..\..\..\core\src\modules\Elsa.Expressions.CSharp\Elsa.Expressions.CSharp.csproj" />
+        <ProjectReference Include="..\..\..\..\core\src\modules\Elsa.Expressions.JavaScript\Elsa.Expressions.JavaScript.csproj" />
+        <ProjectReference Include="..\..\..\..\core\src\modules\Elsa.Expressions.Liquid\Elsa.Expressions.Liquid.csproj" />
+        <ProjectReference Include="..\..\..\..\core\src\modules\Elsa.Expressions.Python\Elsa.Expressions.Python.csproj" />
+        <ProjectReference Include="..\..\..\..\core\src\modules\Elsa.Http\Elsa.Http.csproj" />
+        <ProjectReference Include="..\..\..\..\core\src\modules\Elsa.Identity\Elsa.Identity.csproj" />
+        <ProjectReference Include="..\..\..\..\core\src\modules\Elsa.Persistence.EFCore.Sqlite\Elsa.Persistence.EFCore.Sqlite.csproj" />
+        <ProjectReference Include="..\..\..\..\core\src\modules\Elsa.Scheduling\Elsa.Scheduling.csproj" />
+        <ProjectReference Include="..\..\..\..\core\src\modules\Elsa.Workflows.Api\Elsa.Workflows.Api.csproj" />
+        <ProjectReference Include="..\..\..\..\core\src\modules\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
+        <ProjectReference Include="..\..\..\..\core\src\modules\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
+        <ProjectReference Include="..\..\..\..\core\src\modules\Elsa.Workflows.Runtime.Dashboard\Elsa.Workflows.Runtime.Dashboard.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\bundles\Elsa.Studio\Elsa.Studio.csproj" />
+        <ProjectReference Include="..\..\framework\Elsa.Studio.Core.BlazorServer\Elsa.Studio.Core.BlazorServer.csproj" />
+        <ProjectReference Include="..\..\framework\Elsa.Studio.Translations\Elsa.Studio.Translations.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.Studio.Authentication.ElsaIdentity.BlazorServer\Elsa.Studio.Authentication.ElsaIdentity.BlazorServer.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.Studio.Authentication.ElsaIdentity.UI\Elsa.Studio.Authentication.ElsaIdentity.UI.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.Studio.Authentication.Themes\Elsa.Studio.Authentication.Themes.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.Studio.Authentication.UI\Elsa.Studio.Authentication.UI.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.Studio.Dashboard\Elsa.Studio.Dashboard.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.Studio.Localization.BlazorServer\Elsa.Studio.Localization.BlazorServer.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.Studio.Login.BlazorServer\Elsa.Studio.Login.BlazorServer.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.Studio.Security\Elsa.Studio.Security.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.Studio.Settings\Elsa.Studio.Settings.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.Studio.Workflows\Elsa.Studio.Workflows.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.Studio.Workflows.Dashboard\Elsa.Studio.Workflows.Dashboard.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Folder Include="App_Data\" />
+    </ItemGroup>
+
+</Project>

@@ -1,4 +1,5 @@
 using Elsa;
+using Elsa.Common.Multitenancy;
 using Elsa.Identity.Options;
 using Elsa.Identity.Providers;
 using Elsa.Identity.Services;
@@ -29,6 +30,8 @@ public class AdminCredentialProviderTests
 
         Assert.NotNull(apiKey);
         Assert.Equal("admin", apiKey.OwnerName);
+        Assert.Contains(apiKey.Claims, claim => claim.Type == TenantPrincipalClaims.HostAdministrator && claim.Value == "true");
+        Assert.DoesNotContain(apiKey.Claims, claim => claim.Type == TenantPrincipalClaims.BoundTenant);
         Assert.Contains(apiKey.Claims, claim => claim.Type == "permissions" && claim.Value == "*");
         Assert.DoesNotContain(apiKey.Claims, claim => claim.Type == "permissions" && claim.Value == PermissionNames.None);
     }

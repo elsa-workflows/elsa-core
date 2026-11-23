@@ -86,29 +86,29 @@ public class CustomSchemaProviderMigrationTests
     private static ProviderDefinition GetProvider(string providerName) => providerName switch
     {
         "SqlServer" => new(
-            typeof(Elsa.Persistence.EFCore.SqlServer.Migrations.Management.WorkflowDefinitionRegistryGeneration).Assembly,
-            "20260924222035_WorkflowDefinitionRegistryGeneration",
+            typeof(Elsa.Persistence.EFCore.SqlServer.Migrations.Management.TenantScopedDefinitionIds).Assembly,
+            "20261101100001_TenantScopedDefinitionIds",
             "20260823231421_PerTenantIdentityUniqueness",
             (builder, assembly, options) => builder.UseElsaSqlServer(assembly, "Server=unused", options)),
         "PostgreSql" => new(
-            typeof(Elsa.Persistence.EFCore.PostgreSql.Migrations.Management.WorkflowDefinitionRegistryGeneration).Assembly,
-            "20260924222104_WorkflowDefinitionRegistryGeneration",
+            typeof(Elsa.Persistence.EFCore.PostgreSql.Migrations.Management.TenantScopedDefinitionIds).Assembly,
+            "20261101100004_TenantScopedDefinitionIds",
             "20260823231437_PerTenantIdentityUniqueness",
             (builder, assembly, options) => builder.UseElsaPostgreSql(assembly, "Host=unused", options)),
         "Oracle" => new(
-            typeof(Elsa.Persistence.EFCore.Oracle.Migrations.Management.NullableDefaultTenant).Assembly,
-            "20261022120000_NullableDefaultTenant",
+            typeof(Elsa.Persistence.EFCore.Oracle.Migrations.Management.TenantScopedDefinitionIds).Assembly,
+            "20261101100002_TenantScopedDefinitionIds",
             "20260823231459_PerTenantIdentityUniqueness",
             (builder, assembly, options) => builder.UseElsaOracle(assembly, "Data Source=unused", options)),
         "Sqlite" => new(
-            typeof(Elsa.Persistence.EFCore.Sqlite.Migrations.Management.WorkflowDefinitionRegistryGeneration).Assembly,
-            "20260924222051_WorkflowDefinitionRegistryGeneration",
+            typeof(Elsa.Persistence.EFCore.Sqlite.Migrations.Management.TenantScopedDefinitionIds).Assembly,
+            "20261101100005_TenantScopedDefinitionIds",
             "20260823231406_PerTenantIdentityUniqueness",
             (builder, assembly, options) => builder.UseElsaSqlite(assembly, "Data Source=:memory:", options)),
 #if NET9_0
         "MySql" => new(
-            typeof(Elsa.Persistence.EFCore.MySql.Migrations.Management.WorkflowDefinitionRegistryGeneration).Assembly,
-            "20260924222151_WorkflowDefinitionRegistryGeneration",
+            typeof(Elsa.Persistence.EFCore.MySql.Migrations.Management.TenantScopedDefinitionIds).Assembly,
+            "20261101100003_TenantScopedDefinitionIds",
             "20260823231449_PerTenantIdentityUniqueness",
             (builder, assembly, options) => builder.UseElsaMySql(assembly, "Server=unused", options, ServerVersion.Parse("9.0.0"))),
 #endif

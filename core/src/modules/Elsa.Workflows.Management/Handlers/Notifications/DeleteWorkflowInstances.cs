@@ -46,7 +46,7 @@ public class DeleteWorkflowInstances :
     /// <inheritdoc />
     public async Task HandleAsync(WorkflowDefinitionVersionsDeleting notification, CancellationToken cancellationToken)
     {
-        await DeleteWorkflowInstancesAsync(new WorkflowInstanceFilter { Ids = notification.Ids }, cancellationToken);
+        await DeleteWorkflowInstancesAsync(new WorkflowInstanceFilter { DefinitionVersionIds = notification.Ids }, cancellationToken);
     }
 
     private async Task DeleteWorkflowInstancesAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken) => await _workflowInstanceManager.BulkDeleteAsync(filter, cancellationToken);

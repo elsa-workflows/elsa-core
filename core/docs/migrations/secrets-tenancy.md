@@ -83,9 +83,10 @@ Oracle secrets providers also target `net10.0`. That is a dependency constraint,
 build against. Every MySQL project in the repository carries the same pin, and the secrets one additionally
 inherits it by referencing `Elsa.Persistence.EFCore.MySql`.
 
-A net10.0 host referencing the MySQL secrets provider resolves the net9.0 asset and runs normally, including
-the `SecretTenancy` migration — migrations are ordinary C# and do not depend on the host framework. The pins
-come out together once Pomelo ships for EF Core 10.
+A net10.0 host can still restore the net9.0 MySQL asset through NuGet TFM fallback. That combination is
+**not supported**: it pairs Pomelo 9 with EF Core 10 (NU1608) and is not a runtime proof. Keep MySQL hosts
+on net8.0/net9.0, or use SQLite, SQL Server, PostgreSQL, or Oracle on net10.0. The pins come out together
+once Pomelo ships for EF Core 10.
 
 ## The VNext persistence provider does not support this
 

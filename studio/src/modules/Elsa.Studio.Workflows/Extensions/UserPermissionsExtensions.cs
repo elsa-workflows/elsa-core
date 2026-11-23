@@ -35,7 +35,7 @@ public static class UserPermissionsExtensions
     public static bool CanCancelInstances(this UserPermissions permissions) => permissions.Has(WorkflowPermissions.Instances, WorkflowVerbs.Cancel);
 
     /// <summary>Whether the user can import workflow instances.</summary>
-    public static bool CanImportInstances(this UserPermissions permissions) => permissions.Has(WorkflowPermissions.Instances, PermissionVerbs.Write);
+    public static bool CanImportInstances(this UserPermissions permissions) => permissions.Has(WorkflowPermissions.Instances, WorkflowVerbs.Restore);
 
     /// <summary>Whether the user can submit alteration plans, such as a bulk cancel across every matching instance.</summary>
     public static bool CanExecuteAlterations(this UserPermissions permissions) => permissions.Has(WorkflowPermissions.Alterations, PermissionVerbs.Execute);

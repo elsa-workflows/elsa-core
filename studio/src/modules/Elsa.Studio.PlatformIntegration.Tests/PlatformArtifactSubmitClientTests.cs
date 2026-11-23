@@ -16,6 +16,25 @@ public sealed class PlatformArtifactSubmitClientTests
     };
 
     [Fact]
+    public async Task Submit_without_deploy_permission_never_configures_credentials()
+    {
+        var authorization = new FixedAuthorization(false);
+        using var client = new HttpClient();
+        var submit = new PlatformArtifactSubmitClient(client, authorization);
+        var result = await submit.SubmitAsync(null!, _options with
+        {
+            ConfigureRequestAsync = (_, _) => throw new InvalidOperationException("A denied caller cannot configure a Platform request.")
+        });
+
+        Assert.Equal(PlatformSubmitStatus.Unauthorized, result.Status);
+    }
+
+    private sealed class FixedAuthorization(bool allowed) : IPlatformSubmissionAuthorization
+    {
+        public Task<bool> CanSubmitAsync(CancellationToken cancellationToken = default) => Task.FromResult(allowed);
+    }
+
+    [Fact]
     public async Task Uploads_artifact_and_creates_desired_state_revision()
     {
         var handler = new RecordingHandler(
@@ -53,7 +72,7 @@ public sealed class PlatformArtifactSubmitClientTests
                   "createdAt": "2026-05-29T08:00:00Z"
                 }
                 """));
-        var client = new PlatformArtifactSubmitClient(new HttpClient(handler));
+        var client = new PlatformArtifactSubmitClient(new HttpClient(handler), new FixedAuthorization(true));
 
         var result = await client.SubmitAsync(Package(), _options);
 
@@ -117,7 +136,7 @@ public sealed class PlatformArtifactSubmitClientTests
                   "createdAt": "2026-05-29T08:00:00Z"
                 }
                 """));
-        var client = new PlatformArtifactSubmitClient(new HttpClient(handler));
+        var client = new PlatformArtifactSubmitClient(new HttpClient(handler), new FixedAuthorization(true));
 
         var result = await client.SubmitAsync(Package(), _options);
 
@@ -134,7 +153,7 @@ public sealed class PlatformArtifactSubmitClientTests
     public async Task Maps_platform_responses_to_safe_submit_states(HttpStatusCode statusCode, PlatformSubmitStatus expectedStatus)
     {
         var handler = new RecordingHandler(Response(statusCode, """{"title":"Bearer token rejected"}"""));
-        var client = new PlatformArtifactSubmitClient(new HttpClient(handler));
+        var client = new PlatformArtifactSubmitClient(new HttpClient(handler), new FixedAuthorization(true));
 
         var result = await client.SubmitAsync(Package(), _options);
 

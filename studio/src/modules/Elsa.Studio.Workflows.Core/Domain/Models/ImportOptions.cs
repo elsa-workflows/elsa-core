@@ -13,6 +13,11 @@ public class ImportOptions
     public int MaxAllowedSize { get; set; } = 1024 * 1024 * 10; // 10 MB
 
     /// <summary>
+    /// Gets or sets the total bytes that may be read from expanded entries in one ZIP archive and its nested archives.
+    /// </summary>
+    public int MaxArchiveExpandedSize { get; set; } = 50 * 1024 * 1024;
+
+    /// <summary>
     /// Gets or sets the target workflow definition identifier for the import.
     /// </summary>
     public string? DefinitionId { get; set; }

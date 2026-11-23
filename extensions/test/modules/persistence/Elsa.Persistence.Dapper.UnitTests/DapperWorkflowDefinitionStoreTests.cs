@@ -71,6 +71,22 @@ public sealed class DapperWorkflowDefinitionStoreTests : IDisposable
     }
 
     [Fact]
+    public async Task TryAddAsync_PersistsTextDefinitionAndDoesNotReplaceExistingRow()
+    {
+        var initial = Definition();
+        Assert.Null(initial.BinaryData);
+        Assert.True(await _store.TryAddAsync(initial));
+
+        var replacement = Definition();
+        replacement.StringData = "replacement";
+        Assert.False(await _store.TryAddAsync(replacement));
+
+        var stored = Assert.IsType<WorkflowDefinition>(await _store.FindAsync(Filter()));
+        Assert.Equal(initial.StringData, stored.StringData);
+        Assert.Null(stored.BinaryData);
+    }
+
+    [Fact]
     public async Task OptionalTenantAccessorUsesDefaultTenantAndExcludesOtherTenants()
     {
         await _store.SaveAsync(Definition());
@@ -227,6 +243,19 @@ public sealed class DapperWorkflowDefinitionStoreTests : IDisposable
         Assert.Equal("tenant-a", result.Definition!.TenantId);
         using var verify = _provider.GetConnection();
         Assert.Equal("tenant-a", verify.QuerySingle<string>($"select {Q("TenantId")} from {Q(_table)}"));
+    }
+
+    [Fact]
+    public async Task AnyAsyncHonorsTenantAgnosticFilter()
+    {
+        await _store.SaveAsync(Definition());
+        using (var connection = _provider.GetConnection())
+        {
+            connection.Execute($"update {Q(_table)} set {Q("TenantId")} = 'tenant-a'");
+        }
+
+        Assert.False(await _store.AnyAsync(new WorkflowDefinitionFilter { Id = "v1" }));
+        Assert.True(await _store.AnyAsync(new WorkflowDefinitionFilter { Id = "v1", TenantAgnostic = true }));
     }
 
     [Theory]

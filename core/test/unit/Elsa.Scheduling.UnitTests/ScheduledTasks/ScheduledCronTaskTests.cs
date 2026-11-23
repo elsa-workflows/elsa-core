@@ -16,6 +16,7 @@ public class ScheduledCronTaskTests : IDisposable
     private static readonly DateTimeOffset DefaultNow = new(2025, 11, 06, 22, 50, 00, 0, TimeSpan.Zero);
 
     private readonly ServiceProvider _serviceProvider;
+    private readonly ICommandSender _commandSender;
     private readonly ISystemClock _systemClock;
     private readonly ICronParser _cronParser;
     private readonly ILogger<ScheduledCronTask> _logger;
@@ -28,7 +29,8 @@ public class ScheduledCronTaskTests : IDisposable
         _cronParser = Substitute.For<ICronParser>();
         _logger = Substitute.For<ILogger<ScheduledCronTask>>();
         
-        services.AddSingleton(Substitute.For<ICommandSender>());
+        _commandSender = Substitute.For<ICommandSender>();
+        services.AddSingleton(_commandSender);
         _serviceProvider = services.BuildServiceProvider();
     }
 
@@ -92,6 +94,41 @@ public class ScheduledCronTaskTests : IDisposable
 
         // Assert - Verify that no error was logged (timer should be set up successfully)
         AssertNoErrorLogged();
+    }
+
+    [Fact]
+    public void Schedule_WithNextOccurrenceExceedingTimerLimit_ShouldStillSetupTimer()
+    {
+        // Arrange - System.Timers.Timer rejects intervals greater than int.MaxValue milliseconds.
+        SetupSystemClock(DefaultNow);
+        SetupCronParser(DefaultNow.AddDays(26));
+
+        // Act
+        CreateScheduledTask();
+
+        // Assert - Verify that no error was logged (timer should be set up successfully)
+        AssertNoErrorLogged();
+    }
+
+    [Fact]
+    public async Task EarlyTimerFire_BeforeTarget_DoesNotRunAndKeepsPendingOccurrence()
+    {
+        var occurrence = DefaultNow.AddMilliseconds(40);
+        SetupSystemClock(DefaultNow);
+        SetupCronParser(occurrence);
+
+        CreateScheduledTask();
+        var parserCallsAfterSchedule = CountParserCalls();
+
+        await Task.Delay(150);
+
+        Assert.Equal(parserCallsAfterSchedule, CountParserCalls());
+        await _commandSender.DidNotReceive().SendAsync(Arg.Any<ICommand>(), Arg.Any<CancellationToken>());
+
+        _systemClock.UtcNow.Returns(occurrence);
+        await WaitForCommandAsync();
+
+        await _commandSender.Received().SendAsync(Arg.Any<ICommand>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -198,6 +235,53 @@ public class ScheduledCronTaskTests : IDisposable
         
         // Assert - The key is that the task was created successfully without throwing or silently failing
         // This test passes with the fix, demonstrating the issue is resolved
+    }
+
+    private int CountParserCalls() =>
+        _cronParser.ReceivedCalls().Count(call => call.GetMethodInfo().Name == nameof(_cronParser.GetNextOccurrence));
+
+    [Fact]
+    public async Task TimerCallbackError_IsLoggedInsteadOfEscaping()
+    {
+        // Arrange - the clock works while scheduling, then throws inside the timer callback.
+        _systemClock.UtcNow.Returns(_ => DefaultNow, _ => throw new InvalidOperationException("clock failed"));
+        SetupCronParser(DefaultNow.AddMilliseconds(20));
+        CreateScheduledTask();
+
+        // Act - wait for the timer to fire.
+        await WaitForErrorLoggedAsync();
+
+        // Assert - the top-level guard logged the error instead of letting it escape the async void handler.
+        _logger.Received().Log(
+            LogLevel.Error,
+            Arg.Any<EventId>(),
+            Arg.Any<object>(),
+            Arg.Is<Exception>(e => e is InvalidOperationException),
+            Arg.Any<Func<object, Exception?, string>>());
+    }
+
+    private async Task WaitForErrorLoggedAsync()
+    {
+        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(2);
+        while (DateTime.UtcNow < deadline)
+        {
+            if (_logger.ReceivedCalls().Any(call => call.GetArguments().FirstOrDefault() is LogLevel.Error))
+                return;
+
+            await Task.Delay(10);
+        }
+    }
+
+    private async Task WaitForCommandAsync()
+    {
+        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(2);
+        while (DateTime.UtcNow < deadline)
+        {
+            if (_commandSender.ReceivedCalls().Any(call => call.GetMethodInfo().Name == nameof(ICommandSender.SendAsync)))
+                return;
+
+            await Task.Delay(10);
+        }
     }
 
     public void Dispose()

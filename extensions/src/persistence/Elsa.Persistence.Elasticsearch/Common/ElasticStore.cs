@@ -53,8 +53,7 @@ public class ElasticStore<T> where T : class
     /// </summary>
     public async Task<Page<T>> SearchAsync(Action<SearchRequestDescriptor<T>> search, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
-        search += s => s.From(pageArgs.Offset);
-        search += s => s.Size(pageArgs.Limit);
+        search += s => s.Indices(Indices.Index<T>()).From(pageArgs.Offset).Size(pageArgs.Limit);
 
         var response = await _elasticClient.SearchAsync(search, cancellationToken);
 
@@ -69,6 +68,7 @@ public class ElasticStore<T> where T : class
     /// </summary>
     public async Task<long> CountAsync(Action<CountRequestDescriptor<T>> countRequest, CancellationToken cancellationToken = default)
     {
+        countRequest += request => request.Indices(Indices.Index<T>());
         var response = await _elasticClient.CountAsync(countRequest, cancellationToken);
 
         if (!response.IsSuccess())
@@ -86,6 +86,21 @@ public class ElasticStore<T> where T : class
 
         if (!response.IsSuccess()) 
             throw new Exception($"Failed to save data in Elasticsearch: {response.ElasticsearchServerError}");
+    }
+
+    internal async Task<bool> TryCreateAsync(T document, string id, CancellationToken cancellationToken)
+    {
+        var response = await _elasticClient.CreateAsync(document, id,
+            request => request.RequestConfiguration(config => config.ThrowExceptions(false)), cancellationToken);
+
+        if (response.ApiCallDetails?.HttpStatusCode == 409 &&
+            response.ElasticsearchServerError?.Error?.Type == "version_conflict_engine_exception")
+            return false;
+
+        if (!response.IsSuccess())
+            throw new Exception($"Failed to add data in Elasticsearch: {response.ElasticsearchServerError}", response.ApiCallDetails?.OriginalException);
+
+        return true;
     }
 
     /// <summary>
@@ -117,7 +132,7 @@ public class ElasticStore<T> where T : class
     /// </summary>
     public async Task<long> DeleteByQueryAsync(Action<DeleteByQueryRequestDescriptor<T>> query, CancellationToken cancellationToken)
     {
-        var response = await _elasticClient.DeleteByQueryAsync(Indices.All, query, cancellationToken);
+        var response = await _elasticClient.DeleteByQueryAsync(Indices.Index<T>(), query, cancellationToken);
         
         if (!response.IsSuccess())
             throw new Exception(response.DebugInformation);
@@ -130,7 +145,7 @@ public class ElasticStore<T> where T : class
     /// </summary>
     public async Task<long> UpdateByQueryAsync(Action<UpdateByQueryRequestDescriptor<T>> query, CancellationToken cancellationToken)
     {
-        var response = await _elasticClient.UpdateByQueryAsync(Indices.All, query, cancellationToken);
+        var response = await _elasticClient.UpdateByQueryAsync(Indices.Index<T>(), query, cancellationToken);
 
         if (!response.IsSuccess())
             throw new Exception(response.DebugInformation);
