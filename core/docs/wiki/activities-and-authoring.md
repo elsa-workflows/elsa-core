@@ -141,6 +141,8 @@ Good examples:
 
 Designer-facing metadata is produced by descriptors and UI hint handlers. Core UI hints live under [Elsa.Workflows.Core/UIHints](../../src/modules/Elsa.Workflows.Core/UIHints). Module-specific handlers live with their module, such as HTTP content type options in [Elsa.Http/UIHints](../../src/modules/Elsa.Http/UIHints).
 
+`InputUIHints.Password` (`"password"`) only masks a literal value on screen in the designer. The mask is presentational: the literal is stored in clear text in the workflow definition. Use an expression that reads configuration or a secret store when the value is a real secret.
+
 If an activity property needs dynamic options, add an `IPropertyUIHandler` and expose it through the descriptor option endpoint.
 
 ## Authoring Choice Guide

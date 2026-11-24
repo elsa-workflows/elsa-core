@@ -10,6 +10,7 @@ import { ActivityRegistry } from "@elsa-workflows/react-studio-sdk/designer/mode
 import type { ActivityDescriptor } from "@elsa-workflows/react-studio-api-client/types/descriptors";
 import { activityEditorsModule } from "../module";
 import { DateTimePickerEditor } from "../editors/datetime-picker-editor";
+import { PasswordEditor } from "../editors/password-editor";
 import { DynamicOutcomesEditor } from "../editors/dynamic-outcomes-editor";
 import { HttpStatusCodesEditor } from "../editors/http-status-codes-editor";
 import { InputPickerEditor } from "../editors/input-picker-editor";
@@ -29,6 +30,15 @@ it("indexes the exact serialized InputPicker value while retaining descriptions 
 const props = (input: InputDescriptor, value?: UiHintEditorProps["value"]): UiHintEditorProps => ({
   descriptor: input, value, onChange() {}, syntaxes: ["Object"], readOnly: true,
   context: { activityType: "Example.Activity", activityVersion: 1, activity: {}, variables: [], outputs: [] },
+});
+
+it("masks a password literal, including surrounding spaces", () => {
+  const markup = renderToStaticMarkup(<PasswordEditor {...props(descriptor({
+    name: "Password", typeName: "String", defaultSyntax: "Literal", uiHint: "password",
+  }), { typeName: "String", expression: { type: "Literal", value: " s3cret " } })} syntaxes={["Literal"]} />);
+  expect(markup).toContain('type="password"');
+  expect(markup).toContain('autoComplete="new-password"');
+  expect(markup).toContain('value=" s3cret "');
 });
 
 describe("DateTimePicker", () => {
@@ -125,7 +135,7 @@ it("registers the four specialized editors and extension hints through the same 
     },
   }));
   expect(registry.slots("uiHints").map(slot => slot.hint)).toEqual(expect.arrayContaining([
-    "datetime-picker", "dynamic-outcomes", "http-status-codes", "input-picker", "email-address",
+    "datetime-picker", "dynamic-outcomes", "http-status-codes", "input-picker", "password", "email-address",
   ]));
   const Email = registry.studioModules().find(module => module.id === "email-extension")!.extensions!.uiHints!["email-address"];
   expect(renderToStaticMarkup(<Email {...props(descriptor())} />)).toContain('type="email"');

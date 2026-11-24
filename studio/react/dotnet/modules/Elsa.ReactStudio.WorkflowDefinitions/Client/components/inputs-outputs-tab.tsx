@@ -20,7 +20,7 @@ import { useWorkflowEditor } from "../editor-context";
 import { useDesigner } from "@elsa-workflows/react-studio-sdk/designer/index";
 import { DataUsageChips } from "./data-usage";
 
-const UI_HINTS = ["singleline", "multiline", "checkbox", "dropdown", "json-editor", "code-editor", "multitext", "datetime-picker"];
+const UI_HINTS = ["singleline", "password", "multiline", "checkbox", "dropdown", "json-editor", "code-editor", "multitext", "datetime-picker"];
 
 export function InputsOutputsTab() {
   const _t = useTranslation();

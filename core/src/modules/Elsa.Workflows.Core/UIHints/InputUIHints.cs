@@ -21,6 +21,14 @@ public static class InputUIHints
     public const string OutcomePicker = "outcome-picker";
     public const string RadioList = "radiolist";
     public const string SingleLine = "singleline";
+
+    /// <summary>
+    /// Displays a single-line input that masks the literal value on screen.
+    /// Masking is presentational: a literal is stored in clear text in the workflow definition.
+    /// Read a real secret from configuration or a secret store with an expression instead of a literal.
+    /// </summary>
+    public const string Password = "password";
+
     public const string TypePicker = "type-picker";
     public const string VariablePicker = "variable-picker";
     public const string InputPicker = "input-picker";

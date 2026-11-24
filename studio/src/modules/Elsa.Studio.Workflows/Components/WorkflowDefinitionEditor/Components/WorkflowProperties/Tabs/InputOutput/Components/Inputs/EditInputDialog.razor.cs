@@ -93,6 +93,7 @@ public partial class EditInputDialog
         var descriptors = new[]
         {
             new UIHintDescriptor("singleline", Localizer["Single line"], Localizer["A single line of text input"]),
+            new UIHintDescriptor("password", Localizer["Password"], Localizer["A masked single-line input"]),
             new UIHintDescriptor("multiline", Localizer["Multi line"], Localizer["Multiple lines of text input"]),
             new UIHintDescriptor("checkbox", Localizer["Checkbox"], Localizer["A checkbox"]),
             new UIHintDescriptor("checklist", Localizer["Checklist"], Localizer["A list of checkboxes"]),
