@@ -40,6 +40,8 @@ public class EFBookmarkQueuePagingTests : IAsyncLifetime
             .BuildServiceProvider();
         var options = new DbContextOptionsBuilder<RuntimeElsaDbContext>()
             .UseSqlite(_connection)
+            // Each case uses its own observer. Avoid retaining a provider for every observer in EF's global cache.
+            .EnableServiceProviderCaching(false)
             .AddInterceptors(_observer)
             .Options;
         _factory = new ContextFactory(options, _services);
