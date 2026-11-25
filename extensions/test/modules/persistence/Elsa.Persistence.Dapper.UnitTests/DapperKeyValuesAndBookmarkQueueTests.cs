@@ -168,7 +168,9 @@ public sealed class DapperKeyValuesAndBookmarkQueueTests : IDisposable
         var store = scope.ServiceProvider.GetRequiredService<IBookmarkQueueStore>();
 
         foreach (var id in new[] { "c", "b", "a" })
+        {
             await store.AddAsync(new BookmarkQueueItem { Id = id, WorkflowInstanceId = "selected", CreatedAt = DateTimeOffset.UnixEpoch });
+        }
 
         await store.AddAsync(new BookmarkQueueItem { Id = "d", WorkflowInstanceId = "other", CreatedAt = DateTimeOffset.UnixEpoch });
         var order = new BookmarkQueueItemOrder<DateTimeOffset>(x => x.CreatedAt, OrderDirection.Descending);

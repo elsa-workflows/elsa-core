@@ -123,7 +123,9 @@ public sealed class MongoTriggerBookmarkQueueTenantAgnosticTests : IAsyncLifetim
         using var tenant = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
 
         foreach (var id in new[] { "c", "b", "a" })
+        {
             await _bookmarkQueueStore.SaveAsync(new BookmarkQueueItem { Id = id, WorkflowInstanceId = "selected", CreatedAt = DateTimeOffset.UnixEpoch });
+        }
 
         await _bookmarkQueueStore.SaveAsync(new BookmarkQueueItem { Id = "d", WorkflowInstanceId = "other", CreatedAt = DateTimeOffset.UnixEpoch });
         var order = new BookmarkQueueItemOrder<DateTimeOffset>(x => x.CreatedAt, OrderDirection.Descending);
