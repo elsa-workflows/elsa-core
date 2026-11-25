@@ -14,6 +14,7 @@ build and every publisher. The ref and inputs arrive as environment variables, n
                            inputs.promote_candidate_version (optional; empty means not a candidate promotion)
     PROMOTE_TARGET         inputs.promote_target (all, feedz or nuget; anything else fails closed; only
                            all is accepted without a promote_candidate_version)
+    RECOVER_NUGET_364      recover the original Elsa 3.6.4 release to NuGet.org (optional boolean)
 """
 
 from __future__ import annotations
@@ -45,12 +46,19 @@ def selection_errors(
     exclude_ids: str | None = None,
     promote: str | None = None,
     target: str = "all",
+    recover_nuget_364: bool = False,
 ) -> list[str]:
     """Return why this selection must not run; an empty list means it may."""
     errors = []
     if target not in PROMOTE_TARGETS:
         # Fails closed on any unknown value, before any promotion or other publication is considered.
         return [f"promote_target {target!r} must be one of {', '.join(PROMOTE_TARGETS)}."]
+    if recover_nuget_364:
+        if ref != PROMOTE_REF:
+            errors.append(f"Elsa 3.6.4 NuGet recovery requires {PROMOTE_REF}.")
+        if any((feedz, nuget, npm, coverage, parse_exclude_ids(exclude_ids), promote, target != "all")):
+            errors.append("recover_nuget_364 cannot be combined with other publication inputs.")
+        return errors
     if target != "all" and not promote:
         return [f"promote_target {target!r} is only accepted together with promote_candidate_version."]
     if promote:
@@ -102,8 +110,8 @@ def selection_errors(
     return errors
 
 
-def _flag(name: str) -> bool:
-    value = os.environ.get(name, "")
+def _flag(name: str, default: str = "") -> bool:
+    value = os.environ.get(name, default)
     if value not in ("true", "false"):
         raise SystemExit(f"{name} must be 'true' or 'false', got {value!r}.")
     return value == "true"
@@ -120,6 +128,7 @@ def main() -> int:
         exclude_ids=os.environ.get("EXCLUDE_IDS"),
         promote=os.environ.get("PROMOTE_CANDIDATE_VERSION", ""),
         target=os.environ.get("PROMOTE_TARGET", "all"),
+        recover_nuget_364=_flag("RECOVER_NUGET_364", "false"),
     )
     for error in errors:
         print(error, file=sys.stderr)

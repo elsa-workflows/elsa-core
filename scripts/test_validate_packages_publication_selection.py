@@ -114,6 +114,20 @@ class SelectionErrorsTests(unittest.TestCase):
             " ".join(errors("refs/tags/3.10.0", set(), exclude_ids="Elsa")),
         )
 
+    def test_nuget_364_recovery_is_main_only_and_exclusive(self):
+        self.assertEqual([], selection_errors("refs/heads/main", recover_nuget_364=True))
+        for ref in ("refs/heads/release/3.6.4", "refs/tags/3.6.4", "refs/heads/topic"):
+            with self.subTest(ref=ref):
+                self.assertIn("requires refs/heads/main", " ".join(selection_errors(ref, recover_nuget_364=True)))
+        for options in (
+            {"feedz": True}, {"nuget": True}, {"npm": True}, {"coverage": True},
+            {"exclude_ids": "Elsa"}, {"promote": "3.11.0"}, {"target": "nuget"},
+        ):
+            with self.subTest(options=options):
+                self.assertIn("cannot be combined", " ".join(
+                    selection_errors("refs/heads/main", recover_nuget_364=True, **options)
+                ))
+
     def test_candidate_promotion_is_main_only_and_exclusive(self):
         self.assertEqual([], errors("refs/heads/main", set(), promote="3.10.1"))
         self.assertEqual([], errors("refs/heads/main", set(), promote="3.10.2"))

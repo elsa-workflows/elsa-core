@@ -3,8 +3,7 @@
 
 Parses the workflow (PyYAML) and fails when a publication capability - Feedz or NuGet secrets, NuGet
 login, package pushes, Pages deployment, OIDC tokens or environments - appears outside
-publish_preview_feedz, publish_nuget, publish_npm, deploy_coverage and the two candidate-promotion publish
-jobs, or when one of those jobs can start without a validated, explicit workflow_dispatch opt-in.
+the configured publishers and Pages deployment job, or when one of those jobs can start without a validated, explicit workflow_dispatch opt-in.
 Candidate promotion (promote_candidate_version) has its own rules: see candidate_promotion_violations.
 """
 
@@ -28,10 +27,12 @@ WORKFLOW = ROOT / ".github/workflows/packages.yml"
 
 SELECTION_JOB = "validate_publication_selection"
 # Each gated job is switched on by the workflow_dispatch input of the same name.
-GATED_JOBS = ("publish_preview_feedz", "publish_nuget", "publish_npm", "deploy_coverage")
+RECOVERY_JOB = "recover_nuget_364"
+GATED_JOBS = ("publish_preview_feedz", "publish_nuget", "publish_npm", "deploy_coverage", RECOVERY_JOB)
 MANUAL_DISPATCH = "github.event_name == 'workflow_dispatch'"
 # Top-level conjuncts a gated job's if: needs beyond the dispatch and its own input.
 REQUIRED_REF_CONDITIONS = {
+    RECOVERY_JOB: ("github.ref == 'refs/heads/main'",),
     "publish_preview_feedz": (
         "startsWith(github.ref, 'refs/heads/') || (startsWith(github.ref, 'refs/tags/3.10.') && contains(github.ref_name, '-'))",
     ),
@@ -54,10 +55,13 @@ SELECTION_ENV = {
     "EXCLUDE_IDS": "${{ inputs.exclude_ids }}",
     "PROMOTE_CANDIDATE_VERSION": "${{ inputs.promote_candidate_version }}",
     "PROMOTE_TARGET": "${{ inputs.promote_target }}",
+    "RECOVER_NUGET_364": "${{ inputs.recover_nuget_364 }}",
 }
 GUARD_EXCLUDE_IDS = SELECTION_ENV["EXCLUDE_IDS"]
 # Probed against the script the selection job runs, not a copy of its rules.
 REQUIRED_REJECTIONS = (
+    ("3.6.4 recovery from a tag", "refs/tags/3.6.4", {"recover_nuget_364": True}),
+    ("3.6.4 recovery combined with promotion", "refs/heads/main", {"recover_nuget_364": True, "promote": "3.11.0"}),
     ("a v-prefixed tag", "refs/tags/v3.10.0", {}),
     ("a non-release tag", "refs/tags/test-1", {}),
     ("unsealed NuGet publication from a stable 3.11 tag", "refs/tags/3.11.0", {"nuget": True}),
@@ -73,6 +77,7 @@ REQUIRED_REJECTIONS = (
     ("candidate promotion combined with publish_nuget", "refs/heads/main", {"promote": "3.10.1", "nuget": True}),
 )
 REQUIRED_ACCEPTANCES = (
+    ("3.6.4 recovery from main", "refs/heads/main", {"recover_nuget_364": True}),
     ("Feedz from a 3.10.x prerelease tag", "refs/tags/3.10.0-rc1", {"feedz": True}),
     ("NuGet from a stable 3.10.x tag", "refs/tags/3.10.0", {"nuget": True}),
     ("npm from a 3.10.x prerelease tag", "refs/tags/3.10.0-rc1", {"npm": True}),
@@ -1210,6 +1215,36 @@ def candidate_promotion_violations(source: str) -> list[str]:
     return violations
 
 
+def recovery_job_violations(jobs: dict) -> list[str]:
+    job = jobs.get(RECOVERY_JOB)
+    if not isinstance(job, dict):
+        return []  # The gated-job checks report a missing job.
+    violations = []
+    if needs(job) != {SELECTION_JOB} or job.get("environment") != "nuget-org":
+        violations.append("3.6.4 recovery must depend only on selection and use the nuget-org environment")
+    if job.get("permissions") != {"actions": "read", "contents": "read", "id-token": "write"}:
+        violations.append("3.6.4 recovery must grant only artifact and source reads plus OIDC")
+
+    steps = job.get("steps") or []
+    expected = [
+        "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683",
+        "python3 scripts/recover_3_6_4_nuget.py",
+        "NuGet/login@8d196754b4036150537f80ac539e15c2f1028841",
+        "./.github/actions/push-nuget-packages",
+        "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+    ]
+    if [step.get("uses", _step_run(step)) for step in steps] != expected:
+        violations.append("3.6.4 recovery must verify the original artifact before login, push and receipt upload")
+    if job.get("continue-on-error") or any("if" in step or step.get("continue-on-error") for step in steps):
+        violations.append("3.6.4 recovery must run all steps and stop on failure")
+
+    for name in ("test_unit_integration", "test_component"):
+        condition = if_expression(jobs.get(name, {}).get("if"))
+        if condition != "inputs.promote_candidate_version == '' && !inputs.recover_nuget_364":
+            violations.append(f"{name} must skip the 3.6.4 recovery dispatch")
+    return violations
+
+
 def workflow_violations(workflow: Any) -> list[str]:
     if not isinstance(workflow, dict) or not isinstance(workflow.get("jobs"), dict):
         return ["the workflow has no jobs mapping"]
@@ -1225,6 +1260,7 @@ def workflow_violations(workflow: Any) -> list[str]:
         *trigger_violations(workflow),
         *capability_violations(workflow),
         *gated_job_violations(jobs),
+        *recovery_job_violations(jobs),
         *build_gate_violations(jobs),
         *selection_violations(jobs),
         *pages_upload_violations(jobs),

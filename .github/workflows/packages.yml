@@ -28,6 +28,11 @@ on:
         required: false
         type: string
         default: ''
+      recover_nuget_364:
+        description: Recover the original Elsa 3.6.4 release artifact on NuGet.org. Main only and requires publisher approval.
+        required: false
+        type: boolean
+        default: false
       promote_candidate_version:
         description: Promote the already-built candidate pinned for this version in .github/release-pins/consolidated.json (for example 3.11.0) to Feedz and nuget.org, each behind its environment approval. Main only; no rebuild, no tag. Leave empty for every other run.
         required: false
@@ -85,12 +90,13 @@ jobs:
           EXCLUDE_IDS: ${{ inputs.exclude_ids }}
           PROMOTE_CANDIDATE_VERSION: ${{ inputs.promote_candidate_version }}
           PROMOTE_TARGET: ${{ inputs.promote_target }}
+          RECOVER_NUGET_364: ${{ inputs.recover_nuget_364 }}
         run: python3 scripts/validate_packages_publication_selection.py
 
   test_unit_integration:
     name: Test unit/integration with coverage
-    # A candidate promotion installs pinned, already-tested bytes: nothing is built or tested.
-    if: ${{ inputs.promote_candidate_version == '' }}
+    # Candidate promotion and release recovery reuse already-tested packages.
+    if: ${{ inputs.promote_candidate_version == '' && !inputs.recover_nuget_364 }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -191,8 +197,8 @@ jobs:
 
   test_component:
     name: Test component with coverage
-    # A candidate promotion installs pinned, already-tested bytes: nothing is built or tested.
-    if: ${{ inputs.promote_candidate_version == '' }}
+    # Candidate promotion and release recovery reuse already-tested packages.
+    if: ${{ inputs.promote_candidate_version == '' && !inputs.recover_nuget_364 }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -910,3 +916,47 @@ jobs:
         with:
           feed-source: ${{ env.nuget_feed_source }}
           api-key: ${{ steps.nuget_login.outputs.NUGET_API_KEY }}
+
+  # Remove this recovery path once the 3.6.4 recovery receipt and public packages have been verified.
+  recover_nuget_364:
+    name: Recover Elsa 3.6.4 to nuget.org
+    needs: validate_publication_selection
+    if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.recover_nuget_364 }}
+    environment: nuget-org
+    concurrency:
+      group: recover-nuget-3.6.4
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      actions: read
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          sparse-checkout: |
+            .github/actions
+            scripts
+          persist-credentials: false
+      - name: Verify and stage only the original release artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/recover_3_6_4_nuget.py
+      - name: NuGet login for Elsa 3.6.4
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1
+        id: nuget_login
+        with:
+          user: ${{ secrets.NUGET_USER }}
+      - name: Publish the original Elsa 3.6.4 packages to nuget.org
+        uses: ./.github/actions/push-nuget-packages
+        with:
+          feed-source: ${{ env.nuget_feed_source }}
+          api-key: ${{ steps.nuget_login.outputs.NUGET_API_KEY }}
+      - name: Retain the release recovery receipt
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: elsa-core-3.6.4-nuget-recovery-evidence
+          path: ${{ runner.temp }}/recovery-receipt.json
+          if-no-files-found: error
+          retention-days: 90

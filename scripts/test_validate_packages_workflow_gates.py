@@ -319,6 +319,15 @@ class WorkflowGateTests(unittest.TestCase):
     def test_real_workflow_passes(self):
         self.assertEqual([], gates.source_violations(self.source))
 
+    def test_recovery_requires_the_protected_environment_and_original_artifact_verification(self):
+        workflow = yaml.safe_load(self.source)
+        recovery = workflow["jobs"][gates.RECOVERY_JOB]
+        recovery["environment"] = "unprotected"
+        recovery["steps"].pop(1)
+        violations = gates.workflow_violations(workflow)
+        self.assertTrue(any("use the nuget-org environment" in item for item in violations))
+        self.assertTrue(any("verify the original artifact before login" in item for item in violations))
+
     def test_rejects_push_job_using_the_feedz_key(self):
         source = self.mutated(None, """
             sneak_feedz:
