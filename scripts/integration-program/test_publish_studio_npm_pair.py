@@ -571,17 +571,6 @@ class PublicationContracts(unittest.TestCase):
         self.assertNotIn('NODE_AUTH_TOKEN', forwarded)
         self.assertNotIn('--provenance=false', child.call_args.args[0])
 
-    def test_existing_workflow_retains_default_proof_and_main_only_310_candidate(self):
-        source = (pair.ROOT / '.github/workflows/studio-npm-pair.yml').read_text()
-        self.assertIn('default: proof', source)
-        self.assertIn('test "$GITHUB_EVENT_NAME" = workflow_dispatch', source)
-        self.assertIn('test "$GITHUB_REF" = refs/heads/main', source)
-        self.assertIn('3.10.*', source)
-        self.assertIn('candidate_args=(--release-candidate)', source)
-        self.assertIn('studio-npm-candidate', source)
-        self.assertNotIn('id-token:', source)
-        self.assertNotIn('npm publish', source)
-
     def test_symlink_original_rejected(self):
         link = self.root / 'link.zip'
         link.symlink_to(self.zip)

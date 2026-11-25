@@ -251,7 +251,7 @@ def receipt(root: Path, manifest_path: Path, expected_head: str | None) -> dict[
         "restoredProjectCount": len(assets),
         "independentPackageConsumers": {
             "disposition": "Registered Apps image consumers use released packages; excluded from source-reference impact, not claimed as affected-test coverage",
-            "validationOwner": ".github/workflows/apps-source-validation.yml",
+            "validationOwner": ".github/workflows/pr.yml#projects",
             "inventoryFilterSha256": sha256(root / "Elsa.Apps.slnf"),
             "buildConfigSha256": {path: sha256(root / path)
                                   for path in graph_reader.ancestor_build_configs(root, set(independent_assets))},
@@ -261,7 +261,7 @@ def receipt(root: Path, manifest_path: Path, expected_head: str | None) -> dict[
         },
         "independentTemplatesProduct": {
             "disposition": "Separate product solution; independent template pack and test, starter/legacy manifests are build data. No Templates restore or smoke coverage claimed by this source graph.",
-            "validationOwner": ".github/workflows/templates-source-validation.yml",
+            "validationOwner": ".github/workflows/pr.yml#templates",
             "inventorySha256": sha256(root / "scripts/solution/solution-groups.json"),
             "filterSha256": sha256(root / "Elsa.Templates.slnf"),
             "buildProjects": [project.relative_to(root).as_posix() for project in templates_projects],

@@ -5,8 +5,7 @@ versions or creates tags. The existing `0.0.0-proof.RUN.ATTEMPT` identity remain
 verification-only. A separate producer switch, `--release-candidate`, emits a
 schema 2 `release-candidate` identity through the same build, pack and consumer
 path. This switch prepares unpublished bytes; it does not reserve a version or
-authorize publication. The existing producer workflow offers an explicit main-only manual 3.10 candidate
-mode, with proof as the default. No candidate producer has yet been run. The
+authorize publication. The historical producer workflow offered an explicit main-only manual 3.10 candidate mode, with proof as the default. The
 3.8/3.9 candidate identity grammar preserves future maintenance routes, but their
 reviewed producer/provenance admission remains unconfigured.
 
@@ -49,23 +48,9 @@ proof is retained and checked; this command does not rerun that consumer.
 
 ## Hosted fixed-original custody (#8736)
 
-The manual [Studio original npm pair custody workflow](../../.github/workflows/publish-studio-original-pair.yml)
-has retrieval and verification jobs only. Its only input is the exact reviewed
-executor head. Dispatch it on `main` after the implementation's exact-head review,
-CI and main integration have passed:
-
-```sh
-gh workflow run publish-studio-original-pair.yml --ref main \
-  -f expected_head=REVIEWED_MAIN_EXECUTOR_SHA
-gh run list --workflow publish-studio-original-pair.yml --event workflow_dispatch
-gh run watch CUSTODY_RUN_ID --exit-status
-gh run download CUSTODY_RUN_ID \
-  -n studio-npm-original-evidence-CUSTODY_RUN_ID-CUSTODY_ATTEMPT \
-  -D /physical/path/custody-evidence
-gh run download CUSTODY_RUN_ID \
-  -n studio-npm-original-input-CUSTODY_RUN_ID-CUSTODY_ATTEMPT \
-  -D /physical/path/original-input
-```
+The [retired Studio original npm pair custody workflow](https://github.com/elsa-workflows/elsa-core/blob/be796b65e89a83941af78351582f988ed391d9f4/.github/workflows/publish-studio-original-pair.yml)
+describes the fixed investigation into the original proof archive. Its artifact is no longer available.
+Use the local pair builder for new proofs and the active release runbook for approved publishing.
 
 An empty, malformed or wrong head, a non-main ref, missing inputs or unavailable
 provider metadata fails the run. The workflow cannot choose another artifact,

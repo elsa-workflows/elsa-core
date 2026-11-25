@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 from contextlib import redirect_stderr, redirect_stdout
 import io
 import json
+import os
 from pathlib import Path
 import subprocess
 import tempfile
@@ -455,6 +456,23 @@ class ProductReleasePlanTests(unittest.TestCase):
         with patch.object(observations.opener, 'open', side_effect=urllib.error.HTTPError(Response.url, 302, 'redirect', {}, None)):
             self.assertEqual('unavailable', observations.get(Response.url)['status'])
 
+    def test_ci_token_is_limited_to_exact_core_reference_reads(self):
+        observations = planner.Observations('test-token')
+        endpoints = [
+            (planner.GITHUB + 'git/ref/heads/release/3.8.4', 'Bearer test-token'),
+            (planner.GITHUB + 'git/matching-refs/tags/3.9.', 'Bearer test-token'),
+            (planner.GITHUB + 'git/ref/heads/main', None),
+            (planner.NUGET_INDEX, None),
+            (planner.history_url(planner.NPM_IDS[0], True), None),
+        ]
+        with patch.object(observations.opener, 'open', side_effect=OSError()) as open_request:
+            for url, expected in endpoints:
+                with self.subTest(url=url):
+                    observations.get(url)
+                    request = open_request.call_args.args[0]
+                    self.assertEqual('GET', request.get_method())
+                    self.assertEqual(expected, request.unredirected_hdrs.get('Authorization'))
+
     def test_310_is_explicitly_ineligible_without_source_or_feed_execution(self):
         with patch.object(metadata, 'git', side_effect=lambda root, *args: '' if args[0] == 'status' else 'a' * 40), \
              patch.object(planner.Observations, 'get', side_effect=AssertionError('feed not allowed')):
@@ -606,6 +624,24 @@ class HistoricalStudioNpmIntentTests(unittest.TestCase):
 
 
 class ProductReleaseCliFailureTests(unittest.TestCase):
+    def test_ci_token_is_removed_before_tools_run_and_failure_is_sanitized(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / 'output'
+            def build_helper(_):
+                self.assertNotIn('ELSA_PLAN_GITHUB_TOKEN', os.environ)
+                return object()
+            stdout = io.StringIO()
+            with patch.dict(os.environ, {'ELSA_PLAN_GITHUB_TOKEN': 'test-token'}), \
+                 patch('sys.argv', ['planner', '--product', 'core', '--line', '3.8', '--version', '3.8.5',
+                                   '--output', str(output)]), patch.object(planner, 'build_helper', side_effect=build_helper), \
+                 patch.object(planner, 'execute', side_effect=ValueError('source_ref_unavailable')) as execute, \
+                 redirect_stdout(stdout):
+                self.assertEqual(1, planner.main())
+            self.assertEqual('test-token', execute.call_args.kwargs['github_token'])
+            text = (output / 'plan.json').read_text()
+            self.assertEqual('source_ref_unavailable', json.loads(text)['category'])
+            self.assertNotIn('test-token', text + stdout.getvalue())
+
     def test_git_called_process_error_produces_path_free_incomplete_receipt_without_build(self):
         with tempfile.TemporaryDirectory() as directory:
             parent = Path(directory)

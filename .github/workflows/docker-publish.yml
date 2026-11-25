@@ -12,13 +12,11 @@
 #   stable X.Y.Z also moves latest when it is the highest stable 3.x tag
 #   previews never move X.Y or latest
 #
-# Registry login uses the Community publisher secrets last used by
-# .github/workflows/elsa-server.yml (and the studio / combined siblings):
-#   DOCKER_USER, DOCKER_PASS
+# The Community publisher uses DOCKER_USER and DOCKER_PASS.
 # The inert Apps publisher uses different names (DOCKER_USERNAME / DOCKER_PASSWORD)
 # and is out of scope here.
 #
-# Datadog (docker/ElsaServer-Datadog.Dockerfile) is smoke-tested by docker-ca.yml
+# PR checks smoke-tests Datadog (docker/ElsaServer-Datadog.Dockerfile)
 # but was never a published Community image, so it is not included.
 #
 # Multi-arch: linux/amd64,linux/arm64. The retired Community workflows also
