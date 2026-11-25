@@ -8,6 +8,9 @@ namespace Elsa.Workflows.Runtime;
 /// <summary>
 /// Provides access to bookmark queue items.
 /// </summary>
+/// <remarks>
+/// Paged queries use the requested primary order, with ascending item ID as the tie-breaker.
+/// </remarks>
 public interface IBookmarkQueueStore
 {
     /// <summary>
