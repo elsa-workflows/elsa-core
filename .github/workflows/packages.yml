@@ -135,24 +135,6 @@ jobs:
     timeout-minutes: 30
     if: ${{ github.event_name != 'pull_request' }}
     steps:
-      - name: Extract branch name
-        run: |
-          BRANCH_NAME=${{ github.ref }} # e.g., refs/heads/main
-          BRANCH_NAME=${BRANCH_NAME#refs/heads/} # remove the refs/heads/ prefix
-          # Extract the last part after the last slash of the branch name, if any, e.g., feature/issue-123 -> issue-123 and use it as the version prefix.
-          PACKAGE_PREFIX=$(echo $BRANCH_NAME | rev | cut -d/ -f1 | rev | tr '_' '-')
-
-          # If the branch name is main, use the preview version. Otherwise, use the branch name as the version prefix.
-          if [[ "${BRANCH_NAME}" == "main" || "${BRANCH_NAME}" =~ ^develop/ || "${BRANCH_NAME}" =~ ^release/ ]]; then
-              PACKAGE_PREFIX="preview"
-          fi
-
-          echo "Ref: ${{ github.ref }}"
-          echo "Branch name: ${BRANCH_NAME}"
-          echo "Package prefix: ${PACKAGE_PREFIX}"
-          echo "BRANCH_NAME=${BRANCH_NAME}" >> $GITHUB_ENV
-          echo "PACKAGE_PREFIX=${PACKAGE_PREFIX}" >> $GITHUB_ENV
-
       - name: Checkout
         uses: actions/checkout@v4
 

@@ -27,7 +27,9 @@ public class BookmarkQueueItemOrder<TProp> : OrderDefinition<BookmarkQueueItem, 
         // An ID sort already determines the order and some providers reject duplicate sort fields.
         var primaryProperty = KeySelector.GetProperty();
         if (primaryProperty?.DeclaringType == typeof(Entity) && primaryProperty.Name == nameof(Entity.Id))
+        {
             return ordered;
+        }
 
         return ordered.ThenBy(item => item.Id);
     }
