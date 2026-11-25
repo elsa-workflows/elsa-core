@@ -475,11 +475,13 @@ public class HttpWorkflowsMiddlewareTests
         Assert.Empty(resume.WorkflowRunner.ReceivedCalls());
     }
 
-    [Fact]
-    public async Task InvokeAsync_WhenTheRequestTimeoutIsShorterThanTheLockTimeout_WaitsForTheInstanceLockNoLongerThanTheRequestTimeout()
+    [Theory]
+    [InlineData(600_000)]
+    [InlineData(-1)] // Timeout.InfiniteTimeSpan
+    public async Task InvokeAsync_WhenTheRequestTimeoutIsShorterThanTheLockTimeout_WaitsForTheInstanceLockNoLongerThanTheRequestTimeout(int lockTimeoutMilliseconds)
     {
         // Arrange
-        var resume = new ResumeScenario(requestTimeout: TimeSpan.FromSeconds(5));
+        var resume = new ResumeScenario(requestTimeout: TimeSpan.FromSeconds(5), lockTimeout: TimeSpan.FromMilliseconds(lockTimeoutMilliseconds));
 
         // Act
         await resume.InvokeAsync(_middleware);
@@ -1162,7 +1164,7 @@ public class HttpWorkflowsMiddlewareTests
         private readonly StoredBookmark _bookmark;
         private readonly IServiceProvider _serviceProvider;
 
-        public ResumeScenario(TimeSpan? requestTimeout = null, bool authorize = false)
+        public ResumeScenario(TimeSpan? requestTimeout = null, bool authorize = false, TimeSpan? lockTimeout = null)
         {
             _bookmark = new()
             {
@@ -1212,6 +1214,7 @@ public class HttpWorkflowsMiddlewareTests
 
             _serviceProvider = new ServiceCollection()
                 .AddOptions()
+                .Configure<DistributedLockingOptions>(options => options.LockAcquisitionTimeout = lockTimeout ?? options.LockAcquisitionTimeout)
                 .AddSingleton<IRouteMatcher, ExactRouteMatcher>()
                 .AddSingleton<IRouteTable>(new ListRouteTable([new(BookmarkPath)]))
                 .AddSingleton<IStimulusHasher, FixedStimulusHasher>()

@@ -233,7 +233,9 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
         // Don't wait for the lock longer than the request is allowed to take (only a positive timeout caps the wait).
         var lockProvider = serviceProvider.GetRequiredService<IDistributedLockProvider>();
         var lockTimeout = serviceProvider.GetRequiredService<IOptions<DistributedLockingOptions>>().Value.LockAcquisitionTimeout;
-        if (bookmarkPayload.RequestTimeout is { } requestTimeout && requestTimeout > TimeSpan.Zero && requestTimeout < lockTimeout)
+        if (bookmarkPayload.RequestTimeout is { } requestTimeout
+            && requestTimeout > TimeSpan.Zero
+            && (lockTimeout == Timeout.InfiniteTimeSpan || requestTimeout < lockTimeout))
             lockTimeout = requestTimeout;
 
         await using var instanceLock = await lockProvider.TryAcquireLockAsync($"workflow-instance:{bookmark.WorkflowInstanceId}", lockTimeout, cancellationToken);
