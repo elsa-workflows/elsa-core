@@ -38,9 +38,9 @@ public class BookmarkQueueDeliveryTests
         app.Signaler.Count = 0;
 
         var starting = app.StartAsync();
-        await app.Gate.Indexed.Task.WaitAsync(Deadline);
         try
         {
+            await app.Gate.Indexed.Task.WaitAsync(Deadline);
             Assert.Single(await app.Services.GetRequiredService<IBookmarkStore>().FindManyAsync(new BookmarkFilter { WorkflowInstanceId = "delivery-instance" }));
             Assert.Equal(0, app.Signaler.Count);
         }
@@ -126,9 +126,9 @@ public class BookmarkQueueDeliveryTests
         app.Gate.DeferWork = true;
         app.Gate.Release.TrySetResult();
         var starting = app.StartAsync();
-        await app.Gate.DeferredEntered.Task.WaitAsync(Deadline);
         try
         {
+            await app.Gate.DeferredEntered.Task.WaitAsync(Deadline);
             Assert.Equal(1, app.Signaler.Count);
             var client = await app.Services.GetRequiredService<IWorkflowRuntime>().CreateClientAsync("delivery-instance");
             Assert.Single((await client.ExportStateAsync()).Bookmarks);
@@ -300,9 +300,9 @@ public class BookmarkQueueDeliveryTests
         await app.EnqueueAsync();
         await app.ConsumeSignalAsync();
         var firstPass = first.RunOnceAsync();
-        await paused.Processed.Task.WaitAsync(Deadline);
         try
         {
+            await paused.Processed.Task.WaitAsync(Deadline);
             Assert.Single(await app.QueueItemsAsync());
             app.Gate.Release.TrySetResult();
             await app.StartAsync();
@@ -514,6 +514,12 @@ public class BookmarkQueueDeliveryTests
                 observed.AcquireAsync(Arg.Any<TimeSpan?>(), Arg.Any<CancellationToken>()).Returns(acquire =>
                 {
                     var acquiring = inner.AcquireAsync(acquire.ArgAt<TimeSpan?>(0), acquire.ArgAt<CancellationToken>(1));
+                    Attempted.TrySetResult();
+                    return acquiring;
+                });
+                observed.TryAcquireAsync(Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>()).Returns(acquire =>
+                {
+                    var acquiring = inner.TryAcquireAsync(acquire.ArgAt<TimeSpan>(0), acquire.ArgAt<CancellationToken>(1));
                     Attempted.TrySetResult();
                     return acquiring;
                 });

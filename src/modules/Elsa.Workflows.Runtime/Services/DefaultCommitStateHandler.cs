@@ -52,9 +52,13 @@ public class DefaultCommitStateHandler(
         await RunPostSaveStepAsync(() => mediator.SendAsync(new WorkflowStateCommitted(workflowExecutionContext, workflowState, workflowInstance), completionToken), failures);
 
         if (failures.Count == 1)
+        {
             failures[0].Throw();
+        }
         if (failures.Count > 1)
+        {
             throw new AggregateException("Workflow state was saved, but post-save work failed.", failures.Select(x => x.SourceException));
+        }
     }
 
     /// <summary>
