@@ -35,7 +35,7 @@ jobs:
       - name: Set up .NET SDK
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 10.0.1xx
+          dotnet-version: 10.0.4xx
 
       - name: Show .NET info
         run: |
@@ -122,7 +122,7 @@ jobs:
       - name: Set up .NET SDK
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 10.0.1xx
+          dotnet-version: 10.0.4xx
 
       - name: Show .NET info
         run: |
@@ -225,7 +225,7 @@ jobs:
       - name: Set up .NET SDK
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 10.0.1xx
+          dotnet-version: 10.0.4xx
 
       - name: Download coverage reports
         uses: actions/download-artifact@v4
@@ -294,6 +294,8 @@ jobs:
         run: |
           set -euo pipefail
           if [[ "${QUALIFY_RELEASE}" == "true" ]]; then
+            test "$GITHUB_RUN_ATTEMPT" = 1
+            test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
             test "$GITHUB_REF" = 'refs/heads/release/3.9.0'
             echo "VERSION=${base_version}" >> "$GITHUB_ENV"
           else
@@ -302,7 +304,7 @@ jobs:
 
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 10.x
+          dotnet-version: 10.0.4xx
 
       - name: Compile+Pack
         run: ./build.sh Compile+Pack --version ${VERSION} --analyseCode true
@@ -312,7 +314,55 @@ jobs:
         with:
           name: elsa-nuget-packages
           path: packages/*nupkg
-        if: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.qualify_release) }}
+        if: ${{ github.event_name == 'push' }}
+
+      - name: Seal the exact patch artifact
+        if: ${{ inputs.qualify_release }}
+        run: |
+          python3 - <<'PYTHON'
+          import hashlib
+          import json
+          import os
+          import shutil
+          from pathlib import Path
+
+          destination = Path(os.environ["RUNNER_TEMP"]) / "core-candidate"
+          artifacts = destination / "artifacts"
+          artifacts.mkdir(parents=True)
+          # The sample fixture has its own fixed version and is not a release package.
+          packages = sorted(pkg for pkg in Path("packages").glob("*nupkg") if pkg.name != "Elsa.SamplePackage.1.0.1.nupkg")
+          version = os.environ["VERSION"]
+          binaries = {pkg.name.removesuffix(".nupkg") for pkg in packages if pkg.name.endswith(f".{version}.nupkg")}
+          symbols = {pkg.name.removesuffix(".snupkg") for pkg in packages if pkg.name.endswith(f".{version}.snupkg")}
+          if not binaries or symbols != binaries or len(packages) != len(binaries) * 2:
+              raise SystemExit("Expected only complete package and symbol pairs at the requested version.")
+          files = []
+          for package in packages:
+              shutil.copyfile(package, artifacts / package.name)
+              with package.open("rb") as stream:
+                  digest = hashlib.file_digest(stream, "sha256").hexdigest()
+              files.append({"path": f"artifacts/{package.name}", "size": package.stat().st_size, "sha256": digest})
+          manifest = {
+              "schema": 1,
+              "published": False,
+              "version": version,
+              "run_id": int(os.environ["GITHUB_RUN_ID"]),
+              "run_attempt": int(os.environ["GITHUB_RUN_ATTEMPT"]),
+              "source_commit": os.environ["GITHUB_SHA"],
+              "files": files,
+          }
+          (destination / "preupload-manifest.json").write_text(json.dumps(manifest) + "\n")
+          PYTHON
+
+      - name: Retain the sealed patch artifact
+        if: ${{ inputs.qualify_release }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: core-candidate-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/core-candidate
+          if-no-files-found: error
+          overwrite: false
+          retention-days: 30
 
   deploy_coverage:
     name: Deploy coverage to GitHub Pages
