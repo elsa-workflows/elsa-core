@@ -87,6 +87,28 @@ public class BookmarkQueueStoreTenantAgnosticEfTests
         Assert.Equal(expectedIds, deadLetterItems.Select(x => x.Id));
     }
 
+    [Fact]
+    public async Task QueuePages_OrderEqualTimestampsById()
+    {
+        await using var fixture = await Fixture.CreateAsync();
+        fixture.DbContext.BookmarkQueueItems.AddRange(
+            new BookmarkQueueItem { Id = "c", TenantId = "t1", CreatedAt = DateTimeOffset.UnixEpoch },
+            new BookmarkQueueItem { Id = "b", TenantId = "t1", CreatedAt = DateTimeOffset.UnixEpoch },
+            new BookmarkQueueItem { Id = "a", TenantId = "t2", CreatedAt = DateTimeOffset.UnixEpoch });
+        await fixture.DbContext.SaveChangesAsync();
+
+        using var _ = fixture.PushTenant("t1");
+        var order = new BookmarkQueueItemOrder<DateTimeOffset>(x => x.CreatedAt, OrderDirection.Descending);
+        var filter = new BookmarkQueueFilter { TenantAgnostic = true };
+        var firstPage = PageArgs.FromRange(0, 1);
+        var secondPage = PageArgs.FromRange(1, 1);
+
+        Assert.Equal("a", Assert.Single(await fixture.QueueStore.FindManyAsync(filter, order, firstPage)).Id);
+        Assert.Equal("b", Assert.Single(await fixture.QueueStore.FindManyAsync(filter, order, secondPage)).Id);
+        Assert.Equal("b", Assert.Single((await fixture.QueueStore.PageAsync(secondPage, filter, order)).Items).Id);
+        Assert.Equal("b", Assert.Single((await fixture.QueueStore.PageAsync(firstPage, order)).Items).Id);
+    }
+
     [Fact(DisplayName = "ListTenantIdsAsync returns the distinct normalized tenant ids across tenants")]
     public async Task ListTenantIdsAsync_ReturnsDistinctNormalizedTenantIds()
     {

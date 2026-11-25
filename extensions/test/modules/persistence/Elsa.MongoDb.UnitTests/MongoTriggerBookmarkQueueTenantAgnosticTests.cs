@@ -118,6 +118,28 @@ public sealed class MongoTriggerBookmarkQueueTenantAgnosticTests : IAsyncLifetim
     }
 
     [Fact]
+    public async Task BookmarkQueueStore_OrdersEqualTimestampsByIdAcrossPages()
+    {
+        using var tenant = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+        foreach (var id in new[] { "queue-c", "queue-b", "queue-a" })
+        {
+            var item = QueueItem(id);
+            item.CreatedAt = DateTimeOffset.UnixEpoch;
+            await _bookmarkQueueStore.SaveAsync(item);
+        }
+
+        var filter = new BookmarkQueueFilter();
+        var order = new BookmarkQueueItemOrder<DateTimeOffset>(x => x.CreatedAt, OrderDirection.Descending);
+        var firstPage = PageArgs.FromRange(0, 1);
+        var secondPage = PageArgs.FromRange(1, 1);
+
+        Assert.Equal("queue-a", Assert.Single(await _bookmarkQueueStore.FindManyAsync(filter, order, firstPage)).Id);
+        Assert.Equal("queue-b", Assert.Single(await _bookmarkQueueStore.FindManyAsync(filter, order, secondPage)).Id);
+        Assert.Equal("queue-b", Assert.Single((await _bookmarkQueueStore.PageAsync(secondPage, filter, order)).Items).Id);
+        Assert.Equal("queue-a", Assert.Single((await _bookmarkQueueStore.PageAsync(firstPage, order)).Items).Id);
+    }
+
+    [Fact]
     public async Task BookmarkQueueStore_ListTenantIdsAsync_ReturnsDistinctNormalizedTenantIds()
     {
         // Arrange
