@@ -119,6 +119,21 @@ public class ApplyTenantIdTests
         Assert.Equal(Tenant.AgnosticTenantId, sharedTenantId);
     }
 
+    [Theory(DisplayName = "A shared ambient tenant stamps missing tenant ids with the shared id only with explicit authority")]
+    [InlineData(null)]
+    [InlineData("")]
+    public async Task SharedAmbientTenant_StampingMissingTenantIdRequiresExplicitAuthority(string? entityTenantId)
+    {
+        var (exception, storedTenantId) = await SaveWithAmbientAsync(Tenant.AgnosticTenantId, entityTenantId);
+        Assert.IsType<InvalidOperationException>(exception);
+        Assert.Null(storedTenantId);
+
+        using var grant = SharedTenantWriteScope.Enter<WorkflowInstance>();
+        var (hostException, sharedTenantId) = await SaveWithAmbientAsync(Tenant.AgnosticTenantId, entityTenantId);
+        Assert.Null(hostException);
+        Assert.Equal(Tenant.AgnosticTenantId, sharedTenantId);
+    }
+
     [Theory(DisplayName = "When multitenancy is disabled the entity tenant id is left untouched")]
     [InlineData(null)]
     [InlineData("")]
