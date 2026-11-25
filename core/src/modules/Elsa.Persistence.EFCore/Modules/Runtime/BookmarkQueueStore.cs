@@ -45,20 +45,20 @@ public class EFBookmarkQueueStore(Store<RuntimeElsaDbContext, BookmarkQueueItem>
     /// <inheritdoc />
     public async Task<IEnumerable<BookmarkQueueItem>> FindManyAsync<TOrderBy>(BookmarkQueueFilter filter, BookmarkQueueItemOrder<TOrderBy> orderBy, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
-        return await store.QueryAsync(queryable => filter.Apply(queryable).OrderBy(orderBy).Paginate(pageArgs), OnLoadAsync, filter.TenantAgnostic, cancellationToken).ToList();
+        return await store.QueryAsync(queryable => orderBy.Apply(filter.Apply(queryable)).Paginate(pageArgs), OnLoadAsync, filter.TenantAgnostic, cancellationToken).ToList();
     }
 
     public async Task<Page<BookmarkQueueItem>> PageAsync<TOrderBy>(PageArgs pageArgs, BookmarkQueueItemOrder<TOrderBy> orderBy, CancellationToken cancellationToken = default)
     {
         var count = await store.CountAsync(queryable => queryable, cancellationToken);
-        var results = await store.QueryAsync(queryable => queryable.OrderBy(orderBy).Paginate(pageArgs), OnLoadAsync, cancellationToken).ToList();
+        var results = await store.QueryAsync(queryable => orderBy.Apply(queryable).Paginate(pageArgs), OnLoadAsync, cancellationToken).ToList();
         return new(results, count);
     }
 
     public async Task<Page<BookmarkQueueItem>> PageAsync<TOrderBy>(PageArgs pageArgs, BookmarkQueueFilter filter, BookmarkQueueItemOrder<TOrderBy> orderBy, CancellationToken cancellationToken = default)
     {
         var count = await store.CountAsync(filter.Apply, filter.TenantAgnostic, cancellationToken);
-        var results = await store.QueryAsync(queryable => filter.Apply(queryable).OrderBy(orderBy).Paginate(pageArgs), OnLoadAsync, filter.TenantAgnostic, cancellationToken).ToList();
+        var results = await store.QueryAsync(queryable => orderBy.Apply(filter.Apply(queryable)).Paginate(pageArgs), OnLoadAsync, filter.TenantAgnostic, cancellationToken).ToList();
         return new(results, count);
     }
 
