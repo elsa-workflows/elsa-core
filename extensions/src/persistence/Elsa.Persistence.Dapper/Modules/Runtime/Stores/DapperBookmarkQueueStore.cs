@@ -1,3 +1,4 @@
+using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Persistence.Dapper.Extensions;
 using Elsa.Persistence.Dapper.Models;
@@ -48,13 +49,13 @@ internal class DapperBookmarkQueueStore(Store<BookmarkQueueItemRecord> store, IP
 
     public async Task<Page<BookmarkQueueItem>> PageAsync<TOrderBy>(PageArgs pageArgs, BookmarkQueueItemOrder<TOrderBy> orderBy, CancellationToken cancellationToken = default)
     {
-        var records = await store.ListAsync(pageArgs, orderBy.KeySelector.GetPropertyName(), orderBy.Direction, cancellationToken);
+        var records = await store.FindManyAsync(null, pageArgs, GetOrderFields(orderBy), cancellationToken);
         return Map(records);
     }
 
     public async Task<Page<BookmarkQueueItem>> PageAsync<TOrderBy>(PageArgs pageArgs, BookmarkQueueFilter filter, BookmarkQueueItemOrder<TOrderBy> orderBy, CancellationToken cancellationToken = default)
     {
-        var records = await store.FindManyAsync(q => ApplyFilter(q, filter), pageArgs, orderBy.KeySelector.GetPropertyName(), orderBy.Direction, cancellationToken);
+        var records = await store.FindManyAsync(q => ApplyFilter(q, filter), pageArgs, GetOrderFields(orderBy), cancellationToken);
         return Map(records);
     }
 
@@ -62,6 +63,14 @@ internal class DapperBookmarkQueueStore(Store<BookmarkQueueItemRecord> store, IP
     public async Task<long> DeleteAsync(BookmarkQueueFilter filter, CancellationToken cancellationToken = default)
     {
         return await store.DeleteAsync(q => ApplyFilter(q, filter), cancellationToken);
+    }
+
+    private static OrderField[] GetOrderFields<TOrderBy>(BookmarkQueueItemOrder<TOrderBy> order)
+    {
+        var primary = new OrderField(order.KeySelector.GetPropertyName(), order.Direction);
+        return primary.Field == nameof(BookmarkQueueItemRecord.Id)
+            ? [primary]
+            : [primary, new(nameof(BookmarkQueueItemRecord.Id), OrderDirection.Ascending)];
     }
 
     private void ApplyFilter(ParameterizedQuery query, BookmarkQueueFilter filter)
