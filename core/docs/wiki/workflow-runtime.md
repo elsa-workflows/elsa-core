@@ -169,6 +169,8 @@ Bookmark queue processing is handled by:
 - [BookmarkQueueWorker](../../src/modules/Elsa.Workflows.Runtime/Services/BookmarkQueueWorker.cs)
 - [BookmarkQueueSignaler](../../src/modules/Elsa.Workflows.Runtime/Services/BookmarkQueueSignaler.cs)
 
+Queue pages use the requested order with ascending item ID to break ties. Enqueuing a stimulus, saving a bookmark explicitly, or committing workflow state with newly added bookmarks signals the queue. Custom commit handlers can publish `WorkflowBookmarksPersisted` after saving the state and new bookmarks, or signal the queue at that point.
+
 Expired bookmark queue items are moved to the dead-letter store before they are removed from the active queue. Processing failures increment `DeliveryAttempts`; when `BookmarkQueuePurgeOptions.MaxDeliveryAttempts` is reached, the queue item is dead-lettered with the last exception type and message. `BookmarkQueuePurgeOptions.Ttl` controls active queue expiry, and `BookmarkQueuePurgeOptions.DeadLetterTtl` controls how long dead-letter records are retained before the purger deletes them.
 
 The recurring bookmark queue trigger and purge run once per cycle across all tenants. The trigger only wakes the workers of tenants that have queue items, and the purge handles each tenant's items under that tenant. A tenant with its own database (a connection string in its configuration) is purged and checked separately in its own scope (see [Bookmark queue recurring tasks](../migrations/bookmark-queue-recurring-tasks.md)).
