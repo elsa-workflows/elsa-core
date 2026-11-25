@@ -15,7 +15,7 @@ ACCEPTED = (
     ("refs/heads/main", {"feedz"}),
     ("refs/heads/feat/new-activity", {"feedz"}),
     ("refs/tags/3.8.4", set()),
-    ("refs/tags/3.8.5", {"nuget"}),
+    ("refs/tags/3.8.4", {"nuget"}),
     ("refs/tags/3.8.0-rc2", {"nuget"}),
     ("refs/tags/2.17.0", {"nuget"}),
     ("refs/tags/3.10.0", {"nuget"}),
@@ -98,8 +98,8 @@ class SelectionErrorsTests(unittest.TestCase):
         self.assertIn("owned by the candidate promotion mode", " ".join(errors("refs/tags/3.10.0", {"feedz"})))
         self.assertEqual([], errors("refs/tags/3.10.0", {"nuget"}))
         self.assertEqual([], errors("refs/tags/3.10.0-rc1", {"feedz"}))
-        self.assertEqual([], errors("refs/tags/3.8.5", {"nuget"}))
-        self.assertEqual([], errors("refs/tags/3.9.1", {"nuget"}))
+        self.assertEqual([], errors("refs/tags/3.8.4", {"nuget"}))
+        self.assertEqual([], errors("refs/tags/3.9.0", {"nuget"}))
         self.assertEqual([], errors("refs/tags/3.10.0", {"nuget"}, exclude_ids="Elsa"))
         self.assertIn(
             "exclude_ids is only accepted",
@@ -107,7 +107,7 @@ class SelectionErrorsTests(unittest.TestCase):
         )
         self.assertIn(
             "exclude_ids is only accepted",
-            " ".join(errors("refs/tags/3.8.5", {"nuget"}, exclude_ids="Elsa")),
+            " ".join(errors("refs/tags/3.8.4", {"nuget"}, exclude_ids="Elsa")),
         )
         self.assertIn(
             "exclude_ids is only accepted",
@@ -130,6 +130,19 @@ class SelectionErrorsTests(unittest.TestCase):
         for version in ("latest", "3.10", "3.10.1-rc1", "3.10.1;x"):
             with self.subTest(version=version):
                 self.assertIn("is not a version", " ".join(errors("refs/heads/main", set(), promote=version)))
+
+    def test_core_maintenance_promotes_only_from_main(self):
+        for version in ("3.7.2", "3.8.5", "3.9.1"):
+            with self.subTest(version=version):
+                self.assertEqual([], errors("refs/heads/main", set(), promote=version))
+                self.assertIn("requires refs/heads/main",
+                              " ".join(errors("refs/heads/release/3.7.2", set(), promote=version)))
+
+    def test_core_maintenance_tag_aliases_cannot_publish_nuget_or_npm(self):
+        for tag in ("3.7.2", "03.07.02", "3.8.5", "3.8.05", "3.9.1", "03.9.1"):
+            with self.subTest(tag=tag):
+                self.assertIn("requires a sealed candidate", " ".join(errors(f"refs/tags/{tag}", {"nuget"})))
+                self.assertIn("do not publish Studio npm", " ".join(errors(f"refs/tags/{tag}", {"npm"})))
 
     def test_promote_target_accepts_all_feedz_nuget_with_a_version(self):
         for target in ("all", "feedz", "nuget"):

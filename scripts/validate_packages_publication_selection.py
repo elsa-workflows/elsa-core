@@ -22,7 +22,7 @@ import os
 import re
 import sys
 
-from validate_packages_id_set import STABLE_310_PATTERN, is_stable_310, parse_exclude_ids
+from validate_packages_id_set import CORE_MAINTENANCE_BRANCHES, STABLE_310_PATTERN, is_stable_310, parse_exclude_ids
 
 # Release tags carry no "v" prefix: 3.8.4, 3.8.0-rc2, 3.8.0-preview1.
 RELEASE_TAG = re.compile(r"[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z]+(\.[0-9A-Za-z]+)*)?")
@@ -57,7 +57,7 @@ def selection_errors(
         # Candidate promotion is its own mode: main only, a version, and none of the other publication switches.
         if ref != PROMOTE_REF:
             errors.append(f"Candidate promotion requires {PROMOTE_REF}.")
-        if not PROMOTE_VERSION.fullmatch(promote):
+        if promote not in CORE_MAINTENANCE_BRANCHES and not PROMOTE_VERSION.fullmatch(promote):
             errors.append(f"promote_candidate_version {promote!r} is not a version such as 3.10.1.")
         for selected, name in ((feedz, "publish_preview_feedz"), (nuget, "publish_nuget"), (npm, "publish_npm"),
                                (coverage, "deploy_coverage"), (parse_exclude_ids(exclude_ids), "exclude_ids")):
@@ -76,9 +76,16 @@ def selection_errors(
         # 3.10.x prerelease tags may still publish to Feedz at the tag version.
         # Stable 3.10.x Feedz is owned only by the candidate promotion mode of packages.yml.
         # nuget.org still accepts any release-version tag, including stable 3.10.x.
-        major, minor = (int(part) for part in tag.split(".")[:2])
+        numeric_version, separator, _ = tag.partition("-")
+        major, minor, patch = map(int, numeric_version.split("."))
         if (major, minor) == (3, 11) and nuget:
             errors.append("3.11 NuGet publication requires a sealed candidate on the protected promotion path.")
+        # Leading zeros on a stable tag resolve to the same NuGet package identity.
+        if not separator and f"{major}.{minor}.{patch}" in CORE_MAINTENANCE_BRANCHES:
+            if nuget:
+                errors.append("Core maintenance NuGet publication requires a sealed candidate on the protected promotion path.")
+            if npm:
+                errors.append("Core maintenance versions do not publish Studio npm packages.")
         feedz_from_tag = (major, minor) == (3, 10)
         if feedz_from_tag and not tag.startswith("3.10."):
             # NuGet would normalize 03.10.0 to 3.10.0, and the Feedz job matches the literal 3.10. prefix.

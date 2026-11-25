@@ -33,6 +33,11 @@ STABLE_310 = re.compile(STABLE_310_PATTERN)
 STABLE_311 = re.compile(r"3\.11\.(0|[1-9][0-9]*)")
 DEFAULT_EXPECTED = Path(__file__).with_name("validate_packages_id_set.txt")
 EXPECTED_311 = Path(__file__).with_name("validate_packages_id_set_311.txt")
+CORE_MAINTENANCE_BRANCHES = {
+    "3.7.2": "release/3.7.2",
+    "3.8.5": "release/3.8.4",
+    "3.9.1": "release/3.9.0",
+}
 # Same packed entries per package as prove_consolidated_packages.CLIENTLIB_ASSETS.
 STUDIO_CONTENT = {
     "Elsa.Studio.Workflows.Designer": (
@@ -62,6 +67,8 @@ def expected_ids_file(version: str | None) -> Path:
         return DEFAULT_EXPECTED
     if STABLE_311.fullmatch(version):
         return EXPECTED_311
+    if version in CORE_MAINTENANCE_BRANCHES:
+        return Path(__file__).with_name(f"validate_packages_id_set_{version.replace('.', '_')}.txt")
     raise SystemExit(f"No consolidated package inventory for {version!r}.")
 
 
@@ -293,7 +300,8 @@ def main() -> int:
         return 1
     print("exclusions: none" if not excluded else "exclusions: " + ", ".join(excluded))
     print(f"Package ID set matches {len(expected)} expected IDs.")
-    print(f"Studio package content matches {sum(len(entries) for entries in STUDIO_CONTENT.values())} required entries.")
+    if version not in CORE_MAINTENANCE_BRANCHES:
+        print(f"Studio package content matches {sum(len(entries) for entries in STUDIO_CONTENT.values())} required entries.")
     return 0
 
 

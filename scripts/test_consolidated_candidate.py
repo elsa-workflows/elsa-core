@@ -79,6 +79,37 @@ class Stable311PinTests(unittest.TestCase):
                 verify.check_run(pin, {**run, **change})
 
 
+class CoreMaintenancePinTests(unittest.TestCase):
+    def test_core_pin_binds_producer_branch_and_inventory(self):
+        entry = {
+            **dataclasses.asdict(PIN),
+            "ancestry_branch": "release/3.7.2",
+            "feedz_count": 45, "nuget_count": 45, "exclude_ids": [],
+        }
+        entry.pop("version")
+        entry.pop("tooling_sha")
+        pin = verify.validate_pin_entry("3.7.2", entry)
+        self.assertEqual(f"core-candidate-{pin.source_sha}-{pin.run_id}-1", pin.artifact_name)
+        run = {**good_run(), "head_branch": pin.ancestry_branch, "path": ".github/workflows/packages.yml"}
+        artifact = {**good_artifact(), "name": pin.artifact_name, "workflow_run": {
+            "id": pin.run_id, "head_branch": pin.ancestry_branch, "head_sha": pin.source_sha
+        }}
+        verify.check_run(pin, run)
+        verify.check_artifact(pin, artifact)
+
+        for change in ({"ancestry_branch": "main"}, {"feedz_count": 44, "nuget_count": 44},
+                       {"nuget_count": 44, "exclude_ids": ["Elsa"]}):
+            with self.subTest(change=change), self.assertRaises(SystemExit):
+                verify.validate_pin_entry("3.7.2", {**entry, **change})
+        for change in ({"head_sha": "d" * 40}, {"head_branch": "main"}, {"event": "push"},
+                       {"path": good_run()["path"]}):
+            with self.subTest(change=change), self.assertRaises(SystemExit):
+                verify.check_run(pin, {**run, **change})
+        for change in ({"name": PIN.artifact_name}, {"workflow_run": good_artifact()["workflow_run"]}):
+            with self.subTest(change=change), self.assertRaises(SystemExit):
+                verify.check_artifact(pin, {**artifact, **change})
+
+
 class RunAndArtifactTests(unittest.TestCase):
     def test_pinned_identity_is_accepted(self):
         verify.check_run(PIN, good_run())

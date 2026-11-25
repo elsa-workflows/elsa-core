@@ -1,4 +1,37 @@
 {
+  "3.7.2": {
+    "run_id": 45587211666,
+    "artifact_id": 15009464818,
+    "source_sha": "88deeccc9d746fcba3e5eba19c4db97b739c315e",
+    "archive_sha256": "59b78ec593d8baf9962c2263849db1224ed20f6345c18c70d9ef19dc750c26d6",
+    "manifest_sha256": "b0875040f275c3f23a276a6aac41a15a84a0cb9b18053a7109dcc7e74c699cd5",
+    "feedz_count": 45,
+    "nuget_count": 45,
+    "exclude_ids": [],
+    "ancestry_branch": "release/3.7.2"
+  },
+  "3.8.5": {
+    "run_id": 45581109002,
+    "artifact_id": 15007683842,
+    "source_sha": "0b6397027fa8fcf1e611deab6729719738ff4774",
+    "archive_sha256": "699fa2965c948640cdb0864d6183a6af4f55eac4eeb6776a8901682aa5ed647d",
+    "manifest_sha256": "9d7509dfe8d2eced39b710bbad4f7d27fd80c44b452f91116249ab0cba37ba18",
+    "feedz_count": 92,
+    "nuget_count": 92,
+    "exclude_ids": [],
+    "ancestry_branch": "release/3.8.4"
+  },
+  "3.9.1": {
+    "run_id": 45582940009,
+    "artifact_id": 15007988141,
+    "source_sha": "e9a5b2edfb672acbfdfc3c6635c7cfbd03758c83",
+    "archive_sha256": "1a528e2fe0ebbc34603169414533bb0983e5a80ff5671cd324ba4c96bcc3a7bc",
+    "manifest_sha256": "39269a60401830b176b94796dfae4736e18880b5c5d13290c1dd24457da5542d",
+    "feedz_count": 102,
+    "nuget_count": 102,
+    "exclude_ids": [],
+    "ancestry_branch": "release/3.9.0"
+  },
   "3.10.1": {
     "run_id": 43236516383,
     "artifact_id": 13955429317,

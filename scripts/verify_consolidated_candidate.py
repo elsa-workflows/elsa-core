@@ -32,6 +32,8 @@ import zipfile
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 
+from validate_packages_id_set import CORE_MAINTENANCE_BRANCHES, STABLE_311, expected_ids_file, load_expected_ids
+
 TOKEN_NAMES = ("GH_TOKEN", "GITHUB_TOKEN", "ACTIONS_READ_TOKEN")
 SEAL_NAME = "preupload-manifest.json"
 PACKAGE_FILE = re.compile(r"(?P<id>.+)\.(?P<version>[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?)\.(?P<kind>nupkg|snupkg)")
@@ -85,7 +87,8 @@ class Pin:
 
     @property
     def artifact_name(self) -> str:
-        return f"consolidated-candidate-{self.source_sha}-{self.run_id}-1"
+        product = "core" if self.version in CORE_MAINTENANCE_BRANCHES else "consolidated"
+        return f"{product}-candidate-{self.source_sha}-{self.run_id}-1"
 
 
 def _is_positive_int(value: object) -> bool:
@@ -115,7 +118,6 @@ def validate_pin_entry(version: str, entry: object) -> Pin:
             and ".." not in entry["ancestry_branch"],
             f"Pin {version}.ancestry_branch must be a branch name.")
     if version.startswith("3.11."):
-        from validate_packages_id_set import STABLE_311, expected_ids_file, load_expected_ids
         require(STABLE_311.fullmatch(version), f"Pin version {version} must be a canonical stable 3.11 version.")
         require(entry["ancestry_branch"] == "release/3.11.0",
                 f"Pin {version} must name the release/3.11.0 source line.")
@@ -124,6 +126,12 @@ def validate_pin_entry(version: str, entry: object) -> Pin:
         expected = load_expected_ids(expected_ids_file(version))
         require(entry["feedz_count"] == len(expected) and entry["nuget_count"] == len(expected) and not exclude,
                 f"Pin {version} must use the full reviewed 3.11 inventory on both feeds, with no exclusions.")
+    if version in CORE_MAINTENANCE_BRANCHES:
+        branch = CORE_MAINTENANCE_BRANCHES[version]
+        require(entry["ancestry_branch"] == branch, f"Pin {version} must name the {branch} source line.")
+        expected = load_expected_ids(expected_ids_file(version))
+        require(entry["feedz_count"] == len(expected) and entry["nuget_count"] == len(expected) and not exclude,
+                f"Pin {version} must use the reviewed Core inventory on both feeds with no exclusions.")
     require(entry["nuget_count"] == entry["feedz_count"] - len(exclude),
             f"Pin {version}.nuget_count must be feedz_count minus the number of exclude_ids.")
     require(entry["run_id"] not in FORBIDDEN_RUNS and entry["artifact_id"] not in FORBIDDEN_ARTIFACTS
@@ -173,6 +181,10 @@ def check_run_head(pin: Pin, head_sha: object, head_branch: object, where: str) 
     ancestry check instead.
     """
     require(head_sha not in FORBIDDEN_SOURCES, f"{where} names the 3.10.0 source commit {head_sha}.")
+    if pin.version in CORE_MAINTENANCE_BRANCHES:
+        require(head_branch == pin.ancestry_branch and head_sha == pin.source_sha,
+                f"{where} does not match the pinned Core maintenance source and branch.")
+        return
     if pin.tooling_sha is not None:
         require(head_branch == "main" and head_sha == pin.tooling_sha,
                 f"{where} does not match the pinned main tooling commit.")
@@ -187,8 +199,10 @@ def check_run(pin: Pin, run: dict) -> None:
     check_run_head(pin, run.get("head_sha"), run.get("head_branch"), "Candidate run head_sha")
     require(run.get("conclusion") == "success" and run.get("status") == "completed", "Candidate run did not succeed.")
     producer_paths = {".github/workflows/prepare-consolidated-release-candidate.yml"} if pin.tooling_sha else PRODUCER_WORKFLOWS
+    if pin.version in CORE_MAINTENANCE_BRANCHES:
+        producer_paths = {".github/workflows/packages.yml"}
     require(run.get("event") == "workflow_dispatch" and run.get("path") in producer_paths,
-            "Candidate run was not produced by a consolidated candidate workflow.")
+            "Candidate run was not produced by an approved candidate workflow.")
 
 
 def check_artifact(pin: Pin, artifact: dict) -> None:
