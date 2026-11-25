@@ -137,7 +137,12 @@ class SelectionErrorsTests(unittest.TestCase):
                 self.assertEqual([], errors("refs/heads/main", set(), promote=version))
                 self.assertIn("requires refs/heads/main",
                               " ".join(errors("refs/heads/release/3.7.2", set(), promote=version)))
-                self.assertIn("requires a sealed candidate", " ".join(errors(f"refs/tags/{version}", {"nuget"})))
+
+    def test_core_maintenance_tag_aliases_cannot_publish_nuget_or_npm(self):
+        for tag in ("3.7.2", "03.07.02", "3.8.5", "3.8.05", "3.9.1", "03.9.1"):
+            with self.subTest(tag=tag):
+                self.assertIn("requires a sealed candidate", " ".join(errors(f"refs/tags/{tag}", {"nuget"})))
+                self.assertIn("do not publish Studio npm", " ".join(errors(f"refs/tags/{tag}", {"npm"})))
 
     def test_promote_target_accepts_all_feedz_nuget_with_a_version(self):
         for target in ("all", "feedz", "nuget"):
