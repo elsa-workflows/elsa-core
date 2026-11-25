@@ -1,5 +1,8 @@
 using System.Collections;
+using Elsa.Common.DistributedHosting;
 using Elsa.Common.Models;
+using Elsa.Common.Multitenancy;
+using Elsa.Common.Services;
 using Elsa.Http.Bookmarks;
 using Elsa.Http.Contracts;
 using Elsa.Http.Middleware;
@@ -15,7 +18,10 @@ using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
+using Elsa.Workflows.Runtime.Stores;
 using Elsa.Workflows.State;
+using Medallion.Threading;
+using Medallion.Threading.FileSystem;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
@@ -63,6 +69,37 @@ public class HttpWorkflowsMiddlewareTests
         Assert.NotNull(_bookmarkStore.LastFilter);
         var filter = _bookmarkStore.LastFilter!;
         Assert.False(filter.TenantAgnostic);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_WhenOnlyAnotherTenantHasAMatchingBookmark_ReturnsNotFound()
+    {
+        var tenantAccessor = new DefaultTenantAccessor();
+        using var tenantScope = tenantAccessor.PushContext(new Tenant { Id = CurrentTenantId, Name = CurrentTenantId });
+        var bookmarkStore = new MemoryBookmarkStore(new MemoryStore<StoredBookmark>(), tenantAccessor);
+        await bookmarkStore.SaveAsync(CreateBookmark("other-tenant-bookmark", OtherTenantId));
+
+        var workflowRunner = Substitute.For<IWorkflowRunner>();
+        await using var serviceProvider = new ServiceCollection()
+            .AddSingleton<IBookmarkStore>(bookmarkStore)
+            .AddSingleton<IRouteMatcher, ExactRouteMatcher>()
+            .AddSingleton<IRouteTable>(new ListRouteTable([new(BookmarkPath)]))
+            .AddSingleton<IStimulusHasher, FixedStimulusHasher>()
+            .AddSingleton(workflowRunner)
+            .BuildServiceProvider();
+
+        var httpContext = new DefaultHttpContext { RequestServices = serviceProvider };
+        httpContext.Request.Path = "/workflows" + BookmarkPath;
+        httpContext.Request.Method = HttpMethod.Get.Method;
+
+        await _middleware.InvokeAsync(
+            httpContext,
+            serviceProvider,
+            Microsoft.Extensions.Options.Options.Create(new HttpActivityOptions { BasePath = new PathString("/workflows") }),
+            new EmptyHttpWorkflowLookupService());
+
+        Assert.Equal(StatusCodes.Status404NotFound, httpContext.Response.StatusCode);
+        Assert.Empty(workflowRunner.ReceivedCalls());
     }
 
     [Fact]
@@ -294,58 +331,211 @@ public class HttpWorkflowsMiddlewareTests
     public async Task InvokeAsync_WhenTheBookmarkedInstanceHasFinished_ReturnsNotFoundWithoutResuming()
     {
         // Arrange
-        var bookmark = new StoredBookmark
-        {
-            Id = "bookmark-1",
-            Hash = BookmarkHash,
-            WorkflowInstanceId = "finished-instance",
-            Payload = new HttpEndpointBookmarkPayload(BookmarkPath, "get", authorize: false)
-        };
-        var finishedInstance = new WorkflowInstance
-        {
-            Id = "finished-instance",
-            DefinitionVersionId = "workflow-version",
-            Status = WorkflowStatus.Finished
-        };
-        var workflow = new Workflow { Id = "workflow" };
-        var root = new ActivityNode(workflow, "Root");
-        var bookmarkStore = Substitute.For<IBookmarkStore>();
-        bookmarkStore.FindManyAsync(Arg.Any<BookmarkFilter>(), Arg.Any<CancellationToken>()).Returns(new ValueTask<IEnumerable<StoredBookmark>>([bookmark]));
-        var workflowInstanceStore = Substitute.For<IWorkflowInstanceStore>();
-        workflowInstanceStore.FindAsync(Arg.Is<WorkflowInstanceFilter>(x => x.Id == finishedInstance.Id), Arg.Any<CancellationToken>()).Returns(new ValueTask<WorkflowInstance?>(finishedInstance));
-        var workflowDefinitionService = Substitute.For<IWorkflowDefinitionService>();
-        workflowDefinitionService.FindWorkflowGraphAsync(finishedInstance.DefinitionVersionId, Arg.Any<CancellationToken>()).Returns(new WorkflowGraph(workflow, root, [root]));
-        var workflowRunner = Substitute.For<IWorkflowRunner>();
-        workflowRunner
-            .RunAsync(Arg.Any<Workflow>(), Arg.Any<WorkflowState>(), Arg.Any<RunWorkflowOptions?>(), Arg.Any<CancellationToken>())
-            .Returns(new RunWorkflowResult(null!, new WorkflowState(), workflow, null, Journal.Empty));
-        var serviceProvider = new ServiceCollection()
-            .AddSingleton<IRouteMatcher, ExactRouteMatcher>()
-            .AddSingleton<IRouteTable>(new ListRouteTable([new(BookmarkPath)]))
-            .AddSingleton<IStimulusHasher, FixedStimulusHasher>()
-            .AddSingleton(bookmarkStore)
-            .AddSingleton(workflowInstanceStore)
-            .AddSingleton(workflowDefinitionService)
-            .AddSingleton(Substitute.For<IHttpEndpointAuthorizationHandler>())
-            .AddSingleton(workflowRunner)
-            .BuildServiceProvider();
-        var httpContext = new DefaultHttpContext
-        {
-            RequestServices = serviceProvider
-        };
-        httpContext.Request.Path = BookmarkPath;
-        httpContext.Request.Method = HttpMethod.Get.Method;
+        var resume = new ResumeScenario();
+        resume.Instance.Status = WorkflowStatus.Finished;
 
         // Act
-        await _middleware.InvokeAsync(
-            httpContext,
-            serviceProvider,
-            Microsoft.Extensions.Options.Options.Create(new HttpActivityOptions { BasePath = null }),
-            new EmptyHttpWorkflowLookupService());
+        var httpContext = await resume.InvokeAsync(_middleware);
 
         // Assert
         Assert.Equal(StatusCodes.Status404NotFound, httpContext.Response.StatusCode);
-        Assert.Empty(workflowRunner.ReceivedCalls());
+        Assert.Empty(resume.WorkflowRunner.ReceivedCalls());
+    }
+
+    [Fact]
+    public async Task InvokeAsync_WhenTheInstanceFinishesWhileWaitingForTheInstanceLock_ReturnsNotFoundWithoutResuming()
+    {
+        // Arrange: another resume finishes the instance while this request waits for the lock.
+        var resume = new ResumeScenario();
+        resume.OnLockAcquired = () => resume.Instance.Status = WorkflowStatus.Finished;
+
+        // Act
+        var httpContext = await resume.InvokeAsync(_middleware);
+
+        // Assert
+        Assert.Equal(StatusCodes.Status404NotFound, httpContext.Response.StatusCode);
+        Assert.Empty(resume.WorkflowRunner.ReceivedCalls());
+        resume.LockProvider.Received(1).CreateLock($"workflow-instance:{resume.Instance.Id}");
+    }
+
+    [Fact]
+    public async Task InvokeAsync_WhenTheBookmarkIsConsumedWhileWaitingForTheInstanceLock_ReturnsNotFoundWithoutResuming()
+    {
+        // Arrange: another resume consumes the bookmark while this request waits for the lock.
+        var resume = new ResumeScenario();
+        resume.OnLockAcquired = () => resume.Instance.WorkflowState.Bookmarks.Clear();
+
+        // Act
+        var httpContext = await resume.InvokeAsync(_middleware);
+
+        // Assert
+        Assert.Equal(StatusCodes.Status404NotFound, httpContext.Response.StatusCode);
+        Assert.Empty(resume.WorkflowRunner.ReceivedCalls());
+    }
+
+    [Fact]
+    public async Task InvokeAsync_WhenResumeAuthorizationIsDenied_DoesNotAcquireTheInstanceLock()
+    {
+        var resume = new ResumeScenario(authorize: true);
+        resume.LockUnavailable = true;
+
+        var httpContext = await resume.InvokeAsync(_middleware);
+
+        Assert.Equal(StatusCodes.Status401Unauthorized, httpContext.Response.StatusCode);
+        Assert.Empty(resume.LockProvider.ReceivedCalls());
+        Assert.Empty(resume.WorkflowRunner.ReceivedCalls());
+    }
+
+    [Fact]
+    public async Task InvokeAsync_WhenTheInstanceVersionChangesWhileWaitingForTheLock_DoesNotResumeIt()
+    {
+        var resume = new ResumeScenario();
+        resume.OnLockAcquired = () => resume.Instance.DefinitionVersionId = "another-version";
+
+        var httpContext = await resume.InvokeAsync(_middleware);
+
+        Assert.Equal(StatusCodes.Status404NotFound, httpContext.Response.StatusCode);
+        Assert.Empty(resume.WorkflowRunner.ReceivedCalls());
+    }
+
+    [Fact]
+    public async Task InvokeAsync_WhenTwoRequestsMatchTheSameBookmark_ResumesItOnce()
+    {
+        var resume = new ResumeScenario();
+        var lockDirectory = Directory.CreateTempSubdirectory();
+        try
+        {
+            var lockName = $"workflow-instance:{resume.Instance.Id}";
+            IDistributedLock fileLock = new FileDistributedSynchronizationProvider(lockDirectory).CreateLock(lockName);
+            var instanceLock = Substitute.For<IDistributedLock>();
+            var secondRequestReachedLock = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var firstRunStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var finishFirstRun = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var timeout = TimeSpan.FromSeconds(10);
+            var lockAttempts = 0;
+            var runs = 0;
+            instanceLock.TryAcquireAsync(Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>()).Returns(call =>
+            {
+                if (Interlocked.Increment(ref lockAttempts) == 2)
+                    secondRequestReachedLock.SetResult();
+
+                return fileLock.TryAcquireAsync(call.Arg<TimeSpan>(), call.Arg<CancellationToken>());
+            });
+            resume.LockProvider.CreateLock(lockName).Returns(instanceLock);
+            resume.WorkflowRunner
+                .RunAsync(Arg.Any<Workflow>(), Arg.Any<WorkflowState>(), Arg.Any<RunWorkflowOptions?>(), Arg.Any<CancellationToken>())
+                .Returns(async call =>
+                {
+                    if (Interlocked.Increment(ref runs) == 1)
+                    {
+                        firstRunStarted.SetResult();
+                        await finishFirstRun.Task.WaitAsync(timeout);
+                        resume.Instance.WorkflowState.Bookmarks.Clear();
+                    }
+
+                    return new RunWorkflowResult(null!, new WorkflowState(), call.Arg<Workflow>(), null, Journal.Empty);
+                });
+
+            var firstRequest = resume.InvokeAsync(_middleware);
+            try
+            {
+                await firstRunStarted.Task.WaitAsync(timeout);
+                var secondRequest = resume.InvokeAsync(_middleware);
+                await Task.WhenAny(secondRequest, secondRequestReachedLock.Task).WaitAsync(timeout);
+                finishFirstRun.TrySetResult();
+                var secondResponse = await secondRequest.WaitAsync(timeout);
+
+                Assert.Equal(1, runs);
+                Assert.Equal(StatusCodes.Status404NotFound, secondResponse.Response.StatusCode);
+            }
+            finally
+            {
+                finishFirstRun.TrySetResult();
+                await firstRequest.WaitAsync(timeout);
+            }
+        }
+        finally
+        {
+            lockDirectory.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task InvokeAsync_WhenTheInstanceLockIsNotAcquiredInTime_ReturnsConflictWithoutResuming()
+    {
+        // Arrange: another run holds the instance lock for longer than this request waits.
+        var resume = new ResumeScenario(requestTimeout: TimeSpan.FromSeconds(5));
+        resume.LockUnavailable = true;
+
+        // Act
+        var httpContext = await resume.InvokeAsync(_middleware);
+
+        // Assert
+        Assert.Equal(StatusCodes.Status409Conflict, httpContext.Response.StatusCode);
+        Assert.Empty(resume.WorkflowRunner.ReceivedCalls());
+    }
+
+    [Theory]
+    [InlineData(600_000)]
+    [InlineData(-1)] // Timeout.InfiniteTimeSpan
+    public async Task InvokeAsync_WhenTheRequestTimeoutIsShorterThanTheLockTimeout_WaitsForTheInstanceLockNoLongerThanTheRequestTimeout(int lockTimeoutMilliseconds)
+    {
+        // Arrange
+        var resume = new ResumeScenario(requestTimeout: TimeSpan.FromSeconds(5), lockTimeout: TimeSpan.FromMilliseconds(lockTimeoutMilliseconds));
+
+        // Act
+        await resume.InvokeAsync(_middleware);
+
+        // Assert
+        Assert.Equal(TimeSpan.FromSeconds(5), resume.RequestedLockTimeout);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_WhenThereIsNoRequestTimeout_WaitsForTheInstanceLockForTheConfiguredLockTimeout()
+    {
+        // Arrange
+        var resume = new ResumeScenario();
+
+        // Act
+        await resume.InvokeAsync(_middleware);
+
+        // Assert
+        Assert.Equal(new DistributedLockingOptions().LockAcquisitionTimeout, resume.RequestedLockTimeout);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)] // Timeout.InfiniteTimeSpan
+    [InlineData(60 * 60 * 1000)] // Longer than the default lock timeout.
+    public async Task InvokeAsync_WhenTheRequestTimeoutIsNotAShorterPositiveValue_WaitsForTheInstanceLockForTheConfiguredLockTimeout(int requestTimeoutMilliseconds)
+    {
+        // Arrange
+        var resume = new ResumeScenario(requestTimeout: TimeSpan.FromMilliseconds(requestTimeoutMilliseconds));
+
+        // Act
+        await resume.InvokeAsync(_middleware);
+
+        // Assert
+        Assert.Equal(new DistributedLockingOptions().LockAcquisitionTimeout, resume.RequestedLockTimeout);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_WhenTheBookmarkedInstanceIsRunning_ResumesItWhileHoldingTheInstanceLock()
+    {
+        // Arrange
+        var resume = new ResumeScenario();
+        var lockHeldDuringRun = false;
+        resume.WorkflowRunner
+            .When(x => x.RunAsync(Arg.Any<Workflow>(), Arg.Any<WorkflowState>(), Arg.Any<RunWorkflowOptions?>(), Arg.Any<CancellationToken>()))
+            .Do(_ => lockHeldDuringRun = resume.LockHeld);
+
+        // Act
+        await resume.InvokeAsync(_middleware);
+
+        // Assert
+        await resume.WorkflowRunner.Received(1).RunAsync(Arg.Any<Workflow>(), resume.Instance.WorkflowState, Arg.Is<RunWorkflowOptions?>(x => x!.BookmarkId == ResumeScenario.BookmarkId), Arg.Any<CancellationToken>());
+        Assert.True(lockHeldDuringRun);
+        Assert.False(resume.LockHeld);
     }
 
     [Fact]
@@ -962,6 +1152,117 @@ public class HttpWorkflowsMiddlewareTests
         {
             await next(httpContext);
             return true;
+        }
+    }
+
+    /// <summary>
+    /// A request that matches one HTTP bookmark of a running workflow instance, with a fake per-instance lock.
+    /// </summary>
+    private class ResumeScenario
+    {
+        public const string BookmarkId = "bookmark-1";
+        private readonly StoredBookmark _bookmark;
+        private readonly IServiceProvider _serviceProvider;
+
+        public ResumeScenario(TimeSpan? requestTimeout = null, bool authorize = false, TimeSpan? lockTimeout = null)
+        {
+            _bookmark = new()
+            {
+                Id = BookmarkId,
+                Hash = BookmarkHash,
+                WorkflowInstanceId = "instance-1",
+                Payload = new HttpEndpointBookmarkPayload(BookmarkPath, "get", authorize: authorize, requestTimeout: requestTimeout)
+            };
+            Instance = new()
+            {
+                Id = _bookmark.WorkflowInstanceId,
+                DefinitionVersionId = "workflow-version",
+                Status = WorkflowStatus.Running,
+                WorkflowState = new() { Bookmarks = [new() { Id = BookmarkId }] }
+            };
+
+            var workflow = new Workflow { Id = "workflow" };
+            var root = new ActivityNode(workflow, "Root");
+            var bookmarkStore = Substitute.For<IBookmarkStore>();
+            bookmarkStore.FindManyAsync(Arg.Any<BookmarkFilter>(), Arg.Any<CancellationToken>()).Returns(new ValueTask<IEnumerable<StoredBookmark>>([_bookmark]));
+            var workflowInstanceStore = Substitute.For<IWorkflowInstanceStore>();
+            workflowInstanceStore.FindAsync(Arg.Is<WorkflowInstanceFilter>(x => x.Id == Instance.Id), Arg.Any<CancellationToken>()).Returns(_ => new ValueTask<WorkflowInstance?>(Instance));
+            var workflowDefinitionService = Substitute.For<IWorkflowDefinitionService>();
+            workflowDefinitionService.FindWorkflowGraphAsync(Instance.DefinitionVersionId, Arg.Any<CancellationToken>()).Returns(new WorkflowGraph(workflow, root, [root]));
+            WorkflowRunner
+                .RunAsync(Arg.Any<Workflow>(), Arg.Any<WorkflowState>(), Arg.Any<RunWorkflowOptions?>(), Arg.Any<CancellationToken>())
+                .Returns(new RunWorkflowResult(null!, new WorkflowState(), workflow, null, Journal.Empty));
+
+            var lockHandle = Substitute.For<IDistributedSynchronizationHandle>();
+            lockHandle.DisposeAsync().Returns(_ =>
+            {
+                LockHeld = false;
+                return ValueTask.CompletedTask;
+            });
+            var instanceLock = Substitute.For<IDistributedLock>();
+            instanceLock.TryAcquireAsync(Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>()).Returns(_ =>
+            {
+                RequestedLockTimeout = _.Arg<TimeSpan>();
+                if (LockUnavailable)
+                    return new ValueTask<IDistributedSynchronizationHandle?>((IDistributedSynchronizationHandle?)null);
+
+                LockHeld = true;
+                OnLockAcquired();
+                return new ValueTask<IDistributedSynchronizationHandle?>(lockHandle);
+            });
+            LockProvider.CreateLock($"workflow-instance:{Instance.Id}").Returns(instanceLock);
+
+            _serviceProvider = new ServiceCollection()
+                .AddOptions()
+                .Configure<DistributedLockingOptions>(options => options.LockAcquisitionTimeout = lockTimeout ?? options.LockAcquisitionTimeout)
+                .AddSingleton<IRouteMatcher, ExactRouteMatcher>()
+                .AddSingleton<IRouteTable>(new ListRouteTable([new(BookmarkPath)]))
+                .AddSingleton<IStimulusHasher, FixedStimulusHasher>()
+                .AddSingleton(bookmarkStore)
+                .AddSingleton(workflowInstanceStore)
+                .AddSingleton(workflowDefinitionService)
+                .AddSingleton(Substitute.For<IHttpEndpointAuthorizationHandler>())
+                .AddSingleton(WorkflowRunner)
+                .AddSingleton(LockProvider)
+                .BuildServiceProvider();
+        }
+
+        public WorkflowInstance Instance { get; }
+        public IWorkflowRunner WorkflowRunner { get; } = Substitute.For<IWorkflowRunner>();
+        public IDistributedLockProvider LockProvider { get; } = Substitute.For<IDistributedLockProvider>();
+        public bool LockHeld { get; private set; }
+
+        /// <summary>
+        /// Simulates another run holding the instance lock for longer than the caller waits.
+        /// </summary>
+        public bool LockUnavailable { get; set; }
+
+        /// <summary>
+        /// The time the middleware was willing to wait for the instance lock.
+        /// </summary>
+        public TimeSpan RequestedLockTimeout { get; private set; }
+
+        /// <summary>
+        /// Runs right after the instance lock is acquired, to simulate changes made by another request while this one waited.
+        /// </summary>
+        public Action OnLockAcquired { get; set; } = () => { };
+
+        public async Task<HttpContext> InvokeAsync(HttpWorkflowsMiddleware middleware)
+        {
+            var httpContext = new DefaultHttpContext
+            {
+                RequestServices = _serviceProvider
+            };
+            httpContext.Request.Path = BookmarkPath;
+            httpContext.Request.Method = HttpMethod.Get.Method;
+
+            await middleware.InvokeAsync(
+                httpContext,
+                _serviceProvider,
+                Microsoft.Extensions.Options.Options.Create(new HttpActivityOptions { BasePath = null }),
+                new EmptyHttpWorkflowLookupService());
+
+            return httpContext;
         }
     }
 
