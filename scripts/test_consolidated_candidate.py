@@ -591,9 +591,12 @@ class WorkflowShapeTests(unittest.TestCase):
             self.assertNotIn(text, promotion.lower() if text == "docker" else promotion)
 
     def test_normal_push_and_tag_behaviour_is_unchanged(self):
-        # The only edits to the build path are the two test jobs skipping while a candidate is promoted.
+        # Test jobs are skipped when promotion or recovery reuses existing packages.
         for name in ("test_unit_integration", "test_component"):
-            self.assertEqual("${{ inputs.promote_candidate_version == '' }}", self.jobs[name]["if"])
+            self.assertEqual(
+                "${{ inputs.promote_candidate_version == '' && !inputs.recover_nuget_364 }}",
+                self.jobs[name]["if"],
+            )
 
     def test_the_per_version_workflows_are_gone(self):
         for name in DELETED_WORKFLOWS:
