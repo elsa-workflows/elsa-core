@@ -1474,6 +1474,7 @@ jobs:
           PRODUCT: ${{ matrix.product }}
           LINE: ${{ matrix.line }}
           VERSION: ${{ matrix.version }}
+          ELSA_PLAN_GITHUB_TOKEN: ${{ github.repository == 'elsa-workflows/elsa-core' && matrix.product == 'core' && github.token || '' }}
         run: |
           test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
           python3 scripts/integration-program/plan_product_release.py \

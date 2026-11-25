@@ -116,7 +116,9 @@ try {
         `${clientPath}/src/designer/api/create-graph.ts`,
         `${clientPath}/src/designer/api/__tests__/edge-hover-tools.test.ts`,
         `${clientPath}/vitest.config.ts`,
-        '.github/workflows/studio-clientlib-build.yml',
+        '.github/workflows/pr.yml',
+        'scripts/ci/pr-paths.json',
+        'scripts/ci/select_pr_suites.py',
         ...['run.mjs', 'fixture.ts', 'source-binding.mjs', 'source-binding.test.mjs', 'package.json', 'package-lock.json', 'README.md', '.gitignore'].map(name => relative(root, join(fixtureDirectory, name))),
     ]);
     receipt.source = await captureSourceBinding(root, [...inputPaths], expectedHead, [installedLockPath]);
