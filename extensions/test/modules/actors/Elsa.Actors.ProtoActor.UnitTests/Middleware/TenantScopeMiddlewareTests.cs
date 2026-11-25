@@ -1,5 +1,6 @@
 using Elsa.Actors.ProtoActor;
 using Elsa.Actors.ProtoActor.Middleware;
+using Elsa.Common.Multitenancy;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 using Proto;
@@ -20,6 +21,22 @@ public class TenantScopeMiddlewareTests
         await next.PropagateTenant(_servicesWithoutTenancy)(Substitute.For<ISenderContext>(), PID.FromAddress("local", "actor"), _envelope);
 
         Assert.True(forwarded);
+    }
+
+    [Fact(DisplayName = "Sending within a tenant scope forwards the tenant header")]
+    public async Task PropagateTenant_WithTenant_ForwardsTenantHeader()
+    {
+        var tenantAccessor = Substitute.For<ITenantAccessor>();
+        tenantAccessor.Tenant.Returns(new Tenant { Id = "tenant-1", Name = "Tenant 1" });
+        var services = new ServiceCollection().AddSingleton(tenantAccessor).BuildServiceProvider();
+
+        MessageEnvelope? forwarded = null;
+        Sender next = (_, _, envelope) => { forwarded = envelope; return Task.CompletedTask; };
+
+        await next.PropagateTenant(services)(Substitute.For<ISenderContext>(), PID.FromAddress("local", "actor"), new MessageEnvelope("message", null));
+
+        Assert.NotNull(forwarded);
+        Assert.Equal("tenant-1", forwarded!.Header.GetValueOrDefault(HeaderNames.TenantId));
     }
 
     [Fact(DisplayName = "Receiving a tenant header in a host without multitenancy passes the message on")]
