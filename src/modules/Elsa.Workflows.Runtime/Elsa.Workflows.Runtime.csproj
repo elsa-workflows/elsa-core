@@ -8,6 +8,10 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <InternalsVisibleTo Include="Elsa.Persistence.EFCore" />
+    </ItemGroup>
+
+    <ItemGroup>
 		<PackageReference Include="DistributedLock.FileSystem" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
         <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
