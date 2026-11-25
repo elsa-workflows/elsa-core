@@ -22,7 +22,7 @@ import os
 import re
 import sys
 
-from validate_packages_id_set import STABLE_310_PATTERN, is_stable_310, parse_exclude_ids
+from validate_packages_id_set import CORE_MAINTENANCE_BRANCHES, STABLE_310_PATTERN, is_stable_310, parse_exclude_ids
 
 # Release tags carry no "v" prefix: 3.8.4, 3.8.0-rc2, 3.8.0-preview1.
 RELEASE_TAG = re.compile(r"[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z]+(\.[0-9A-Za-z]+)*)?")
@@ -57,7 +57,7 @@ def selection_errors(
         # Candidate promotion is its own mode: main only, a version, and none of the other publication switches.
         if ref != PROMOTE_REF:
             errors.append(f"Candidate promotion requires {PROMOTE_REF}.")
-        if not PROMOTE_VERSION.fullmatch(promote):
+        if promote not in CORE_MAINTENANCE_BRANCHES and not PROMOTE_VERSION.fullmatch(promote):
             errors.append(f"promote_candidate_version {promote!r} is not a version such as 3.10.1.")
         for selected, name in ((feedz, "publish_preview_feedz"), (nuget, "publish_nuget"), (npm, "publish_npm"),
                                (coverage, "deploy_coverage"), (parse_exclude_ids(exclude_ids), "exclude_ids")):
@@ -79,6 +79,8 @@ def selection_errors(
         major, minor = (int(part) for part in tag.split(".")[:2])
         if (major, minor) == (3, 11) and nuget:
             errors.append("3.11 NuGet publication requires a sealed candidate on the protected promotion path.")
+        if tag in CORE_MAINTENANCE_BRANCHES and nuget:
+            errors.append("Core maintenance NuGet publication requires a sealed candidate on the protected promotion path.")
         feedz_from_tag = (major, minor) == (3, 10)
         if feedz_from_tag and not tag.startswith("3.10."):
             # NuGet would normalize 03.10.0 to 3.10.0, and the Feedz job matches the literal 3.10. prefix.
