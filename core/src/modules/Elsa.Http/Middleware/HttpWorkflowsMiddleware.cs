@@ -236,7 +236,9 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
         if (bookmarkPayload.RequestTimeout is { } requestTimeout
             && requestTimeout > TimeSpan.Zero
             && (lockTimeout == Timeout.InfiniteTimeSpan || requestTimeout < lockTimeout))
+        {
             lockTimeout = requestTimeout;
+        }
 
         await using var instanceLock = await lockProvider.TryAcquireLockAsync($"workflow-instance:{bookmark.WorkflowInstanceId}", lockTimeout, cancellationToken);
 
