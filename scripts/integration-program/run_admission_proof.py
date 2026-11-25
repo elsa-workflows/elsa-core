@@ -311,7 +311,7 @@ def source_hashes(root: Path) -> dict[str, str]:
     # Conservative tracked superset includes implementation, workers/migrations, shared
     # props/targets/configuration and proof dependencies, not just csproj references.
     paths = subprocess.check_output(["git", "-C", str(root), "ls-files", "-z", "--", "core", "extensions", "studio",
-        "build", "scripts/integration-program", ".github/workflows/admission-proof.yml", ".config",
+        "build", "scripts/integration-program", ".github/workflows/pr.yml", "scripts/ci", ".config",
         "Directory.*", "global.json", "NuGet.Config", "Elsa.sln", ".editorconfig", ".gitignore",
         ".gitattributes"], text=True).split("\0")
     # The single ls-files result already establishes tracking; avoid thousands of

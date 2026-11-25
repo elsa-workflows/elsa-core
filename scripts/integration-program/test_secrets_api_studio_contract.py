@@ -32,7 +32,8 @@ class SecretsApiStudioContractTests(unittest.TestCase):
         self.assertEqual({'studioApi', 'studioModels'}, set(self.fixture['studioTestSourceSnapshots']))
 
     def test_workflow_checkouts_match_contract_source_pins(self):
-        workflow = (SCRIPT.parents[2] / '.github/workflows/secrets-api-studio-contract.yml').read_text()
+        workflow = (SCRIPT.parents[2] / '.github/workflows/pr.yml').read_text()
+        workflow = workflow.split('  pinned-source-contract:\n', 1)[1].split('  # Studio ClientLib build', 1)[0]
         for repository, pin in (
             ('elsa-core', self.fixture['sourcePins']['core']),
             ('elsa-extensions', self.fixture['sourcePins']['extensions']),
@@ -103,11 +104,12 @@ class SecretsApiStudioContractTests(unittest.TestCase):
         self.assertEqual(self.fixture['routeConflicts'], conflicts)
 
     def test_workflow_runs_when_an_import_candidate_source_changes(self):
-        workflow = (SCRIPT.parents[2] / '.github/workflows/secrets-api-studio-contract.yml').read_text()
+        config = SCRIPT.parents[2] / 'scripts/ci/pr-paths.json'
+        paths = json.loads(config.read_bytes())['secrets-contract']['paths']
         for path in self.fixture['importCandidateSourcePaths'].values():
             trigger = path if path.endswith('.cs') else f'{path}/**'
             with self.subTest(path=path):
-                self.assertIn(f"- '{trigger}'", workflow)
+                self.assertIn(trigger, paths)
 
     def test_legacy_only_packages_are_exactly_the_imported_legacy_package_graph(self):
         # The default-host test asserts that none of these is loaded or deployed with the Workbench, so the list must

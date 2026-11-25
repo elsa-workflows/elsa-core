@@ -17,9 +17,6 @@ import run_persisted_workflow_upgrade_fixture as fixture
 import run_stable_persisted_workflow_upgrade_fixture as stable
 from test_consolidated_candidate_clock import AFTER_EXPIRY, candidate_clock, install_candidate_clock
 
-ROOT = Path(__file__).resolve().parents[2]
-
-
 class StableAdapterContracts(unittest.TestCase):
     def setUp(self):
         install_candidate_clock(self, candidate, candidate_input, sys.modules[__name__])
@@ -237,32 +234,6 @@ class StableCliContracts(unittest.TestCase):
 
 
 class StableWorkflowContracts(unittest.TestCase):
-    def test_fixed_token_boundary_same_run_layout_and_full_matrix(self):
-        text = (ROOT / ".github/workflows/stable-persisted-workflow-upgrade-proof.yml").read_text()
-        retrieve, execution = text.split("  proof:\n", 1)
-        self.assertNotIn("pull_request", text)
-        self.assertIn("workflow_dispatch:", text)
-        branches = text.split("    branches:\n", 1)[1].split("    paths:\n", 1)[0]
-        self.assertEqual(branches.splitlines(), ["      - 'codex/**'"])
-        for forbidden in ("actions/checkout", "scripts/", "python", "node", "secrets."):
-            self.assertNotIn(forbidden, retrieve.split("  retrieve:\n", 1)[1])
-        for value in (str(stable.ARTIFACT), str(stable.RUN), stable.SOURCE, stable.ARCHIVE_SHA256):
-            self.assertIn(value, retrieve)
-        self.assertIn(f"actions/runs/{stable.RUN}/attempts/1", retrieve)
-        self.assertIn(".run_attempt == 1", retrieve)
-        self.assertIn("actions: none", execution)
-        self.assertIn("ref: ${{ github.sha }}", execution)
-        self.assertIn("persist-credentials: false", execution)
-        self.assertIn("artifact-ids: ${{ needs.retrieve.outputs.input-artifact-id }}", execution)
-        self.assertIn("merge-multiple: true", execution)
-        for forbidden in ("github-token:", "GH_TOKEN", "GITHUB_TOKEN", "ACTIONS_READ_TOKEN", "run-id:", "repository:", "--cell"):
-            self.assertNotIn(forbidden, execution)
-        for name in ("candidate.zip", "artifact.json", "producer-run.json", "live-retrieval.json"):
-            self.assertIn("${{ runner.temp }}/upgrade-input/" + name, retrieve)
-        self.assertIn('--fixture-source "${{ github.sha }}"', execution)
-        self.assertIn('--fixture-run "${{ github.run_id }}"', execution)
-        self.assertIn('--fixture-attempt "${{ github.run_attempt }}"', execution)
-
     def test_transport_rejects_extra_nested_missing_and_symlinked_entries(self):
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)

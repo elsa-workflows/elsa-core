@@ -371,8 +371,8 @@ class DependabotDiscoveryTests < Minitest::Test
   end
 
   def test_coverage_workflow_runs_when_discovery_inputs_change
-    workflow = YAML.load_file(File.join(REPOSITORY_ROOT, ".github/workflows/integration-program-tools.yml"))
-    paths = workflow.fetch("on") { workflow.fetch(true) }.fetch("pull_request").fetch("paths")
+    routes = JSON.parse(File.read(File.join(REPOSITORY_ROOT, "scripts/ci/pr-paths.json")))
+    paths = routes.fetch("integration-tools").fetch("paths")
     inputs = tracked_projects + %w[
       Elsa.Future.sln Elsa.Future.slnx Future.proj Future.fsproj Future.vbproj
       extensions/src/Elsa.Testing.Extensions/Future.sln extensions/src/Elsa.Testing.Extensions/Future.slnx

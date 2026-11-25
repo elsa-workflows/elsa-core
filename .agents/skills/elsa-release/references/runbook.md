@@ -8,10 +8,10 @@ Studio, Extensions and Apps are folded into `elsa-core`; a release is one `elsa-
 
 What `elsa-core` actually does today (check `origin/main` before relying on it):
 
-- `.github/workflows/packages.yml` builds and uploads packages on `release: published` and on pushes to `main` and `release/*`. Those events never publish. Publication is an approved `workflow_dispatch`: `publish_preview_feedz` (Feedz, from a branch or a `3.10.x` prerelease tag) or `publish_nuget` (nuget.org, from a release-version tag). Stable `3.10.x` Feedz is owned only by `publish-consolidated-original-candidate.yml`.
-- Its `./build.sh Compile+Pack` packs Core only on branch pushes and non-`3.10.0` tags. A `3.10.0` tag `release` event (and a non-promote dispatch from that tag) packs the 231-ID set through `prepare_consolidated_release_candidate.py`. A `publish_nuget` dispatch on a stable `3.10.x` tag does not pack: it downloads the current pin (run `40347931480`, artifact `12664519771`, source `5cff67228e550b353b3483eb3b37dfdb73a41c74`), verifies each `.nupkg` sha256 against that candidate's seal, and runs `scripts/validate_packages_id_set.py` (231 IDs plus the three Studio ClientLib assets per package) before any push. That pin's archive size and expiry (`2026-11-25T16:05:50Z`) come from `stable-original-envelope.json`. `Elsa.SamplePackage` is not packable. The five `Elsa.Secrets.*` IDs and the four `Elsa.Studio.Host.*` IDs stay unpackable and `Elsa.Templates` is not in core. The whole-product 3.10.0 candidate is [prepared without publishing](#consolidated-3100-candidate-preparation-nonpublishing); `publish-consolidated-original-candidate.yml` is the only Feedz publisher for those stable 3.10.x bytes and runs the same 231-ID guard before its Feedz push.
-- `studio-npm-pair.yml` is a local proof of the two Studio npm archives. `packages.yml` `publish_npm` publishes `@elsa-workflows/elsa-studio-wasm` and `@elsa-workflows/elsa-studio-wasm-react` to Feedz from a 3.10.x prerelease tag. The npmjs.com upload is not in this job until trusted publishing is confirmed for `elsa-workflows/elsa-core`. Stable `3.10.x` stays fail-closed until the 231-ID nuget.org promote guard can pass. The pair builder accepts 3.8–3.10 versions only.
-- Core has no container-image publishing workflow. The Apps workflow it used lived in `elsa-apps`.
+- `.github/workflows/packages.yml` builds and uploads packages on `release: published` and on pushes to `main` and `release/*`. Those events never publish. Publication is an approved `workflow_dispatch`: `publish_preview_feedz` (Feedz, from a branch or a `3.10.x` prerelease tag) or `publish_nuget` (nuget.org, from a release-version tag). Use `promote_candidate_version` on `main` to promote a pinned stable candidate to the approved feed targets.
+- The historic 3.10.0 tag path uses the fixed original candidate envelope. For a new supported stable candidate, follow the producer and version-keyed pin procedure and promote through `packages.yml` on `main`. Promotion verifies the producer and artifacts before publishing and uses those exact bytes.
+- The [local Studio npm pair proof](../../../../docs/integration-program/studio-npm-pair.md) builds and consumes both archives. `packages.yml` `publish_npm` publishes `@elsa-workflows/elsa-studio-wasm` and `@elsa-workflows/elsa-studio-wasm-react` to Feedz from a 3.10.x prerelease tag. The npmjs.com upload is not in this job until trusted publishing is confirmed for `elsa-workflows/elsa-core`. Stable `3.10.x` stays fail-closed until the 231-ID nuget.org promote guard can pass. The pair builder accepts 3.8–3.10 versions only.
+- `docker-publish.yml` publishes the three Community images. `studio-react-release.yml` coordinates the React Preview image and npm packages.
 
 ## 1. Resolve the plan and preflight the Core and Templates repositories
 
@@ -30,7 +30,7 @@ Check:
 - All configured package workflow `base_version` values match the new release line before branch CI. Templates stable workflow policy is checked separately: its `BASE_VERSION` and embedded Core/Studio PackageReferences must match the requested stable version, while a prerelease source must be selected explicitly or from its release branch. Version tags drive named release artifacts, but the branch preview version must also be correct. Make routine preparation changes on the intended release branch when needed.
 - Before a Templates RC/preview run, inspect its release workflow's tag ancestry guard. It must accept the selected `origin/release/<base-version>` or explicit prerelease source; if it only accepts `origin/main`, resolve that workflow/source mismatch in the Templates repository before publishing. Never claim a release-line source is runnable while the workflow silently rejects its tag.
 - The workflow subscribes once to `release: types: [published]`. GitHub `published` covers both stable and prereleases. Use `release.prerelease` or parsed package versions for distinctions, never `event.action == published` as a stable-only test. [GitHub reference](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#release).
-- Named stable, RC and preview releases use the approved publication workflows, never the release event itself: nuget.org for release-version tags (stable `3.10.x` uses the pinned 231-ID candidate), Feedz for branches and `3.10.x` prerelease tags through `packages.yml`, and stable `3.10.x` Feedz publication through `publish-consolidated-original-candidate.yml`. Automated branch previews are separate, Feedz-only builds. Studio npm `next`/`latest` publication does not exist in core yet (pending #8725); do not expect it. If the source workflow disagrees with this policy, resolve the mismatch before release; do not weaken verification to match missing output.
+- Named stable, RC and preview releases use the approved publication workflows, never the release event itself: nuget.org for release-version tags (stable `3.10.x` uses the pinned 231-ID candidate), Feedz for branches and `3.10.x` prerelease tags through `packages.yml`, and stable candidate Feedz publication through the promotion mode of `packages.yml`. Automated branch previews are separate, Feedz-only builds. Studio npm `next`/`latest` publication does not exist in core yet (pending #8725); do not expect it. If the source workflow disagrees with this policy, resolve the mismatch before release; do not weaken verification to match missing output.
 - Identify advisories and build/test prerequisites early. Assess actual usage and document disposition; a known warning from a prior release is evidence, not permanent acceptance. Keep unrelated upgrades out of the release. New material unresolved risks or failures require an explicit resolution before irreversible publication.
 
 Before creating a named release, perform a publishing credential preflight for
@@ -428,21 +428,9 @@ the unchanged earlier `3.10.0-proof.37410240989.1` archive and from future appro
 publication. The #8629 proof-version persisted matrix cannot certify different
 stable candidate bytes: applicable persisted compatibility checks must bind to
 the admitted candidate production bytes before that candidate is published.
-`publish-consolidated-original-candidate.yml` is the only Feedz publisher for
-those stable 3.10.x bytes. A `packages.yml` nuget.org dispatch on a stable
-3.10.x tag downloads the current pin (run `40347931480`, artifact
-`12664519771`), verifies each `.nupkg` sha256 against the candidate seal, and
-runs the same 231-ID and Studio content guards that the candidate Feedz
-publisher runs before its push. The promote path does not restore, build, or
-pack. `3.10.1` and later stay blocked until a new pin exists.
-
-This task implements no publisher handoff. Ordinary approved Core publication
-selection remains a `packages.yml` dispatch: branch previews and 3.10.x
-prerelease tags may publish to Feedz, and release-version tags may publish to
-NuGet.org with `publish_nuget`. Stable 3.10.x Feedz is not a `packages.yml`
-option. That
-workflow has no operator-supplied candidate artifact/run selector; the 3.10.0
-nuget.org path is pinned to the reviewed candidate identity and promotes those
-bytes. Candidate
+The 3.10.0 original artifact and its evidence are historical. Use the
+version-keyed promotion mode in `packages.yml` for approved candidate releases
+with an available artifact and a reviewed pin on `main`. The retired original
+candidate and recovery workflows remain in Git history. Candidate
 success does not imply release readiness, publication, source publisher cutover
 or completion of #8219/#8220.
