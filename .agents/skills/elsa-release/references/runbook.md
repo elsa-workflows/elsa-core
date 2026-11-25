@@ -93,9 +93,9 @@ python3 <skill>/scripts/release_train.py --state <run>/state.json init \
   --repositories core --no-containers
 ```
 
-Optional arguments: `--kind stable|rc|preview`, `--repositories core` (the profile still lists `studio`, `extensions` and `templates`; never select `studio` or `extensions`), `--source core=3.10.0-rc1` (use `--source core=origin/main` when the line has no `release/<base-version>` branch yet, because the helper otherwise resolves `origin/release/<base-version>`), repeated `--pr <URL>`, `--no-announcements`, `--no-post-refresh`, `--no-containers`, and `--profile <JSON>`. The flags are independent. `--no-containers` is mandatory until core has its own image workflow (see Scope); it records that no images were released and does not change the requested package scope. A named subset includes its upstream repositories as verification-only dependencies; do not publish those implicitly. Do not select `templates` in the helper yet: the profile declares `studio` as a Templates upstream, so the helper would read the `elsa-studio` repository's GitHub releases, which is off limits. Run the Templates stage by hand (sections 3 to 5 describe the checks, `release.py` works on the Templates repository) and record what you verified, until the profile has a core-only upstream for Templates. The post-release receipt scope contains only the selected repositories.
+Optional arguments: `--kind stable|rc|preview`, `--repositories core` (the profile still lists `studio`, `extensions` and `templates`; never select `studio` or `extensions`), `--source core=3.10.0-rc1` (use `--source core=origin/main` when the line has no `release/<base-version>` branch yet, because the helper otherwise resolves `origin/release/<base-version>`), repeated `--pr <URL>`, `--no-announcements`, `--no-post-refresh`, `--no-containers`, and `--profile <JSON>`. The flags are independent. Use `--no-containers` to bypass the helper’s retired Apps checkpoint. Track current Core image evidence separately. A named subset includes its upstream repositories as verification-only dependencies; do not publish those implicitly. Do not select `templates` in the helper yet: the profile declares `studio` as a Templates upstream, so the helper would read the `elsa-studio` repository's GitHub releases, which is off limits. Run the Templates stage by hand (sections 3 to 5 describe the checks, `release.py` works on the Templates repository) and record what you verified, until the profile has a core-only upstream for Templates. The post-release receipt scope contains only the selected repositories.
 
-Container images are out of scope until core has its own image workflow (see Scope). The profile's `container_release` section still points at `elsa-apps`: always initialize with `--no-containers`, and do not run `prepare-containers`, `bind-containers`, `dispatch-containers` or `record-containers`. Report that no images were released.
+The helper profile still points its container checkpoint at the retired Apps publisher. Initialize with `--no-containers` and follow the Core image procedure in section 6.
 
 Repeating `init` with identical inputs preserves progress. Conflicting inputs fail rather than overwrite an in-flight plan.
 
@@ -127,7 +127,7 @@ The helper updates only the configured declarations and checks upstream evidence
 
 Use the source repository's current AGENTS/build/workflow instructions. As of this profile:
 
-- Core: relevant regression coverage plus the branch workflow's unit/integration/component and package build checks (the Studio and Extensions projects are built and tested in the same `Elsa.sln` run, and the Studio ClientLib browser bundles are built by `studio-clientlib-build.yml`); real host/API smoke tests when the prerequisite touches endpoint discovery or hosting.
+- Core: relevant regression coverage plus the branch workflow's unit/integration/component and package build checks (the Studio and Extensions projects are built and tested in the same `Elsa.sln` run, and the `studio-clientlibs` suite in PR checks builds the Studio browser bundles); real host/API smoke tests when the prerequisite touches endpoint discovery or hosting.
 - Templates: fresh `Elsa.Templates.slnx` restore/build/test, followed by the generated template matrix below. The Templates workflow must produce exactly the `Elsa.Templates` package in its `elsa-template-packages` artifact and must pass `Build packages`, `Publish to feedz.io`, and `Publish to nuget.org` for a named release. Its embedded Elsa references are checked from the source files against the known published package IDs from its configured upstreams (Core and Studio).
 
 Use `--force --no-cache` restores for changed upstream packages and inspect `project.assets.json` for exact resolved versions and package provenance. Verify all supported target frameworks via the repository's build. Record commands, exit results and intentional service-dependent test skips against the exact commit. Resolve failures; do not replace broad required checks with a convenient small passing subset.
@@ -307,17 +307,15 @@ python3 <skill>/scripts/release_train.py --state <run>/state.json verify \
 
 `verify_packages.py` compares the explicit manifest with local artifacts and actual published feed content, handles NuGet repository signing, and checks npm integrity/dist-tags. For Templates it also compares every embedded project file and Elsa PackageReference in the nupkg against the bound source and known published upstream IDs. Each attempt writes a report even when indexing is incomplete. Retry missing/not-yet-indexed packages with backoff; diagnose provenance mismatches rather than calling them propagation delays. Never accept a queued/uploaded state as package availability. Once Core verifies, prepare Templates.
 
-NuGet verification is not a release-wide artifact verdict. The retired four-repository checkpoint also requires a container gate before sites or announcements. With no core image workflow, run with `--no-containers` and record that no images were released; do not treat that as a note in the site audit.
+Verify the applicable Core image outputs separately from NuGet before updating sites or announcing the release.
 
-## 6. Container images (blocked: no core workflow yet)
+## 6. Container images
 
-The Apps container workflow (`container-images.yml`) lived in `elsa-workflows/elsa-apps`, which is folded into `elsa-core` and off limits. Core has no workflow that builds or pushes release images; `docker-ca.yml` only smoke-tests Dockerfiles. Until core has one:
+The [Community image workflow](../../../../.github/workflows/docker-publish.yml) publishes the server, Studio, and combined images to Docker Hub from accepted stable or preview tags. Before creating a release tag, check the trigger and publisher in the selected source revision. For an in-scope publication, bind the completed run to the tag commit and verify the exact version, live registry digests, amd64 and arm64 manifests, and per-platform image startup. Verify floating tags according to the workflow's rules for stable and preview releases.
 
-- Initialize the plan with `--no-containers` and skip `prepare-containers`, `bind-containers`, `dispatch-containers`, `record-containers`, `adopt-containers` and `verify-containers`. They bind to `elsa-apps` through the profile's `container_release` section, and no command here may contact that repository.
-- Do not build or push images by hand, and never retag an image as `latest` or `4`.
-- Say in the release record and the announcement that no container images were released with this version.
+The [React Studio Preview workflow](../../../../.github/workflows/studio-react-release.yml) coordinates the Preview image and npm packages through the protected `react-studio-release` environment. Follow the [Preview release procedure](../../../../studio/docs/releases/3.11.0-react-studio-preview.md) when that release is in scope.
 
-A replacement core workflow must be reviewed and merged in `elsa-core` first. Then update the profile's `container_release` section and the helper, and restore the evidence bar that the retired stage had: an exact workflow run and artifact bound to the release commit, live registry digests for every platform, per-platform authenticated smoke checks, and the exact Elsa package versions inside each image.
+Use `--no-containers` for the release-train helper because its container subcommands still target the retired Apps workflow. Record the applicable Core workflow runs and live verification separately. Report the images and tags that the registry checks actually verified.
 
 ## 7. Refresh sites, announce, recover, and finish
 

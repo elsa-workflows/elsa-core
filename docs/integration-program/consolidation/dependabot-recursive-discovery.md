@@ -184,7 +184,7 @@ Run the inexpensive coverage and configuration gate with:
 ruby scripts/integration-program/test_dependabot_discovery.rb
 ```
 
-The [Integration program tools workflow](../../../.github/workflows/integration-program-tools.yml)
+The `integration-tools` suite in [PR checks](../../../.github/workflows/pr.yml)
 runs this check. Its Ruby step uses bundled Minitest, with a pinned 5.16.3 fallback.
 Synthetic regressions retain the terminal-glob failure and deeper-project case, and
 exercise deeper project parents, the excluded TLS host, solution expansion, explicit
