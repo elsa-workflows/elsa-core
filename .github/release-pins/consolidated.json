@@ -1,4 +1,15 @@
 {
+  "3.7.2": {
+    "run_id": 45587211666,
+    "artifact_id": 15009464818,
+    "source_sha": "88deeccc9d746fcba3e5eba19c4db97b739c315e",
+    "archive_sha256": "59b78ec593d8baf9962c2263849db1224ed20f6345c18c70d9ef19dc750c26d6",
+    "manifest_sha256": "b0875040f275c3f23a276a6aac41a15a84a0cb9b18053a7109dcc7e74c699cd5",
+    "feedz_count": 45,
+    "nuget_count": 45,
+    "exclude_ids": [],
+    "ancestry_branch": "release/3.7.2"
+  },
   "3.8.5": {
     "run_id": 45581109002,
     "artifact_id": 15007683842,
