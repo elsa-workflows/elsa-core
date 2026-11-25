@@ -43,6 +43,8 @@
       "core/src/modules/Elsa.Resilience/Elsa.Resilience.csproj",
       "core/src/modules/Elsa.SasTokens/Elsa.SasTokens.csproj",
       "core/src/modules/Elsa.Scheduling/Elsa.Scheduling.csproj",
+      "core/src/modules/Elsa.Secrets.Persistence.EFCore.MySql/Elsa.Secrets.Persistence.EFCore.MySql.csproj",
+      "core/src/modules/Elsa.Secrets.Persistence.EFCore/Elsa.Secrets.Persistence.EFCore.csproj",
       "core/src/modules/Elsa.Secrets/Elsa.Secrets.csproj",
       "core/src/modules/Elsa.Shells.Api/Elsa.Shells.Api.csproj",
       "core/src/modules/Elsa.Tenants.AspNetCore/Elsa.Tenants.AspNetCore.csproj",
