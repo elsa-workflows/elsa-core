@@ -2,6 +2,11 @@ name: Packages
 
 on:
   workflow_dispatch:
+    inputs:
+      qualify_release:
+        description: Build and retain the exact patch packages without publishing
+        type: boolean
+        default: false
   push:
     branches:
       - 'main'
@@ -14,13 +19,9 @@ on:
       - 'develop/*'
       - 'release/*'
       - 'codex/*'
-  release:
-    types: [prereleased, published]
 
 env:
-  base_version: '3.8.0'
-  feedz_feed_source: 'https://f.feedz.io/elsa-workflows/elsa-3/nuget/index.json'
-  nuget_feed_source: 'https://api.nuget.org/v3/index.json'
+  base_version: '3.8.5'
 
 jobs:
   test_unit_integration:
@@ -287,24 +288,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Verify commit exists in branch
+      - name: Set package version
+        env:
+          QUALIFY_RELEASE: ${{ inputs.qualify_release }}
         run: |
-          if [[ "${{ github.ref }}" == refs/tags/* && "${{ github.event_name }}" == "release" && ("${{ github.event.action }}" == "published" || "${{ github.event.action }}" == "prereleased") ]]; then
-            git fetch --no-tags --prune origin +refs/heads/*:refs/remotes/origin/*
-            git branch --remote --contains | grep -E 'origin/(main|release/)'
+          set -euo pipefail
+          if [[ "${QUALIFY_RELEASE}" == "true" ]]; then
+            test "$GITHUB_REF" = 'refs/heads/release/3.8.4'
+            echo "VERSION=${base_version}" >> "$GITHUB_ENV"
           else
-            git fetch --no-tags --prune origin +refs/heads/*:refs/remotes/origin/*
-            git branch --remote --contains | grep origin/${BRANCH_NAME}
-          fi
-
-      - name: Set VERSION variable
-        run: |
-          if [[ "${{ github.ref }}" == refs/tags/* && "${{ github.event_name }}" == "release" && ("${{ github.event.action }}" == "published" || "${{ github.event.action }}" == "prereleased") ]]; then
-            TAG_NAME=${{ github.ref }} # e.g., refs/tags/3.0.0
-            TAG_NAME=${TAG_NAME#refs/tags/} # remove the refs/tags/ prefix
-            echo "VERSION=${TAG_NAME}" >> $GITHUB_ENV
-          else
-            echo "VERSION=${{env.base_version}}-preview.${{github.run_number}}" >> $GITHUB_ENV
+            echo "VERSION=${base_version}-preview.${GITHUB_RUN_NUMBER}" >> "$GITHUB_ENV"
           fi
 
       - uses: actions/setup-dotnet@v4
@@ -319,50 +312,7 @@ jobs:
         with:
           name: elsa-nuget-packages
           path: packages/*nupkg
-        if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
-
-  publish_preview_feedz:
-    name: Publish to feedz.io
-    needs: build
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
-    steps:
-      - name: Download Packages
-        uses: actions/download-artifact@v4.1.7
-        with:
-          name: elsa-nuget-packages
-
-      - name: Publish to feedz.io
-        run: dotnet nuget push *.nupkg -k "${{ secrets.FEEDZ_API_KEY }}" -s ${{ env.feedz_feed_source }} --skip-duplicate
-
-  publish_nuget:
-    name: Publish release to nuget.org
-    needs: build
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    if: ${{ github.event.action == 'published' }}
-    permissions:
-      contents: read
-      id-token: write # Required: lets this job request the OIDC token that nuget.org exchanges for a temporary API key.
-    steps:
-      - name: Download Packages
-        uses: actions/download-artifact@v4.1.7
-        with:
-          name: elsa-nuget-packages
-
-      # Exchanges a GitHub OIDC token for a temporary nuget.org API key (valid 1 hour).
-      # Requires a Trusted Publishing policy on nuget.org matching:
-      #   Repository Owner: elsa-workflows | Repository: elsa-core | Workflow File: packages.yml
-      # Keep this step immediately before the push so the key cannot expire in between.
-      - name: NuGet login (OIDC)
-        uses: NuGet/login@v1
-        id: nuget_login
-        with:
-          user: ${{ secrets.NUGET_USER }} # nuget.org username (profile name), not an email address.
-
-      - name: Publish to nuget.org
-        run: dotnet nuget push *.nupkg --api-key ${{ steps.nuget_login.outputs.NUGET_API_KEY }} --source ${{ env.nuget_feed_source }} --skip-duplicate
+        if: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.qualify_release) }}
 
   deploy_coverage:
     name: Deploy coverage to GitHub Pages
