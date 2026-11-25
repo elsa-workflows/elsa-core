@@ -18,7 +18,9 @@ public class BookmarkQueueOrderingTests
         var store = new MemoryBookmarkQueueStore(new MemoryStore<BookmarkQueueItem>());
         var ids = Enumerable.Range(0, 55).Select(index => $"queue-{index:D2}").ToArray();
         foreach (var id in ids.Reverse())
+        {
             await store.AddAsync(new() { Id = id, WorkflowInstanceId = "selected", CreatedAt = DateTimeOffset.UnixEpoch });
+        }
 
         const string newest = "newest";
         await store.AddAsync(new() { Id = newest, WorkflowInstanceId = "selected", CreatedAt = DateTimeOffset.UnixEpoch.AddDays(1) });
