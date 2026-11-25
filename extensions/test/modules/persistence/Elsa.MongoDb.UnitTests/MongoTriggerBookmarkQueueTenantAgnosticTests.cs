@@ -117,6 +117,31 @@ public sealed class MongoTriggerBookmarkQueueTenantAgnosticTests : IAsyncLifetim
         Assert.Equal(2, agnosticPage.TotalCount);
     }
 
+    [Fact]
+    public async Task BookmarkQueueStore_PagesTimestampTiesById()
+    {
+        using var tenant = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+
+        foreach (var id in new[] { "c", "b", "a" })
+        {
+            await _bookmarkQueueStore.SaveAsync(new BookmarkQueueItem { Id = id, WorkflowInstanceId = "selected", CreatedAt = DateTimeOffset.UnixEpoch });
+        }
+
+        await _bookmarkQueueStore.SaveAsync(new BookmarkQueueItem { Id = "d", WorkflowInstanceId = "other", CreatedAt = DateTimeOffset.UnixEpoch });
+        var order = new BookmarkQueueItemOrder<DateTimeOffset>(x => x.CreatedAt, OrderDirection.Descending);
+        var filter = new BookmarkQueueFilter { WorkflowInstanceId = "selected" };
+
+        var first = await _bookmarkQueueStore.PageAsync(PageArgs.FromRange(0, 2), filter, order);
+        var second = await _bookmarkQueueStore.PageAsync(PageArgs.FromRange(2, 2), filter, order);
+        var all = await _bookmarkQueueStore.PageAsync(PageArgs.FromRange(0, 4), order);
+
+        Assert.Equal(3, first.TotalCount);
+        Assert.Equal(new[] { "a", "b" }, first.Items.Select(x => x.Id));
+        Assert.Equal("c", Assert.Single(second.Items).Id);
+        Assert.Equal(4, all.TotalCount);
+        Assert.Equal(new[] { "a", "b", "c", "d" }, all.Items.Select(x => x.Id));
+    }
+
     private static StoredTrigger Trigger(string id) =>
         new()
         {

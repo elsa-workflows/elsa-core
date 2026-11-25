@@ -1,4 +1,6 @@
 using Dapper;
+using Elsa.Common.Entities;
+using Elsa.Common.Models;
 using Elsa.Common.Multitenancy;
 using Elsa.Extensions;
 using Elsa.KeyValues.Contracts;
@@ -16,6 +18,7 @@ using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Options;
+using Elsa.Workflows.Runtime.OrderDefinitions;
 using FluentMigrator.Runner;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.DependencyInjection;
@@ -153,6 +156,35 @@ public sealed class DapperKeyValuesAndBookmarkQueueTests : IDisposable
         Assert.NotNull(loaded.Options);
         Assert.Equal("hello", loaded.Options.Input?["payload"]?.ToString());
         Assert.Equal("test", loaded.Options.Properties?["source"]?.ToString());
+    }
+
+    [Fact]
+    public async Task BookmarkQueueStore_PagesTimestampTiesById()
+    {
+        MigrateUp();
+        await using var services = CreateElsaServices();
+        using var scope = services.CreateScope();
+        using var tenant = scope.ServiceProvider.GetRequiredService<ITenantAccessor>().PushContext(Tenant.Default);
+        var store = scope.ServiceProvider.GetRequiredService<IBookmarkQueueStore>();
+
+        foreach (var id in new[] { "c", "b", "a" })
+        {
+            await store.AddAsync(new BookmarkQueueItem { Id = id, WorkflowInstanceId = "selected", CreatedAt = DateTimeOffset.UnixEpoch });
+        }
+
+        await store.AddAsync(new BookmarkQueueItem { Id = "d", WorkflowInstanceId = "other", CreatedAt = DateTimeOffset.UnixEpoch });
+        var order = new BookmarkQueueItemOrder<DateTimeOffset>(x => x.CreatedAt, OrderDirection.Descending);
+        var filter = new BookmarkQueueFilter { WorkflowInstanceId = "selected" };
+
+        var first = await store.PageAsync(PageArgs.FromRange(0, 2), filter, order);
+        var second = await store.PageAsync(PageArgs.FromRange(2, 2), filter, order);
+        var all = await store.PageAsync(PageArgs.FromRange(0, 4), order);
+
+        Assert.Equal(3, first.TotalCount);
+        Assert.Equal(new[] { "a", "b" }, first.Items.Select(x => x.Id));
+        Assert.Equal("c", Assert.Single(second.Items).Id);
+        Assert.Equal(4, all.TotalCount);
+        Assert.Equal(new[] { "a", "b", "c", "d" }, all.Items.Select(x => x.Id));
     }
 
     [Fact(DisplayName = "#264: Event start + resume completes on a migration-built Dapper DB")]
