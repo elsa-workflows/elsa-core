@@ -22,6 +22,8 @@
     <PackageReference Include="Nuke.Components" Version="10.1.0" />
     <PackageReference Include="NuGet.Packaging" Version="7.6.0" />
     <PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.9" />
+    <!-- Match the framework parser required by the .NET 10.0.4xx SDK. -->
+    <PackageReference Include="NuGet.Frameworks" Version="7.9.0" />
   </ItemGroup>
 
 </Project>

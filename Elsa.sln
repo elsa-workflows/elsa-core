@@ -469,6 +469,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.ExternalAuthentication
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.ExternalAuthentication.IntegrationTests", "test\integration\Elsa.ExternalAuthentication.IntegrationTests\Elsa.ExternalAuthentication.IntegrationTests.csproj", "{F94712B2-9237-403F-B8F4-C6F73D1DFED9}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.EFCore.IntegrationTests", "test\integration\Elsa.Persistence.EFCore.IntegrationTests\Elsa.Persistence.EFCore.IntegrationTests.csproj", "{113F2841-FB03-49C9-82A0-3AE3E0BDA62D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -2169,6 +2171,18 @@ Global
 		{9E4F58D3-0A26-4C71-B39E-8D5721CA640B}.Release|x64.Build.0 = Release|Any CPU
 		{9E4F58D3-0A26-4C71-B39E-8D5721CA640B}.Release|x86.ActiveCfg = Release|Any CPU
 		{9E4F58D3-0A26-4C71-B39E-8D5721CA640B}.Release|x86.Build.0 = Release|Any CPU
+		{113F2841-FB03-49C9-82A0-3AE3E0BDA62D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{113F2841-FB03-49C9-82A0-3AE3E0BDA62D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{113F2841-FB03-49C9-82A0-3AE3E0BDA62D}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{113F2841-FB03-49C9-82A0-3AE3E0BDA62D}.Debug|x64.Build.0 = Debug|Any CPU
+		{113F2841-FB03-49C9-82A0-3AE3E0BDA62D}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{113F2841-FB03-49C9-82A0-3AE3E0BDA62D}.Debug|x86.Build.0 = Debug|Any CPU
+		{113F2841-FB03-49C9-82A0-3AE3E0BDA62D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{113F2841-FB03-49C9-82A0-3AE3E0BDA62D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{113F2841-FB03-49C9-82A0-3AE3E0BDA62D}.Release|x64.ActiveCfg = Release|Any CPU
+		{113F2841-FB03-49C9-82A0-3AE3E0BDA62D}.Release|x64.Build.0 = Release|Any CPU
+		{113F2841-FB03-49C9-82A0-3AE3E0BDA62D}.Release|x86.ActiveCfg = Release|Any CPU
+		{113F2841-FB03-49C9-82A0-3AE3E0BDA62D}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -2352,6 +2366,7 @@ Global
 		{D8371C05-4E6A-42BF-95D7-3A0F81B6E27C} = {5948B0A5-7873-4DBB-BA03-EB283D6EA91B}
 		{6C0B92FA-1D53-4E87-8B4A-72F9C3D06E15} = {5948B0A5-7873-4DBB-BA03-EB283D6EA91B}
 		{9E4F58D3-0A26-4C71-B39E-8D5721CA640B} = {5948B0A5-7873-4DBB-BA03-EB283D6EA91B}
+		{113F2841-FB03-49C9-82A0-3AE3E0BDA62D} = {1B8D5897-902E-4632-8698-E89CAF3DDF54}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4B5CEAA-7D70-4FCB-A68E-B03FBE5E0E5E}
