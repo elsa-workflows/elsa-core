@@ -105,10 +105,24 @@ def _is_positive_int(value: object) -> bool:
     return isinstance(value, int) and not isinstance(value, bool) and value > 0
 
 
+
+def predates_sealed_candidates(version: str) -> bool:
+    """True for trains that predate sealed candidates, i.e. below 3.10."""
+    core = version.split("-")[0]
+    try:
+        major, minor, *_ = (int(part) for part in core.split("."))
+    except ValueError:
+        return False
+    return (major, minor) < (3, 10)
+
+
 def validate_pin_entry(version: str, entry: object) -> Pin:
     """Check one pin entry field by field and return it; every problem is a SystemExit naming the field."""
     require(isinstance(entry, dict), f"Pin entry for {version} must be an object.")
-    legacy = isinstance(entry, dict) and entry.get("legacy_release_artifact") is True
+    legacy = entry.get("legacy_release_artifact") is True
+    if legacy:
+        require(predates_sealed_candidates(version),
+                f"Pin {version} cannot use legacy_release_artifact; 3.10 and later require a sealed candidate.")
     fields = (*PIN_FIELDS, "tooling_sha") if version.startswith("3.11.") else (LEGACY_PIN_FIELDS if legacy else PIN_FIELDS)
     missing = [field for field in fields if field not in entry]
     require(not missing, f"Pin entry for {version} is missing: {', '.join(missing)}.")

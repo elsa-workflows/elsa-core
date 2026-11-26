@@ -6,7 +6,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from validate_packages_publication_selection import selection_errors
+from validate_packages_publication_selection import release_version, selection_errors
 
 SCRIPT = Path(__file__).with_name("validate_packages_publication_selection.py")
 
@@ -83,6 +83,12 @@ def errors(ref, selected, exclude_ids=None, promote=None, target="all"):
 
 
 class SelectionErrorsTests(unittest.TestCase):
+
+    def test_release_version_strips_leading_zeros_and_prerelease_suffix(self):
+        self.assertEqual("3.6.4", release_version("3.6.4"))
+        self.assertEqual("3.6.4", release_version("03.6.4"))
+        self.assertEqual("3.8.0", release_version("3.8.0-rc2"))
+
     def test_accepts_matching_selections(self):
         for ref, selected in ACCEPTED:
             with self.subTest(ref=ref, selected=sorted(selected)):

@@ -721,15 +721,16 @@ def make_nupkg(package_id, version, commit, url="https://github.com/elsa-workflo
     return buffer.getvalue()
 
 
-def build_legacy_archive(path: Path, *, version="3.6.4", commit=LEGACY_SOURCE, ids=None, drop_snupkg=None,
-                         nested=False, duplicate_case=False, commit_for=None, extra=None):
+def build_legacy_archive(path: Path, *, version="3.6.4", nuspec_version=None, commit=LEGACY_SOURCE, ids=None,
+                         drop_snupkg=None, nested=False, duplicate_case=False, commit_for=None, extra=None):
     from validate_packages_id_set import expected_ids_file, load_expected_ids
     package_ids = list(ids or load_expected_ids(expected_ids_file("3.6.4")))
     files = {}
+    metadata_version = version if nuspec_version is None else nuspec_version
     for package_id in package_ids:
         commit_value = (commit_for or {}).get(package_id, commit)
         name = f"{package_id}.{version}.nupkg"
-        files[name] = make_nupkg(package_id, version, commit_value)
+        files[name] = make_nupkg(package_id, metadata_version, commit_value)
         snupkg = f"{package_id}.{version}.snupkg"
         if drop_snupkg != package_id:
             files[snupkg] = f"symbol {package_id}".encode()
@@ -822,6 +823,55 @@ class LegacyReleaseArtifactTests(unittest.TestCase):
             pin = dataclasses.replace(LEGACY_PIN, archive_sha256=digest)
             with self.assertRaisesRegex(SystemExit, "Duplicate package IDs|package and symbol pairs"):
                 verify.stage_legacy_release_packages(pin, archive, Path(temp) / "stage")
+
+    def test_wrong_package_version_is_rejected(self):
+        with tempfile.TemporaryDirectory() as temp:
+            archive = Path(temp) / "candidate.zip"
+            digest = build_legacy_archive(archive, version="3.6.5")
+            pin = dataclasses.replace(LEGACY_PIN, archive_sha256=digest)
+            with self.assertRaisesRegex(SystemExit, "identity or source"):
+                verify.stage_legacy_release_packages(pin, archive, Path(temp) / "stage")
+
+    def test_nuspec_version_mismatch_is_rejected(self):
+        with tempfile.TemporaryDirectory() as temp:
+            archive = Path(temp) / "candidate.zip"
+            digest = build_legacy_archive(archive, nuspec_version="3.6.5")
+            pin = dataclasses.replace(LEGACY_PIN, archive_sha256=digest)
+            with self.assertRaisesRegex(SystemExit, "identity or source"):
+                verify.stage_legacy_release_packages(pin, archive, Path(temp) / "stage")
+
+    def test_extra_package_pair_is_rejected(self):
+        from validate_packages_id_set import expected_ids_file, load_expected_ids
+        with tempfile.TemporaryDirectory() as temp:
+            archive = Path(temp) / "candidate.zip"
+            ids = [*load_expected_ids(expected_ids_file("3.6.4")), "Elsa.Extra"]
+            digest = build_legacy_archive(archive, ids=ids)
+            pin = dataclasses.replace(LEGACY_PIN, archive_sha256=digest)
+            with self.assertRaisesRegex(SystemExit, "package and symbol pairs"):
+                verify.stage_legacy_release_packages(pin, archive, Path(temp) / "stage")
+
+    def test_stray_file_is_rejected(self):
+        with tempfile.TemporaryDirectory() as temp:
+            archive = Path(temp) / "candidate.zip"
+            digest = build_legacy_archive(archive, extra={"readme.txt": b"nope"})
+            pin = dataclasses.replace(LEGACY_PIN, archive_sha256=digest)
+            with self.assertRaisesRegex(SystemExit, "package and symbol pairs"):
+                verify.stage_legacy_release_packages(pin, archive, Path(temp) / "stage")
+
+    def test_legacy_flag_is_rejected_on_310_and_later(self):
+        with self.assertRaisesRegex(SystemExit, "cannot use legacy_release_artifact"):
+            verify.validate_pin_entry("3.10.1", {**GOOD_ENTRY, "legacy_release_artifact": True})
+        entry = {
+            **dataclasses.asdict(PIN),
+            "ancestry_branch": "release/3.11.0",
+            "tooling_sha": "d" * 40,
+            "feedz_count": 251, "nuget_count": 251, "exclude_ids": [],
+            "legacy_release_artifact": True,
+        }
+        entry.pop("version")
+        with self.assertRaisesRegex(SystemExit, "cannot use legacy_release_artifact"):
+            verify.validate_pin_entry("3.11.0", entry)
+        verify.validate_pin_entry("3.6.4", LEGACY_ENTRY)
 
 if __name__ == "__main__":
     unittest.main()

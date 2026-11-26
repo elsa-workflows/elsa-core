@@ -56,6 +56,12 @@ def is_allowed_promote_version(version: str) -> bool:
     return bool(PROMOTE_VERSION.fullmatch(version)) or version in legacy_release_pin_versions()
 
 
+def release_version(tag: str) -> str:
+    """Canonical major.minor.patch for a release tag, stripping leading zeros and any prerelease suffix."""
+    core = tag.split("-")[0]
+    return ".".join(str(int(part)) for part in core.split("."))
+
+
 def selection_errors(
     ref: str,
     *,
@@ -98,10 +104,11 @@ def selection_errors(
         # Stable 3.10.x Feedz is owned only by the candidate promotion mode of packages.yml.
         # nuget.org still accepts any release-version tag, including stable 3.10.x.
         major, minor = (int(part) for part in tag.split(".")[:2])
-        numeric = f"{int(tag.split('.')[0])}.{int(tag.split('.')[1])}.{int(tag.split('.')[2].split('-')[0])}" if tag[0].isdigit() else tag
-        if nuget and numeric in legacy_release_pin_versions():
+        published = release_version(tag)
+        legacy_pins = legacy_release_pin_versions()
+        if nuget and published in legacy_pins:
             errors.append("NuGet publication for this version requires a pinned candidate on the protected promotion path.")
-        if npm and numeric in legacy_release_pin_versions():
+        if npm and published in legacy_pins:
             errors.append("This version does not publish Studio npm packages.")
         if (major, minor) == (3, 11) and nuget:
             errors.append("3.11 NuGet publication requires a sealed candidate on the protected promotion path.")
