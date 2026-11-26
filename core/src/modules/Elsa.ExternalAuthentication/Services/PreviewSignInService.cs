@@ -2,6 +2,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using Elsa.Common;
+using Elsa.Common.Multitenancy;
 using Elsa.ExternalAuthentication.Contracts;
 using Elsa.ExternalAuthentication.Models;
 using Elsa.ExternalAuthentication.Notifications;
@@ -23,6 +24,7 @@ public sealed class PreviewSignInService(
     IPreviewResultStore results,
     IExternalAuthenticationHandleHasher handles,
     IDataProtectionProvider dataProtection,
+    ExternalAuthenticationCallbackTenant callbackTenant,
     ISystemClock clock,
     IOptions<ExternalAuthenticationOptions> options,
     ExternalAuthenticationSecurityNotifier notifier)
@@ -64,8 +66,12 @@ public sealed class PreviewSignInService(
         if (lookup is not ManagementConnectionLookupResult.Found(var connection) || !string.Equals(connection.Connection.MaterialRevision, transaction.ConnectionMaterialRevision, StringComparison.Ordinal) || !adapters.TryGet(connection.Connection.AdapterType, out var adapter))
             return new PreviewAuthorizeResult.Invalid();
 
-        var state = Opaque();
-        transaction.HandleHash = handles.Hash(state);
+        var nonce = Opaque();
+        var lifetime = transaction.ExpiresAt - clock.UtcNow;
+        if (lifetime < TimeSpan.Zero)
+            lifetime = TimeSpan.Zero;
+        var state = callbackTenant.Protect(transaction.TenantId, nonce, lifetime);
+        transaction.HandleHash = handles.Hash(nonce);
         transaction.ClientState = previewHandle;
         var secrets = await ResolveSecretsAsync(connection.Connection.SecretBindings, cancellationToken);
         try
@@ -81,8 +87,12 @@ public sealed class PreviewSignInService(
 
     public async ValueTask<PreviewCallbackResult> CompleteAsync(string connectionId, string state, IReadOnlyDictionary<string, IReadOnlyCollection<string>> parameters, CancellationToken cancellationToken = default)
     {
-        var taken = await stateStore.TryTakeAsync<BrokerTransaction>(BrokerTransactionPurpose.Preview.ToString(), handles.Hash(state), cancellationToken);
-        if (taken is not TakeResult<BrokerTransaction>.Taken { Value: var transaction } || !string.Equals(transaction.ConnectionId, connectionId, StringComparison.Ordinal) || string.IsNullOrWhiteSpace(transaction.ClientState))
+        var resolved = await callbackTenant.TryResolveAsync(state, cancellationToken);
+        if (resolved is null)
+            return new PreviewCallbackResult.Invalid();
+        using var opened = resolved.Push();
+        var taken = await stateStore.TryTakeAsync<BrokerTransaction>(BrokerTransactionPurpose.Preview.ToString(), handles.Hash(opened.Nonce), cancellationToken);
+        if (taken is not TakeResult<BrokerTransaction>.Taken { Value: var transaction } || !callbackTenant.MatchesStoredTenantId(opened.TenantId, transaction.TenantId) || !string.Equals(transaction.ConnectionId, connectionId, StringComparison.Ordinal) || string.IsNullOrWhiteSpace(transaction.ClientState))
             return new PreviewCallbackResult.Invalid();
         var lookup = await management.FindAsync(connectionId, transaction.TenantId, cancellationToken);
         if (lookup is not ManagementConnectionLookupResult.Found(var connection) || !string.Equals(connection.Connection.MaterialRevision, transaction.ConnectionMaterialRevision, StringComparison.Ordinal) || !adapters.TryGet(connection.Connection.AdapterType, out var adapter))
