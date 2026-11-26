@@ -70,7 +70,9 @@ jobs:
       - name: Check out the selection check
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
-          sparse-checkout: scripts
+          sparse-checkout: |
+            scripts
+            .github/release-pins
           fetch-depth: 1
 
       # Strict release tags only. Tested by

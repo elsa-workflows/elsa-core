@@ -42,10 +42,12 @@ def legacy_release_pin_versions(pin_file: Path = PIN_FILE) -> set[str]:
     """Versions recovered from an original release artifact, pinned with legacy_release_artifact."""
     try:
         document = json.loads(pin_file.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return set()
+    except FileNotFoundError:
+        raise SystemExit(f"Release pin file {pin_file} is missing.")
+    except (OSError, json.JSONDecodeError) as error:
+        raise SystemExit(f"Release pin file {pin_file} is unreadable: {error}") from None
     if not isinstance(document, dict):
-        return set()
+        raise SystemExit(f"Release pin file {pin_file} must be an object keyed by version.")
     return {
         version for version, entry in document.items()
         if isinstance(entry, dict) and entry.get("legacy_release_artifact") is True
