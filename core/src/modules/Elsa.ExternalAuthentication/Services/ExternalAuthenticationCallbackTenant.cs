@@ -19,10 +19,18 @@ public sealed class ExternalAuthenticationCallbackTenant(
     ITenantFinder tenantFinder,
     ITenantAccessor tenantAccessor)
 {
-    public string Protect(string? tenantId, string nonce, TimeSpan lifetime)
+    /// <summary>
+    /// Extra protector lifetime past the transaction lifetime so an expired transaction can still be
+    /// unprotected and the store remains the authority on expiry.
+    /// </summary>
+    public static readonly TimeSpan ProtectorLifetimeMargin = TimeSpan.FromMinutes(5);
+
+    public string Protect(string? tenantId, string nonce, TimeSpan transactionLifetime)
     {
         ArgumentException.ThrowIfNullOrEmpty(nonce);
-        return CreateProtector().Protect(Normalize(tenantId) + "\n" + nonce, lifetime);
+        if (transactionLifetime < TimeSpan.Zero)
+            transactionLifetime = TimeSpan.Zero;
+        return CreateProtector().Protect(Normalize(tenantId) + "\n" + nonce, transactionLifetime + ProtectorLifetimeMargin);
     }
 
     /// <summary>

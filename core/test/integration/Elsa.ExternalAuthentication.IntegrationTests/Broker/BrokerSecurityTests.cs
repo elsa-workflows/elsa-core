@@ -629,7 +629,13 @@ public class BrokerSecurityTests
             throw new NotSupportedException();
         }
         public ValueTask<ConnectionTestResult> TestAsync(ConnectionTestContext context, CancellationToken cancellationToken = default) => throw new NotSupportedException();
-        public ValueTask<ExternalLogoutRequest?> CreateLogoutRequestAsync(ExternalLogoutContext context, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public ValueTask<ExternalLogoutRequest?> CreateLogoutRequestAsync(ExternalLogoutContext context, CancellationToken cancellationToken = default)
+        {
+            CorrelationState = context.CorrelationState;
+            Transaction = context.Transaction;
+            Connection = context.Connection;
+            return ValueTask.FromResult<ExternalLogoutRequest?>(new ExternalLogoutRequest(new Uri($"https://issuer.example/logout?state={Uri.EscapeDataString(context.CorrelationState)}"), [1, 2, 3]));
+        }
     }
 
     private sealed class FixedHasher : IExternalAuthenticationHandleHasher
