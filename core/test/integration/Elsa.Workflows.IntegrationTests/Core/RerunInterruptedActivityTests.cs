@@ -117,6 +117,34 @@ public class RerunInterruptedActivityTests(ITestOutputHelper testOutputHelper)
         Assert.Single(state.Bookmarks, x => x.Name == "Docs");
     }
 
+    [Fact(DisplayName = "Running a started instance with no scheduled work, no bookmark and no interrupted activity does nothing: it doesn't start again from the root and stays Running/Suspended")]
+    public async Task StartedInstanceWithNothingToRunDoesNothing()
+    {
+        // Arrange: suspend on Docs, then drop its bookmark, so the saved state has activity contexts and nothing that can run.
+        var start = new Step();
+        var docs = new Step { BookmarkName = "Docs" };
+        var workflow = new Workflow { Root = new Flowchart { Start = start, Activities = { start, docs }, Connections = { new Connection(start, docs) } } };
+        var services = BuildServices(commitStrategy: null, new SnapshotAtCommit(_ => false));
+        var runner = services.GetRequiredService<IWorkflowRunner>();
+        var serializer = services.GetRequiredService<IWorkflowStateSerializer>();
+        var suspended = (await runner.RunAsync(workflow)).WorkflowState;
+        var savedState = serializer.Deserialize(serializer.Serialize(suspended));
+        savedState.Bookmarks.Clear();
+        Assert.NotEmpty(savedState.ActivityExecutionContexts);
+        Assert.Empty(savedState.ScheduledActivities);
+        Assert.DoesNotContain(savedState.ActivityExecutionContexts, x => x.IsExecuting);
+        start.Runs = docs.Runs = 0;
+
+        // Act
+        var state = (await runner.RunAsync(workflow, savedState)).WorkflowState;
+
+        // Assert
+        Assert.Equal(0, start.Runs);
+        Assert.Equal(0, docs.Runs);
+        Assert.Empty(state.Bookmarks);
+        Assert.Equal((WorkflowStatus.Running, WorkflowSubStatus.Suspended), (state.Status, state.SubStatus));
+    }
+
     private IServiceProvider BuildServices(string? commitStrategy, SnapshotAtCommit snapshot) => new TestApplicationBuilder(testOutputHelper)
         .ConfigureElsa(elsa => elsa.UseWorkflows(workflows =>
         {
