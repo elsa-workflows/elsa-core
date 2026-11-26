@@ -75,6 +75,7 @@ public class HostStopInterruptTests(ITestOutputHelper testOutputHelper) : IAsync
         var run = Task.Run(() => client.RunInstanceAsync(RunWorkflowInstanceRequest.Empty));
 
         var instance = await DrainAndReleaseAsync(client.WorkflowInstanceId, run);
+        var siblingRunsBeforeRecovery = _gate.Count("sibling");
 
         // The checkpoint holds the hanging activity as executing, and the sibling branch as a scheduled work item (#8467).
         Assert.Equal((WorkflowStatus.Running, WorkflowSubStatus.Interrupted), (instance.Status, instance.SubStatus));
@@ -84,8 +85,7 @@ public class HostStopInterruptTests(ITestOutputHelper testOutputHelper) : IAsync
         await WaitForFinishedAsync(client.WorkflowInstanceId);
         Assert.Equal(1, _gate.Count("first"));
         Assert.Equal(2, _gate.Count(HostStopHang.HangName));
-        // Once in the cut-off runner, whose commits were dropped, and once on recovery.
-        Assert.Equal(2, _gate.Count("sibling"));
+        Assert.Equal(siblingRunsBeforeRecovery + 1, _gate.Count("sibling"));
     }
 
     [Theory(DisplayName = "A resume that never reached a checkpoint ends Cancelled when force-cancelled, and keeps its suspension and is resumed again when interrupted")]

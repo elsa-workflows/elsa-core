@@ -92,7 +92,7 @@ public class DefaultActivityInvokerMiddleware(ActivityMiddlewareDelegate next, I
         if (activityDidComplete)
         {
             var mediator = context.GetRequiredService<INotificationSender>();
-            await mediator.SendAsync(new Notifications.ActivityCompleted(context), context.CancellationToken);
+            await mediator.SendAsync(new Notifications.ActivityCompleted(context), workflowExecutionContext.CancellationToken);
         }
 
         // The activity has run, so it must not look interrupted in the commit below; otherwise recovery would run it again.
