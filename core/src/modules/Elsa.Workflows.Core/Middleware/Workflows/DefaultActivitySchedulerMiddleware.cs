@@ -34,7 +34,7 @@ public class DefaultActivitySchedulerMiddleware(WorkflowMiddlewareDelegate next,
         while (scheduler.HasAny)
         {
             // Do not start a workflow if cancellation has been requested.
-            if (context.CancellationToken.IsCancellationRequested)
+            if (context.ExecutionCancellationToken.IsCancellationRequested)
                 break;
 
             var currentWorkItem = scheduler.Take();

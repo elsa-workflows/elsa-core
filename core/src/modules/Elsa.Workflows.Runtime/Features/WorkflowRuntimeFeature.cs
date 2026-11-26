@@ -309,6 +309,10 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
             .AddSingleton(sp => new Lazy<IEnumerable<IIngressSource>>(sp.GetServices<IIngressSource>))
             // Drain orchestrator + hosted service (US1). See FR-029 / R5 — heartbeat must outlive drain.
             .AddSingleton<IDrainOrchestrator, Elsa.Workflows.Runtime.Services.DrainOrchestrator>()
+            // Registered after the mediator's hosted services, so on host stop (reverse order) the drain runs before the
+            // background command sender cancels its stopping token. Background runs observe that token; if it were
+            // cancelled first, the cancel would count as a caller cancel and end Finished/Cancelled instead of
+            // Running/Interrupted. Pinned by CooperativeDrainCancellationTests.HostStopDrainsBeforeTheCommandSenderStops.
             .AddHostedService<Elsa.Workflows.Runtime.HostedServices.DrainOrchestratorHostedService>()
             // Domain service that backs all runtime-admin transports (US2). Encapsulates the audit-on-effective-
             // transition rule (SC-007) so transports stay thin. Scoped because INotificationSender is scoped.
