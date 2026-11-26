@@ -24,6 +24,12 @@ BASELINES = {
     "3.8.4": "33181ae3048f628f591a0155b5665a8e4d1bcea2",
     "3.9.0": "6436609a1a3874d3fea7ccf690897792f5a1f702",
 }
+RELEASED_TARGET = "3.10.2"
+RELEASED_SOURCE = "76700bad5435ab08db5815866f5640101f6d1e25"
+PUBLIC_SOURCES = """<configuration>
+  <packageSources><clear/><add key="nuget.org" value="https://api.nuget.org/v3/index.json"/></packageSources>
+  <packageSourceMapping><packageSource key="nuget.org"><package pattern="*"/></packageSource></packageSourceMapping>
+</configuration>"""
 PROOF_VERSION = "3.10.0-proof.37410240989.1"
 PROOF_SOURCE = "44083dc4f47d56aa2d5c215b0c7479c0b7290cb0"
 PROOF_RUN = 37410240989
@@ -221,7 +227,12 @@ def check_phase(receipt: dict, spec: dict, phase: str, original: dict | None = N
 
 
 def readonly(path: Path) -> sqlite3.Connection:
-    connection = sqlite3.connect(f"file:{quote(str(path.resolve()), safe='/')}?mode=ro", uri=True)
+    # Each fixture phase exits before inspection. A checkpointed database with
+    # no journal can be opened without creating SQLite WAL shared-memory files.
+    database = path.resolve()
+    has_journal = any(Path(f"{database}{suffix}").exists() for suffix in ("-wal", "-journal"))
+    flags = "mode=ro" if has_journal else "mode=ro&immutable=1"
+    connection = sqlite3.connect(f"file:{quote(str(database), safe='/')}?{flags}", uri=True)
     connection.row_factory = sqlite3.Row
     connection.execute("PRAGMA query_only=ON")
     return connection
@@ -318,7 +329,8 @@ def corroborate(databases: dict, state: dict, spec: dict, finished: bool) -> Non
 
 
 def package_provenance(project: Path, cache: Path, tfm: str, version: str, root: Path, by_id: dict, exceptions: dict, exclusions: set, target: ValidatedTarget | None = None) -> dict:
-    require(target is not None or version in BASELINES, "Unknown baseline package identity")
+    released_source = RELEASED_SOURCE if version == RELEASED_TARGET else BASELINES.get(version)
+    require(target is not None or released_source is not None, "Unknown baseline package identity")
     require(target is None or version == target.producer["version"], "Candidate version differs from validated target")
     assets_path = project / "obj" / "project.assets.json"
     assets = json.loads(assets_path.read_text())
@@ -357,7 +369,7 @@ def package_provenance(project: Path, cache: Path, tfm: str, version: str, root:
                 with zipfile.ZipFile(archive) as package:
                     nuspec = ET.fromstring(package.read(next(name for name in package.namelist() if name.endswith(".nuspec"))))
                 repository = nuspec.find(".//{*}repository")
-                require(repository is not None and repository.get("commit") == BASELINES[version], f"Baseline nuspec source mismatch: {key}")
+                require(repository is not None and repository.get("commit") == released_source, f"Published nuspec source mismatch: {key}")
                 item["repository_commit"] = repository.get("commit")
                 item["repository_url"] = repository.get("url")
             evidence.append(item)
@@ -425,16 +437,20 @@ def prepare_project(project: Path, cache: Path, version: str, tfm: str, config: 
         record_command(command, project, environment, project / log, 1200, commands)
 
 
-def run_cell(baseline: str, tfm: str, cell: Path, root: Path, by_id: dict, exceptions: dict, exclusions: set, sdk: str, target: ValidatedTarget) -> dict:
+def run_cell(baseline: str, tfm: str, cell: Path, root: Path, by_id: dict, exceptions: dict, exclusions: set, sdk: str, target: ValidatedTarget | None) -> dict:
     cell.mkdir()
     spec = spec_for(baseline, tfm, cell)
     write_json(cell / "spec.json", spec)
     result = {"baseline": baseline, "framework": tfm, "passed": False, "phases": {}, "provenance": {}, "databases": {}, "commands": []}
     environment = {key: value for key, value in os.environ.items() if key not in ("GH_TOKEN", "GITHUB_TOKEN")}
     environment.update(DOTNET_CLI_TELEMETRY_OPTOUT="1", DOTNET_CLI_DO_NOT_USE_MSBUILD_SERVER="1", MSBUILDDISABLENODEREUSE="1")
-    public = '<configuration><packageSources><clear/><add key="nuget.org" value="https://api.nuget.org/v3/index.json"/></packageSources><packageSourceMapping><packageSource key="nuget.org"><package pattern="*"/></packageSource></packageSourceMapping></configuration>'
+    if target is None:
+        target_version, target_sources = RELEASED_TARGET, PUBLIC_SOURCES
+    else:
+        target_version = target.producer["version"]
+        target_sources = packages.render_nuget_config(root / "artifacts", [x["id"] for x in by_id.values()], exceptions)
     try:
-        for label, version, config in (("baseline", baseline, public), ("candidate", target.producer["version"], packages.render_nuget_config(root / "artifacts", [x["id"] for x in by_id.values()], exceptions))):
+        for label, version, config in (("baseline", baseline, PUBLIC_SOURCES), ("candidate", target_version, target_sources)):
             project, cache = cell / label, cell / f"{label}-packages"
             env = dict(environment, NUGET_PACKAGES=str(cache))
             prepare_project(project, cache, version, tfm, config, env, sdk, result["commands"])
@@ -599,6 +615,14 @@ def stage_evidence(output: Path, result: dict) -> None:
     write_json(destination / "retention-manifest.json", manifest)
 
 
+def select_sdk(output: Path) -> str:
+    log = output / "sdk-list.log"
+    packages._run_command(["dotnet", "--list-sdks"], output, dict(os.environ), log, 60)
+    versions = [line.split()[0] for line in log.read_text().splitlines() if line.startswith("10.") and "-" not in line.split()[0]]
+    require(bool(versions), "A .NET 10 SDK is required to compile the framework consumers")
+    return max(versions, key=lambda value: tuple(int(part) for part in value.split(".")))
+
+
 def run(root: Path, archive: Path, output: Path, selected: list[tuple[str, str]], *, target: ValidatedTarget | None = None) -> dict:
     require(not output.exists(), "Refusing to reuse evidence/cache directory")
     require(not output.resolve().is_relative_to(Path(__file__).resolve().parents[2]), "Consumers must be generated outside checkout")
@@ -619,10 +643,7 @@ def run(root: Path, archive: Path, output: Path, selected: list[tuple[str, str]]
         shutil.copyfile(path, output / name)
     try:
         packages._run_command(["dotnet", "--info"], output, dict(os.environ), output / "sdk-info.log", 60)
-        packages._run_command(["dotnet", "--list-sdks"], output, dict(os.environ), output / "sdk-list.log", 60)
-        sdks = [line.split()[0] for line in (output / "sdk-list.log").read_text().splitlines() if line.startswith("10.") and "-" not in line.split()[0]]
-        require(bool(sdks), "A .NET 10 SDK is required to compile all three framework consumers")
-        sdk = sorted(sdks, key=lambda value: tuple(int(part) for part in value.split(".")))[-1]
+        sdk = select_sdk(output)
         result["sdk"] = sdk
         for baseline, tfm in selected:
             print(f"Starting {baseline}/{tfm}", flush=True)
@@ -648,15 +669,45 @@ def run(root: Path, archive: Path, output: Path, selected: list[tuple[str, str]]
     return result
 
 
+def run_released_cell(output: Path, baseline: str, tfm: str) -> None:
+    require((baseline, tfm) in MATRIX, "Unknown released-package upgrade cell")
+    output = output.resolve()
+    require(not output.is_relative_to(Path(__file__).resolve().parents[2]), "Consumers must be generated outside checkout")
+    output.mkdir(parents=True)
+    sdk = select_sdk(output)
+    cell = output / f"{baseline}-{tfm}"
+    try:
+        run_cell(baseline, tfm, cell, output, {}, {}, set(), sdk, None)
+        print(f"{baseline}/{tfm} suspended, resumed and verified with NuGet.org Elsa {RELEASED_TARGET}")
+    finally:
+        record_path = cell / "cell.json"
+        if record_path.is_file():
+            record = json.loads(record_path.read_text())
+            write_json(output / "public-upgrade-proof.json", {
+                "baseline": baseline, "framework": tfm, "released_target": RELEASED_TARGET,
+                "released_source": RELEASED_SOURCE, "fixture_sha256": sha256(FIXTURE), "passed": record["passed"],
+            })
+            stage_evidence(output, {"passed": record["passed"], "complete_matrix": False, "cells": [record]})
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--proof-artifacts", type=Path, required=True)
-    parser.add_argument("--proof-archive", type=Path, required=True)
+    parser.add_argument("--proof-artifacts", type=Path)
+    parser.add_argument("--proof-archive", type=Path)
     parser.add_argument("--output", type=Path)
     parser.add_argument("--extract-only", action="store_true")
     parser.add_argument("--artifact-metadata", type=Path)
     parser.add_argument("--cell", choices=[f"{baseline}/{tfm}" for baseline, tfm in sorted(MATRIX)], help="Development smoke only; cannot satisfy full matrix")
+    parser.add_argument("--released-target", action="store_true", help="Test one cell against pinned public NuGet packages")
     args = parser.parse_args()
+    if args.released_target:
+        if not args.output or not args.cell or args.proof_artifacts or args.proof_archive or args.artifact_metadata or args.extract_only:
+            parser.error("--released-target needs --cell and --output")
+        baseline, tfm = args.cell.split("/")
+        run_released_cell(args.output, baseline, tfm)
+        return
+    if not args.proof_artifacts or not args.proof_archive:
+        parser.error("--proof-artifacts and --proof-archive are required for an archived proof")
     if args.artifact_metadata:
         validate_artifact_metadata(json.loads(args.artifact_metadata.read_text()))
     if args.extract_only:

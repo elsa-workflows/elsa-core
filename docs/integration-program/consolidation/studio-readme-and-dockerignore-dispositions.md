@@ -27,7 +27,7 @@ badges and the original Weblate status widget remain in the inert source copy;
 they are not presented as current consolidated-build or localization status.
 
 The old `.dockerignore` was the root policy for the separate Studio repository.
-The `docker-ca.yml` build and Docker Compose use the consolidated repository root
+The `docker-smoke` suite in [PR checks](../../../.github/workflows/pr.yml) and Docker Compose use the consolidated repository root
 as their context (`docker build … .` and `context: ../.` respectively), so the
 root `.dockerignore` applies to them. It excludes generated output and
 developer-local or sensitive files while preserving root `README.md`, `LICENSE`,

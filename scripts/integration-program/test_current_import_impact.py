@@ -96,12 +96,12 @@ class CurrentImportedImpactTests(unittest.TestCase):
                 self.assertEqual(expected_status, git_output(selected, "status", "--porcelain"))
 
     def test_workflow_triggers_for_selector_graph_dependencies(self):
-        workflow = Path(__file__).resolve().parents[2] / ".github/workflows/current-import-impact.yml"
-        text = workflow.read_text(encoding="utf-8")
+        config = Path(__file__).resolve().parents[2] / "scripts/ci/pr-paths.json"
+        paths = json.loads(config.read_bytes())["current-import-impact"]["paths"]
         input_roots = (".github/**", "build/**", "Elsa.Apps.slnf", 'core/samples/**', "scripts/integration-program/**", 'core/src/**', 'core/test/**')
         for input_root in input_roots:
             with self.subTest(input_root=input_root):
-                self.assertIn(f"      - '{input_root}'", text)
+                self.assertIn(input_root, paths)
 
     def test_rejects_unmapped_elsa_package_type_dependencies(self):
         with self.assertRaisesRegex(ValueError, "unmapped Elsa package dependency Elsa.Workflows.Core"):

@@ -17,7 +17,7 @@ A bounded local SDK 10.0.300 check on that exact source restored and built
 does not stand in for the full solution CI or a Copilot agent session.
 
 Studio ClientLib work also needs Node 22. The active
-[Studio ClientLib workflow](../../../.github/workflows/studio-clientlib-build.yml)
+[Studio ClientLib workflow](../../../.github/workflows/pr.yml)
 uses Node 22 and .NET 10; its [run 36189257282](https://github.com/elsa-workflows/elsa-core/actions/runs/36189257282)
 passed on the same draft import. The root Copilot setup did not provide Node.
 Reviewed [PR #8475](https://github.com/elsa-workflows/elsa-core/pull/8475)

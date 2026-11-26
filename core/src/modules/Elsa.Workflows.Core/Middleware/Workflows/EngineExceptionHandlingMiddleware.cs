@@ -29,7 +29,8 @@ public class EngineExceptionHandlingMiddleware(WorkflowMiddlewareDelegate next, 
         {
             await next(context);
         }
-        catch (Exception e)
+        // A cancelled execution has not faulted: let the cancellation through, so the runner doesn't commit the cut-off run.
+        catch (Exception e) when (!context.IsExecutionCancellation(e))
         {
             logger.LogWarning(e, "An exception was caught from a downstream middleware component");
             var exceptionState = ExceptionState.FromException(e);
