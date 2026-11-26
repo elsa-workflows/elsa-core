@@ -19,15 +19,16 @@ namespace Elsa.Workflows.IntegrationTests.GracefulShutdown;
 /// End-to-end drain recovery using the production <see cref="IWorkflowRestarter"/> (not a recording fake).
 /// A recoverable instance runs a first step, then blocks on a gated activity (still Running). Drain marks
 /// that live row Interrupted. After the real restarter resumes it, the remaining work completes and the
-/// first step is not re-run. A separate drain-cancelled instance stays Finished/Cancelled across scans.
+/// first step is not re-run. A separate instance whose activity honours its cancellation token is stopped by the
+/// drain's force-cancel, also left Running/Interrupted, and recovered (#8489).
 /// </summary>
 public class DrainRecoveryEndToEndTests
 {
     private readonly IServiceProvider _services;
-    private readonly IWorkflowRunner _workflowRunner;
     private readonly IWorkflowRuntime _workflowRuntime;
     private readonly IDrainOrchestrator _orchestrator;
     private readonly CapturingTextWriter _capturingTextWriter = new();
+    private readonly CooperativeWaitGate _cooperativeGate = new();
 
     public DrainRecoveryEndToEndTests(ITestOutputHelper testOutputHelper)
     {
@@ -35,6 +36,8 @@ public class DrainRecoveryEndToEndTests
             .WithCapturingTextWriter(_capturingTextWriter)
             .AddActivitiesFrom<DrainRecoveryEndToEndTests>()
             .AddWorkflow<RecoverableResumeWorkflow>()
+            .AddWorkflow<CooperativeWaitWorkflow>()
+            .ConfigureServices(services => services.AddSingleton(_cooperativeGate))
             .ConfigureElsa(elsa => elsa
                 .UseWorkflowRuntime(runtime => runtime.ConfigureGracefulShutdown(o =>
                 {
@@ -42,13 +45,12 @@ public class DrainRecoveryEndToEndTests
                     o.IngressPauseTimeout = TimeSpan.FromMilliseconds(50);
                 })))
             .Build();
-        _workflowRunner = _services.GetRequiredService<IWorkflowRunner>();
         _workflowRuntime = _services.GetRequiredService<IWorkflowRuntime>();
         _orchestrator = _services.GetRequiredService<IDrainOrchestrator>();
     }
 
-    [Fact(DisplayName = "Real restarter resumes a drain-marked Running/Interrupted instance without re-running completed work, and does not resume a drain-cancelled instance")]
-    public async Task RealRestarterResumesInterruptedRunningAndLeavesDrainCancelledAlone()
+    [Fact(DisplayName = "Real restarter resumes a drain-marked Running/Interrupted instance without re-running completed work, and also recovers a drain-cancelled instance whose activity honoured its token")]
+    public async Task RealRestarterResumesInterruptedRunningAndDrainCancelledInstances()
     {
         await _services.PopulateRegistriesAsync();
         ResumeGate.Current = new ResumeGate();
@@ -62,8 +64,7 @@ public class DrainRecoveryEndToEndTests
 
         var recoverableRun = Task.Run(() => recoverableClient.RunInstanceAsync(RunWorkflowInstanceRequest.Empty));
         BackgroundCommandSenderHostedService? commandProcessor = null;
-        var drainLive = new DrainLiveGate();
-        Task? drainTask = null;
+        Task? cooperativeRun = null;
         try
         {
             await ResumeGate.Current.Started.Task.WaitAsync(TimeSpan.FromSeconds(5));
@@ -80,22 +81,24 @@ public class DrainRecoveryEndToEndTests
 
             Assert.Equal(["first"], _capturingTextWriter.Lines.ToList());
 
-            var drainWorkflow = new TestWorkflow(builder => builder.Root = new DrainLiveActivity { Gate = drainLive });
-            drainTask = Task.Run(() => _workflowRunner.RunAsync(drainWorkflow));
-            await drainLive.Started.Task.WaitAsync(TimeSpan.FromSeconds(2));
+            var cooperativeClient = await _workflowRuntime.CreateClientAsync();
+            Assert.False((await cooperativeClient.CreateInstanceAsync(new CreateWorkflowInstanceRequest
+            {
+                WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionId(nameof(CooperativeWaitWorkflow), VersionOptions.Published)
+            })).CannotStart);
+            cooperativeRun = Task.Run(() => cooperativeClient.RunInstanceAsync(RunWorkflowInstanceRequest.Empty));
+            await _cooperativeGate.Started.Task.WaitAsync(TimeSpan.FromSeconds(2));
 
             var outcome = await _orchestrator.DrainAsync(DrainTrigger.HostStopSignal);
 
-            // Drain marks the workflow Cancelled but does not cancel ActivityExecutionContext.CancellationToken.
-            // Release only after DrainAsync so this cycle cannot finish before force-cancel.
-            drainLive.Continue.TrySetResult();
-            try { await drainTask.WaitAsync(TimeSpan.FromSeconds(5)); }
-            catch (Exception ex) when (!ex.IsFatal()) { /* runner may complete normally or surface OCE */ }
+            // The force-cancel reaches the activity through its cancellation token (#8489), so the runner stops without committing.
+            Assert.True(_cooperativeGate.Stopped.Task.IsCompleted);
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => cooperativeRun.WaitAsync(TimeSpan.FromSeconds(5)));
 
             Assert.Equal(DrainResult.DeadlineExceeded, outcome.OverallResult);
             Assert.Equal(2, outcome.ExecutionCyclesForceCancelledCount);
             Assert.Contains(recoverableClient.WorkflowInstanceId, outcome.ForceCancelledInstanceIds);
-            var cancelledId = Assert.Single(outcome.ForceCancelledInstanceIds, id => id != recoverableClient.WorkflowInstanceId);
+            Assert.Contains(cooperativeClient.WorkflowInstanceId, outcome.ForceCancelledInstanceIds);
 
             var interrupted = await instanceStore.FindAsync(new WorkflowInstanceFilter { Id = recoverableClient.WorkflowInstanceId });
             Assert.NotNull(interrupted);
@@ -104,10 +107,11 @@ public class DrainRecoveryEndToEndTests
             Assert.False(interrupted.IsExecuting);
             Assert.Equal(["first"], _capturingTextWriter.Lines.ToList());
 
-            var cancelled = await instanceStore.FindAsync(new WorkflowInstanceFilter { Id = cancelledId });
-            Assert.NotNull(cancelled);
-            Assert.Equal(WorkflowStatus.Finished, cancelled.Status);
-            Assert.Equal(WorkflowSubStatus.Cancelled, cancelled.SubStatus);
+            // Before #8489 the drain-cancelled instance ended Finished/Cancelled and was never recovered.
+            var drainCancelled = await instanceStore.FindAsync(new WorkflowInstanceFilter { Id = cooperativeClient.WorkflowInstanceId });
+            Assert.NotNull(drainCancelled);
+            Assert.Equal(WorkflowStatus.Running, drainCancelled.Status);
+            Assert.Equal(WorkflowSubStatus.Interrupted, drainCancelled.SubStatus);
 
             commandProcessor = _services.GetServices<IHostedService>().OfType<BackgroundCommandSenderHostedService>().Single();
             await commandProcessor.StartAsync(CancellationToken.None);
@@ -115,7 +119,7 @@ public class DrainRecoveryEndToEndTests
             using var recoverScope = _services.CreateScope();
             var scanner = recoverScope.ServiceProvider.GetRequiredService<IInterruptedRecoveryScanner>();
             var requeued = await scanner.ScanAndRequeueAsync(CancellationToken.None);
-            Assert.Equal(1, requeued);
+            Assert.Equal(2, requeued); // Before #8489: 1, the drain-cancelled instance was not requeued.
 
             await WaitUntilAsync(async () =>
             {
@@ -130,21 +134,22 @@ public class DrainRecoveryEndToEndTests
             Assert.Equal(1, _capturingTextWriter.Lines.Count(line => line == "first"));
             Assert.Equal(1, _capturingTextWriter.Lines.Count(line => line == "second"));
 
+            await WaitUntilAsync(async () =>
+            {
+                var current = await instanceStore.FindAsync(new WorkflowInstanceFilter { Id = cooperativeClient.WorkflowInstanceId });
+                return current is { Status: WorkflowStatus.Finished, SubStatus: WorkflowSubStatus.Finished };
+            }, TimeSpan.FromSeconds(10));
+            Assert.Equal(2, _cooperativeGate.Executions);
+
             var secondScan = await scanner.ScanAndRequeueAsync(CancellationToken.None);
             Assert.Equal(0, secondScan);
-
-            var stillCancelled = await instanceStore.FindAsync(new WorkflowInstanceFilter { Id = cancelledId });
-            Assert.NotNull(stillCancelled);
-            Assert.Equal(WorkflowStatus.Finished, stillCancelled.Status);
-            Assert.Equal(WorkflowSubStatus.Cancelled, stillCancelled.SubStatus);
         }
         finally
         {
-            drainLive.Continue.TrySetResult();
-            if (drainTask is not null)
+            if (cooperativeRun is not null)
             {
-                try { await drainTask.WaitAsync(TimeSpan.FromSeconds(5)); }
-                catch (Exception ex) when (!ex.IsFatal()) { /* runner may complete normally or surface OCE */ }
+                try { await cooperativeRun.WaitAsync(TimeSpan.FromSeconds(5)); }
+                catch (Exception ex) when (!ex.IsFatal()) { /* the cut-off runner surfaces OCE */ }
             }
 
             ResumeGate.Current.Continue.TrySetResult();
@@ -177,9 +182,8 @@ public sealed class DrainLiveGate
 }
 
 /// <summary>
-/// Stays executing until the test releases <see cref="DrainLiveGate.Continue"/>. Drain force-cancel marks the
-/// workflow Cancelled but does not cancel <see cref="ActivityExecutionContext.CancellationToken"/>, so a delay
-/// on that token cannot keep the cycle live.
+/// Stays executing until the test releases <see cref="DrainLiveGate.Continue"/>. It ignores its cancellation token, so a
+/// drain force-cancel cannot stop it and the cycle stays live.
 /// </summary>
 public class DrainLiveActivity : CodeActivity
 {
