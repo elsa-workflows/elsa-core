@@ -1,5 +1,6 @@
 import dataclasses
 import hashlib
+import io
 import json
 import os
 import re
@@ -8,6 +9,7 @@ import tempfile
 import unittest
 import unittest.mock
 import zipfile
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -682,6 +684,144 @@ class WorkflowShapeTests(unittest.TestCase):
                 # After the source checkout only the build and its packaging guards run: no second checkout.
                 self.assertFalse([step for step in after if str(step.get("uses", "")).startswith("actions/checkout@")])
 
+
+LEGACY_PIN = verify.load_pin("3.6.4")
+LEGACY_SOURCE = LEGACY_PIN.source_sha
+LEGACY_ENTRY = {
+    "run_id": 45546881553, "artifact_id": 14993170259,
+    "source_sha": "874e670e4ca405359a058bfee2ed9ef2a859d98c",
+    "archive_sha256": "73da3a79cfd77afc81eddb1f8a948371a7937c48e35a63d64322a2716b3fb427",
+    "legacy_release_artifact": True, "feedz_count": 44, "nuget_count": 44,
+    "exclude_ids": [], "ancestry_branch": "release/3.6.4",
+}
+
+
+def good_legacy_run(*, conclusion="failure"):
+    return {"id": LEGACY_PIN.run_id, "run_attempt": 1, "head_sha": LEGACY_PIN.source_sha,
+            "head_branch": "3.6.4", "status": "completed", "conclusion": conclusion,
+            "event": "release", "path": ".github/workflows/packages.yml"}
+
+
+def good_legacy_artifact():
+    return {"id": LEGACY_PIN.artifact_id, "name": "elsa-nuget-packages", "expired": False,
+            "digest": f"sha256:{LEGACY_PIN.archive_sha256}",
+            "workflow_run": {"id": LEGACY_PIN.run_id, "head_sha": LEGACY_PIN.source_sha, "head_branch": "3.6.4"}}
+
+
+def make_nupkg(package_id, version, commit, url="https://github.com/elsa-workflows/elsa-core"):
+    nuspec = (
+        '<?xml version="1.0"?><package><metadata>'
+        f"<id>{package_id}</id><version>{version}</version>"
+        f'<repository type="git" url="{url}" commit="{commit}" />'
+        "</metadata></package>"
+    )
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as package:
+        package.writestr(f"{package_id}.nuspec", nuspec)
+    return buffer.getvalue()
+
+
+def build_legacy_archive(path: Path, *, version="3.6.4", commit=LEGACY_SOURCE, ids=None, drop_snupkg=None,
+                         nested=False, duplicate_case=False, commit_for=None, extra=None):
+    from validate_packages_id_set import expected_ids_file, load_expected_ids
+    package_ids = list(ids or load_expected_ids(expected_ids_file("3.6.4")))
+    files = {}
+    for package_id in package_ids:
+        commit_value = (commit_for or {}).get(package_id, commit)
+        name = f"{package_id}.{version}.nupkg"
+        files[name] = make_nupkg(package_id, version, commit_value)
+        snupkg = f"{package_id}.{version}.snupkg"
+        if drop_snupkg != package_id:
+            files[snupkg] = f"symbol {package_id}".encode()
+    if duplicate_case:
+        files["elsa.3.6.4.nupkg"] = make_nupkg("Elsa", version, commit)
+        files["elsa.3.6.4.snupkg"] = b"dup"
+    if extra:
+        files.update(extra)
+    with zipfile.ZipFile(path, "w") as archive:
+        for name, data in files.items():
+            archive.writestr(f"nested/{name}" if nested else name, data)
+    return verify.sha256_file(path)
+
+
+class LegacyReleaseArtifactTests(unittest.TestCase):
+    def test_committed_legacy_pin_is_accepted(self):
+        pin = verify.load_pin("3.6.4")
+        self.assertTrue(pin.legacy_release_artifact)
+        self.assertEqual("elsa-nuget-packages", pin.artifact_name)
+        self.assertEqual((45546881553, 14993170259, 44, 44, ()),
+                         (pin.run_id, pin.artifact_id, pin.feedz_count, pin.nuget_count, pin.exclude_ids))
+        self.assertEqual("", pin.manifest_sha256)
+        self.assertEqual("release/3.6.4", pin.ancestry_branch)
+        self.assertEqual(LEGACY_ENTRY, {key: value for key, value in json.loads(verify.PIN_FILE.read_text())["3.6.4"].items()})
+
+    def test_legacy_pin_rejects_a_manifest_field(self):
+        with self.assertRaisesRegex(SystemExit, "unknown fields: manifest_sha256"):
+            verify.validate_pin_entry("3.6.4", {**LEGACY_ENTRY, "manifest_sha256": "a" * 64})
+
+    def test_legacy_run_accepts_a_failed_packages_release_and_rejects_dispatch(self):
+        verify.check_run(LEGACY_PIN, good_legacy_run())
+        verify.check_run(LEGACY_PIN, good_legacy_run(conclusion="success"))
+        verify.check_artifact(LEGACY_PIN, good_legacy_artifact())
+        for change in (
+            {"event": "workflow_dispatch"},
+            {"path": ".github/workflows/prepare-consolidated-release-candidate.yml"},
+            {"conclusion": "cancelled"},
+            {"head_sha": "1" * 40},
+        ):
+            with self.subTest(change=change), self.assertRaises(SystemExit):
+                verify.check_run(LEGACY_PIN, {**good_legacy_run(), **change})
+        with self.assertRaises(SystemExit):
+            verify.check_artifact(LEGACY_PIN, {**good_legacy_artifact(), "name": PIN.artifact_name})
+
+    def test_legacy_archive_is_staged_when_pairs_and_nuspecs_match(self):
+        with tempfile.TemporaryDirectory() as temp:
+            archive = Path(temp) / "candidate.zip"
+            digest = build_legacy_archive(archive)
+            pin = dataclasses.replace(LEGACY_PIN, archive_sha256=digest)
+            staged = Path(temp) / "stage"
+            written = verify.stage_legacy_release_packages(pin, archive, staged)
+            self.assertEqual(88, len(written))
+            self.assertEqual(44, len(list(staged.glob("*.nupkg"))))
+
+    def test_legacy_archive_hash_must_match_the_pin(self):
+        with tempfile.TemporaryDirectory() as temp:
+            archive = Path(temp) / "candidate.zip"
+            build_legacy_archive(archive)
+            with self.assertRaisesRegex(SystemExit, "archive sha256"):
+                verify.check_archive(LEGACY_PIN, archive)
+
+    def test_missing_symbol_package_is_rejected(self):
+        with tempfile.TemporaryDirectory() as temp:
+            archive = Path(temp) / "candidate.zip"
+            digest = build_legacy_archive(archive, drop_snupkg="Elsa")
+            pin = dataclasses.replace(LEGACY_PIN, archive_sha256=digest)
+            with self.assertRaisesRegex(SystemExit, "package and symbol pairs"):
+                verify.stage_legacy_release_packages(pin, archive, Path(temp) / "stage")
+
+    def test_wrong_repository_commit_is_rejected(self):
+        with tempfile.TemporaryDirectory() as temp:
+            archive = Path(temp) / "candidate.zip"
+            digest = build_legacy_archive(archive, commit_for={"Elsa": "1" * 40})
+            pin = dataclasses.replace(LEGACY_PIN, archive_sha256=digest)
+            with self.assertRaisesRegex(SystemExit, "identity or source"):
+                verify.stage_legacy_release_packages(pin, archive, Path(temp) / "stage")
+
+    def test_nested_package_path_is_rejected(self):
+        with tempfile.TemporaryDirectory() as temp:
+            archive = Path(temp) / "candidate.zip"
+            digest = build_legacy_archive(archive, nested=True)
+            pin = dataclasses.replace(LEGACY_PIN, archive_sha256=digest)
+            with self.assertRaises(SystemExit):
+                verify.stage_legacy_release_packages(pin, archive, Path(temp) / "stage")
+
+    def test_duplicate_package_id_is_rejected(self):
+        with tempfile.TemporaryDirectory() as temp:
+            archive = Path(temp) / "candidate.zip"
+            digest = build_legacy_archive(archive, duplicate_case=True)
+            pin = dataclasses.replace(LEGACY_PIN, archive_sha256=digest)
+            with self.assertRaisesRegex(SystemExit, "Duplicate package IDs|package and symbol pairs"):
+                verify.stage_legacy_release_packages(pin, archive, Path(temp) / "stage")
 
 if __name__ == "__main__":
     unittest.main()

@@ -18,9 +18,11 @@ build and every publisher. The ref and inputs arrive as environment variables, n
 
 from __future__ import annotations
 
+import json
 import os
 import re
 import sys
+from pathlib import Path
 
 from validate_packages_id_set import STABLE_310_PATTERN, is_stable_310, parse_exclude_ids
 
@@ -33,6 +35,25 @@ COVERAGE_REFS = ("refs/heads/main", "refs/heads/release/3.6.1")
 PROMOTE_REF = "refs/heads/main"
 PROMOTE_VERSION = re.compile(r"3\.(?:10|11)\.(?:0|[1-9][0-9]*)")
 PROMOTE_TARGETS = ("all", "feedz", "nuget")
+PIN_FILE = Path(__file__).resolve().parents[1] / ".github/release-pins/consolidated.json"
+
+
+def legacy_release_pin_versions(pin_file: Path = PIN_FILE) -> set[str]:
+    """Versions recovered from an original release artifact, pinned with legacy_release_artifact."""
+    try:
+        document = json.loads(pin_file.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return set()
+    if not isinstance(document, dict):
+        return set()
+    return {
+        version for version, entry in document.items()
+        if isinstance(entry, dict) and entry.get("legacy_release_artifact") is True
+    }
+
+
+def is_allowed_promote_version(version: str) -> bool:
+    return bool(PROMOTE_VERSION.fullmatch(version)) or version in legacy_release_pin_versions()
 
 
 def selection_errors(
@@ -57,7 +78,7 @@ def selection_errors(
         # Candidate promotion is its own mode: main only, a version, and none of the other publication switches.
         if ref != PROMOTE_REF:
             errors.append(f"Candidate promotion requires {PROMOTE_REF}.")
-        if not PROMOTE_VERSION.fullmatch(promote):
+        if not is_allowed_promote_version(promote):
             errors.append(f"promote_candidate_version {promote!r} is not a version such as 3.10.1.")
         for selected, name in ((feedz, "publish_preview_feedz"), (nuget, "publish_nuget"), (npm, "publish_npm"),
                                (coverage, "deploy_coverage"), (parse_exclude_ids(exclude_ids), "exclude_ids")):
@@ -77,6 +98,11 @@ def selection_errors(
         # Stable 3.10.x Feedz is owned only by the candidate promotion mode of packages.yml.
         # nuget.org still accepts any release-version tag, including stable 3.10.x.
         major, minor = (int(part) for part in tag.split(".")[:2])
+        numeric = f"{int(tag.split('.')[0])}.{int(tag.split('.')[1])}.{int(tag.split('.')[2].split('-')[0])}" if tag[0].isdigit() else tag
+        if nuget and numeric in legacy_release_pin_versions():
+            errors.append("NuGet publication for this version requires a pinned candidate on the protected promotion path.")
+        if npm and numeric in legacy_release_pin_versions():
+            errors.append("This version does not publish Studio npm packages.")
         if (major, minor) == (3, 11) and nuget:
             errors.append("3.11 NuGet publication requires a sealed candidate on the protected promotion path.")
         feedz_from_tag = (major, minor) == (3, 10)
