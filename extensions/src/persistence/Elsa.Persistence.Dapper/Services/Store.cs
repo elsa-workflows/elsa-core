@@ -537,6 +537,39 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantAccesso
     }
 
     /// <summary>
+    /// Deletes the records matching the specified query that the current tenant may write: its own records and, when
+    /// <paramref name="canWriteShared"/> is set, the tenant-agnostic records. Unlike <see cref="DeleteAsync(Action{ParameterizedQuery}, CancellationToken)"/>,
+    /// a <c>*</c> tenant context alone does not delete tenant-agnostic records.
+    /// </summary>
+    /// <param name="filter">The conditions to apply to the query.</param>
+    /// <param name="canWriteShared">Whether the caller holds the authority to delete tenant-agnostic records.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The number of records deleted.</returns>
+    internal async Task<long> DeleteAsync(Action<ParameterizedQuery> filter, bool canWriteShared, CancellationToken cancellationToken)
+    {
+        var query = dbConnectionProvider.CreateQuery().Delete(TableName);
+        filter(query);
+
+        // If there are no conditions, we don't want to delete all records.
+        if (!query.Parameters.ParameterNames.Any())
+            return 0;
+
+        var ident = query.Dialect.QuoteIdentifier(nameof(Record.TenantId));
+        var tenantId = tenantAccessor.Tenant?.Id;
+        var ownRecords = string.IsNullOrEmpty(tenantId) ? $"{ident} is null or {ident} = ''" : tenantId == Tenant.AgnosticTenantId ? "1 = 0" : $"{ident} = @WriterTenantId";
+        query.Sql.AppendLine(canWriteShared ? $"and ({ownRecords} or {ident} = @SharedTenantId)" : $"and ({ownRecords})");
+
+        if (!string.IsNullOrEmpty(tenantId) && tenantId != Tenant.AgnosticTenantId)
+            query.Parameters.Add("@WriterTenantId", tenantId);
+
+        if (canWriteShared)
+            query.Parameters.Add("@SharedTenantId", Tenant.AgnosticTenantId);
+
+        using var connection = dbConnectionProvider.GetConnection();
+        return await query.ExecuteAsync(connection);
+    }
+
+    /// <summary>
     /// Deletes all records matching the specified query.
     /// </summary>
     /// <param name="filter">The conditions to apply to the query.</param>

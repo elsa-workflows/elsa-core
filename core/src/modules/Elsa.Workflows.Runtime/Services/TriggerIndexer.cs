@@ -1,9 +1,9 @@
 using System.Runtime.CompilerServices;
 using Elsa.Caching;
+using Elsa.Common.Multitenancy;
 using Elsa.Common.DistributedHosting;
 using Elsa.Expressions.Contracts;
 using Elsa.Extensions;
-using Elsa.Mediator;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Helpers;
@@ -25,7 +25,7 @@ using Elsa.Common.Serialization;
 namespace Elsa.Workflows.Runtime;
 
 /// <inheritdoc />
-public class TriggerIndexer : ITriggerIndexer
+public partial class TriggerIndexer : ITriggerIndexer
 {
     private readonly IActivityVisitor _activityVisitor;
     private readonly IWorkflowDefinitionService _workflowDefinitionService;
@@ -77,7 +77,7 @@ public class TriggerIndexer : ITriggerIndexer
     /// <inheritdoc />
     public async Task DeleteTriggersAsync(TriggerFilter filter, CancellationToken cancellationToken = default)
     {
-        var triggers = await _triggerStore.FindManyAsync(filter, cancellationToken);
+        var triggers = await FindTriggersToDeleteAsync(filter, cancellationToken);
 
         foreach (var group in triggers.GroupBy(trigger => trigger.WorkflowDefinitionVersionId))
         {
@@ -94,27 +94,19 @@ public class TriggerIndexer : ITriggerIndexer
                     continue;
                 }
 
-                var removed = group.ToList();
-                var indexed = new IndexedWorkflowTriggers(workflowGraph.Workflow, [], removed, []);
-                var notification = new WorkflowTriggersIndexed(indexed);
+                // Without the authority to delete tenant-agnostic definitions, the version is not deleted: these are the tenant's copies of its triggers.
+                if (IsSharedDefinition(workflowGraph.Workflow) && !SharedTenantWriteScope.IsGranted(typeof(WorkflowDefinition)))
+                    continue;
 
-                if (filter.RequireCompleteCleanup)
-                {
-                    // Keep the removal payload available for retry if required cleanup fails.
-                    await _notificationSender.SendAsync(notification, NotificationStrategy.Sequential, cancellationToken);
-                    await _triggerStore.ReplaceAsync(removed, [], cancellationToken);
-                }
-                else
-                {
-                    await _triggerStore.ReplaceAsync(removed, [], cancellationToken);
-                    await _notificationSender.SendAsync(notification, cancellationToken);
-                }
+                await RemoveTriggersAsync(workflowGraph.Workflow, group.ToList(), filter.RequireCompleteCleanup, cancellationToken);
             }
             catch (Exception ex) when (!filter.RequireCompleteCleanup && ex is not OperationCanceledException)
             {
                 _logger.LogWarning(ex, "Failed to clean up triggers for workflow definition version {WorkflowDefinitionVersionId}.", group.Key);
             }
         }
+
+        await DeleteTenantCopiesOfDeletedSharedDefinitionsAsync(filter, cancellationToken);
 
         // Retry this signal even when the trigger rows were removed by a prior attempt.
         if (filter.RequireCompleteCleanup && _serviceProvider.GetService<ICacheManager>() is { } cacheManager)
@@ -124,21 +116,46 @@ public class TriggerIndexer : ITriggerIndexer
     }
 
     /// <inheritdoc />
-    public async Task<IndexedWorkflowTriggers> IndexTriggersAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
+    public Task<IndexedWorkflowTriggers> IndexTriggersAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
     {
-        var workflowGraph = await _workflowDefinitionService.MaterializeWorkflowAsync(definition, cancellationToken);
-        return await IndexTriggersAsync(workflowGraph.Workflow, cancellationToken);
+        return IndexTriggersAsync(definition, true, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task<IndexedWorkflowTriggers> IndexTriggersAsync(Workflow workflow, CancellationToken cancellationToken = default)
+    /// <remarks>
+    /// The scheduled triggers of a tenant-agnostic workflow definition are reconciled for every active tenant.
+    /// </remarks>
+    public Task<IndexedWorkflowTriggers> IndexTriggersAsync(Workflow workflow, CancellationToken cancellationToken = default)
+    {
+        return IndexTriggersAsync(workflow, true, cancellationToken);
+    }
+
+    /// <summary>
+    /// Indexes the triggers of the specified workflow definition. For a tenant-agnostic definition, <paramref name="allTenants"/> selects
+    /// whether its scheduled triggers are reconciled for every active tenant or for the current tenant only.
+    /// </summary>
+    internal async Task<IndexedWorkflowTriggers> IndexTriggersAsync(WorkflowDefinition definition, bool allTenants, CancellationToken cancellationToken)
+    {
+        var workflowGraph = await _workflowDefinitionService.MaterializeWorkflowAsync(definition, cancellationToken);
+        return await IndexTriggersAsync(workflowGraph.Workflow, allTenants, cancellationToken);
+    }
+
+    /// <inheritdoc cref="IndexTriggersAsync(WorkflowDefinition, bool, CancellationToken)"/>
+    internal async Task<IndexedWorkflowTriggers> IndexTriggersAsync(Workflow workflow, bool allTenants, CancellationToken cancellationToken)
     {
         // Use distributed lock to prevent concurrent trigger indexing race conditions
-        var lockResource = $"trigger-indexer:{workflow.Identity.DefinitionId}";
-        await using (await _distributedLockProvider.AcquireLockAsync(lockResource, _lockingOptions.LockAcquisitionTimeout, cancellationToken))
+        await using (await AcquireDefinitionLockAsync(workflow.Identity.DefinitionId, cancellationToken))
         {
-            return await IndexTriggersInternalAsync(workflow, cancellationToken);
+            return IsSharedDefinition(workflow)
+                ? await IndexSharedDefinitionTriggersAsync(workflow, allTenants, cancellationToken)
+                : await IndexTriggersInternalAsync(workflow, cancellationToken);
         }
+    }
+
+    private async Task<IAsyncDisposable> AcquireDefinitionLockAsync(string definitionId, CancellationToken cancellationToken)
+    {
+        var lockResource = $"trigger-indexer:{definitionId}";
+        return await _distributedLockProvider.AcquireLockAsync(lockResource, _lockingOptions.LockAcquisitionTimeout, cancellationToken);
     }
 
     private async Task<IndexedWorkflowTriggers> IndexTriggersInternalAsync(Workflow workflow, CancellationToken cancellationToken)
@@ -161,6 +178,11 @@ public class TriggerIndexer : ITriggerIndexer
 
         // Publish event.
         await _notificationSender.SendAsync(new WorkflowTriggersIndexed(indexedWorkflow), cancellationToken);
+
+        // A tenant whose own definition is no longer published stops overriding a tenant-agnostic definition with the same ID.
+        if (IsTenancyEnabled && !workflow.Publication.IsPublished)
+            await ReconcileTenantCopiesOfPublishedSharedDefinitionAsync(workflow.Identity.DefinitionId, false, cancellationToken);
+
         return indexedWorkflow;
     }
 
@@ -176,7 +198,14 @@ public class TriggerIndexer : ITriggerIndexer
         {
             WorkflowDefinitionId = workflowDefinitionId
         };
-        return await _triggerStore.FindManyAsync(filter, cancellationToken);
+        var triggers = await _triggerStore.FindManyAsync(filter, cancellationToken);
+
+        // The tenant's view includes the rows of tenant-agnostic definitions, which are never the tenant's own current rows.
+        if (!IsTenancyEnabled)
+            return triggers;
+
+        var tenantId = CurrentTenantId;
+        return triggers.Where(x => IsOwnedBy(x, tenantId)).ToList();
     }
 
     private async IAsyncEnumerable<StoredTrigger> GetTriggersInternalAsync(Workflow workflow, [EnumeratorCancellation] CancellationToken cancellationToken = default)

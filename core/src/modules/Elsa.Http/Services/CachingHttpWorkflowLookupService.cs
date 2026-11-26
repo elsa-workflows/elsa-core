@@ -31,8 +31,12 @@ public class CachingHttpWorkflowLookupService(
 
             var result = await decoratedService.FindWorkflowAsync(bookmarkHash, cancellationToken);
 
+            // A tenant finds no workflow while it overrides the tenant-agnostic workflow of the route; any trigger change can end that.
             if (result == null)
+            {
+                entry.AddExpirationToken(cache.GetToken(CachingTriggerStore.CacheInvalidationTokenKey));
                 return null;
+            }
             
             if(result.WorkflowGraph == null)
                 return result;

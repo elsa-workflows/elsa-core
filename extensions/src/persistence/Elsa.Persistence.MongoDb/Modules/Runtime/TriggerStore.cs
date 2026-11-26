@@ -1,5 +1,6 @@
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
+using Elsa.Common.Multitenancy;
 using Elsa.Extensions;
 using Elsa.Persistence.MongoDb.Common;
 using Elsa.Workflows.Runtime;
@@ -68,9 +69,17 @@ public class MongoTriggerStore(MongoDbStore<StoredTrigger> mongoDbStore) : ITrig
     }
 
     /// <inheritdoc />
+    /// <remarks>
+    /// Tenant-agnostic rows are also deleted inside a <see cref="SharedTenantWriteScope"/> for <see cref="StoredTrigger"/>.
+    /// </remarks>
     public async ValueTask<long> DeleteManyAsync(TriggerFilter filter, CancellationToken cancellationToken = default)
     {
-        return await mongoDbStore.DeleteWhereAsync<string>(query => Filter(query, filter), x => x.Id, filter.TenantAgnostic, cancellationToken);
+        var count = await mongoDbStore.DeleteWhereAsync<string>(query => Filter(query, filter), x => x.Id, filter.TenantAgnostic, cancellationToken);
+
+        if (!filter.TenantAgnostic && SharedTenantWriteScope.IsGranted(typeof(StoredTrigger)))
+            count += await mongoDbStore.DeleteWhereAsync<string>(query => Filter(query, filter).Where(x => x.TenantId == Tenant.AgnosticTenantId), x => x.Id, true, cancellationToken);
+
+        return count;
     }
 
     private static IQueryable<StoredTrigger> Filter(IQueryable<StoredTrigger> queryable, TriggerFilter filter)

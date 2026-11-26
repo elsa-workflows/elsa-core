@@ -1,5 +1,6 @@
 ﻿using Elsa.Common.Entities;
 using Elsa.Common.Models;
+using Elsa.Common.Multitenancy;
 using Elsa.Extensions;
 using Elsa.Persistence.Dapper.Extensions;
 using Elsa.Persistence.Dapper.Models;
@@ -37,14 +38,14 @@ internal class DapperTriggerStore(Store<StoredTriggerRecord> store, IPayloadSeri
     /// <inheritdoc />
     public async ValueTask<StoredTrigger?> FindAsync(TriggerFilter filter, CancellationToken cancellationToken = default)
     {
-        var record = await store.FindAsync(q => ApplyFilter(q, filter), cancellationToken);
+        var record = await store.FindAsync(q => ApplyFilter(q, filter), filter.TenantAgnostic, cancellationToken);
         return record != null ? Map(record) : null;
     }
 
     /// <inheritdoc />
     public async ValueTask<IEnumerable<StoredTrigger>> FindManyAsync(TriggerFilter filter, CancellationToken cancellationToken = default)
     {
-        var records = await store.FindManyAsync(q => ApplyFilter(q, filter), cancellationToken);
+        var records = await store.FindManyAsync(q => ApplyFilter(q, filter), filter.TenantAgnostic, cancellationToken);
         return Map(records);
     }
 
@@ -55,7 +56,7 @@ internal class DapperTriggerStore(Store<StoredTriggerRecord> store, IPayloadSeri
 
     public async ValueTask<Page<StoredTrigger>> FindManyAsync<TProp>(TriggerFilter filter, PageArgs pageArgs, StoredTriggerOrder<TProp> order, CancellationToken cancellationToken = default)
     {
-        var page = await store.FindManyAsync(q => ApplyFilter(q, filter), pageArgs, order.KeySelector.GetPropertyName(), order.Direction, cancellationToken);
+        var page = await store.FindManyAsync(q => ApplyFilter(q, filter), pageArgs, order.KeySelector.GetPropertyName(), order.Direction, filter.TenantAgnostic, cancellationToken);
         return Map(page);
     }
 
@@ -71,9 +72,13 @@ internal class DapperTriggerStore(Store<StoredTriggerRecord> store, IPayloadSeri
     }
 
     /// <inheritdoc />
+    /// <remarks>
+    /// Deletes the rows of the current tenant. Tenant-agnostic rows are deleted only inside a <see cref="SharedTenantWriteScope"/> for
+    /// <see cref="StoredTrigger"/>, and <see cref="TriggerFilter.TenantAgnostic"/> does not widen a delete to other tenants.
+    /// </remarks>
     public async ValueTask<long> DeleteManyAsync(TriggerFilter filter, CancellationToken cancellationToken = default)
     {
-        return await store.DeleteAsync(q => ApplyFilter(q, filter), cancellationToken);
+        return await store.DeleteAsync(q => ApplyFilter(q, filter), SharedTenantWriteScope.IsGranted(typeof(StoredTrigger)), cancellationToken);
     }
 
     private void ApplyFilter(ParameterizedQuery query, TriggerFilter filter)

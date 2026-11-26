@@ -3,6 +3,7 @@ using Elsa.Common.Multitenancy;
 using Elsa.Common.ShellFeatures;
 using Elsa.Extensions;
 using Elsa.Workflows.Options;
+using Elsa.Workflows.Runtime.Options;
 using Elsa.Scheduling.Bookmarks;
 using Elsa.Scheduling.Handlers;
 using Elsa.Scheduling.Options;
@@ -58,6 +59,7 @@ public class SchedulingFeature : IShellFeature
             .AddActivitiesFrom<SchedulingFeature>();
 
         services.Configure<SchedulingOptions>(_ => { });
+        services.Configure<RuntimeOptions>(options => options.ScheduledTriggerNames.UnionWith(SchedulingStimulusNames.ScheduledTriggerNames));
         services.Configure<SerializationTypeOptions>(options =>
         {
             options.AddTypeAlias<CronBookmarkPayload>();

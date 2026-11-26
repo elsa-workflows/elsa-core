@@ -5,6 +5,11 @@ namespace Elsa.Scheduling;
 /// <summary>
 /// Schedules tasks for the specified list of triggers.
 /// </summary>
+/// <remarks>
+/// An implementation selects the triggers it schedules by name, and adds those names to
+/// <see cref="Elsa.Workflows.Runtime.Options.RuntimeOptions.ScheduledTriggerNames"/>: only triggers with these names are loaded for scheduling,
+/// and a tenant-agnostic workflow definition stores them once per tenant.
+/// </remarks>
 public interface ITriggerScheduler
 {
     /// <summary>

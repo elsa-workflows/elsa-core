@@ -6,6 +6,7 @@ using Elsa.Scheduling.Services;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Filters;
+using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -40,20 +41,21 @@ public class CreateSchedulesStartupTask(IServiceProvider serviceProvider, IOptio
             ? null
             : new SchedulingBookmarkReconciler(workflowInstanceStore, serviceProvider.GetService<IBookmarkManager>());
         var pageSize = Math.Max(1, options.Value.StartupSchedulePageSize);
-        var stimulusNames = new[]
-        {
-            SchedulingStimulusNames.Cron, SchedulingStimulusNames.Timer, SchedulingStimulusNames.StartAt, SchedulingStimulusNames.Delay,
-        };
+        var scheduledTriggerNames = serviceProvider.GetService<IOptions<RuntimeOptions>>()?.Value.ScheduledTriggerNames ?? new HashSet<string>();
         var triggerFilter = new TriggerFilter
         {
-            Names = stimulusNames
-        };
-        var bookmarkFilter = new BookmarkFilter
-        {
-            Names = stimulusNames
+            Names = scheduledTriggerNames.ToList()
         };
 
-        await ScheduleTriggersAsync(triggerStore, triggerScheduler, triggerFilter, pageSize, cancellationToken);
+        // Delay is a bookmark, not a trigger, so it is not one of the scheduled trigger names.
+        var bookmarkFilter = new BookmarkFilter
+        {
+            Names = [SchedulingStimulusNames.Cron, SchedulingStimulusNames.Timer, SchedulingStimulusNames.StartAt, SchedulingStimulusNames.Delay]
+        };
+
+        if (scheduledTriggerNames.Count > 0)
+            await ScheduleTriggersAsync(triggerStore, triggerScheduler, triggerFilter, pageSize, cancellationToken);
+
         await ScheduleBookmarksAsync(bookmarkStore, bookmarkScheduler, bookmarkReconciler, bookmarkFilter, pageSize, cancellationToken);
     }
 

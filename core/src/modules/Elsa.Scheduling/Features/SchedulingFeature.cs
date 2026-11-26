@@ -12,6 +12,7 @@ using Elsa.Scheduling.StartupTasks;
 using Elsa.Scheduling.TriggerPayloadValidators;
 using Elsa.Workflows.Management.Features;
 using Elsa.Workflows.Options;
+using Elsa.Workflows.Runtime.Options;
 using Microsoft.Extensions.DependencyInjection;
 using Elsa.Common.Serialization;
 
@@ -62,6 +63,7 @@ public class SchedulingFeature : FeatureBase
             .AddSingleton<Elsa.Workflows.Runtime.IIngressSource, Elsa.Scheduling.IngressSources.ScheduledTriggerIngressSource>();
 
         Services.Configure<SchedulingOptions>(_ => { });
+        Services.Configure<RuntimeOptions>(options => options.ScheduledTriggerNames.UnionWith(SchedulingStimulusNames.ScheduledTriggerNames));
         Services.Configure<SerializationTypeOptions>(options =>
         {
             options.RegisterTypeAlias(typeof(CronBookmarkPayload), nameof(CronBookmarkPayload));
