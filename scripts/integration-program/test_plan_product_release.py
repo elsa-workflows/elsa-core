@@ -373,6 +373,24 @@ class ProductReleasePlanTests(unittest.TestCase):
                 self.assertEqual(commit, binding['commit'])
                 self.assertEqual('admitted-maintenance-descendant', binding['kind'])
 
+    def test_pinned_core_reads_tags_but_not_the_live_branch(self):
+        for line, commit in metadata.CORE_PINS.items():
+            with self.subTest(line=line):
+                tags = self.observation(planner.GITHUB + 'git/matching-refs/tags/' + line + '.',
+                    [{'ref': 'refs/tags/' + line + '.0', 'object': {'type': 'commit', 'sha': commit}}])
+                observations = planner.Observations()
+                with patch.object(metadata, 'git', return_value='e' * 40), \
+                     patch.object(observations, 'get', return_value=tags) as get:
+                    observation = planner.observe_core(metadata.ROOT, line, observations, pinned=True)
+                self.assertEqual([tags['url']], [call.args[0] for call in get.call_args_list])
+                self.assertEqual((commit, True, None),
+                                 (observation['commit'], observation['pinned'], observation['branch_observation']))
+                with patch.object(metadata, 'git', return_value='e' * 40):
+                    binding = metadata.bind_source(metadata.ROOT, 'core', line, commit, observation)
+                self.assertEqual('pinned-core-release-commit', binding['kind'])
+                with patch.object(metadata, 'git', return_value='e' * 40), self.assertRaisesRegex(ValueError, 'source_selection'):
+                    metadata.bind_source(metadata.ROOT, 'core', line, 'f' * 40, {**observation, 'commit': 'f' * 40})
+
     def test_studio_npm_pair_requires_both_member_histories_and_same_source_version(self):
         self.binding['product'] = 'studio'
         npm = {'atomic': True, 'line': self.binding['line'], 'source_commit': self.binding['commit'], 'source_tree': self.binding['tree'],

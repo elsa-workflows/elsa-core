@@ -433,14 +433,19 @@ def assemble_plan(binding: dict, inventory: dict, version: str, histories: list[
                 'Selected artifact builds, clean consumers, publisher/recovery and operational cutover remain separate gates.']}
 
 
-def observe_core(controller: Path, line: str, observations: Observations) -> dict:
+def observe_core(controller: Path, line: str, observations: Observations, *, pinned: bool = False) -> dict:
     ref = metadata.CORE_REFS[line]
-    response = observations.get(GITHUB + 'git/ref/' + ref.removeprefix('refs/'))
-    require(fresh(response, response['url'], now()) is None, 'source_ref_unavailable')
-    value = read_json(response['_body'])
-    require(isinstance(value, dict) and value.get('ref') == ref and isinstance(value.get('object'), dict) and
-            value['object'].get('type') == 'commit' and isinstance(value['object'].get('sha'), str), 'source_ref_identity')
-    commit = value['object']['sha']
+    if pinned:
+        # A pinned commit needs no branch read; the tags below are still observed.
+        commit, branch_observation, observed_at = metadata.CORE_PINS[line], None, now()
+    else:
+        response = observations.get(GITHUB + 'git/ref/' + ref.removeprefix('refs/'))
+        require(fresh(response, response['url'], now()) is None, 'source_ref_unavailable')
+        value = read_json(response['_body'])
+        require(isinstance(value, dict) and value.get('ref') == ref and isinstance(value.get('object'), dict) and
+                value['object'].get('type') == 'commit' and isinstance(value['object'].get('sha'), str), 'source_ref_identity')
+        commit = value['object']['sha']
+        branch_observation, observed_at = public_observation(response), response['observed_at']
     require(re.fullmatch(r'[a-f0-9]{40}', commit) is not None, 'source_ref_identity')
     tree = metadata.git(controller, 'rev-parse', commit + '^{tree}')
     # Published source tags are separate observations, never inferred from the branch.
@@ -453,8 +458,8 @@ def observe_core(controller: Path, line: str, observations: Observations) -> dic
                 row['object'].get('type') in ('tag', 'commit') and isinstance(row['object'].get('sha'), str) and
                 re.fullmatch(r'[a-f0-9]{40}', row['object']['sha']) for row in tag_history) and
             len({row['ref'] for row in tag_history}) == len(tag_history), 'source_tag_history_identity')
-    return {'ref': ref, 'commit': commit, 'tree': tree, 'observed_at': response['observed_at'],
-            'branch_observation': public_observation(response), 'tag_history': tag_history,
+    return {'ref': ref, 'commit': commit, 'tree': tree, 'observed_at': observed_at, 'pinned': pinned,
+            'branch_observation': branch_observation, 'tag_history': tag_history,
             'tag_observation': public_observation(tags), 'tag_scope': 'bounded-matching-ref-snapshot-not-complete-version-authority'}
 
 
@@ -497,7 +502,8 @@ def execute(controller: Path, product: str, line: str, requested: str, output: P
         (output / 'plan.json').write_text(json.dumps(plan, indent=2) + '\n')
         return plan
     observations = Observations(github_token)
-    observation = observe_core(controller, line, observations) if product == 'core' else None
+    pinned = os.environ.get('GITHUB_EVENT_NAME') == 'pull_request'
+    observation = observe_core(controller, line, observations, pinned=pinned) if product == 'core' else None
     commit = observation['commit'] if observation else metadata.DESCENDANTS[(product, line)]
     binding = metadata.bind_source(controller, product, line, commit, observation)
     source = output / 'source.private'
