@@ -373,7 +373,6 @@ public class WorkflowRuntimeFeature : IShellFeature
             .AddNotificationHandler<CancelBackgroundActivities>()
             .AddNotificationHandler<DeleteBookmarks>()
             .AddNotificationHandler<DeleteTriggers>()
-            .AddNotificationHandler<ReconcileTenantCopiesAfterDeletion>()
             .AddNotificationHandler<DeleteActivityExecutionLogRecords>()
             .AddNotificationHandler<DeleteWorkflowExecutionLogRecords>()
             .AddNotificationHandler<RefreshActivityRegistry>()
