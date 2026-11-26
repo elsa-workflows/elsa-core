@@ -1,12 +1,13 @@
 import os
 import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from validate_packages_publication_selection import release_version, selection_errors
+from validate_packages_publication_selection import legacy_release_pin_versions, release_version, selection_errors
 
 SCRIPT = Path(__file__).with_name("validate_packages_publication_selection.py")
 
@@ -88,6 +89,14 @@ class SelectionErrorsTests(unittest.TestCase):
         self.assertEqual("3.6.4", release_version("3.6.4"))
         self.assertEqual("3.6.4", release_version("03.6.4"))
         self.assertEqual("3.8.0", release_version("3.8.0-rc2"))
+
+    def test_missing_pin_file_fails_closed(self):
+        missing = Path(tempfile.mkdtemp()) / "consolidated.json"
+        with self.assertRaisesRegex(SystemExit, "is missing"):
+            legacy_release_pin_versions(missing)
+
+    def test_tag_run_for_legacy_pinned_364_is_blocked(self):
+        self.assertIn("requires a pinned candidate", " ".join(errors("refs/tags/3.6.4", {"nuget"})))
 
     def test_accepts_matching_selections(self):
         for ref, selected in ACCEPTED:
