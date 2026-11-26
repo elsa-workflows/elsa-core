@@ -16,6 +16,7 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
+using Elsa.ExternalAuthentication.IntegrationTests.Broker;
 using Elsa.ExternalAuthentication.IntegrationTests.Fixtures;
 
 namespace Elsa.ExternalAuthentication.IntegrationTests.Operations;
@@ -72,6 +73,7 @@ public class PreviewEndpointContractTests : IAsyncLifetime
             null!,
             new ServiceCollection().BuildServiceProvider(),
             NullLogger<IdentityProviderConnectionManagementService>.Instance);
+        var dataProtection = new EphemeralDataProtectionProvider();
         var previews = new PreviewSignInService(
             management,
             adapters,
@@ -82,7 +84,8 @@ public class PreviewEndpointContractTests : IAsyncLifetime
             stateStore,
             new InMemoryPreviewResultStore(clock),
             handleHasher,
-            new EphemeralDataProtectionProvider(),
+            dataProtection,
+            new ExternalAuthenticationCallbackTenant(dataProtection, new BrokerSecurityTests.AnyIdTenantFinder(), new DefaultTenantAccessor()),
             clock,
             options,
             new ExternalAuthenticationSecurityNotifier(new ServiceCollection().BuildServiceProvider()));
