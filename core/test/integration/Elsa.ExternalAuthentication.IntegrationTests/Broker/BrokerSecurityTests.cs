@@ -479,7 +479,9 @@ public class BrokerSecurityTests
         ConnectionValidity connectionValidity = ConnectionValidity.Valid,
         ConnectionValidity? assessedValidity = null,
         bool includeLoginMethod = false,
-        ISystemClock? clock = null)
+        ISystemClock? clock = null,
+        IExternalAuthenticationStateStore? stateStore = null,
+        ITenantFinder? tenantFinder = null)
     {
         var connection = new IdentityProviderConnection
         {
@@ -487,14 +489,15 @@ public class BrokerSecurityTests
             DisplayName = "Contoso", IsEnabled = true, MaterialRevision = "revision-a"
         };
         configureConnection?.Invoke(connection);
-        var effective = new EffectiveIdentityProviderConnection(connection, ConnectionSourceOwnership.Configuration, new(ConnectionScopeKind.Tenant, "tenant-a"), connectionValidity, false, "test");
+        var tenantId = string.IsNullOrEmpty(connection.TenantId) ? "" : connection.TenantId;
+        var effective = new EffectiveIdentityProviderConnection(connection, ConnectionSourceOwnership.Configuration, new(ConnectionScopeKind.Tenant, tenantId), connectionValidity, false, "test");
         var registry = Substitute.For<IIdentityProviderConnectionRegistry>();
-        registry.FindByKeyAsync("tenant-a", "contoso", Arg.Any<CancellationToken>()).Returns(ValueTask.FromResult<EffectiveIdentityProviderConnection?>(effective));
-        registry.FindByIdAsync("tenant-a", "connection-a", Arg.Any<CancellationToken>()).Returns(ValueTask.FromResult<EffectiveIdentityProviderConnection?>(effective));
+        registry.FindByKeyAsync(tenantId, "contoso", Arg.Any<CancellationToken>()).Returns(ValueTask.FromResult<EffectiveIdentityProviderConnection?>(effective));
+        registry.FindByIdAsync(tenantId, "connection-a", Arg.Any<CancellationToken>()).Returns(ValueTask.FromResult<EffectiveIdentityProviderConnection?>(effective));
         IReadOnlyCollection<LoginMethod> loginMethods = includeLoginMethod
             ? [new LoginMethod(connection.Id, connection.Key, LoginMethodKind.External, connection.DisplayName, null, 0, false, new Uri($"/external-authentication/authorize/{connection.Key}", UriKind.Relative))]
             : [];
-        registry.GetAsync("tenant-a", Arg.Any<CancellationToken>()).Returns(ValueTask.FromResult(new EffectiveConnectionRegistry([effective], loginMethods, "v1")));
+        registry.GetAsync(tenantId, Arg.Any<CancellationToken>()).Returns(ValueTask.FromResult(new EffectiveConnectionRegistry([effective], loginMethods, "v1")));
         var validityAssessor = Substitute.For<IIdentityProviderConnectionValidityAssessor>();
         validityAssessor.AssessAsync(Arg.Any<EffectiveIdentityProviderConnection>(), Arg.Any<CancellationToken>())
             .Returns(call => ValueTask.FromResult(call.Arg<EffectiveIdentityProviderConnection>() with
@@ -507,7 +510,10 @@ public class BrokerSecurityTests
                 new HashSet<Uri> { new("https://studio.example/authentication/external/callback") }, new HashSet<Uri>(), new HashSet<string> { "https://studio.example" }, new HashSet<string> { "/workflows" }, null, true)]
         });
         var brokerClock = clock ?? new TestClock();
-        return new ExternalAuthenticationBroker(registry, validityAssessor, [adapter], resolvers ?? [], hasher ?? new HmacExternalAuthenticationHandleHasher(), new Microsoft.AspNetCore.DataProtection.EphemeralDataProtectionProvider(), identityResolver ?? Substitute.For<IExternalIdentityResolver>(), permissionGrantResolver ?? Substitute.For<IPermissionGrantResolver>(), new InMemoryExternalAuthenticationStateStore(brokerClock), grants ?? new InMemoryAuthorizationGrantStore(brokerClock), sessionStore ?? new InMemoryExternalAuthenticationSessionStore(brokerClock), tokenIssuer ?? Substitute.For<IExternalAuthenticationTokenIssuer>(), credentialsValidator ?? Substitute.For<IUserCredentialsValidator>(), userProvider ?? Substitute.For<IUserProvider>(), roleProvider ?? Substitute.For<IRoleProvider>(), tokenService ?? Substitute.For<IElsaTokenService>(), identityRefreshTokenService ?? Substitute.For<IIdentityRefreshTokenService>(), tenantAccessor ?? new DefaultTenantAccessor(), brokerClock, options, notifier);
+        var dataProtection = new Microsoft.AspNetCore.DataProtection.EphemeralDataProtectionProvider();
+        var accessor = tenantAccessor ?? new DefaultTenantAccessor();
+        var callbackTenant = new ExternalAuthenticationCallbackTenant(dataProtection, tenantFinder ?? new AnyIdTenantFinder(), accessor);
+        return new ExternalAuthenticationBroker(registry, validityAssessor, [adapter], resolvers ?? [], hasher ?? new HmacExternalAuthenticationHandleHasher(), dataProtection, identityResolver ?? Substitute.For<IExternalIdentityResolver>(), permissionGrantResolver ?? Substitute.For<IPermissionGrantResolver>(), stateStore ?? new InMemoryExternalAuthenticationStateStore(brokerClock), grants ?? new InMemoryAuthorizationGrantStore(brokerClock), sessionStore ?? new InMemoryExternalAuthenticationSessionStore(brokerClock), tokenIssuer ?? Substitute.For<IExternalAuthenticationTokenIssuer>(), credentialsValidator ?? Substitute.For<IUserCredentialsValidator>(), userProvider ?? Substitute.For<IUserProvider>(), roleProvider ?? Substitute.For<IRoleProvider>(), tokenService ?? Substitute.For<IElsaTokenService>(), identityRefreshTokenService ?? Substitute.For<IIdentityRefreshTokenService>(), accessor, callbackTenant, brokerClock, options, notifier);
     }
 
     private static BrokerAuthorizationRequest Request(string returnPath) => new("studio", new Uri("https://studio.example/authentication/external/callback"), "code", "challenge", "S256", returnPath, "contoso");
@@ -572,6 +578,17 @@ public class BrokerSecurityTests
         SessionRevoker SessionRevoker,
         DefaultIdentityRefreshTokenService RefreshTokens);
 
+    internal sealed class AnyIdTenantFinder : ITenantFinder
+    {
+        public Task<Tenant?> FindByIdAsync(string tenantId, CancellationToken cancellationToken = default)
+        {
+            tenantId = string.IsNullOrEmpty(tenantId) ? Tenant.DefaultTenantId : tenantId;
+            if (tenantId == Tenant.DefaultTenantId)
+                return Task.FromResult<Tenant?>(Tenant.Default);
+            return Task.FromResult<Tenant?>(new Tenant { Id = tenantId, Name = tenantId });
+        }
+    }
+
     private sealed class TestClock : ISystemClock { public DateTimeOffset UtcNow => DateTimeOffset.Parse("2026-01-01T00:00:00Z"); }
     private sealed class CurrentTestClock : ISystemClock { public DateTimeOffset UtcNow => DateTimeOffset.UtcNow; }
     private sealed class MutableClock(DateTimeOffset utcNow) : ISystemClock { public DateTimeOffset UtcNow { get; set; } = utcNow; }
@@ -612,7 +629,13 @@ public class BrokerSecurityTests
             throw new NotSupportedException();
         }
         public ValueTask<ConnectionTestResult> TestAsync(ConnectionTestContext context, CancellationToken cancellationToken = default) => throw new NotSupportedException();
-        public ValueTask<ExternalLogoutRequest?> CreateLogoutRequestAsync(ExternalLogoutContext context, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public ValueTask<ExternalLogoutRequest?> CreateLogoutRequestAsync(ExternalLogoutContext context, CancellationToken cancellationToken = default)
+        {
+            CorrelationState = context.CorrelationState;
+            Transaction = context.Transaction;
+            Connection = context.Connection;
+            return ValueTask.FromResult<ExternalLogoutRequest?>(new ExternalLogoutRequest(new Uri($"https://issuer.example/logout?state={Uri.EscapeDataString(context.CorrelationState)}"), [1, 2, 3]));
+        }
     }
 
     private sealed class FixedHasher : IExternalAuthenticationHandleHasher
