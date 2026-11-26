@@ -10,4 +10,6 @@ public static class ExternalAuthenticationDataProtectionPurposes
     public const string AdapterState = Root + ".AdapterState";
     public const string PreviewState = Root + ".PreviewState";
     public const string LogoutState = Root + ".LogoutState";
+    /// <summary>Time-limited protector for the tenant id + nonce echoed as provider callback state.</summary>
+    public const string CallbackState = Root + ".CallbackState.v1";
 }
