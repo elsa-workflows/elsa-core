@@ -62,6 +62,10 @@ def expected_ids_file(version: str | None) -> Path:
         return DEFAULT_EXPECTED
     if STABLE_311.fullmatch(version):
         return EXPECTED_311
+    if version:
+        versioned = Path(__file__).with_name(f"validate_packages_id_set_{version.replace('.', '_')}.txt")
+        if versioned.is_file():
+            return versioned
     raise SystemExit(f"No consolidated package inventory for {version!r}.")
 
 
