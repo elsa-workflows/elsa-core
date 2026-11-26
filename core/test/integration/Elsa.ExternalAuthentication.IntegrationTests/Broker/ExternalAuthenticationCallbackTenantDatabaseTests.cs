@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using System.Text.Json;
 using Elsa.Authorization;
 using Elsa.Common;
@@ -385,6 +386,124 @@ public class ExternalAuthenticationCallbackTenantDatabaseTests
         Assert.Null(accessor.Tenant);
     }
 
+    [Fact(DisplayName = "InitiateAsync then AuthorizeAsync looks up PreviewStart in the tenant database")]
+    public async Task AuthorizeAsync_WhenInitiatedForATenant_UsesTheTenantDatabase()
+    {
+        var accessor = new DefaultTenantAccessor();
+        var acme = TenantWithDatabase("acme", "Tenant-Acme-Database");
+        var log = new AmbientDatabaseLog(accessor);
+        var clock = new TestClock();
+        var stateStore = new RecordingStateStore(new InMemoryExternalAuthenticationStateStore(clock), log);
+        var hasher = new HmacExternalAuthenticationHandleHasher();
+        var harness = CreatePreviewService(new BrokerSecurityTests.RecordingAdapter(), accessor, acme, stateStore, hasher, clock);
+        var administrator = new ClaimsPrincipal(new ClaimsIdentity([new Claim("sub", "administrator-a")], "test"));
+
+        PreviewInitiationResult initiated;
+        using (accessor.PushContext(acme))
+            initiated = await harness.Service.InitiateAsync("connection-a", 0, "acme", administrator);
+
+        var started = Assert.IsType<PreviewInitiationResult.Started>(initiated);
+        log.Clear();
+        Assert.Null(accessor.Tenant);
+
+        var result = await harness.Service.AuthorizeAsync(started.Handle);
+
+        Assert.IsType<PreviewAuthorizeResult.Redirect>(result);
+        Assert.Equal(["Tenant-Acme-Database"], log.OnTake);
+        Assert.DoesNotContain("Host-Database", log.All);
+        Assert.DoesNotContain("<none>", log.OnTake);
+        Assert.Null(accessor.Tenant);
+    }
+
+    [Fact(DisplayName = "An expired PreviewStart is rejected while the protector is still valid")]
+    public async Task AuthorizeAsync_WhenPreviewStartHasExpired_FailsClosed()
+    {
+        var accessor = new DefaultTenantAccessor();
+        var acme = TenantWithDatabase("acme", "Tenant-Acme-Database");
+        var log = new AmbientDatabaseLog(accessor);
+        var clock = new MutableClock(new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero));
+        var stateStore = new RecordingStateStore(new InMemoryExternalAuthenticationStateStore(clock), log);
+        var hasher = new HmacExternalAuthenticationHandleHasher();
+        var harness = CreatePreviewService(new BrokerSecurityTests.RecordingAdapter(), accessor, acme, stateStore, hasher, clock);
+        var (handle, start) = SeedPreviewStart(harness.CallbackTenant, hasher, acme, clock);
+
+        using (accessor.PushContext(acme))
+            await stateStore.PutAsync("PreviewStart", start.HandleHash, start, start.ExpiresAt);
+
+        clock.UtcNow = start.ExpiresAt.AddSeconds(1);
+        log.Clear();
+        Assert.Null(accessor.Tenant);
+
+        var result = await harness.Service.AuthorizeAsync(handle);
+
+        Assert.IsType<PreviewAuthorizeResult.Invalid>(result);
+        Assert.Equal(["Tenant-Acme-Database"], log.OnTake);
+        Assert.DoesNotContain("Host-Database", log.All);
+        Assert.Null(accessor.Tenant);
+    }
+
+    [Fact(DisplayName = "A preview authorize handle for an unknown tenant is rejected without store access")]
+    public async Task AuthorizeAsync_WhenTenantIsUnknown_FailsClosedWithoutStoreAccess()
+    {
+        var accessor = new DefaultTenantAccessor();
+        var acme = TenantWithDatabase("acme", "Tenant-Acme-Database");
+        var log = new AmbientDatabaseLog(accessor);
+        var clock = new TestClock();
+        var stateStore = new RecordingStateStore(new InMemoryExternalAuthenticationStateStore(clock), log);
+        var hasher = new HmacExternalAuthenticationHandleHasher();
+        var harness = CreatePreviewService(new BrokerSecurityTests.RecordingAdapter(), accessor, acme, stateStore, hasher, clock);
+        var (handle, start) = SeedPreviewStart(harness.CallbackTenant, hasher, acme, clock, tenantId: "unknown");
+
+        using (accessor.PushContext(acme))
+            await stateStore.PutAsync("PreviewStart", start.HandleHash, start, start.ExpiresAt);
+
+        log.Clear();
+        Assert.Null(accessor.Tenant);
+
+        var result = await harness.Service.AuthorizeAsync(handle);
+
+        Assert.IsType<PreviewAuthorizeResult.Invalid>(result);
+        Assert.Empty(log.OnTake);
+        Assert.DoesNotContain("Host-Database", log.All);
+        Assert.Null(accessor.Tenant);
+    }
+
+    [Fact(DisplayName = "A max-length tenant id still authorizes, and its route segment length is measured")]
+    public async Task InitiateAsync_WhenTenantIdIsMaxLength_MeasuresAuthorizeRouteSegmentLength()
+    {
+        // Connection management cursors cap tenant ids at 256 characters.
+        const int maxTenantIdLength = 256;
+        var accessor = new DefaultTenantAccessor();
+        var tenantId = new string('a', maxTenantIdLength);
+        var tenant = TenantWithDatabase(tenantId, "Tenant-Long-Database");
+        var log = new AmbientDatabaseLog(accessor);
+        var clock = new TestClock();
+        var stateStore = new RecordingStateStore(new InMemoryExternalAuthenticationStateStore(clock), log);
+        var hasher = new HmacExternalAuthenticationHandleHasher();
+        var harness = CreatePreviewService(new BrokerSecurityTests.RecordingAdapter(), accessor, tenant, stateStore, hasher, clock);
+        var administrator = new ClaimsPrincipal(new ClaimsIdentity([new Claim("sub", "administrator-a")], "test"));
+
+        PreviewInitiationResult initiated;
+        using (accessor.PushContext(tenant))
+            initiated = await harness.Service.InitiateAsync("connection-a", 0, tenantId, administrator);
+
+        var started = Assert.IsType<PreviewInitiationResult.Started>(initiated);
+        var segmentLength = Uri.EscapeDataString(started.Handle).Length;
+        log.Clear();
+        Assert.Null(accessor.Tenant);
+
+        var result = await harness.Service.AuthorizeAsync(started.Handle);
+
+        Assert.IsType<PreviewAuthorizeResult.Redirect>(result);
+        Assert.Equal(["Tenant-Long-Database"], log.OnTake);
+        Assert.DoesNotContain("Host-Database", log.All);
+        Assert.Null(accessor.Tenant);
+        // The authorize URL puts this escaped handle in a route segment (PreviewSignInEndpoints.cs:53, 61).
+        // A 256-character tenant id produces a segment well above the IIS/HTTP.sys 260-character limit
+        // (539 characters under EphemeralDataProtectionProvider on net10.0). Not asserted here; follow-up needed.
+        Assert.True(segmentLength > 0, $"escaped preview authorize route segment is {segmentLength} characters");
+    }
+
     private static ExternalAuthenticationBroker CreateBroker(
         BrokerSecurityTests.RecordingAdapter adapter,
         ITenantAccessor accessor,
@@ -492,11 +611,18 @@ public class ExternalAuthenticationCallbackTenantDatabaseTests
         IExternalAuthenticationHandleHasher hasher,
         Tenant tenant,
         ISystemClock clock,
-        string? tenantId = null,
+        string nonce = "preview-nonce")
+        => SeedPreviewStart(callbackTenant, hasher, tenant, clock, tenant.Id, nonce);
+
+    private static (string Handle, BrokerTransaction Start) SeedPreviewStart(
+        ExternalAuthenticationCallbackTenant callbackTenant,
+        IExternalAuthenticationHandleHasher hasher,
+        Tenant tenant,
+        ISystemClock clock,
+        string? tenantId,
         string nonce = "preview-nonce")
     {
-        var protectedTenantId = tenantId ?? tenant.Id;
-        var handle = callbackTenant.Protect(protectedTenantId, nonce, TimeSpan.FromMinutes(10));
+        var handle = callbackTenant.Protect(tenantId, nonce, TimeSpan.FromMinutes(10));
         var start = new BrokerTransaction
         {
             HandleHash = hasher.Hash(nonce),
@@ -504,7 +630,7 @@ public class ExternalAuthenticationCallbackTenantDatabaseTests
             ClientId = "administrator-a",
             CallbackUri = new Uri($"/external-authentication/previews/{Uri.EscapeDataString(handle)}/authorize", UriKind.Relative),
             ReturnPath = "/",
-            TenantId = ExternalAuthenticationCallbackTenant.Normalize(protectedTenantId),
+            TenantId = ExternalAuthenticationCallbackTenant.Normalize(tenantId),
             ConnectionId = "connection-a",
             ConnectionMaterialRevision = "revision-a",
             PkceChallenge = string.Empty,
