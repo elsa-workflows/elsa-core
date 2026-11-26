@@ -24,7 +24,7 @@ namespace Elsa.ExternalAuthentication.IntegrationTests.Operations;
 [Collection(nameof(EndpointSecurityCollection))]
 public class PreviewEndpointContractTests : IAsyncLifetime
 {
-    private const string PreviewHandle = "preview-handle";
+    private string _previewHandle = "";
     private static readonly Uri ProviderAuthorizationUri = new("https://provider.example/authorize?state=provider-state");
     private WebApplication? _app;
     private HttpClient? _client;
@@ -74,6 +74,7 @@ public class PreviewEndpointContractTests : IAsyncLifetime
             new ServiceCollection().BuildServiceProvider(),
             NullLogger<IdentityProviderConnectionManagementService>.Instance);
         var dataProtection = new EphemeralDataProtectionProvider();
+        var callbackTenant = new ExternalAuthenticationCallbackTenant(dataProtection, new BrokerSecurityTests.AnyIdTenantFinder(), new DefaultTenantAccessor());
         var previews = new PreviewSignInService(
             management,
             adapters,
@@ -85,17 +86,19 @@ public class PreviewEndpointContractTests : IAsyncLifetime
             new InMemoryPreviewResultStore(clock),
             handleHasher,
             dataProtection,
-            new ExternalAuthenticationCallbackTenant(dataProtection, new BrokerSecurityTests.AnyIdTenantFinder(), new DefaultTenantAccessor()),
+            callbackTenant,
             clock,
             options,
             new ExternalAuthenticationSecurityNotifier(new ServiceCollection().BuildServiceProvider()));
+        const string nonce = "preview-nonce";
+        _previewHandle = callbackTenant.Protect("tenant-a", nonce, TimeSpan.FromMinutes(5));
         var expiresAt = clock.UtcNow.AddMinutes(5);
-        await stateStore.PutAsync("PreviewStart", handleHasher.Hash(PreviewHandle), new BrokerTransaction
+        await stateStore.PutAsync("PreviewStart", handleHasher.Hash(nonce), new BrokerTransaction
         {
-            HandleHash = handleHasher.Hash(PreviewHandle),
+            HandleHash = handleHasher.Hash(nonce),
             Purpose = BrokerTransactionPurpose.Preview,
             ClientId = "administrator-a",
-            CallbackUri = new Uri($"/external-authentication/previews/{PreviewHandle}/authorize", UriKind.Relative),
+            CallbackUri = new Uri($"/external-authentication/previews/{Uri.EscapeDataString(_previewHandle)}/authorize", UriKind.Relative),
             ReturnPath = "/",
             TenantId = "tenant-a",
             ConnectionId = connection.Id,
@@ -139,8 +142,9 @@ public class PreviewEndpointContractTests : IAsyncLifetime
     [Fact]
     public async Task AuthorizeReturnsProviderRedirectAndConsumedHandleReturnsGone()
     {
-        var firstResponse = await _client!.GetAsync($"/external-authentication/previews/{PreviewHandle}/authorize");
-        var secondResponse = await _client.GetAsync($"/external-authentication/previews/{PreviewHandle}/authorize");
+        var authorizePath = $"/external-authentication/previews/{Uri.EscapeDataString(_previewHandle)}/authorize";
+        var firstResponse = await _client!.GetAsync(authorizePath);
+        var secondResponse = await _client.GetAsync(authorizePath);
 
         Assert.Equal(HttpStatusCode.Found, firstResponse.StatusCode);
         Assert.Equal(ProviderAuthorizationUri, firstResponse.Headers.Location);
