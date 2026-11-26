@@ -11,7 +11,7 @@ PYTHONDONTWRITEBYTECODE=1 python3 scripts/integration-program/current_import_imp
   --output /tmp/current-import-impact.json
 ```
 
-The script restores the solution with source references, rejects missing or escaping project inputs, and records the source commit, project/asset/build-configuration hashes, test/TFM selections and working-tree state. A dirty checkout produces a diagnostic receipt but exits nonzero. The read-only [CI workflow](../../.github/workflows/current-import-impact.yml) checks out the PR head, runs selector policy tests, then uploads this receipt. It has no package-push step or publishing credential.
+The script restores the solution with source references, rejects missing or escaping project inputs, and records the source commit, project/asset/build-configuration hashes, test/TFM selections and working-tree state. A dirty checkout produces a diagnostic receipt but exits nonzero. The read-only [CI workflow](../../.github/workflows/pr.yml) checks out the PR head, runs selector policy tests, then uploads this receipt. It has no package-push step or publishing credential.
 
 For a change to `src/extensions/communication/Elsa.Slack/Elsa.Slack.csproj`, the selected tests must match the mapped `Elsa.Slack` release-unit manifest exactly. A change to shared `src/modules/Elsa/Elsa.csproj` must include the Slack test and select more test/TFM nodes. Both scenarios keep the package-to-pack list at the single declared `Elsa.Slack` release unit; that list is **not** a Core package release plan. `Elsa.Mqtt` remains an unchanged package control.
 

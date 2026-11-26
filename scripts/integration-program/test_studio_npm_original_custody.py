@@ -15,13 +15,22 @@ import studio_npm_original_custody as custody
 import publish_studio_npm_pair as publication
 import test_publish_studio_npm_pair as fixtures
 
-WORKFLOW = publication.pair.ROOT / publication.WORKFLOW
+HISTORICAL_WORKFLOW_COMMIT = "be796b65e89a83941af78351582f988ed391d9f4"
 SOURCE = 'c' * 40
 RUN = 42
 
 
+def historical_workflow():
+    # The executor is retired. Keep the original custody contract verifiable
+    # against the immutable workflow that actually defined it.
+    return subprocess.check_output(
+        ["git", "show", f"{HISTORICAL_WORKFLOW_COMMIT}:{publication.WORKFLOW}"],
+        cwd=publication.pair.ROOT, text=True,
+    )
+
+
 def reader_code():
-    workflow = WORKFLOW.read_text()
+    workflow = historical_workflow()
     return textwrap.dedent(workflow.split("          python3 - <<'PY'\n", 1)[1].split('          PY\n', 1)[0])
 
 
@@ -311,7 +320,8 @@ class HostedAuthorityContracts(unittest.TestCase):
 
     def test_only_manual_exact_head_and_separated_reader_verifier_authority(self):
         import yaml
-        workflow = yaml.safe_load(WORKFLOW.read_text())
+        text = historical_workflow()
+        workflow = yaml.safe_load(text)
         trigger = workflow.get('on', workflow.get(True))
         self.assertEqual({'workflow_dispatch'}, set(trigger))
         self.assertEqual({'expected_head'}, set(trigger['workflow_dispatch']['inputs']))
@@ -328,7 +338,6 @@ class HostedAuthorityContracts(unittest.TestCase):
         self.assertEqual('${{ github.sha }}', checkout['with']['ref'])
         for job in (reader, verifier):
             self.assertNotIn('environment', job)
-        text = WORKFLOW.read_text()
         for forbidden in ('secrets.', 'id-token:', '--operation publish', 'npm publish', 'setup-node', 'setup-dotnet'):
             self.assertNotIn(forbidden, text)
         commands = [step.get('run', '') for step in verifier['steps'] if 'publish_studio_npm_pair.py' in step.get('run', '')]

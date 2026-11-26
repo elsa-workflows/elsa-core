@@ -8,6 +8,8 @@ using Elsa.Persistence.EFCore.Modules.Management;
 using Elsa.Persistence.EFCore.Modules.Runtime;
 using Elsa.Testing.Shared;
 using Elsa.Workflows.Activities;
+using Elsa.Workflows.Activities.Flowchart.Activities;
+using Elsa.Workflows.Activities.Flowchart.Models;
 using Elsa.Workflows.CommitStates;
 using Elsa.Workflows.CommitStates.Strategies;
 using Elsa.Workflows.Management;
@@ -62,6 +64,28 @@ public class HostStopInterruptTests(ITestOutputHelper testOutputHelper) : IAsync
         await WaitForFinishedAsync(client.WorkflowInstanceId);
         Assert.Equal(1, _gate.Count("first"));
         Assert.Equal(2, _gate.Count(HostStopHang.HangName));
+    }
+
+    [Fact(DisplayName = "A checkpoint taken while a parallel branch was still scheduled re-runs the cut-off activity once on recovery")]
+    public async Task CheckpointedCycleWithPendingSibling()
+    {
+        await StartAsync(interruptOnHostStop: true, new ActivityExecutingWorkflowStrategy());
+        var client = await _services.GetRequiredService<IWorkflowRuntime>().CreateClientAsync();
+        Assert.False((await client.CreateInstanceAsync(new() { WorkflowDefinitionHandle = Handle<HostStopSiblingWorkflow>() })).CannotStart);
+        var run = Task.Run(() => client.RunInstanceAsync(RunWorkflowInstanceRequest.Empty));
+
+        var instance = await DrainAndReleaseAsync(client.WorkflowInstanceId, run);
+        var siblingRunsBeforeRecovery = _gate.Count("sibling");
+
+        // The checkpoint holds the hanging activity as executing, and the sibling branch as a scheduled work item (#8467).
+        Assert.Equal((WorkflowStatus.Running, WorkflowSubStatus.Interrupted), (instance.Status, instance.SubStatus));
+        Assert.Contains(instance.WorkflowState.ActivityExecutionContexts, x => x.IsExecuting);
+        Assert.NotEmpty(instance.WorkflowState.ScheduledActivities);
+        Assert.Equal(1, await ScanAsync());
+        await WaitForFinishedAsync(client.WorkflowInstanceId);
+        Assert.Equal(1, _gate.Count("first"));
+        Assert.Equal(2, _gate.Count(HostStopHang.HangName));
+        Assert.Equal(siblingRunsBeforeRecovery + 1, _gate.Count("sibling"));
     }
 
     [Theory(DisplayName = "A resume that never reached a checkpoint ends Cancelled when force-cancelled, and keeps its suspension and is resumed again when interrupted")]
@@ -143,6 +167,7 @@ public class HostStopInterruptTests(ITestOutputHelper testOutputHelper) : IAsync
             .AddActivitiesFrom<HostStopInterruptTests>()
             .AddWorkflow<HostStopCheckpointWorkflow>()
             .AddWorkflow<HostStopResumeWorkflow>()
+            .AddWorkflow<HostStopSiblingWorkflow>()
             .ConfigureServices(services => services.Configure<CommitStateOptions>(options => options.DefaultWorkflowCommitStrategy = commitStrategy))
             .ConfigureElsa(elsa => elsa
                 .UseWorkflowManagement(management => management.UseEntityFrameworkCore(persistence => persistence.UseSqlite(ConnectionString)))
@@ -267,6 +292,18 @@ public class HostStopCheckpointWorkflow : WorkflowBase
 {
     protected override void Build(IWorkflowBuilder builder) =>
         builder.Root = new Sequence { Activities = { new HostStopStep { StepName = "first" }, new HostStopHang(), new HostStopStep { StepName = "second" } } };
+}
+
+/// <summary>The hanging activity is scheduled before its sibling, so the sibling is still scheduled when the hang starts.</summary>
+public class HostStopSiblingWorkflow : WorkflowBase
+{
+    protected override void Build(IWorkflowBuilder builder)
+    {
+        var first = new HostStopStep { StepName = "first" };
+        var hang = new HostStopHang();
+        var sibling = new HostStopStep { StepName = "sibling" };
+        builder.Root = new Flowchart { Start = first, Activities = { first, hang, sibling }, Connections = { new Connection(first, hang), new Connection(first, sibling) } };
+    }
 }
 
 public class HostStopResumeWorkflow : WorkflowBase

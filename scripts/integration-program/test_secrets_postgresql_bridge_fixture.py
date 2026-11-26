@@ -49,7 +49,7 @@ class PostgreSqlSecretsBridgeFixtureTests(unittest.TestCase):
         self.assertNotRegex(script, r'(?i)dotnet\s+nuget\s+push|nuget\s+push|gh\s+release')
 
     def test_ci_runs_and_retains_only_the_redacted_report(self):
-        workflow = (ROOT / '.github/workflows/integration-program-tools.yml').read_text()
+        workflow = (ROOT / '.github/workflows/pr.yml').read_text()
         self.assertIn('run_secrets_postgresql_bridge.py', workflow)
         self.assertIn('secrets-postgresql-bridge-report.json', workflow)
         self.assertIn('actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02', workflow)

@@ -35,7 +35,8 @@ public sealed class ExecutionCycleHandle : IDisposable
     /// Creates a new handle. The owning <see cref="IExecutionCycleRegistry"/> supplies <paramref name="onDisposed"/>
     /// so it can decrement its active count. The optional <paramref name="cancelCallback"/> is invoked by
     /// <see cref="Cancel"/> to propagate cancellation into the workflow execution itself (e.g.,
-    /// <c>WorkflowExecutionContext.Cancel()</c>) so that the running cycle stops scheduling new activities. Without it,
+    /// <c>WorkflowExecutionContext.Cancel()</c>) so that the running cycle stops scheduling new activities, and a running
+    /// activity observes the cancellation through <c>ActivityExecutionContext.CancellationToken</c>. Without it,
     /// <see cref="Cancel"/> only signals the cycle's own <see cref="CancellationToken"/>, which is consumed by the
     /// execution-cycle registry but does NOT propagate to the workflow runner's pipeline (the runner reads from
     /// <c>WorkflowExecutionContext.CancellationToken</c>, which is captured at context construction and is not part
@@ -135,9 +136,11 @@ public sealed class ExecutionCycleHandle : IDisposable
         if (Interlocked.CompareExchange(ref _lifecycleState, CancellingState, ActiveState) != ActiveState)
             return false;
 
-        // Propagate to the workflow execution first (this typically marks the workflow as Cancelled and clears its
-        // schedule, so the runner stops scheduling new activities). The orchestrator's subsequent Interrupted
-        // persistence then overrides the Cancelled sub-status — see Disposed-await sequencing in DrainOrchestrator.
+        // Propagate to the workflow execution first (this marks the workflow as Cancelled, so the runner stops scheduling
+        // new activities, and cancels the token running activities observe). When the running activity honours that
+        // token, the runner stops without committing, so the row keeps its last commit and the orchestrator's subsequent
+        // Interrupted persistence makes it recoverable — see Disposed-await sequencing in DrainOrchestrator. An activity
+        // that ignores the token may still finish and commit Cancelled.
         try { _cancelCallback?.Invoke(); }
         catch (Exception ex) when (!ex.IsFatal()) { /* Cancellation is best-effort; non-fatal failures here must not break the drain. */ }
 

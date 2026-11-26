@@ -197,15 +197,17 @@ def _completion_errors(row: dict[str, Any], root: Path) -> list[str]:
                 or active_path.startswith(('doc/integration-program/legacy/', 'docs/integration-program/legacy/'))):
             errors.append(f"completed asset has invalid active path: {source}")
         else:
+            # The receipt pins the reviewed file at import time. A later removal or
+            # replacement does not invalidate evidence from that accepted tree.
+            pinned = (completion["active_blob"], completion["active_mode"])
+            landed = _landed_blob_and_mode(root, active_path)
             if not _is_regular_repo_file(root, active_path):
-                errors.append(f"completed asset active file is missing: {source}")
-            else:
-                # The ledger pins the reviewed file as the import landed; later edits on main are ordinary reviewed changes.
-                pinned = (completion["active_blob"], completion["active_mode"])
-                if (pinned != _active_git_blob_and_mode(root, active_path)
-                        and pinned != _landed_blob_and_mode(root, active_path)
-                        and pinned != verified_relocation_identity(ROOT, active_path, current_path(root, active_path))):
-                    errors.append(f"completed asset active blob or mode changed: {source}")
+                path = current_path(root, active_path)
+                if path.exists() or path.is_symlink() or pinned != landed:
+                    errors.append(f"completed asset active file is missing: {source}")
+            elif (pinned != landed and pinned != _active_git_blob_and_mode(root, active_path)
+                  and pinned != verified_relocation_identity(ROOT, active_path, current_path(root, active_path))):
+                errors.append(f"completed asset active blob or mode changed: {source}")
         if (not isinstance(completion["representation"], str)
                 or completion["representation"] not in {"identical", "expanded"}):
             errors.append(f"completed asset representation is invalid: {source}")

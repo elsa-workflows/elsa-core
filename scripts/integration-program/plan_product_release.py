@@ -25,6 +25,10 @@ from release_unit_manifest import _is_semver2
 NUGET = 'https://api.nuget.org/v3-flatcontainer/'
 NPM = 'https://registry.npmjs.org/'
 GITHUB = 'https://api.github.com/repos/elsa-workflows/elsa-core/'
+GITHUB_REF_URLS = frozenset(
+    [GITHUB + 'git/ref/' + ref.removeprefix('refs/') for ref in metadata.CORE_REFS.values()]
+    + [GITHUB + 'git/matching-refs/tags/' + line + '.' for line in metadata.CORE_REFS]
+)
 NUGET_INDEX = 'https://api.nuget.org/v3/index.json'
 # Exact public origins already present in the six admitted source configurations.
 FEED_BASES = {NUGET_INDEX: NUGET, **{
@@ -82,9 +86,10 @@ class NoRedirects(urllib.request.HTTPRedirectHandler):
 
 
 class Observations:
-    """Bounded, unauthenticated requests to closed public origins, without retries."""
-    def __init__(self):
+    """Bounded GET requests to closed public origins, without retries."""
+    def __init__(self, github_token: str | None = None):
         self.opener = urllib.request.build_opener(NoRedirects())
+        self.github_token = github_token
 
     def get(self, url: str) -> dict:
         require((url in FEED_BASES or url.startswith((NPM, GITHUB, *FEED_BASES.values()))) and
@@ -92,6 +97,8 @@ class Observations:
                 'observation_origin')
         result = {'url': url, 'observed_at': now(), 'status': 'unavailable'}
         request = urllib.request.Request(url, headers={'User-Agent': 'Elsa-Product-Release-Plan', 'Accept': 'application/json'})
+        if self.github_token and url in GITHUB_REF_URLS:
+            request.add_unredirected_header('Authorization', 'Bearer ' + self.github_token)
         try:
             with self.opener.open(request, timeout=30) as response:
                 require(response.status == 200 and response.url == url, 'observation_response')
@@ -426,14 +433,19 @@ def assemble_plan(binding: dict, inventory: dict, version: str, histories: list[
                 'Selected artifact builds, clean consumers, publisher/recovery and operational cutover remain separate gates.']}
 
 
-def observe_core(controller: Path, line: str, observations: Observations) -> dict:
+def observe_core(controller: Path, line: str, observations: Observations, *, pinned: bool = False) -> dict:
     ref = metadata.CORE_REFS[line]
-    response = observations.get(GITHUB + 'git/ref/' + ref.removeprefix('refs/'))
-    require(fresh(response, response['url'], now()) is None, 'source_ref_unavailable')
-    value = read_json(response['_body'])
-    require(isinstance(value, dict) and value.get('ref') == ref and isinstance(value.get('object'), dict) and
-            value['object'].get('type') == 'commit' and isinstance(value['object'].get('sha'), str), 'source_ref_identity')
-    commit = value['object']['sha']
+    if pinned:
+        # A pinned commit needs no branch read; the tags below are still observed.
+        commit, branch_observation, observed_at = metadata.CORE_PINS[line], None, now()
+    else:
+        response = observations.get(GITHUB + 'git/ref/' + ref.removeprefix('refs/'))
+        require(fresh(response, response['url'], now()) is None, 'source_ref_unavailable')
+        value = read_json(response['_body'])
+        require(isinstance(value, dict) and value.get('ref') == ref and isinstance(value.get('object'), dict) and
+                value['object'].get('type') == 'commit' and isinstance(value['object'].get('sha'), str), 'source_ref_identity')
+        commit = value['object']['sha']
+        branch_observation, observed_at = public_observation(response), response['observed_at']
     require(re.fullmatch(r'[a-f0-9]{40}', commit) is not None, 'source_ref_identity')
     tree = metadata.git(controller, 'rev-parse', commit + '^{tree}')
     # Published source tags are separate observations, never inferred from the branch.
@@ -446,8 +458,8 @@ def observe_core(controller: Path, line: str, observations: Observations) -> dic
                 row['object'].get('type') in ('tag', 'commit') and isinstance(row['object'].get('sha'), str) and
                 re.fullmatch(r'[a-f0-9]{40}', row['object']['sha']) for row in tag_history) and
             len({row['ref'] for row in tag_history}) == len(tag_history), 'source_tag_history_identity')
-    return {'ref': ref, 'commit': commit, 'tree': tree, 'observed_at': response['observed_at'],
-            'branch_observation': public_observation(response), 'tag_history': tag_history,
+    return {'ref': ref, 'commit': commit, 'tree': tree, 'observed_at': observed_at, 'pinned': pinned,
+            'branch_observation': branch_observation, 'tag_history': tag_history,
             'tag_observation': public_observation(tags), 'tag_scope': 'bounded-matching-ref-snapshot-not-complete-version-authority'}
 
 
@@ -465,7 +477,8 @@ def build_helper(output: Path) -> Semantics:
     return Semantics(binaries / 'ProductReleaseSemantics.dll')
 
 
-def execute(controller: Path, product: str, line: str, requested: str, output: Path, semantics: Semantics) -> dict:
+def execute(controller: Path, product: str, line: str, requested: str, output: Path, semantics: Semantics,
+            *, github_token: str | None = None, pinned: bool = False) -> dict:
     controller_identity = {'commit': metadata.git(controller, 'rev-parse', 'HEAD'),
                            'tree': metadata.git(controller, 'rev-parse', 'HEAD^{tree}'),
                            'execution': {key.removeprefix('GITHUB_').lower(): os.environ[key] for key in
@@ -488,8 +501,8 @@ def execute(controller: Path, product: str, line: str, requested: str, output: P
                 'published': False, 'version_allocated': False, 'tag_created': False}
         (output / 'plan.json').write_text(json.dumps(plan, indent=2) + '\n')
         return plan
-    observations = Observations()
-    observation = observe_core(controller, line, observations) if product == 'core' else None
+    observations = Observations(github_token)
+    observation = observe_core(controller, line, observations, pinned=pinned) if product == 'core' else None
     commit = observation['commit'] if observation else metadata.DESCENDANTS[(product, line)]
     binding = metadata.bind_source(controller, product, line, commit, observation)
     source = output / 'source.private'
@@ -519,6 +532,8 @@ def execute(controller: Path, product: str, line: str, requested: str, output: P
 
 
 def main() -> int:
+    # Only the GitHub reference requests need this token. Leave it out of every child process.
+    github_token = os.environ.pop('ELSA_PLAN_GITHUB_TOKEN', None)
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--controller', type=Path, default=ROOT)
     parser.add_argument('--product', choices=('core', 'studio', 'extensions'), required=True)
@@ -526,6 +541,8 @@ def main() -> int:
     parser.add_argument('--version', required=True)
     parser.add_argument('--output', type=Path, required=True)
     args = parser.parse_args()
+    # Temporary (#9335): PR rehearsals plan core from CORE_PINS; manual runs observe the live branch tip.
+    pinned = os.environ.get('GITHUB_EVENT_NAME') == 'pull_request'
     if args.output.exists():
         print(json.dumps({'status': 'incomplete', 'category': 'plan_output_exists', 'published': False}))
         return 1
@@ -533,11 +550,17 @@ def main() -> int:
     with tempfile.TemporaryDirectory(prefix='product-release-semantics-') as temporary:
         try:
             semantics = build_helper(Path(temporary))
-            plan = execute(args.controller.resolve(), args.product, args.line, args.version, args.output.resolve(), semantics)
-        except (ValueError, OSError, KeyError, subprocess.TimeoutExpired, subprocess.CalledProcessError):
+            plan = execute(args.controller.resolve(), args.product, args.line, args.version, args.output.resolve(),
+                           semantics, github_token=github_token, pinned=pinned)
+        except (ValueError, OSError, KeyError, subprocess.TimeoutExpired, subprocess.CalledProcessError) as error:
+            category = 'plan_input_or_metadata_unavailable'
+            if type(error) is ValueError and str(error) in {
+                'source_ref_unavailable', 'source_ref_identity', 'source_tag_history_unavailable', 'source_tag_history_identity',
+            }:
+                category = str(error)
             failure = {'schema': 1, 'status': 'incomplete', 'product': args.product, 'line': args.line,
                 'requested_version_input': args.version, 'observed_at': now(), 'eligible': False,
-                'category': 'plan_input_or_metadata_unavailable', 'published': False,
+                'category': category, 'published': False,
                 'version_allocated': False, 'tag_created': False}
             try:
                 args.output.mkdir(parents=True, exist_ok=True)

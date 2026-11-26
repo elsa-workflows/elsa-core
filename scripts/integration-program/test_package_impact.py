@@ -1,6 +1,6 @@
 import sys
 import unittest
-import fnmatch
+import json
 import re
 from pathlib import Path
 
@@ -8,25 +8,32 @@ SCRIPTS = Path(__file__).resolve().parent
 REPOSITORY = SCRIPTS.parents[1]
 sys.path.insert(0, str(SCRIPTS))
 
+sys.path.insert(0, str(REPOSITORY / "scripts/ci"))
+from select_pr_suites import pattern_regex
+
 from package_impact import InventoryGraph  # noqa: E402
 
 
 class PackageImpactTests(unittest.TestCase):
     def test_workflow_filters_cover_every_executed_proof_helper(self):
-        workflow = (REPOSITORY / '.github/workflows/package-impact-closure.yml').read_text()
-        pull_request_paths = workflow.split('  pull_request:\n', 1)[1].split('  workflow_dispatch:', 1)[0]
-        filters = re.findall(r"^\s+- '([^']+)'$", pull_request_paths, re.MULTILINE)
+        workflow = (REPOSITORY / '.github/workflows/pr.yml').read_text()
+        workflow = workflow.split('  # Package impact closure rehearsal\n', 1)[1].split('  # Consolidated package proof\n', 1)[0]
+        routes = json.loads((REPOSITORY / "scripts/ci/pr-paths.json").read_text())
+        filters = [pattern_regex(pattern) for pattern in routes["package-impact-closure"]["paths"]]
         invoked_scripts = set(re.findall(r'python\s+(scripts/integration-program/[\w.-]+\.py)', workflow))
 
         uncovered = sorted(script for script in invoked_scripts
-                           if not any(fnmatch.fnmatchcase(script, pattern) for pattern in filters))
+                           if not any(pattern.fullmatch(script) for pattern in filters))
         self.assertEqual([], uncovered)
 
     def test_read_only_publisher_preflight_is_part_of_the_pr_lane(self):
-        workflow = (REPOSITORY / '.github/workflows/package-impact-closure.yml').read_text()
+        workflow = (REPOSITORY / '.github/workflows/pr.yml').read_text()
+        workflow = workflow.split('  # Package impact closure rehearsal\n', 1)[1].split('  # Consolidated package proof\n', 1)[0]
         self.assertIn("Validate current publisher ownership without cutover", workflow)
         self.assertIn("check_publisher_handoff.py", workflow)
-        self.assertIn("permissions:\n  contents: read", workflow)
+        full_workflow = (REPOSITORY / '.github/workflows/pr.yml').read_text()
+        self.assertIn("permissions:\n  contents: read", full_workflow)
+        self.assertNotIn("permissions:", workflow)
 
     @classmethod
     def setUpClass(cls):

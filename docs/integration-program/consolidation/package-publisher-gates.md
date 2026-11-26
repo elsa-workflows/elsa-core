@@ -48,7 +48,7 @@ To cancel an opt-in before the job starts, cancel that workflow run. Once packag
 The workflow validator parses the workflow with PyYAML (`python3 -m pip install PyYAML`). Run:
 
 ```sh
-actionlint -shellcheck '' .github/workflows/packages.yml .github/workflows/validate-packages-gates.yml
+actionlint -shellcheck '' .github/workflows/packages.yml .github/workflows/pr.yml
 python3 scripts/validate_packages_workflow_gates.py
 python3 -m unittest discover -s scripts -p 'test_validate_packages_*.py'
 ```

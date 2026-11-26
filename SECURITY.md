@@ -28,3 +28,7 @@ GitHub's guide to [privately reporting a security vulnerability](https://docs.gi
 - Once a fix is available, we publish the advisory with the fixed versions and credit the reporter unless they ask us not to.
 
 Please give us a reasonable amount of time to release a fix before you disclose the issue publicly.
+
+## Dependency monitoring
+
+[OSV-Scanner](.github/workflows/osv-scanner.yml) scans the repository on pushes to `main` and release branches, weekly, and on manual runs. It also reads the five Studio ClientLib lockfiles that use nonstandard names. Completed scans send findings to [code scanning](https://github.com/elsa-workflows/elsa-core/security/code-scanning) and retain a SARIF artifact for five days. Findings are report-only. A scanner or upload failure fails the workflow.

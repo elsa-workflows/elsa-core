@@ -88,7 +88,7 @@ The example uses SQLite, which is the configured default and the database path c
 
 Each Elsa Apps release publishes an exact version tag and a source-specific tag containing the Apps commit SHA for all six applications. Supported release tags are derived from the workflow input and must be Elsa 3.x SemVer versions. The hosted Studio WASM image also receives the matching `elsaworkflows/elsa-studio:<version>` alias, and the server image receives `elsaworkflows/elsa-server:<version>`. These aliases are limited to Elsa 3 release tags; the workflow does not update `latest` or Elsa 4 tags.
 
-The [Core Apps validation workflow](../.github/workflows/apps-source-validation.yml) validates the nine net10.0 projects and builds/smokes all six image profiles on Linux AMD64 without pushing images. Run these local checks from the consolidated repository root:
+The [Core Apps validation workflow](../.github/workflows/pr.yml) validates the nine net10.0 projects and builds/smokes all six image profiles on Linux AMD64 without pushing images. Run these local checks from the consolidated repository root:
 
 ```bash
 dotnet build Elsa.Apps.slnf
