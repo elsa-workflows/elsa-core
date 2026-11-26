@@ -44,19 +44,19 @@ public class MongoBookmarkQueueStore(MongoDbStore<BookmarkQueueItem> mongoDbStor
     /// <inheritdoc />
     public async Task<IEnumerable<BookmarkQueueItem>> FindManyAsync<TOrderBy>(BookmarkQueueFilter filter, BookmarkQueueItemOrder<TOrderBy> orderBy, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
-        return await mongoDbStore.FindManyAsync(query => Paginate(Order(Filter(query, filter), orderBy), pageArgs), filter.TenantAgnostic, cancellationToken);
+        return await mongoDbStore.FindManyAsync(query => Paginate(orderBy.Apply(Filter(query, filter)), pageArgs), filter.TenantAgnostic, cancellationToken);
     }
 
     public async Task<Page<BookmarkQueueItem>> PageAsync<TOrderBy>(PageArgs pageArgs, BookmarkQueueItemOrder<TOrderBy> orderBy, CancellationToken cancellationToken = default)
     {
-        var results = await mongoDbStore.FindManyAsync(query => Paginate(Order(query, orderBy), pageArgs), cancellationToken);
-        var count = await mongoDbStore.CountAsync(queryable => Order(queryable, orderBy), cancellationToken);
+        var results = await mongoDbStore.FindManyAsync(query => Paginate(orderBy.Apply(query), pageArgs), cancellationToken);
+        var count = await mongoDbStore.CountAsync(queryable => queryable, cancellationToken);
         return Page.Of(results.ToList(), count);
     }
 
     public async Task<Page<BookmarkQueueItem>> PageAsync<TOrderBy>(PageArgs pageArgs, BookmarkQueueFilter filter, BookmarkQueueItemOrder<TOrderBy> orderBy, CancellationToken cancellationToken = default)
     {
-        var results = await mongoDbStore.FindManyAsync(query => Paginate(Order(Filter(query, filter), orderBy), pageArgs), filter.TenantAgnostic, cancellationToken);
+        var results = await mongoDbStore.FindManyAsync(query => Paginate(orderBy.Apply(Filter(query, filter)), pageArgs), filter.TenantAgnostic, cancellationToken);
         var count = await mongoDbStore.CountAsync(queryable => Filter(queryable, filter), filter.TenantAgnostic, cancellationToken);
         return Page.Of(results.ToList(), count);
     }
@@ -80,11 +80,6 @@ public class MongoBookmarkQueueStore(MongoDbStore<BookmarkQueueItem> mongoDbStor
         return filter.Apply(queryable);
     }
     
-    private IQueryable<BookmarkQueueItem> Order<TOrderBy>(IQueryable<BookmarkQueueItem> queryable, BookmarkQueueItemOrder<TOrderBy> order)
-    {
-        return queryable.OrderBy(order);
-    }
-
     private IQueryable<BookmarkQueueItem> Paginate(IQueryable<BookmarkQueueItem> queryable, PageArgs pageArgs)
     {
         return queryable.Paginate(pageArgs);

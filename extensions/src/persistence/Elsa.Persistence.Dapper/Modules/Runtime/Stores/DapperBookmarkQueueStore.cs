@@ -1,3 +1,4 @@
+using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Common.Multitenancy;
 using Elsa.Persistence.Dapper.Extensions;
@@ -50,19 +51,19 @@ internal class DapperBookmarkQueueStore(Store<BookmarkQueueItemRecord> store, IP
     /// <inheritdoc />
     public async Task<IEnumerable<BookmarkQueueItem>> FindManyAsync<TOrderBy>(BookmarkQueueFilter filter, BookmarkQueueItemOrder<TOrderBy> orderBy, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
-        var records = await store.FindPageItemsAsync(q => ApplyFilter(q, filter), pageArgs, orderBy.KeySelector.GetPropertyName(), orderBy.Direction, filter.TenantAgnostic, cancellationToken);
+        var records = await store.FindPageItemsAsync(q => ApplyFilter(q, filter), pageArgs, GetOrderFields(orderBy), filter.TenantAgnostic, cancellationToken);
         return Map(records).ToList();
     }
 
     public async Task<Page<BookmarkQueueItem>> PageAsync<TOrderBy>(PageArgs pageArgs, BookmarkQueueItemOrder<TOrderBy> orderBy, CancellationToken cancellationToken = default)
     {
-        var records = await store.ListAsync(pageArgs, orderBy.KeySelector.GetPropertyName(), orderBy.Direction, cancellationToken);
+        var records = await store.FindManyAsync(null, pageArgs, GetOrderFields(orderBy), cancellationToken);
         return Map(records);
     }
 
     public async Task<Page<BookmarkQueueItem>> PageAsync<TOrderBy>(PageArgs pageArgs, BookmarkQueueFilter filter, BookmarkQueueItemOrder<TOrderBy> orderBy, CancellationToken cancellationToken = default)
     {
-        var records = await store.FindManyAsync(q => ApplyFilter(q, filter), pageArgs, orderBy.KeySelector.GetPropertyName(), orderBy.Direction, filter.TenantAgnostic, cancellationToken);
+        var records = await store.FindManyAsync(q => ApplyFilter(q, filter), pageArgs, GetOrderFields(orderBy), filter.TenantAgnostic, cancellationToken);
         return Map(records);
     }
 
@@ -77,6 +78,14 @@ internal class DapperBookmarkQueueStore(Store<BookmarkQueueItemRecord> store, IP
     public async Task<long> DeleteAsync(BookmarkQueueFilter filter, CancellationToken cancellationToken = default)
     {
         return await store.DeleteAsync(q => ApplyFilter(q, filter), cancellationToken);
+    }
+
+    private static OrderField[] GetOrderFields<TOrderBy>(BookmarkQueueItemOrder<TOrderBy> order)
+    {
+        var primary = new OrderField(order.KeySelector.GetPropertyName(), order.Direction);
+        return primary.Field == nameof(BookmarkQueueItemRecord.Id)
+            ? [primary]
+            : [primary, new(nameof(BookmarkQueueItemRecord.Id), OrderDirection.Ascending)];
     }
 
     private void ApplyFilter(ParameterizedQuery query, BookmarkQueueFilter filter)

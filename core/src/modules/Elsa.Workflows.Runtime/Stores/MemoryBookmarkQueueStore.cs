@@ -35,20 +35,20 @@ public class MemoryBookmarkQueueStore(MemoryStore<BookmarkQueueItem> store, ITen
 
     public Task<Page<BookmarkQueueItem>> PageAsync<TOrderBy>(PageArgs pageArgs, BookmarkQueueItemOrder<TOrderBy> orderBy, CancellationToken cancellationToken = default)
     {
-        var entities = store.Query(query => query.WhereVisibleToTenant(CurrentTenantId).OrderBy(orderBy)).Paginate(pageArgs);
+        var entities = store.Query(query => orderBy.Apply(query.WhereVisibleToTenant(CurrentTenantId))).Paginate(pageArgs);
         return Task.FromResult(entities);
     }
 
     public Task<Page<BookmarkQueueItem>> PageAsync<TOrderBy>(PageArgs pageArgs, BookmarkQueueFilter filter, BookmarkQueueItemOrder<TOrderBy> orderBy, CancellationToken cancellationToken = default)
     {
-        var entities = store.Query(query => Filter(query, filter).OrderBy(orderBy)).Paginate(pageArgs);
+        var entities = store.Query(query => orderBy.Apply(Filter(query, filter))).Paginate(pageArgs);
         return Task.FromResult(entities);
     }
 
     /// <inheritdoc />
     public Task<IEnumerable<BookmarkQueueItem>> FindManyAsync<TOrderBy>(BookmarkQueueFilter filter, BookmarkQueueItemOrder<TOrderBy> orderBy, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
-        IEnumerable<BookmarkQueueItem> entities = store.Query(query => Filter(query, filter).OrderBy(orderBy).Paginate(pageArgs)).ToList();
+        IEnumerable<BookmarkQueueItem> entities = store.Query(query => orderBy.Apply(Filter(query, filter)).Paginate(pageArgs)).ToList();
         return Task.FromResult(entities);
     }
 

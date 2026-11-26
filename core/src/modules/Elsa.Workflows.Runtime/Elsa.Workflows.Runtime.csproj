@@ -19,6 +19,7 @@
     <ItemGroup>
         <InternalsVisibleTo Include="Elsa.Persistence.EFCore" />
         <InternalsVisibleTo Include="Elsa.Persistence.Dapper" />
+        <InternalsVisibleTo Include="Elsa.Persistence.MongoDb" />
 
     </ItemGroup>
 
