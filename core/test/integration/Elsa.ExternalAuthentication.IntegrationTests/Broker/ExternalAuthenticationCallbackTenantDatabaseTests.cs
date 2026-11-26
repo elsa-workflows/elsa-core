@@ -252,38 +252,135 @@ public class ExternalAuthenticationCallbackTenantDatabaseTests
             AuthenticationResult = new ExternalAuthenticationResult(new ExternalIdentity("https://issuer.example", "subject-a", EmptyClaims), EmptyClaims, [])
         };
         var hasher = new HmacExternalAuthenticationHandleHasher();
-        var previews = CreatePreviewService(adapter, accessor, acme, stateStore, hasher, clock);
-        const string handle = "preview-handle";
-        var expiresAt = clock.UtcNow.Add(Microsoft.Extensions.Options.Options.Create(new ExternalAuthenticationOptions()).Value.Lifetimes.PreviewLifetime);
-        var start = new BrokerTransaction
-        {
-            HandleHash = hasher.Hash(handle),
-            Purpose = BrokerTransactionPurpose.Preview,
-            ClientId = "administrator-a",
-            CallbackUri = new Uri($"/external-authentication/previews/{handle}/authorize", UriKind.Relative),
-            ReturnPath = "/",
-            TenantId = acme.Id,
-            ConnectionId = "connection-a",
-            ConnectionMaterialRevision = "revision-a",
-            PkceChallenge = string.Empty,
-            ExpiresAt = expiresAt
-        };
+        var harness = CreatePreviewService(adapter, accessor, acme, stateStore, hasher, clock);
+        var (handle, start) = SeedPreviewStart(harness.CallbackTenant, hasher, acme, clock);
 
         using (accessor.PushContext(acme))
         {
             await stateStore.PutAsync("PreviewStart", start.HandleHash, start, start.ExpiresAt);
-            var authorized = await previews.AuthorizeAsync(handle);
+            var authorized = await harness.Service.AuthorizeAsync(handle);
             Assert.IsType<PreviewAuthorizeResult.Redirect>(authorized);
         }
 
         log.Clear();
         Assert.Null(accessor.Tenant);
 
-        var result = await previews.CompleteAsync("connection-a", adapter.CorrelationState!, Parameters(adapter));
+        var result = await harness.Service.CompleteAsync("connection-a", adapter.CorrelationState!, Parameters(adapter));
 
         Assert.IsType<PreviewCallbackResult.Completed>(result);
         Assert.Equal(["Tenant-Acme-Database"], log.OnTake);
         Assert.DoesNotContain("Host-Database", log.All);
+        Assert.DoesNotContain("<none>", log.OnTake);
+        Assert.Null(accessor.Tenant);
+    }
+
+    [Fact(DisplayName = "A preview authorize with no tenant header looks up PreviewStart in the tenant database")]
+    public async Task AuthorizeAsync_WhenTenantHeaderIsMissing_UsesTheTenantDatabase()
+    {
+        var accessor = new DefaultTenantAccessor();
+        var acme = TenantWithDatabase("acme", "Tenant-Acme-Database");
+        var log = new AmbientDatabaseLog(accessor);
+        var clock = new TestClock();
+        var stateStore = new RecordingStateStore(new InMemoryExternalAuthenticationStateStore(clock), log);
+        var hasher = new HmacExternalAuthenticationHandleHasher();
+        var harness = CreatePreviewService(new BrokerSecurityTests.RecordingAdapter(), accessor, acme, stateStore, hasher, clock);
+        var (handle, start) = SeedPreviewStart(harness.CallbackTenant, hasher, acme, clock);
+
+        using (accessor.PushContext(acme))
+            await stateStore.PutAsync("PreviewStart", start.HandleHash, start, start.ExpiresAt);
+
+        log.Clear();
+        Assert.Null(accessor.Tenant);
+
+        var result = await harness.Service.AuthorizeAsync(handle);
+
+        Assert.IsType<PreviewAuthorizeResult.Redirect>(result);
+        Assert.Equal(["Tenant-Acme-Database"], log.OnTake);
+        Assert.DoesNotContain("Host-Database", log.All);
+        Assert.DoesNotContain("<none>", log.OnTake);
+        Assert.Null(accessor.Tenant);
+    }
+
+    [Fact(DisplayName = "A tampered preview authorize handle is rejected without store access")]
+    public async Task AuthorizeAsync_WhenHandleIsTampered_FailsClosedWithoutStoreAccess()
+    {
+        var accessor = new DefaultTenantAccessor();
+        var acme = TenantWithDatabase("acme", "Tenant-Acme-Database");
+        var log = new AmbientDatabaseLog(accessor);
+        var clock = new TestClock();
+        var stateStore = new RecordingStateStore(new InMemoryExternalAuthenticationStateStore(clock), log);
+        var hasher = new HmacExternalAuthenticationHandleHasher();
+        var harness = CreatePreviewService(new BrokerSecurityTests.RecordingAdapter(), accessor, acme, stateStore, hasher, clock);
+        var (handle, start) = SeedPreviewStart(harness.CallbackTenant, hasher, acme, clock);
+
+        using (accessor.PushContext(acme))
+            await stateStore.PutAsync("PreviewStart", start.HandleHash, start, start.ExpiresAt);
+
+        log.Clear();
+        Assert.Null(accessor.Tenant);
+
+        var result = await harness.Service.AuthorizeAsync(handle + "x");
+
+        Assert.IsType<PreviewAuthorizeResult.Invalid>(result);
+        Assert.Empty(log.OnTake);
+        Assert.DoesNotContain("Host-Database", log.All);
+        Assert.Null(accessor.Tenant);
+    }
+
+    [Fact(DisplayName = "A tenant mismatch between the preview handle and the stored PreviewStart is rejected")]
+    public async Task AuthorizeAsync_WhenStoredTenantIdDoesNotMatchHandle_FailsClosed()
+    {
+        var accessor = new DefaultTenantAccessor();
+        var acme = TenantWithDatabase("acme", "Tenant-Acme-Database");
+        var log = new AmbientDatabaseLog(accessor);
+        var clock = new TestClock();
+        var stateStore = new RecordingStateStore(new InMemoryExternalAuthenticationStateStore(clock), log);
+        var hasher = new HmacExternalAuthenticationHandleHasher();
+        var harness = CreatePreviewService(new BrokerSecurityTests.RecordingAdapter(), accessor, acme, stateStore, hasher, clock);
+        var (handle, start) = SeedPreviewStart(harness.CallbackTenant, hasher, acme, clock);
+
+        using (accessor.PushContext(acme))
+            await stateStore.PutAsync("PreviewStart", start.HandleHash, start, start.ExpiresAt);
+
+        // The in-memory store keeps the same BrokerTransaction instance seeded here.
+        start.TenantId = "other-tenant";
+        log.Clear();
+        Assert.Null(accessor.Tenant);
+
+        var result = await harness.Service.AuthorizeAsync(handle);
+
+        Assert.IsType<PreviewAuthorizeResult.Invalid>(result);
+        Assert.Equal(["Tenant-Acme-Database"], log.OnTake);
+        Assert.Null(accessor.Tenant);
+    }
+
+    [Fact(DisplayName = "The default single-tenant preview authorize restores the default tenant explicitly")]
+    public async Task AuthorizeAsync_WhenTenantIdIsDefault_UsesTheDefaultTenantDatabase()
+    {
+        var accessor = new DefaultTenantAccessor();
+        var defaultTenant = new Tenant
+        {
+            Id = Tenant.DefaultTenantId,
+            Name = "Default",
+            Configuration = Configuration("Default-Database")
+        };
+        var log = new AmbientDatabaseLog(accessor);
+        var clock = new TestClock();
+        var stateStore = new RecordingStateStore(new InMemoryExternalAuthenticationStateStore(clock), log);
+        var hasher = new HmacExternalAuthenticationHandleHasher();
+        var harness = CreatePreviewService(new BrokerSecurityTests.RecordingAdapter(), accessor, defaultTenant, stateStore, hasher, clock);
+        var (handle, start) = SeedPreviewStart(harness.CallbackTenant, hasher, defaultTenant, clock, tenantId: null);
+
+        using (accessor.PushContext(defaultTenant))
+            await stateStore.PutAsync("PreviewStart", start.HandleHash, start, start.ExpiresAt);
+
+        log.Clear();
+        Assert.Null(accessor.Tenant);
+
+        var result = await harness.Service.AuthorizeAsync(handle);
+
+        Assert.IsType<PreviewAuthorizeResult.Redirect>(result);
+        Assert.Equal(["Default-Database"], log.OnTake);
         Assert.DoesNotContain("<none>", log.OnTake);
         Assert.Null(accessor.Tenant);
     }
@@ -318,7 +415,9 @@ public class ExternalAuthenticationCallbackTenantDatabaseTests
             clients: clients);
     }
 
-    private static PreviewSignInService CreatePreviewService(
+    private sealed record PreviewHarness(PreviewSignInService Service, ExternalAuthenticationCallbackTenant CallbackTenant);
+
+    private static PreviewHarness CreatePreviewService(
         BrokerSecurityTests.RecordingAdapter adapter,
         ITenantAccessor accessor,
         Tenant tenant,
@@ -347,42 +446,71 @@ public class ExternalAuthenticationCallbackTenantDatabaseTests
             .Returns(call => ValueTask.FromResult(call.Arg<EffectiveIdentityProviderConnection>()));
         var adapters = new SingleAdapterRegistry(adapter);
         var management = new IdentityProviderConnectionManagementService(
-            null!,
+            Substitute.For<IIdentityProviderConnectionStore>(),
             registry,
             validityAssessor,
-            null!,
+            Substitute.For<IConnectionRegistryVersionStore>(),
             adapters,
             Substitute.For<IAdapterSettingsMigrationService>(),
-            null!,
-            null!,
-            null!,
+            Substitute.For<IUnlinkedIdentityPolicyRegistry>(),
+            Substitute.For<IExternalUserMatcherRegistry>(),
+            Substitute.For<IPermissionGrantSourceRegistry>(),
             [],
             [],
-            null!,
+            Substitute.For<IPermissionDelegationAuthorizer>(),
             new PermissionEvaluator(),
-            null!,
+            new ConnectionRevisionCalculator(),
             clock,
             options,
-            null!,
-            null!,
+            Substitute.For<Elsa.Identity.Contracts.IRoleAuthorizationService>(),
+            Substitute.For<IExternalAuthenticationSessionStore>(),
             new ServiceCollection().BuildServiceProvider(),
             NullLogger<IdentityProviderConnectionManagementService>.Instance);
         var dataProtection = new EphemeralDataProtectionProvider();
-        return new PreviewSignInService(
-            management,
-            adapters,
-            [],
-            [],
-            Substitute.For<IExternalIdentityProvisioner>(),
-            Substitute.For<IPermissionGrantResolver>(),
-            stateStore,
-            new InMemoryPreviewResultStore(clock),
-            hasher,
-            dataProtection,
-            new ExternalAuthenticationCallbackTenant(dataProtection, new MapTenantFinder(tenant), accessor),
-            clock,
-            options,
-            new ExternalAuthenticationSecurityNotifier(new ServiceCollection().BuildServiceProvider()));
+        var callbackTenant = new ExternalAuthenticationCallbackTenant(dataProtection, new MapTenantFinder(tenant), accessor);
+        return new PreviewHarness(
+            new PreviewSignInService(
+                management,
+                adapters,
+                [],
+                [],
+                Substitute.For<IExternalIdentityProvisioner>(),
+                Substitute.For<IPermissionGrantResolver>(),
+                stateStore,
+                new InMemoryPreviewResultStore(clock),
+                hasher,
+                dataProtection,
+                callbackTenant,
+                clock,
+                options,
+                new ExternalAuthenticationSecurityNotifier(new ServiceCollection().BuildServiceProvider())),
+            callbackTenant);
+    }
+
+    private static (string Handle, BrokerTransaction Start) SeedPreviewStart(
+        ExternalAuthenticationCallbackTenant callbackTenant,
+        IExternalAuthenticationHandleHasher hasher,
+        Tenant tenant,
+        ISystemClock clock,
+        string? tenantId = null,
+        string nonce = "preview-nonce")
+    {
+        var protectedTenantId = tenantId ?? tenant.Id;
+        var handle = callbackTenant.Protect(protectedTenantId, nonce, TimeSpan.FromMinutes(10));
+        var start = new BrokerTransaction
+        {
+            HandleHash = hasher.Hash(nonce),
+            Purpose = BrokerTransactionPurpose.Preview,
+            ClientId = "administrator-a",
+            CallbackUri = new Uri($"/external-authentication/previews/{Uri.EscapeDataString(handle)}/authorize", UriKind.Relative),
+            ReturnPath = "/",
+            TenantId = ExternalAuthenticationCallbackTenant.Normalize(protectedTenantId),
+            ConnectionId = "connection-a",
+            ConnectionMaterialRevision = "revision-a",
+            PkceChallenge = string.Empty,
+            ExpiresAt = clock.UtcNow.AddMinutes(10)
+        };
+        return (handle, start);
     }
 
     private static AuthenticationClient StudioClientWithLogout() =>
