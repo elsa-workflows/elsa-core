@@ -6,6 +6,8 @@ Date: 2026-11-11
 
 Proposed
 
+Amended by [Tenant-agnostic workflows share one row per unscheduled trigger](2026-11-20-tenant-agnostic-workflows-share-one-row-per-unscheduled-trigger.md): unscheduled triggers (HTTP, events, messages) of a `"*"` definition keep one shared `"*"` row; only scheduled triggers (timers, cron, `StartAt`) fan out per tenant, and a tenant's own published definition with the same ID wins over the `"*"` one.
+
 ## Context
 
 ADR 0009 established `"*"` (`Tenant.AgnosticTenantId`) as the sentinel value for tenant-agnostic entities. Such entities are visible to every tenant but are owned by no specific tenant. The follow-up ADR [2026-11-02-a-host-may-register-the-asterisk-tenant](2026-11-02-a-host-may-register-the-asterisk-tenant.md) clarified that a host *may* register a tenant whose ID is `"*"`, that a `"*"` tenant context grants no shared-write authority, and that workflow instances are never tenant-agnostic.
