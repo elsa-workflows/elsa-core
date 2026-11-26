@@ -506,7 +506,7 @@ class WorkflowShapeTests(unittest.TestCase):
                 self.assertNotIn("if", step, f"{name}: {step.get('name')}")
             self.assertNotRegex(job_text(job), r"[0-9]+\.[0-9]+\.[0-9]+")
         self.assertNotIn("if", self.jobs["retrieve_candidate"])
-        self.assertNotIn("3.10.1", self.source.split("  # --- Candidate promotion")[1])
+        self.assertNotIn("3.10.1", self.source.split("  # --- Candidate promotion")[1].split("  # --- Release evidence")[0])
 
     PUBLISH_TARGETS = {"publish_candidate_feedz": "feedz", "publish_candidate_nuget": "nuget"}
 
@@ -588,14 +588,17 @@ class WorkflowShapeTests(unittest.TestCase):
                 self.assertNotIn("if", step)
 
     def test_no_tag_is_created_or_required_and_docker_is_untouched(self):
-        promotion = self.source.split("  # --- Candidate promotion")[1]
+        promotion = self.source.split("  # --- Candidate promotion")[1].split("  # --- Release evidence")[0]
         for text in ("git/ref/tags", "git tag", "refs/tags", "git push", "docker"):
             self.assertNotIn(text, promotion.lower() if text == "docker" else promotion)
 
     def test_normal_push_and_tag_behaviour_is_unchanged(self):
         # The only edits to the build path are the two test jobs skipping while a candidate is promoted.
         for name in ("test_unit_integration", "test_component"):
-            self.assertEqual("${{ inputs.promote_candidate_version == '' }}", self.jobs[name]["if"])
+            self.assertEqual(
+                "${{ inputs.promote_candidate_version == '' && inputs.verify_release_evidence_version == '' }}",
+                self.jobs[name]["if"],
+            )
 
     def test_the_per_version_workflows_are_gone(self):
         for name in DELETED_WORKFLOWS:

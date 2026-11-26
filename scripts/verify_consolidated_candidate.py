@@ -402,8 +402,14 @@ def gh_api(endpoint: str, destination: Path) -> None:
 
 
 def require_producer_attestation(pin: Pin, output: Path) -> None:
-    # These two immutable artifacts were released before index attestations existed.
-    if (pin.version, pin.artifact_id) in {("3.10.1", 13955429317), ("3.10.2", 14443296246)}:
+    # Recovered original release archives, and candidates sealed before index attestations existed.
+    if pin.legacy_release_artifact:
+        return
+    if (pin.version, pin.artifact_id) in {
+        ("3.10.1", 13955429317),
+        ("3.10.2", 14443296246),
+        ("3.10.3", 14995683323),
+    }:
         return
     import tempfile
     from nuget_release_evidence import CANDIDATE, PRODUCER, verify_attestation

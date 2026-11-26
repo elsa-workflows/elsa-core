@@ -133,8 +133,8 @@ class ReleaseEvidenceTests(unittest.TestCase):
 
     def test_release_asset_retry_and_conflicting_existing_bytes(self):
         import yaml
-        workflow = Path(__file__).resolve().parents[1] / ".github/workflows/nuget-release-evidence.yml"
-        script = yaml.safe_load(workflow.read_text())["jobs"]["attach"]["steps"][-1]["run"]
+        workflow = Path(__file__).resolve().parents[1] / ".github/workflows/packages.yml"
+        script = yaml.safe_load(workflow.read_text())["jobs"]["attach_release_evidence"]["steps"][-1]["run"]
         local = self.root / "evidence"
         remote = self.root / "release"
         binary = self.root / "bin"
@@ -215,6 +215,34 @@ else:
             bundle.write_bytes(b"incomplete")
             with self.assertRaisesRegex(ValueError, "SBOM bundle"):
                 evidence.verify(self.version, "Elsa", "net10.0", "nuget", self.package, signed_index, bundle)
+
+    def test_evidence_jobs_live_in_packages_yml_and_the_separate_workflow_is_gone(self):
+        root = Path(__file__).resolve().parents[1]
+        self.assertFalse((root / ".github/workflows/nuget-release-evidence.yml").exists())
+        import yaml
+        jobs = yaml.safe_load((root / ".github/workflows/packages.yml").read_text())["jobs"]
+        self.assertEqual(
+            ["validate_publication_selection", "publish_candidate_feedz", "publish_candidate_nuget"],
+            jobs["select_release_evidence"]["needs"],
+        )
+        select_if = jobs["select_release_evidence"]["if"]
+        self.assertIn("always()", select_if)
+        self.assertIn("needs.publish_candidate_feedz.result == 'success'", select_if)
+        self.assertIn("needs.publish_candidate_nuget.result == 'success'", select_if)
+        self.assertIn("inputs.verify_release_evidence_version != ''", select_if)
+        self.assertEqual({"contents": "read"}, jobs["select_release_evidence"]["permissions"])
+        self.assertEqual({"actions": "read", "contents": "read", "attestations": "read"},
+                         jobs["build_release_evidence"]["permissions"])
+        self.assertEqual({"contents": "read", "id-token": "write", "attestations": "write"},
+                         jobs["attest_release_evidence"]["permissions"])
+        self.assertEqual({"contents": "write"}, jobs["attach_release_evidence"]["permissions"])
+        self.assertEqual({"contents": "read", "attestations": "read"},
+                         jobs["consume_release_evidence"]["permissions"])
+        # Publish jobs keep their names, environments and nuget.org Trusted Publishing permissions.
+        self.assertEqual("feedz-publish", jobs["publish_candidate_feedz"]["environment"])
+        self.assertEqual("nuget-org", jobs["publish_candidate_nuget"]["environment"])
+        self.assertEqual("write", jobs["publish_candidate_nuget"]["permissions"]["id-token"])
+
 
 
 if __name__ == "__main__":

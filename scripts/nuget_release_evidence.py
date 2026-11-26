@@ -21,7 +21,7 @@ import zipfile
 import verify_consolidated_candidate as candidates
 
 REPO = candidates.REPOSITORY
-SIGNER = f"{REPO}/.github/workflows/nuget-release-evidence.yml"
+SIGNER = f"{REPO}/.github/workflows/packages.yml"
 FEEDS = {
     "feedz": "https://f.feedz.io/elsa-workflows/elsa-3/nuget/v3/packages",
     "nuget": "https://api.nuget.org/v3-flatcontainer",
