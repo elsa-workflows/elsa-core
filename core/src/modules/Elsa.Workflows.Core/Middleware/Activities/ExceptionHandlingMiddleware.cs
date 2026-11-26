@@ -35,7 +35,8 @@ public class ExceptionHandlingMiddleware(ActivityMiddlewareDelegate next, IIncid
         }
         // A background run works on a throwaway copy of the workflow, so its exceptions escape to the background invoker,
         // which carries them back to the workflow. The fault is handled when the workflow resumes.
-        catch (Exception e) when (!context.GetIsBackgroundExecution())
+        // An activity that stops because its execution was cancelled has not faulted, so the cancellation goes through.
+        catch (Exception e) when (!context.GetIsBackgroundExecution() && !context.WorkflowExecutionContext.IsExecutionCancellation(e))
         {
             logger.LogWarning(e, "An exception was caught from a downstream middleware component");
             context.Fault(e);

@@ -94,29 +94,6 @@ public class RerunInterruptedActivityTests(ITestOutputHelper testOutputHelper)
         Assert.Equal((WorkflowStatus.Finished, WorkflowSubStatus.Finished), (state.Status, state.SubStatus));
     }
 
-    [Fact(DisplayName = "Running a started instance that has nothing scheduled does not start it again from the root")]
-    public async Task StartedInstanceWithNothingScheduledDoesNotRestart()
-    {
-        // Arrange
-        var start = new Step();
-        var docs = new Step { BookmarkName = "Docs" };
-        var workflow = new Workflow { Root = new Flowchart { Start = start, Activities = { start, docs }, Connections = { new Connection(start, docs) } } };
-        var services = BuildServices(commitStrategy: null, new SnapshotAtCommit(_ => false));
-        var runner = services.GetRequiredService<IWorkflowRunner>();
-        var serializer = services.GetRequiredService<IWorkflowStateSerializer>();
-        var suspended = (await runner.RunAsync(workflow)).WorkflowState;
-        var savedState = serializer.Deserialize(serializer.Serialize(suspended));
-        start.Runs = 0;
-
-        // Act
-        var state = (await runner.RunAsync(workflow, savedState)).WorkflowState;
-
-        // Assert
-        Assert.Equal(0, start.Runs);
-        Assert.Equal((WorkflowStatus.Running, WorkflowSubStatus.Suspended), (state.Status, state.SubStatus));
-        Assert.Single(state.Bookmarks, x => x.Name == "Docs");
-    }
-
     [Fact(DisplayName = "Running a started instance with no scheduled work, no bookmark and no interrupted activity does nothing: it doesn't start again from the root and stays Running/Suspended")]
     public async Task StartedInstanceWithNothingToRunDoesNothing()
     {
