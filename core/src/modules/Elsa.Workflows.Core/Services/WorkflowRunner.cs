@@ -166,24 +166,24 @@ public class WorkflowRunner(
                 if (activity != null) workflowExecutionContext.ScheduleActivity(activity);
             }
         }
-        else if (workflowExecutionContext.Scheduler.HasAny)
-        {
-            // Do nothing. The scheduler already has activities to schedule.
-        }
         else
         {
-            // Check if there are any interrupted activities.
-            var interruptedActivityExecutionContexts = workflowExecutionContext.ActivityExecutionContexts.Where(x => x.IsExecuting).ToList();
+            // Re-run activities that were interrupted while executing, next to any restored work items.
+            // Skip a context that already has a restored work item, so it doesn't run twice.
+            var interruptedActivityExecutionContexts = workflowExecutionContext.ActivityExecutionContexts
+                .Where(x => x.IsExecuting && !workflowExecutionContext.Scheduler.Any(workItem => workItem.ExistingActivityExecutionContext == x))
+                .ToList();
 
-            if (interruptedActivityExecutionContexts.Count > 0)
+            foreach (var interruptedActivityExecutionContext in interruptedActivityExecutionContexts)
             {
-                // Schedule the interrupted activities.
-                foreach (var pendingActivityExecutionContext in interruptedActivityExecutionContexts)
-                    workflowExecutionContext.ScheduleActivityExecutionContext(pendingActivityExecutionContext);
+                // Owned by its parent, like the original work item, so that the parent (e.g. a flowchart) doesn't complete before it has run.
+                var workItem = workflowExecutionContext.ScheduleActivityExecutionContext(interruptedActivityExecutionContext);
+                workItem.Owner = interruptedActivityExecutionContext.ParentActivityExecutionContext;
             }
-            else
+
+            // Only a fresh instance starts from the root: nothing is scheduled and no activity has run yet.
+            if (!workflowExecutionContext.Scheduler.HasAny && workflowExecutionContext.ActivityExecutionContexts.Count == 0)
             {
-                // Nothing was scheduled. Schedule the workflow itself.
                 var vars = variables?.Select(x => new Variable(x.Key, x.Value)).ToList();
                 var schedulingActivityExecutionId = options?.SchedulingActivityExecutionId;
                 var schedulingWorkflowInstanceId = options?.SchedulingWorkflowInstanceId;

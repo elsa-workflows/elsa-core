@@ -95,6 +95,10 @@ public class DefaultActivityInvokerMiddleware(ActivityMiddlewareDelegate next, I
             await mediator.SendAsync(new Notifications.ActivityCompleted(context), context.CancellationToken);
         }
 
+        // The activity has run, so it must not look interrupted in the commit below; otherwise recovery would run it again.
+        // The workflow-level flag stays set until the execution state is disposed.
+        context.IsExecuting = false;
+
         // Conditionally commit the workflow state.
         if (ShouldCommit(context, ActivityLifetimeEvent.ActivityExecuted))
             await context.WorkflowExecutionContext.CommitAsync();
