@@ -73,10 +73,53 @@ jobs:
           python3 -m unittest discover -s scripts/ci
           python3 scripts/ci/select_pr_suites.py
 
-  # .NET solution build and tests
-  ubuntu-latest:
+  # Which .NET projects this change affects, so ubuntu-latest builds and tests only those.
+  # https://stenbrinke.nl/blog/build-only-what-changed-in-your-dotnet-monorepo/
+  affected:
     needs: changes
     if: ${{ fromJSON(needs.changes.outputs.suites)['compile'] }}
+    name: Select affected projects
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: read # to find this workflow's last verified push run on a branch
+    outputs:
+      build: ${{ steps.decide.outputs.build }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+        with:
+          dotnet-version: |
+            10.x
+      - run: dotnet tool restore
+      # Only this step gets the token, so the PR's MSBuild evaluation never sees it.
+      - name: Find the commit to compare with
+        id: base
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/ci/select_affected_projects.py base >> "$GITHUB_OUTPUT"
+      - name: Decide what to build
+        id: decide
+        shell: bash # -eo pipefail, so a script failure fails the step
+        env:
+          BASE: ${{ steps.base.outputs.base }}
+        run: python3 scripts/ci/select_affected_projects.py decide | tee -a "$GITHUB_STEP_SUMMARY" >> "$GITHUB_OUTPUT"
+      - name: Upload the affected solution
+        if: steps.decide.outputs.build == 'affected'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: affected-solution
+          path: affected.slnx
+          if-no-files-found: error
+          retention-days: 7
+
+  # .NET solution build and tests: everything, only the affected projects, or nothing
+  ubuntu-latest:
+    needs: [changes, affected]
+    if: ${{ fromJSON(needs.changes.outputs.suites)['compile'] && needs.affected.outputs.build != 'none' }}
     name: ubuntu-latest
     runs-on: ubuntu-latest
     steps:
@@ -87,8 +130,15 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
+      - name: Download the affected solution
+        if: needs.affected.outputs.build == 'affected'
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: affected-solution
       - name: 'Run: Compile, Test'
-        run: ./build.cmd Compile Test
+        env:
+          SOLUTION: ${{ needs.affected.outputs.build == 'affected' && 'affected.slnx' || 'Elsa.sln' }}
+        run: ./build.cmd Compile Test --solution "$SOLUTION"
       - name: Upload test results and hang dumps
         if: failure()
         uses: actions/upload-artifact@v4
@@ -2011,3 +2061,53 @@ jobs:
           path: ${{ runner.temp }}/persisted-upgrade/retained-evidence
           if-no-files-found: warn
           retention-days: 7
+
+  # One check that always reports, whichever jobs above were skipped. Add new jobs to its needs.
+  result:
+    name: PR checks result
+    if: ${{ always() }}
+    needs:
+      - changes
+      - affected
+      - ubuntu-latest
+      - check-toc
+      - check
+      - build-product-filters
+      - validate-gates
+      - smoke
+      - admission-proof
+      - execution-cycle-proof
+      - store-tests
+      - mongo-atomic-proof
+      - retained-testing-helper
+      - import-rehearsal-tests
+      - select-tests
+      - run-affected-tests
+      - selector-and-plan
+      - pinned-source-tests
+      - released-artifact-proof
+      - mapped-source-artifact-proof
+      - prove
+      - pack-studio-core
+      - pack-slack-only
+      - select
+      - contracts
+      - plan
+      - pinned-source-contract
+      - studio-clientlibs
+      - provenance
+      - frontend-and-host
+      - projects
+      - images
+      - templates
+      - persisted-upgrade
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Show job results
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: echo "$NEEDS" | jq -r 'to_entries[] | "\(.key) \(.value.result)"'
+      - name: Fail when a job failed or was cancelled
+        if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+        run: exit 1
