@@ -78,6 +78,13 @@ public class ShellHostTests : IAsyncLifetime
 
         Assert.Empty(seenByA);
         Assert.Equal(["shared-trigger"], seenByB.Select(x => x.Id));
+
+        // The cache is the outermost store, so the override that hides the shared trigger above sits beneath it.
+        await InTenantAsync("a", sp =>
+        {
+            Assert.IsType<Elsa.Workflows.Runtime.Stores.CachingTriggerStore>(sp.GetRequiredService<ITriggerStore>());
+            return Task.CompletedTask;
+        });
     }
 
     private async Task<List<StoredTrigger>> FindAsync(string tenantId)

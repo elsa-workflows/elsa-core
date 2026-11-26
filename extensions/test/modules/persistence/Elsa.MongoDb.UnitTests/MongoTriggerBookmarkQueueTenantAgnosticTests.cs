@@ -82,8 +82,10 @@ public sealed class MongoTriggerBookmarkQueueTenantAgnosticTests : IAsyncLifetim
         Assert.Equal(2, agnostic.TotalCount);
     }
 
-    [Fact]
-    public async Task TriggerStore_DeleteMany_DeletesSharedRowOnlyInsideSharedWriteScope()
+    [Theory]
+    [InlineData("tenant-a")]
+    [InlineData(Tenant.AgnosticTenantId)]
+    public async Task TriggerStore_DeleteMany_DeletesSharedRowOnlyInsideSharedWriteScope(string tenantId)
     {
         // Arrange
         var shared = Trigger("trigger-shared");
@@ -94,7 +96,7 @@ public sealed class MongoTriggerBookmarkQueueTenantAgnosticTests : IAsyncLifetim
         // Act
         long withoutScope;
         long withScope;
-        using (var tenantA = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" }))
+        using (var tenant = _tenantAccessor.PushContext(new Tenant { Id = tenantId }))
         {
             withoutScope = await _triggerStore.DeleteManyAsync(filter);
 

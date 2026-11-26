@@ -429,6 +429,11 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
 
         return await result.OnSuccessAsync(async workflowDefinition =>
         {
+            // The import saved the definition, possibly changed under the same version ID, so what was derived from that version is stale.
+            // A stored definition that already matched is reused without coming here.
+            if (workflowDefinition.TenantId == Tenant.AgnosticTenantId)
+                TriggerIndexer.AsTriggerIndexer(_triggerIndexer, null)?.ForgetSharedDefinitionVersion(workflowDefinition.Id);
+
             if (indexTriggers && workflowDefinition.IsPublished)
                 await IndexProvidedTriggersAsync(workflowDefinition, allTenants, cancellationToken);
         });

@@ -23,6 +23,7 @@ namespace Elsa.Workflows.Runtime.UnitTests.Stores;
 public class TenantOverrideTriggerStoreTests
 {
     private readonly TenantOverrideTriggerStore _store;
+    private readonly IServiceProvider _services;
 
     public TenantOverrideTriggerStoreTests()
     {
@@ -34,7 +35,7 @@ public class TenantOverrideTriggerStoreTests
             new WorkflowDefinitionSummary { Id = "shared-v1", DefinitionId = "overridden", IsPublished = true, TenantId = Tenant.AgnosticTenantId },
             new WorkflowDefinitionSummary { Id = "own-v1", DefinitionId = "overridden", IsPublished = true, TenantId = "tenant-a" }
         ]);
-        var services = new ServiceCollection()
+        var services = _services = new ServiceCollection()
             .AddSingleton<ITenantAccessor>(tenantAccessor)
             .AddSingleton(definitionStore)
             .Configure<TenantsOptions>(options => options.IsEnabled = true)
@@ -74,6 +75,24 @@ public class TenantOverrideTriggerStoreTests
 
         Assert.Equal(["b-own"], page.Items.Select(x => x.Id));
         Assert.Equal(2, page.TotalCount);
+    }
+
+    [Fact(DisplayName = "A page is the store's own page when no hidden trigger matches the lookup")]
+    public async Task FindManyPaged_ReturnsStorePageWhenNoHiddenTriggerMatches()
+    {
+        var innerStore = Substitute.For<ITriggerStore>();
+        var filter = new TriggerFilter { Name = "Elsa.Timer" };
+        var pageArgs = PageArgs.FromRange(0, 1);
+        var storePage = Page.Of(new List<StoredTrigger> { Trigger("b-own", "tenant-a", "overridden", "own-v1") }, 1);
+        innerStore.FindManyAsync(filter, pageArgs, Arg.Any<CancellationToken>()).Returns(storePage);
+        innerStore.FindManyAsync(Arg.Any<TriggerFilter>(), Arg.Any<CancellationToken>()).Returns([Trigger("b-own", "tenant-a", "overridden", "own-v1")]);
+        var store = new TenantOverrideTriggerStore(innerStore, _services);
+
+        var page = await store.FindManyAsync(filter, pageArgs);
+
+        Assert.Same(storePage, page);
+        await innerStore.Received(1).FindManyAsync(Arg.Any<TriggerFilter>(), Arg.Any<CancellationToken>());
+        await innerStore.Received(1).FindManyAsync(Arg.Is<TriggerFilter>(x => x.WorkflowDefinitionIds != null && x.WorkflowDefinitionIds.SequenceEqual(new[] { "overridden" })), Arg.Any<CancellationToken>());
     }
 
     private static StoredTrigger Trigger(string id, string tenantId, string definitionId, string versionId) => new()

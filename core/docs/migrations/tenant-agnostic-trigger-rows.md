@@ -12,7 +12,9 @@
 - **Tenant overrides.** A tenant overrides a `"*"` definition while it has a published version of its own definition with the same definition ID. The trigger store then does not return the shared rows of that definition to the tenant, and the tenant gets no scheduled rows of it. A draft alone does not override. When the tenant retracts or deletes its last published version, the shared triggers apply to it again.
 - **HTTP endpoints with tenant route prefixes.** With the route-prefix tenant resolver, the endpoint of a `"*"` workflow is routed as `{tenantPrefix}/<base path>/<path>`, so it matches under every prefix, including one that names no tenant. Such a prefix leaves the tenant unresolved, and unless the host sets `MultitenancyOptions.RejectUnresolvedTenants`, the request falls back to the default tenant and runs the shared workflow there.
 - **Replaced trigger indexers.** These rules are implemented by Elsa's `TriggerIndexer`. A host that registers another `ITriggerIndexer` gets none of them on activation, after deletions or across tenants; Elsa logs a warning once when it finds one.
-- **Stores.** The Dapper trigger store honors `TriggerFilter.TenantAgnostic` on reads, and it and the MongoDB trigger store delete `"*"` rows inside a `SharedTenantWriteScope` for `StoredTrigger`. A `"*"` tenant context alone does not let the Dapper trigger store delete them.
+- **Stores.** The Dapper trigger store honors `TriggerFilter.TenantAgnostic` on reads. The Dapper and MongoDB trigger stores delete `"*"` rows only inside a `SharedTenantWriteScope` for `StoredTrigger`; a `"*"` tenant context alone does not let them. `TriggerFilter.TenantAgnostic` no longer widens a MongoDB `DeleteManyAsync` to other tenants: it always deletes within the current tenant, plus the `"*"` rows under the grant.
+- **Workflow definition summaries.** `WorkflowDefinitionSummary` has a new `TenantId` property, so the workflow definitions list endpoint now also returns `tenantId`.
+- **Trigger cache on shell hosts.** On hosts that use shell features with EF Core runtime persistence, the trigger store is now decorated by the trigger cache when `CachingWorkflowRuntimeFeature` is enabled. Before, the EF Core registration bypassed the cache there.
 
 ## Upgrading
 
@@ -22,11 +24,31 @@ Before the upgrade, each tenant's activation wrote rows stamped with that tenant
 - The first activation of a registered `"*"` tenant removes its scheduled rows of `"*"` definitions and unschedules their jobs.
 - **Transition window.** Until a tenant's first activation after the upgrade, it can see both its old row and the new shared row for the same trigger. HTTP then answers 500 ("The call is ambiguous and matches multiple workflows") for that trigger, and a stimulus starts two instances, one per row.
 
-Hosts that cannot accept this window delete the tenant-stamped rows of unscheduled triggers of `"*"` definitions before they start the new version. The first activation then writes the shared rows; until it has, those triggers are not found rather than matched twice. For the EF Core and Dapper table names (add your schema, for example `"Elsa".`, where your provider uses one):
+Hosts that cannot accept this window delete the tenant-stamped rows of unscheduled triggers of `"*"` definitions before they start the new version. The first activation then writes the shared rows; until it has, those triggers are not found rather than matched twice. The EF Core providers keep the `Triggers` and `WorkflowDefinitions` tables in the `Elsa` schema (or the schema set with `ElsaDbContextOptions.SchemaName`), except SQLite and MySQL, which have no schema there; Dapper creates them in the connection's default schema, so with Dapper use the statement for your database without the `Elsa` schema. The column names are the property names.
+
+PostgreSQL and Oracle (EF Core):
+
+```sql
+DELETE FROM "Elsa"."Triggers"
+WHERE ("TenantId" IS NULL OR "TenantId" <> '*')
+  AND "Name" NOT IN ('Elsa.Timer', 'Elsa.Cron', 'Elsa.StartAt')
+  AND "WorkflowDefinitionVersionId" IN (SELECT "Id" FROM "Elsa"."WorkflowDefinitions" WHERE "TenantId" = '*');
+```
+
+SQL Server (EF Core):
+
+```sql
+DELETE FROM [Elsa].[Triggers]
+WHERE ([TenantId] IS NULL OR [TenantId] <> '*')
+  AND [Name] NOT IN ('Elsa.Timer', 'Elsa.Cron', 'Elsa.StartAt')
+  AND [WorkflowDefinitionVersionId] IN (SELECT [Id] FROM [Elsa].[WorkflowDefinitions] WHERE [TenantId] = '*');
+```
+
+SQLite and MySQL:
 
 ```sql
 DELETE FROM Triggers
-WHERE COALESCE(TenantId, '') <> '*'
+WHERE (TenantId IS NULL OR TenantId <> '*')
   AND Name NOT IN ('Elsa.Timer', 'Elsa.Cron', 'Elsa.StartAt')
   AND WorkflowDefinitionVersionId IN (SELECT Id FROM WorkflowDefinitions WHERE TenantId = '*');
 ```

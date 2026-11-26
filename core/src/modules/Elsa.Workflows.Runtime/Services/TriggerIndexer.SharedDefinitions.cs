@@ -2,6 +2,7 @@ using Elsa.Caching;
 using Elsa.Common.Models;
 using Elsa.Common.Multitenancy;
 using Elsa.Mediator;
+using Elsa.Mediator.Contracts;
 using Elsa.Tenants.Options;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Helpers;
@@ -13,6 +14,7 @@ using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Notifications;
 using Elsa.Workflows.Runtime.Options;
+using Elsa.Workflows.Runtime.Services;
 using Elsa.Workflows.Runtime.Stores;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -62,7 +64,9 @@ public partial class TriggerIndexer
 
         if (publishedVersions.Count > 0)
         {
-            var derivedTriggers = await DeriveSharedTriggersAsync(publishedVersions, cancellationToken);
+            // What a tenant with its own database derives and writes concerns that database only, so it is not shared with other tenants.
+            var shareWork = TenantAccessor.Tenant?.HasOwnDatabase() != true;
+            var derivedTriggers = await DeriveSharedTriggersAsync(publishedVersions, shareWork, cancellationToken);
 
             // The shared rows exist before any tenant's own copies of them are removed, so a definition whose shared rows could not be
             // written keeps the tenant's copies until a later attempt.
@@ -70,7 +74,7 @@ public partial class TriggerIndexer
 
             foreach (var derived in derivedTriggers)
             {
-                if (await EnsureSharedRowsReconciledAsync(derived, cancellationToken))
+                if (await EnsureSharedRowsReconciledAsync(derived, shareWork, cancellationToken))
                     reconciledTriggers.Add(derived);
             }
 
@@ -88,11 +92,14 @@ public partial class TriggerIndexer
     /// Returns the triggers of the published versions, deriving those that this process has not derived yet. A version that cannot be
     /// derived is logged and skipped.
     /// </summary>
-    private async Task<List<SharedDefinitionTriggersCache.DerivedTriggers>> DeriveSharedTriggersAsync(IReadOnlyCollection<WorkflowDefinitionSummary> publishedVersions, CancellationToken cancellationToken)
+    /// <param name="publishedVersions">The published versions.</param>
+    /// <param name="shareWork">Whether the triggers are derived once per process for all tenants, or here for this tenant only.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    private async Task<List<SharedDefinitionTriggersCache.DerivedTriggers>> DeriveSharedTriggersAsync(IReadOnlyCollection<WorkflowDefinitionSummary> publishedVersions, bool shareWork, CancellationToken cancellationToken)
     {
         var cache = SharedTriggersCache;
         var cacheManager = _serviceProvider.GetService<ICacheManager>();
-        var missingVersionIds = publishedVersions.Select(x => x.Id).Where(x => !cache.ContainsDerived(x, cacheManager)).ToList();
+        var missingVersionIds = publishedVersions.Select(x => x.Id).Where(x => !shareWork || !cache.ContainsDerived(x, cacheManager)).ToList();
         var definitions = new Dictionary<string, WorkflowDefinition>();
 
         if (missingVersionIds.Count > 0)
@@ -104,7 +111,10 @@ public partial class TriggerIndexer
         {
             try
             {
-                result.Add(await cache.GetOrDeriveAsync(version.Id, sharedToken => DeriveAsync(version.Id, definitions.GetValueOrDefault(version.Id), sharedToken), cacheManager, cancellationToken));
+                var definition = definitions.GetValueOrDefault(version.Id);
+                result.Add(shareWork
+                    ? await cache.GetOrDeriveAsync(version.Id, sharedToken => DeriveAsync(version.Id, definition, sharedToken), cacheManager, cancellationToken)
+                    : await DeriveAsync(version.Id, definition, cancellationToken));
             }
             catch (Exception e) when (e is not OperationCanceledException)
             {
@@ -135,32 +145,45 @@ public partial class TriggerIndexer
     /// published by the time the definition's lock is held is skipped: whatever retracted or replaced it reconciled the rows. A failure is
     /// logged, and the next activation tries again.
     /// </summary>
-    private async Task<bool> EnsureSharedRowsReconciledAsync(SharedDefinitionTriggersCache.DerivedTriggers derived, CancellationToken cancellationToken)
+    /// <param name="derived">The triggers of the version.</param>
+    /// <param name="shareWork">Whether this is done once per process for all tenants, or here for this tenant's database only.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    private async Task<bool> EnsureSharedRowsReconciledAsync(SharedDefinitionTriggersCache.DerivedTriggers derived, bool shareWork, CancellationToken cancellationToken)
     {
         var workflow = derived.Workflow;
 
         try
         {
-            return await SharedTriggersCache.EnsureSharedRowsReconciledAsync(workflow.Identity.Id, async sharedToken =>
-            {
-                await using (await AcquireDefinitionLockAsync(workflow.Identity.DefinitionId, sharedToken))
-                {
-                    var filter = new WorkflowDefinitionFilter { Id = workflow.Identity.Id, VersionOptions = VersionOptions.Published };
-
-                    if (!await WorkflowDefinitionStore.AnyAsync(filter, sharedToken))
-                        return false;
-
-                    await ReconcileSharedTriggersAsync(workflow, derived.SharedTriggers.Select(x => CopyForTenant(x, Tenant.AgnosticTenantId)).ToList(), sharedToken);
-                    return true;
-                }
-            }, _serviceProvider.GetService<ICacheManager>(), cancellationToken);
+            return shareWork
+                ? await SharedTriggersCache.EnsureSharedRowsReconciledAsync(workflow.Identity.Id, ReconcileAsync, _serviceProvider.GetService<ICacheManager>(), cancellationToken)
+                : await ReconcileAsync(cancellationToken);
         }
         catch (Exception e) when (e is not OperationCanceledException)
         {
             _logger.LogError(e, "Failed to index the shared triggers of tenant-agnostic workflow definition {WorkflowDefinitionId}.", workflow.Identity.DefinitionId);
             return false;
         }
+
+        async Task<bool> ReconcileAsync(CancellationToken token)
+        {
+            await using (await AcquireDefinitionLockAsync(workflow.Identity.DefinitionId, token))
+            {
+                if (!await IsPublishedAsync(workflow.Identity.Id, token))
+                    return false;
+
+                await ReconcileSharedTriggersAsync(workflow, derived.SharedTriggers.Select(x => CopyForTenant(x, Tenant.AgnosticTenantId)).ToList(), token);
+                return true;
+            }
+        }
     }
+
+    private Task<bool> IsPublishedAsync(string workflowDefinitionVersionId, CancellationToken cancellationToken) =>
+        WorkflowDefinitionStore.AnyAsync(new WorkflowDefinitionFilter { Id = workflowDefinitionVersionId, VersionOptions = VersionOptions.Published }, cancellationToken);
+
+    /// <summary>
+    /// Forgets what this process derived from the tenant-agnostic definition version, after a provider import changed it in place.
+    /// </summary>
+    internal void ForgetSharedDefinitionVersion(string workflowDefinitionVersionId) => SharedTriggersCache.Forget(workflowDefinitionVersionId);
 
     /// <summary>
     /// Reconciles the activating tenant's copies of the published tenant-agnostic definition versions with one query for its rows of
@@ -198,17 +221,18 @@ public partial class TriggerIndexer
             {
                 // The tenant may publish a definition of its own with this ID meanwhile, and its publication removes the tenant's copies
                 // under this lock. Writing a copy therefore happens under the lock too, against the tenant's current definitions and rows.
+                // A version that was retracted or replaced meanwhile is left to whatever replaced it.
                 await using (await AcquireDefinitionLockAsync(definitionId, cancellationToken))
-                    await ReconcileTenantCopiesAsync(derived.Workflow, derived.ScheduledTriggers, false, cancellationToken);
+                {
+                    if (await IsPublishedAsync(derived.Workflow.Identity.Id, cancellationToken))
+                        await ReconcileTenantCopiesAsync(derived.Workflow, derived.ScheduledTriggers, false, cancellationToken);
+                }
 
                 continue;
             }
 
-            if (diff.Removed.Count == 0)
-                continue;
-
-            await _triggerStore.ReplaceAsync(diff.Removed, diff.Added, cancellationToken);
-            await _notificationSender.SendAsync(new WorkflowTriggersIndexed(new(derived.Workflow, diff.Added, diff.Removed, diff.Unchanged)), cancellationToken);
+            if (diff.Removed.Count > 0)
+                await RemoveTriggersAsync(derived.Workflow, diff.Removed.ToList(), true, cancellationToken);
         }
     }
 
@@ -276,15 +300,49 @@ public partial class TriggerIndexer
     /// Replaces the shared rows of the definition. Writing them requires a <see cref="SharedTenantWriteScope"/> for <see cref="StoredTrigger"/>,
     /// which the caller holds.
     /// </summary>
+    /// <remarks>
+    /// Every row stamped <c>*</c> counts, whatever its name. A scheduled trigger is never stored stamped <c>*</c>, so such a row is removed:
+    /// it is a registered <c>*</c> tenant's row from before the upgrade, or a trigger whose name became scheduled. It is unscheduled first,
+    /// in the registered <c>*</c> tenant's scope where there is one, because that is where it was scheduled.
+    /// </remarks>
     private async Task<IndexedWorkflowTriggers> ReconcileSharedTriggersAsync(Workflow workflow, ICollection<StoredTrigger> triggers, CancellationToken cancellationToken)
     {
-        var currentTriggers = await FindSharedTriggersAsync(new() { WorkflowDefinitionId = workflow.Identity.DefinitionId }, cancellationToken);
+        var currentTriggers = await FindSharedTriggersAsync(new() { WorkflowDefinitionId = workflow.Identity.DefinitionId }, true, cancellationToken);
         var diff = Diff.For(currentTriggers, triggers, _triggerEqualityComparer);
+        var scheduledNames = ScheduledTriggerNames;
+        var removedScheduledTriggers = diff.Removed.Where(x => IsScheduled(x, scheduledNames)).ToList();
+
+        if (removedScheduledTriggers.Count > 0)
+            await UnscheduleInAgnosticTenantAsync(workflow, removedScheduledTriggers, cancellationToken);
+
         await _triggerStore.ReplaceAsync(diff.Removed, diff.Added, cancellationToken);
 
-        var indexedWorkflow = new IndexedWorkflowTriggers(workflow, diff.Added, diff.Removed, diff.Unchanged);
+        var removedSharedTriggers = diff.Removed.Except(removedScheduledTriggers).ToList();
+        var indexedWorkflow = new IndexedWorkflowTriggers(workflow, diff.Added, removedSharedTriggers, diff.Unchanged);
         await _notificationSender.SendAsync(new WorkflowTriggersIndexed(indexedWorkflow), cancellationToken);
-        return indexedWorkflow;
+        return new(workflow, diff.Added, diff.Removed, diff.Unchanged);
+    }
+
+    /// <summary>
+    /// Sends the removal of rows stamped <c>*</c> with a scheduled name, so that the trigger scheduler unschedules them, in the scope of a
+    /// registered <c>*</c> tenant, or here when there is none.
+    /// </summary>
+    private async Task UnscheduleInAgnosticTenantAsync(Workflow workflow, List<StoredTrigger> removed, CancellationToken cancellationToken)
+    {
+        var notification = new WorkflowTriggersIndexed(new(workflow, [], removed, []));
+        // The tenant service knows only the tenants activated so far; the registry also knows one that activates later.
+        var agnosticTenant = _serviceProvider.GetService<ITenantService>() is { } tenantService ? await tenantService.FindAsync(Tenant.AgnosticTenantId, cancellationToken) : null;
+        agnosticTenant ??= _serviceProvider.GetService<ITenantsProvider>() is { } tenantsProvider ? await tenantsProvider.FindByIdAsync(Tenant.AgnosticTenantId, cancellationToken) : null;
+        var tenantScopeFactory = _serviceProvider.GetService<ITenantScopeFactory>();
+
+        if (agnosticTenant == null || tenantScopeFactory == null || CurrentTenantId == Tenant.AgnosticTenantId)
+        {
+            await _notificationSender.SendAsync(notification, NotificationStrategy.Sequential, cancellationToken);
+            return;
+        }
+
+        await using var scope = tenantScopeFactory.CreateScope(agnosticTenant);
+        await scope.ServiceProvider.GetRequiredService<INotificationSender>().SendAsync(notification, NotificationStrategy.Sequential, cancellationToken);
     }
 
     /// <summary>
@@ -298,7 +356,9 @@ public partial class TriggerIndexer
 
         await ForEachTenantAsync(async (indexer, tenantId) =>
         {
-            var result = await indexer.ReconcileTenantCopiesAsync(workflow, scheduledTriggers, false, cancellationToken);
+            // A tenant whose database does not hold the version, such as one with its own database, could not start it, so it gets no copies.
+            var resolvable = scheduledTriggers.Count == 0 || await indexer.WorkflowDefinitionStore.AnyAsync(new WorkflowDefinitionFilter { Id = workflow.Identity.Id }, cancellationToken);
+            var result = await indexer.ReconcileTenantCopiesAsync(workflow, resolvable ? scheduledTriggers : [], false, cancellationToken);
 
             if (tenantId == currentTenantId)
                 currentTenantResult = result;
@@ -352,11 +412,18 @@ public partial class TriggerIndexer
             return null;
 
         var diff = replaceAll ? Diff.From<StoredTrigger>(newTriggers, currentTriggers, []) : Diff.For(currentTriggers, newTriggers, comparer ?? _triggerEqualityComparer);
+
+        // Removed copies are unscheduled before they are deleted, so a failure leaves them to be found again; added copies are scheduled
+        // only once they are stored.
+        if (diff.Removed.Count > 0)
+            await _notificationSender.SendAsync(new WorkflowTriggersIndexed(new(sharedWorkflow, [], diff.Removed, [])), NotificationStrategy.Sequential, cancellationToken);
+
         await _triggerStore.ReplaceAsync(diff.Removed, diff.Added, cancellationToken);
 
-        var indexedWorkflow = new IndexedWorkflowTriggers(sharedWorkflow, diff.Added, diff.Removed, diff.Unchanged);
-        await _notificationSender.SendAsync(new WorkflowTriggersIndexed(indexedWorkflow), cancellationToken);
-        return indexedWorkflow;
+        if (diff.Added.Count > 0 || diff.Unchanged.Count > 0)
+            await _notificationSender.SendAsync(new WorkflowTriggersIndexed(new(sharedWorkflow, diff.Added, [], diff.Unchanged)), cancellationToken);
+
+        return new(sharedWorkflow, diff.Added, diff.Removed, diff.Unchanged);
     }
 
     /// <summary>
@@ -410,10 +477,20 @@ public partial class TriggerIndexer
         foreach (var group in triggers.Where(x => staleVersionIds.Contains(x.WorkflowDefinitionVersionId)).GroupBy(x => x.WorkflowDefinitionVersionId))
         {
             var removed = group.ToList();
-            var workflow = await FindWorkflowAsync(group.Key, removed[0].WorkflowDefinitionId, cancellationToken);
 
-            // Unscheduled before the rows are deleted, so a failure leaves them to be found again by the next activation.
-            await RemoveTriggersAsync(workflow, removed, true, cancellationToken);
+            // The version may have been published again meanwhile, which makes these rows current copies again.
+            await using (await AcquireDefinitionLockAsync(removed[0].WorkflowDefinitionId, cancellationToken))
+            {
+                var version = (await WorkflowDefinitionStore.FindSummariesAsync(new WorkflowDefinitionFilter { Id = group.Key }, cancellationToken)).FirstOrDefault();
+
+                if (version != null && (version.TenantId != Tenant.AgnosticTenantId || version.IsPublished))
+                    continue;
+
+                var workflow = await FindWorkflowAsync(group.Key, removed[0].WorkflowDefinitionId, cancellationToken);
+
+                // Unscheduled before the rows are deleted, so a failure leaves them to be found again by the next activation.
+                await RemoveTriggersAsync(workflow, removed, true, cancellationToken);
+            }
         }
     }
 
@@ -433,7 +510,7 @@ public partial class TriggerIndexer
         var result = triggers.Where(x => IsTenantRow(x, tenantId, scheduledNames)).ToList();
 
         if (SharedTenantWriteScope.IsGranted(typeof(WorkflowDefinition)))
-            result.AddRange(await FindSharedTriggersAsync(filter, cancellationToken));
+            result.AddRange(await FindSharedTriggersAsync(filter, false, cancellationToken));
 
         return result;
     }
@@ -467,7 +544,8 @@ public partial class TriggerIndexer
             return;
 
         // The copies that match the original filter, among the versions of tenant-agnostic definitions only.
-        var copyFilter = CopyFilter(filter, false);
+        var copyFilter = filter.Clone();
+        copyFilter.TenantAgnostic = false;
         copyFilter.WorkflowDefinitionVersionIds = filter.WorkflowDefinitionVersionIds?.Intersect(sharedVersionIds).ToList() ?? sharedVersionIds;
 
         await ForEachTenantAsync(async (indexer, tenantId) =>
@@ -503,14 +581,16 @@ public partial class TriggerIndexer
     }
 
     /// <summary>
-    /// Returns the shared rows that match the filter: the rows stamped <c>*</c> whose trigger is unscheduled. A tenant's lookups hide them
+    /// Returns the rows stamped <c>*</c> that match the filter, with or without those whose name is scheduled. A tenant's lookups hide them
     /// while the tenant overrides their definition, so they are read with a tenant-agnostic filter, in the current tenant's database.
     /// </summary>
-    private async Task<List<StoredTrigger>> FindSharedTriggersAsync(TriggerFilter filter, CancellationToken cancellationToken)
+    private async Task<List<StoredTrigger>> FindSharedTriggersAsync(TriggerFilter filter, bool includeScheduled, CancellationToken cancellationToken)
     {
-        var triggers = await _triggerStore.FindManyAsync(CopyFilter(filter, true), cancellationToken);
+        var tenantAgnosticFilter = filter.Clone();
+        tenantAgnosticFilter.TenantAgnostic = true;
+        var triggers = await _triggerStore.FindManyAsync(tenantAgnosticFilter, cancellationToken);
         var scheduledNames = ScheduledTriggerNames;
-        return triggers.Where(x => x.TenantId == Tenant.AgnosticTenantId && !IsScheduled(x, scheduledNames)).ToList();
+        return triggers.Where(x => x.TenantId == Tenant.AgnosticTenantId && (includeScheduled || !IsScheduled(x, scheduledNames))).ToList();
     }
 
     /// <summary>
@@ -566,7 +646,7 @@ public partial class TriggerIndexer
             }
             catch (Exception e) when (!throwOnFailure && e is not OperationCanceledException)
             {
-                _logger.LogError(e, "Failed to reconcile the triggers of tenant-agnostic workflow definitions for tenant {TenantId}; its next activation reconciles them again.", tenant.Id);
+                _logger.LogError(e, "Failed to reconcile the triggers of tenant-agnostic workflow definitions for tenant {TenantId}; its rows and schedules of them stay as they are until its next activation.", tenant.Id);
             }
         }
     }
@@ -613,20 +693,6 @@ public partial class TriggerIndexer
 
         public int GetHashCode(StoredTrigger obj) => HashCode.Combine(obj.WorkflowDefinitionVersionId, obj.ActivityId, obj.Name);
     }
-
-    private static TriggerFilter CopyFilter(TriggerFilter filter, bool tenantAgnostic) => new()
-    {
-        Id = filter.Id,
-        Ids = filter.Ids,
-        WorkflowDefinitionId = filter.WorkflowDefinitionId,
-        WorkflowDefinitionIds = filter.WorkflowDefinitionIds,
-        WorkflowDefinitionVersionId = filter.WorkflowDefinitionVersionId,
-        WorkflowDefinitionVersionIds = filter.WorkflowDefinitionVersionIds,
-        Name = filter.Name,
-        Names = filter.Names,
-        Hash = filter.Hash,
-        TenantAgnostic = tenantAgnostic
-    };
 
     private static bool IsScheduled(StoredTrigger trigger, ISet<string> scheduledNames) => trigger.Name != null && scheduledNames.Contains(trigger.Name);
 

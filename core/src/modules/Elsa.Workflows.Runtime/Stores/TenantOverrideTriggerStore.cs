@@ -69,9 +69,10 @@ internal class TenantOverrideTriggerStore(ITriggerStore decoratedStore, IService
     public ValueTask<long> DeleteManyAsync(TriggerFilter filter, CancellationToken cancellationToken = default) => decoratedStore.DeleteManyAsync(filter, cancellationToken);
 
     /// <summary>
-    /// Returns the requested page of the triggers the tenant sees. While the tenant overrides no tenant-agnostic definition, that is the
-    /// store's page. Otherwise the store cannot leave out the hidden rows itself, so the lookup is filtered, counted and paged here; a
-    /// page then never comes back short because of rows hidden on it, and its total count is exact.
+    /// Returns the requested page of the triggers the tenant sees. While no shared trigger of a definition the tenant overrides matches the
+    /// lookup, that is the store's page; finding out takes one query for the matching rows of the overridden definitions only. Otherwise
+    /// the store cannot leave out the hidden rows itself, so the lookup is filtered, counted and paged here; a page then never comes back
+    /// short because of rows hidden on it, and its total count is exact.
     /// </summary>
     private async Task<Page<StoredTrigger>> FindPageAsync<TProp>(TriggerFilter filter, PageArgs pageArgs, StoredTriggerOrder<TProp> order, Func<ValueTask<Page<StoredTrigger>>> findStorePage, CancellationToken cancellationToken)
     {
@@ -80,7 +81,7 @@ internal class TenantOverrideTriggerStore(ITriggerStore decoratedStore, IService
 
         var overriddenDefinitionIds = await FindOverriddenDefinitionIdsAsync(null, cancellationToken);
 
-        if (overriddenDefinitionIds.Count == 0)
+        if (overriddenDefinitionIds.Count == 0 || !await MatchesHiddenTriggerAsync(filter, overriddenDefinitionIds, cancellationToken))
             return await findStorePage();
 
         var triggers = Hide(await decoratedStore.FindManyAsync(filter, cancellationToken), overriddenDefinitionIds).AsQueryable();
@@ -96,6 +97,22 @@ internal class TenantOverrideTriggerStore(ITriggerStore decoratedStore, IService
         var sharedDefinitionIds = triggers.Where(x => x.TenantId == Tenant.AgnosticTenantId).Select(x => x.WorkflowDefinitionId).Distinct().ToList();
         var overriddenDefinitionIds = await FindOverriddenDefinitionIdsAsync(sharedDefinitionIds, cancellationToken);
         return overriddenDefinitionIds.Count == 0 ? triggers : Hide(triggers, overriddenDefinitionIds).ToList();
+    }
+
+    private async Task<bool> MatchesHiddenTriggerAsync(TriggerFilter filter, IReadOnlySet<string> overriddenDefinitionIds, CancellationToken cancellationToken)
+    {
+        var definitionIds = overriddenDefinitionIds
+            .Where(x => filter.WorkflowDefinitionId == null || filter.WorkflowDefinitionId == x)
+            .Where(x => filter.WorkflowDefinitionIds == null || filter.WorkflowDefinitionIds.Contains(x))
+            .ToList();
+
+        if (definitionIds.Count == 0)
+            return false;
+
+        var overriddenFilter = filter.Clone();
+        overriddenFilter.WorkflowDefinitionIds = definitionIds;
+        var triggers = await decoratedStore.FindManyAsync(overriddenFilter, cancellationToken);
+        return triggers.Any(x => x.TenantId == Tenant.AgnosticTenantId);
     }
 
     private bool AppliesTo(TriggerFilter filter) =>

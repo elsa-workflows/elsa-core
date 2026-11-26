@@ -53,6 +53,17 @@ internal sealed class SharedDefinitionTriggersCache
         GetOrRunAsync(GetState(cacheManager).ReconciledVersions, versionId, reconcile, cancellationToken);
 
     /// <summary>
+    /// Forgets what this node derived and reconciled for the version, for example after a provider import changed it in place. Every node
+    /// imports the provider itself, so the other nodes are not told.
+    /// </summary>
+    public void Forget(string versionId)
+    {
+        var state = _state;
+        state.Derived.TryRemove(versionId, out _);
+        state.ReconciledVersions.TryRemove(versionId, out _);
+    }
+
+    /// <summary>
     /// Forgets everything, on this node and, when there is a cache manager, on the others.
     /// </summary>
     public async Task InvalidateAsync(ICacheManager? cacheManager, CancellationToken cancellationToken)

@@ -235,10 +235,13 @@ public class Tests(ITestOutputHelper testOutputHelper) : IAsyncDisposable
         Assert.Single(await FindTriggersAsync("a", ownRowOfA.Hash!));
     }
 
-    [Fact(DisplayName = "Activation of a registered \"*\" tenant removes and unschedules its scheduled rows of tenant-agnostic definitions")]
-    public async Task ActivationOfAgnosticTenantRemovesItsScheduledRows()
+    [Theory(DisplayName = "Activation removes and unschedules a scheduled row stamped \"*\", with and without a registered \"*\" tenant")]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task ActivationRemovesScheduledRowsStampedAgnostic(bool registerAgnosticTenant)
     {
-        var services = Build(true);
+        // A registered "*" tenant's row from before the upgrade, or a trigger whose name has since become scheduled.
+        var services = Build(registerAgnosticTenant);
         var sharedVersion = await SeedDefinitionAsync(Tenant.AgnosticTenantId, "shared-v1", TimerActivity());
         var legacyTimer = new StoredTrigger
         {
@@ -254,7 +257,10 @@ public class Tests(ITestOutputHelper testOutputHelper) : IAsyncDisposable
         await ActivateAsync(services);
 
         Assert.Equal(["a", "b"], (await RowsAsync(SharedDefinitionId)).Select(x => x.TenantId).Order());
-        Assert.Contains(("unschedule", legacyTimer.Id, Tenant.AgnosticTenantId), _scheduler.Calls);
+        var unschedule = Assert.Single(_scheduler.Calls, x => x is { Action: "unschedule", TaskName: "legacy-timer" });
+
+        if (registerAgnosticTenant)
+            Assert.Equal(Tenant.AgnosticTenantId, unschedule.TenantId);
     }
 
     [Fact(DisplayName = "Activation keeps the timer of a tenant's own definition")]
