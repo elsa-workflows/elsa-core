@@ -103,6 +103,7 @@ jobs:
         run: python3 scripts/ci/select_affected_projects.py base >> "$GITHUB_OUTPUT"
       - name: Decide what to build
         id: decide
+        shell: bash # -eo pipefail, so a script failure fails the step
         env:
           BASE: ${{ steps.base.outputs.base }}
         run: python3 scripts/ci/select_affected_projects.py decide | tee -a "$GITHUB_STEP_SUMMARY" >> "$GITHUB_OUTPUT"

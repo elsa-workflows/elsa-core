@@ -59,8 +59,17 @@ class DecideTests(unittest.TestCase):
         self.assertEqual("affected", self.decide(("M", "core/src/modules/Elsa.Http/Foo.cs"), rc=0))
         self.assertEqual("none", self.decide(("M", "core/src/Foo.cs"), ("A", "docs/x.png"), rc=166))
 
-    def test_a_deletion_with_nothing_affected_builds_everything(self):
-        self.assertEqual("all", self.decide(("D", "core/test/unit/Shared/FastEndpoints/Helper.cs"), rc=166))
+    def test_a_deletion_builds_everything(self):
+        shared = ("D", "core/test/unit/Shared/FastEndpoints/FastEndpointsCollection.cs")
+        # Only the deletion: dotnet-affected would report nothing affected.
+        self.assertEqual("all", self.decide(shared, rc=166))
+        # Deletion plus an edit elsewhere: dotnet-affected would report only the edited project.
+        self.assertEqual("all", self.decide(shared, ("M", "core/src/modules/Elsa.Http/Foo.cs"), rc=0))
+
+    def test_a_deletion_is_decided_without_running_dotnet_affected(self):
+        def run_affected():
+            raise AssertionError("dotnet-affected should not run")
+        self.assertEqual("all", decide([("D", "core/src/Foo.cs")], run_affected)[0])
 
     def test_any_other_exit_code_fails(self):
         with self.assertRaises(SystemExit):

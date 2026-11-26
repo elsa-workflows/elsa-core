@@ -73,15 +73,15 @@ def decide(changes, run_affected):
     hits = [path for _, path in changes if any(glob.fullmatch(path) for glob in ALWAYS_BUILD)]
     if hits:
         return "all", "a file on the always-build list changed: " + " ".join(hits)
+    # dotnet-affected can't attribute a deleted file that another project linked in
+    # (for example core/test/unit/Shared/FastEndpoints/*.cs), so any deletion builds everything.
+    deleted = [path for status, path in changes if status == "D"]
+    if deleted:
+        return "all", "files were deleted: " + " ".join(deleted)
     rc = run_affected()
     if rc == 0:
         return "affected", "dotnet-affected found affected projects"
     if rc == NOTHING_AFFECTED:
-        # A deleted file that a glob outside its project linked in (for example
-        # core/test/unit/Shared/FastEndpoints/*.cs) leaves nothing to attribute it to.
-        deleted = [path for status, path in changes if status == "D"]
-        if deleted:
-            return "all", "nothing is affected, but files were deleted: " + " ".join(deleted)
         return "none", "no project in Elsa.sln is affected"
     raise SystemExit(f"dotnet-affected failed with exit code {rc}")
 
