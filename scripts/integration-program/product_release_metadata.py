@@ -15,6 +15,7 @@ from prove_consolidated_packages import dependency_groups, framework_reference_g
 ROOT = Path(__file__).resolve().parents[2]
 SDK = '10.0.300'
 CORE_REFS = {'3.8': 'refs/heads/release/3.8.4', '3.9': 'refs/heads/release/3.9.0'}
+# TEMPORARY stopgap until the planner moves to SDK 10.0.400 (#9335); remove then.
 # Pull request rehearsals plan core from these commits on CORE_REFS, like the studio and
 # extensions descendants below, so a later commit on a release branch can't fail unrelated PRs.
 # Manual runs still observe the live branch tip.
