@@ -59,13 +59,16 @@ public class ExternalAuthenticationBenchmarks
         });
         var unused = new UnusedBrokerDependencies();
         var validityAssessor = new AssumeValidConnectionValidityAssessor();
+        var dataProtection = new EphemeralDataProtectionProvider();
+        var tenantAccessor = new DefaultTenantAccessor();
+        var callbackTenant = new ExternalAuthenticationCallbackTenant(dataProtection, new BenchmarkTenantFinder(), tenantAccessor);
         _broker = new ExternalAuthenticationBroker(
             _discoveryRegistry,
             validityAssessor,
             [adapter],
             [],
             _hasher,
-            new EphemeralDataProtectionProvider(),
+            dataProtection,
             unused,
             unused,
             new InMemoryExternalAuthenticationStateStore(clock),
@@ -77,7 +80,8 @@ public class ExternalAuthenticationBenchmarks
             unused,
             unused,
             unused,
-            new DefaultTenantAccessor(),
+            tenantAccessor,
+            callbackTenant,
             clock,
             options);
     }
@@ -174,5 +178,14 @@ public class ExternalAuthenticationBenchmarks
     private sealed class FixedClock : ISystemClock
     {
         public DateTimeOffset UtcNow => new(2026, 7, 24, 0, 0, 0, TimeSpan.Zero);
+    }
+}
+
+file sealed class BenchmarkTenantFinder : ITenantFinder
+{
+    public Task<Tenant?> FindByIdAsync(string tenantId, CancellationToken cancellationToken = default)
+    {
+        tenantId = string.IsNullOrEmpty(tenantId) ? Tenant.DefaultTenantId : tenantId;
+        return Task.FromResult<Tenant?>(tenantId == Tenant.DefaultTenantId ? Tenant.Default : new Tenant { Id = tenantId, Name = tenantId });
     }
 }

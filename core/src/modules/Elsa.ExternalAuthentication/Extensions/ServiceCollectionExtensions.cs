@@ -63,6 +63,9 @@ public static class ServiceCollectionExtensions
         // role-deletion contributor's tenant boundary -- so it depends on an accessor whether or not a host
         // enabled multitenancy. TryAdd keeps a host's own registration.
         services.TryAddSingleton<ITenantAccessor, DefaultTenantAccessor>();
+        services.TryAddSingleton<ITenantsProvider, DefaultTenantsProvider>();
+        services.TryAddSingleton<ITenantFinder, DefaultTenantFinder>();
+        services.TryAddSingleton<ExternalAuthenticationCallbackTenant>();
 
         services.TryAddSingleton<ConnectionRevisionCalculator>();
         services.TryAddSingleton<FinalLoginPathGuard>();

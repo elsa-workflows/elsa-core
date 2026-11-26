@@ -35,6 +35,7 @@ public sealed class ExternalAuthenticationBroker(
     IElsaTokenService elsaTokenService,
     IIdentityRefreshTokenService identityRefreshTokenService,
     ITenantAccessor tenantAccessor,
+    ExternalAuthenticationCallbackTenant callbackTenant,
     ISystemClock clock,
     IOptions<ExternalAuthenticationOptions> options,
     ExternalAuthenticationSecurityNotifier? notifier = null) : IExternalAuthenticationBroker
@@ -118,10 +119,11 @@ public sealed class ExternalAuthenticationBroker(
             return BrokerInitiationResult.Fail(error);
         }
 
-        var state = CreateOpaqueValue();
+        var nonce = CreateOpaqueValue();
+        var state = callbackTenant.Protect(targetTenantId, nonce, options.Value.Lifetimes.BrokerTransactionLifetime);
         var transaction = new BrokerTransaction
         {
-            HandleHash = Hash(state),
+            HandleHash = Hash(nonce),
             Purpose = BrokerTransactionPurpose.ExternalSignIn,
             ClientId = request.ClientId,
             CallbackUri = request.RedirectUri,
@@ -164,9 +166,13 @@ public sealed class ExternalAuthenticationBroker(
 
     public async ValueTask<BrokerCallbackResult> CompleteCallbackAsync(string connectionKey, string state, IReadOnlyDictionary<string, IReadOnlyCollection<string>> parameters, CancellationToken cancellationToken = default)
     {
-        var taken = await stateStore.TryTakeAsync<BrokerTransaction>(BrokerTransactionPurpose.ExternalSignIn.ToString(), Hash(state), cancellationToken);
-        if (taken is not TakeResult<BrokerTransaction>.Taken { Value: var transaction })
-            return await CallbackOutcomeAsync(BrokerCallbackResult.Fail(BrokerErrorFactory.Create(taken is TakeResult<BrokerTransaction>.Expired ? BrokerErrorCategory.FlowExpired : BrokerErrorCategory.InvalidRequest)), "external", "callback", null, connectionKey, cancellationToken);
+        var resolved = await callbackTenant.TryResolveAsync(state, cancellationToken);
+        if (resolved is null)
+            return await CallbackOutcomeAsync(BrokerCallbackResult.Fail(BrokerErrorFactory.Create(BrokerErrorCategory.InvalidRequest)), "external", "callback", null, connectionKey, cancellationToken);
+        using var opened = resolved.Push();
+        var taken = await stateStore.TryTakeAsync<BrokerTransaction>(BrokerTransactionPurpose.ExternalSignIn.ToString(), Hash(opened.Nonce), cancellationToken);
+        if (taken is not TakeResult<BrokerTransaction>.Taken { Value: var transaction } || !callbackTenant.MatchesStoredTenantId(opened.TenantId, transaction.TenantId))
+            return await CallbackOutcomeAsync(BrokerCallbackResult.Fail(BrokerErrorFactory.Create(taken is TakeResult<BrokerTransaction>.Expired ? BrokerErrorCategory.FlowExpired : BrokerErrorCategory.InvalidRequest)), "external", "callback", opened.TenantId, connectionKey, cancellationToken);
         if (!string.Equals(transaction.ConnectionKey, ConnectionRevisionCalculator.NormalizeKey(connectionKey), StringComparison.Ordinal))
             return await FailTrustedCallbackAsync(transaction, BrokerErrorCategory.InvalidRequest, cancellationToken);
 
@@ -459,10 +465,11 @@ public sealed class ExternalAuthenticationBroker(
         if (adapter is null)
             return await LogoutOutcomeAsync(BrokerLogoutResult.Fail(BrokerErrorFactory.Create(BrokerErrorCategory.MethodUnavailable)), "upstream", cancellationToken);
 
-        var state = CreateOpaqueValue();
+        var nonce = CreateOpaqueValue();
+        var state = callbackTenant.Protect(session.TenantId, nonce, options.Value.Lifetimes.BrokerTransactionLifetime);
         var transaction = new BrokerTransaction
         {
-            HandleHash = Hash(state),
+            HandleHash = Hash(nonce),
             Purpose = BrokerTransactionPurpose.UpstreamLogout,
             ClientId = request.ClientId,
             CallbackUri = request.PostLogoutRedirectUri,
@@ -513,9 +520,13 @@ public sealed class ExternalAuthenticationBroker(
 
     public async ValueTask<BrokerCallbackResult> CompleteLogoutAsync(string connectionKey, string state, CancellationToken cancellationToken = default)
     {
-        var taken = await stateStore.TryTakeAsync<BrokerTransaction>(BrokerTransactionPurpose.UpstreamLogout.ToString(), Hash(state), cancellationToken);
-        if (taken is not TakeResult<BrokerTransaction>.Taken { Value: var transaction })
-            return await CallbackOutcomeAsync(BrokerCallbackResult.Fail(BrokerErrorFactory.Create(taken is TakeResult<BrokerTransaction>.Expired ? BrokerErrorCategory.FlowExpired : BrokerErrorCategory.InvalidRequest)), "logout", "callback", null, connectionKey, cancellationToken);
+        var resolved = await callbackTenant.TryResolveAsync(state, cancellationToken);
+        if (resolved is null)
+            return await CallbackOutcomeAsync(BrokerCallbackResult.Fail(BrokerErrorFactory.Create(BrokerErrorCategory.InvalidRequest)), "logout", "callback", null, connectionKey, cancellationToken);
+        using var opened = resolved.Push();
+        var taken = await stateStore.TryTakeAsync<BrokerTransaction>(BrokerTransactionPurpose.UpstreamLogout.ToString(), Hash(opened.Nonce), cancellationToken);
+        if (taken is not TakeResult<BrokerTransaction>.Taken { Value: var transaction } || !callbackTenant.MatchesStoredTenantId(opened.TenantId, transaction.TenantId))
+            return await CallbackOutcomeAsync(BrokerCallbackResult.Fail(BrokerErrorFactory.Create(taken is TakeResult<BrokerTransaction>.Expired ? BrokerErrorCategory.FlowExpired : BrokerErrorCategory.InvalidRequest)), "logout", "callback", opened.TenantId, connectionKey, cancellationToken);
         if (!string.Equals(transaction.ConnectionKey, ConnectionRevisionCalculator.NormalizeKey(connectionKey), StringComparison.Ordinal))
             return await CallbackOutcomeAsync(BrokerCallbackResult.Fail(BrokerErrorFactory.Create(BrokerErrorCategory.InvalidRequest)), "logout", "callback", transaction.TenantId, connectionKey, cancellationToken);
         var connection = await connectionRegistry.FindByIdAsync(transaction.TenantId, transaction.ConnectionId!, cancellationToken);
