@@ -83,7 +83,7 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: read
-      actions: read # to find this workflow's last successful run on a branch
+      actions: read # to find this workflow's last verified push run on a branch
     outputs:
       build: ${{ steps.decide.outputs.build }}
     steps:
@@ -95,65 +95,17 @@ jobs:
           dotnet-version: |
             10.x
       - run: dotnet tool restore
+      # Only this step gets the token, so the PR's MSBuild evaluation never sees it.
+      - name: Find the commit to compare with
+        id: base
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/ci/select_affected_projects.py base >> "$GITHUB_OUTPUT"
       - name: Decide what to build
         id: decide
         env:
-          GH_TOKEN: ${{ github.token }}
-          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          MERGE_GROUP_BASE_SHA: ${{ github.event.merge_group.base_sha }}
-        run: |
-          # Writes build=all, build=affected (with affected.slnx) or build=none.
-          decide() {
-            echo "build=$1" >> "$GITHUB_OUTPUT"
-            echo "Build $1: $2" | tee -a "$GITHUB_STEP_SUMMARY"
-          }
-
-          # The commit to compare with.
-          case "$GITHUB_EVENT_NAME" in
-            pull_request) base="$PR_BASE_SHA" ;;
-            merge_group) base="$MERGE_GROUP_BASE_SHA" ;;
-            push)
-              # The last commit this workflow verified on this branch, so a failed or
-              # cancelled run's changes are still built by the next one.
-              base=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/pr.yml/runs?branch=$GITHUB_REF_NAME&event=push&status=success&per_page=1" \
-                --jq '.workflow_runs[0].head_sha // empty') || base="" ;;
-            *) base="" ;;
-          esac
-
-          if [ -z "$base" ] || ! git fetch --no-tags --depth=1 origin "$base"; then
-            decide all "no base commit to compare with ($GITHUB_EVENT_NAME)"; exit 0
-          fi
-          echo "Comparing $base..$GITHUB_SHA"
-
-          # Files the project graph can't see, but that change how everything builds.
-          always_build=(
-            ':(glob).github/workflows/*'
-            ':(glob)global.json'
-            ':(glob,icase)**/nuget.config'
-            ':(glob)**/Directory.Build.*'
-            ':(glob)**/Directory.Packages.props'
-            ':(glob)build/**'
-            ':(glob).nuke/**'
-          )
-          changed=$(git diff --name-only "$base" HEAD -- "${always_build[@]}")
-          if [ -n "$changed" ]; then
-            decide all "a file on the always-build list changed: $(echo "$changed" | tr '\n' ' ')"; exit 0
-          fi
-
-          rc=0
-          dotnet affected --from "$base" --uncommitted none --filter-file-path Elsa.sln \
-            --format text --output-name affected || rc=$?
-          case $rc in
-            0)
-              # Nuke can't load a .slnf, so put the affected projects in a solution of their own.
-              dotnet new sln --name affected --format slnx
-              sed "s|^$GITHUB_WORKSPACE/||" affected.txt | xargs -d '\n' dotnet sln affected.slnx add --include-references false
-              test "$(grep -c '<Project ' affected.slnx)" -eq "$(wc -l < affected.txt)"
-              decide affected "$(wc -l < affected.txt) of $(grep -c '\.csproj"' Elsa.sln) projects in Elsa.sln"
-              sed "s|^$GITHUB_WORKSPACE/|- |" affected.txt >> "$GITHUB_STEP_SUMMARY" ;;
-            166) decide none "no project in Elsa.sln is affected" ;;
-            *) echo "dotnet-affected failed with exit code $rc"; exit $rc ;;
-          esac
+          BASE: ${{ steps.base.outputs.base }}
+        run: python3 scripts/ci/select_affected_projects.py decide | tee -a "$GITHUB_STEP_SUMMARY" >> "$GITHUB_OUTPUT"
       - name: Upload the affected solution
         if: steps.decide.outputs.build == 'affected'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
