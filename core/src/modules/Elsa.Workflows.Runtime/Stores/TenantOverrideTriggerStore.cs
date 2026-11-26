@@ -1,9 +1,10 @@
+using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Common.Multitenancy;
+using Elsa.Extensions;
 using Elsa.Tenants.Options;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Filters;
-using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.OrderDefinitions;
@@ -24,8 +25,6 @@ namespace Elsa.Workflows.Runtime.Stores;
 /// </remarks>
 internal class TenantOverrideTriggerStore(ITriggerStore decoratedStore, IServiceProvider serviceProvider) : ITriggerStore
 {
-    private static readonly Tenant SharedView = new() { Id = Tenant.AgnosticTenantId, Name = Tenant.AgnosticTenantId };
-
     /// <inheritdoc />
     public ValueTask SaveAsync(StoredTrigger record, CancellationToken cancellationToken = default) => decoratedStore.SaveAsync(record, cancellationToken);
 
@@ -53,15 +52,14 @@ internal class TenantOverrideTriggerStore(ITriggerStore decoratedStore, IService
     /// <inheritdoc />
     public async ValueTask<Page<StoredTrigger>> FindManyAsync(TriggerFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
-        var page = await decoratedStore.FindManyAsync(filter, pageArgs, cancellationToken);
-        return await HideOverriddenAsync(page, filter, cancellationToken);
+        var order = new StoredTriggerOrder<string>(x => x.Id, OrderDirection.Ascending);
+        return await FindPageAsync(filter, pageArgs, order, () => decoratedStore.FindManyAsync(filter, pageArgs, cancellationToken), cancellationToken);
     }
 
     /// <inheritdoc />
     public async ValueTask<Page<StoredTrigger>> FindManyAsync<TProp>(TriggerFilter filter, PageArgs pageArgs, StoredTriggerOrder<TProp> order, CancellationToken cancellationToken = default)
     {
-        var page = await decoratedStore.FindManyAsync(filter, pageArgs, order, cancellationToken);
-        return await HideOverriddenAsync(page, filter, cancellationToken);
+        return await FindPageAsync(filter, pageArgs, order, () => decoratedStore.FindManyAsync(filter, pageArgs, order, cancellationToken), cancellationToken);
     }
 
     /// <inheritdoc />
@@ -70,46 +68,53 @@ internal class TenantOverrideTriggerStore(ITriggerStore decoratedStore, IService
     /// <inheritdoc />
     public ValueTask<long> DeleteManyAsync(TriggerFilter filter, CancellationToken cancellationToken = default) => decoratedStore.DeleteManyAsync(filter, cancellationToken);
 
-    /// <remarks>
-    /// The total count is reduced by the hidden triggers of this page only, so it can overstate the count of a lookup that spans several pages.
-    /// </remarks>
-    private async Task<Page<StoredTrigger>> HideOverriddenAsync(Page<StoredTrigger> page, TriggerFilter filter, CancellationToken cancellationToken)
+    /// <summary>
+    /// Returns the requested page of the triggers the tenant sees. While the tenant overrides no tenant-agnostic definition, that is the
+    /// store's page. Otherwise the store cannot leave out the hidden rows itself, so the lookup is filtered, counted and paged here; a
+    /// page then never comes back short because of rows hidden on it, and its total count is exact.
+    /// </summary>
+    private async Task<Page<StoredTrigger>> FindPageAsync<TProp>(TriggerFilter filter, PageArgs pageArgs, StoredTriggerOrder<TProp> order, Func<ValueTask<Page<StoredTrigger>>> findStorePage, CancellationToken cancellationToken)
     {
-        var items = await HideOverriddenAsync(page.Items.ToList(), filter, cancellationToken);
-        return items.Count == page.Items.Count ? page : Page.Of(items, page.TotalCount - (page.Items.Count - items.Count));
+        if (!AppliesTo(filter))
+            return await findStorePage();
+
+        var overriddenDefinitionIds = await FindOverriddenDefinitionIdsAsync(null, cancellationToken);
+
+        if (overriddenDefinitionIds.Count == 0)
+            return await findStorePage();
+
+        var triggers = Hide(await decoratedStore.FindManyAsync(filter, cancellationToken), overriddenDefinitionIds).AsQueryable();
+        var items = triggers.OrderBy(order).Paginate(pageArgs).ToList();
+        return Page.Of(items, triggers.LongCount());
     }
 
     private async Task<List<StoredTrigger>> HideOverriddenAsync(List<StoredTrigger> triggers, TriggerFilter filter, CancellationToken cancellationToken)
     {
-        if (filter.TenantAgnostic || triggers.All(x => x.TenantId != Tenant.AgnosticTenantId))
+        if (triggers.All(x => x.TenantId != Tenant.AgnosticTenantId) || !AppliesTo(filter))
             return triggers;
 
-        if (serviceProvider.GetService<IOptions<TenantsOptions>>()?.Value.IsEnabled != true)
-            return triggers;
-
-        var tenantAccessor = serviceProvider.GetRequiredService<ITenantAccessor>();
-        var tenantId = tenantAccessor.TenantId;
-
-        if (tenantId == Tenant.AgnosticTenantId)
-            return triggers;
-
-        // The published versions the tenant sees, less the tenant-agnostic ones, are its own. Summaries carry no tenant, so the
-        // tenant-agnostic ones are read in a "*" context, where only they are visible.
         var sharedDefinitionIds = triggers.Where(x => x.TenantId == Tenant.AgnosticTenantId).Select(x => x.WorkflowDefinitionId).Distinct().ToList();
-        var definitionFilter = new WorkflowDefinitionFilter { DefinitionIds = sharedDefinitionIds, VersionOptions = VersionOptions.Published };
-        var definitionStore = serviceProvider.GetRequiredService<IWorkflowDefinitionStore>();
-        var visibleVersions = await definitionStore.FindSummariesAsync(definitionFilter, cancellationToken);
-        IEnumerable<WorkflowDefinitionSummary> sharedVersions;
-
-        using (tenantAccessor.PushContext(SharedView))
-            sharedVersions = await definitionStore.FindSummariesAsync(definitionFilter, cancellationToken);
-
-        var sharedVersionIds = sharedVersions.Select(x => x.Id).ToHashSet();
-        var overriddenDefinitionIds = visibleVersions.Where(x => !sharedVersionIds.Contains(x.Id)).Select(x => x.DefinitionId).ToHashSet();
-
-        if (overriddenDefinitionIds.Count == 0)
-            return triggers;
-
-        return triggers.Where(x => x.TenantId != Tenant.AgnosticTenantId || !overriddenDefinitionIds.Contains(x.WorkflowDefinitionId)).ToList();
+        var overriddenDefinitionIds = await FindOverriddenDefinitionIdsAsync(sharedDefinitionIds, cancellationToken);
+        return overriddenDefinitionIds.Count == 0 ? triggers : Hide(triggers, overriddenDefinitionIds).ToList();
     }
+
+    private bool AppliesTo(TriggerFilter filter) =>
+        !filter.TenantAgnostic
+        && serviceProvider.GetService<IOptions<TenantsOptions>>()?.Value.IsEnabled == true
+        && serviceProvider.GetRequiredService<ITenantAccessor>().TenantId != Tenant.AgnosticTenantId;
+
+    /// <summary>
+    /// Returns the IDs of the tenant-agnostic definitions, among <paramref name="definitionIds"/> or all, of which the tenant has a published
+    /// definition of its own. The tenant sees its own definitions and the tenant-agnostic ones.
+    /// </summary>
+    private async Task<HashSet<string>> FindOverriddenDefinitionIdsAsync(ICollection<string>? definitionIds, CancellationToken cancellationToken)
+    {
+        var definitionFilter = new WorkflowDefinitionFilter { DefinitionIds = definitionIds, VersionOptions = VersionOptions.Published };
+        var publishedVersions = (await serviceProvider.GetRequiredService<IWorkflowDefinitionStore>().FindSummariesAsync(definitionFilter, cancellationToken)).ToList();
+        var sharedDefinitionIds = publishedVersions.Where(x => x.TenantId == Tenant.AgnosticTenantId).Select(x => x.DefinitionId).ToHashSet();
+        return publishedVersions.Where(x => x.TenantId != Tenant.AgnosticTenantId && sharedDefinitionIds.Contains(x.DefinitionId)).Select(x => x.DefinitionId).ToHashSet();
+    }
+
+    private static IEnumerable<StoredTrigger> Hide(IEnumerable<StoredTrigger> triggers, IReadOnlySet<string> overriddenDefinitionIds) =>
+        triggers.Where(x => x.TenantId != Tenant.AgnosticTenantId || !overriddenDefinitionIds.Contains(x.WorkflowDefinitionId));
 }

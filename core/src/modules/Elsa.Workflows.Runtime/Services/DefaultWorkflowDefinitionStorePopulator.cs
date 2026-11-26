@@ -202,7 +202,7 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
 
         // Every tenant runs this import on its activation. It also reconciles the tenant-agnostic definitions that no provider imported,
         // such as those authored in a registered "*" tenant, and the scheduled rows of definitions retracted while the tenant was inactive.
-        if (indexTriggers && _triggerIndexer is TriggerIndexer triggerIndexer)
+        if (indexTriggers && TriggerIndexer.AsTriggerIndexer(_triggerIndexer, _logger) is { } triggerIndexer)
         {
             var indexedVersionIds = workflowDefinitions.Where(x => x.IsPublished).Select(x => x.Id).ToHashSet();
             await triggerIndexer.ReconcileSharedDefinitionsOnActivationAsync(indexedVersionIds, cancellationToken);
@@ -446,7 +446,7 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
             ? SharedTenantWriteScope.Enter<StoredTrigger>()
             : null;
 
-        if (_triggerIndexer is TriggerIndexer triggerIndexer)
+        if (TriggerIndexer.AsTriggerIndexer(_triggerIndexer, _logger) is { } triggerIndexer)
             await triggerIndexer.IndexTriggersAsync(workflowDefinition, allTenants, cancellationToken);
         else
             await _triggerIndexer.IndexTriggersAsync(workflowDefinition, cancellationToken);

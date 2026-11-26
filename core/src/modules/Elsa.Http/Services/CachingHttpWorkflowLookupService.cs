@@ -29,12 +29,14 @@ public class CachingHttpWorkflowLookupService(
             entry.AddExpirationToken(cache.GetToken(cacheManager.GetTriggerChangeTokenKey(bookmarkHash)));
             entry.AddExpirationToken(cache.GetToken(CachingTriggerStore.RequiredRemovalCacheInvalidationTokenKey));
 
+            // Taken before the lookup, so that a trigger change during the lookup expires a "not found" result.
+            var triggerChangeToken = cache.GetToken(CachingTriggerStore.CacheInvalidationTokenKey);
             var result = await decoratedService.FindWorkflowAsync(bookmarkHash, cancellationToken);
 
             // A tenant finds no workflow while it overrides the tenant-agnostic workflow of the route; any trigger change can end that.
             if (result == null)
             {
-                entry.AddExpirationToken(cache.GetToken(CachingTriggerStore.CacheInvalidationTokenKey));
+                entry.AddExpirationToken(triggerChangeToken);
                 return null;
             }
             

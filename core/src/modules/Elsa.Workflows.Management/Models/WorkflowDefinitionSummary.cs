@@ -26,7 +26,8 @@ public class WorkflowDefinitionSummary
         ProviderName = workflowDefinition.ProviderName,
         MaterializerName = workflowDefinition.MaterializerName,
         CreatedAt = workflowDefinition.CreatedAt,
-        IsReadonly = workflowDefinition.IsReadonly
+        IsReadonly = workflowDefinition.IsReadonly,
+        TenantId = workflowDefinition.TenantId
     };
 
     /// <summary>
@@ -45,7 +46,8 @@ public class WorkflowDefinitionSummary
         ProviderName = workflowDefinition.ProviderName,
         MaterializerName = workflowDefinition.MaterializerName,
         CreatedAt = workflowDefinition.CreatedAt,
-        IsReadonly = workflowDefinition.IsReadonly
+        IsReadonly = workflowDefinition.IsReadonly,
+        TenantId = workflowDefinition.TenantId
     };
 
     /// <summary>
@@ -107,4 +109,9 @@ public class WorkflowDefinitionSummary
     /// Makes workflow
     /// </summary>
     public bool IsReadonly { get; set; }
+
+    /// <summary>
+    /// The ID of the tenant that owns the workflow definition, or <c>*</c> for a definition that every tenant shares.
+    /// </summary>
+    public string? TenantId { get; set; }
 }

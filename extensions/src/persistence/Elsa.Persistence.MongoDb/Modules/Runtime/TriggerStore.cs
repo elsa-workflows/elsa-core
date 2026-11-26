@@ -70,13 +70,14 @@ public class MongoTriggerStore(MongoDbStore<StoredTrigger> mongoDbStore) : ITrig
 
     /// <inheritdoc />
     /// <remarks>
-    /// Tenant-agnostic rows are also deleted inside a <see cref="SharedTenantWriteScope"/> for <see cref="StoredTrigger"/>.
+    /// Deletes the rows of the current tenant. Tenant-agnostic rows are deleted only inside a <see cref="SharedTenantWriteScope"/> for
+    /// <see cref="StoredTrigger"/>, and <see cref="TriggerFilter.TenantAgnostic"/> does not widen a delete to other tenants.
     /// </remarks>
     public async ValueTask<long> DeleteManyAsync(TriggerFilter filter, CancellationToken cancellationToken = default)
     {
-        var count = await mongoDbStore.DeleteWhereAsync<string>(query => Filter(query, filter), x => x.Id, filter.TenantAgnostic, cancellationToken);
+        var count = await mongoDbStore.DeleteWhereAsync<string>(query => Filter(query, filter), x => x.Id, false, cancellationToken);
 
-        if (!filter.TenantAgnostic && SharedTenantWriteScope.IsGranted(typeof(StoredTrigger)))
+        if (SharedTenantWriteScope.IsGranted(typeof(StoredTrigger)))
             count += await mongoDbStore.DeleteWhereAsync<string>(query => Filter(query, filter).Where(x => x.TenantId == Tenant.AgnosticTenantId), x => x.Id, true, cancellationToken);
 
         return count;

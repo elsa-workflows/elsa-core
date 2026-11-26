@@ -35,14 +35,22 @@ internal sealed class SharedDefinitionTriggersCache
     /// <summary>
     /// Returns the triggers of the version, deriving them once per process.
     /// </summary>
-    public Task<DerivedTriggers> GetOrDeriveAsync(string versionId, Func<Task<DerivedTriggers>> derive, ICacheManager? cacheManager) =>
-        GetOrRunAsync(GetState(cacheManager).Derived, versionId, derive);
+    /// <remarks>
+    /// The derivation is shared by every caller and does not run on any one caller's token; each caller stops waiting when its own
+    /// <paramref name="cancellationToken"/> is cancelled.
+    /// </remarks>
+    public Task<DerivedTriggers> GetOrDeriveAsync(string versionId, Func<CancellationToken, Task<DerivedTriggers>> derive, ICacheManager? cacheManager, CancellationToken cancellationToken) =>
+        GetOrRunAsync(GetState(cacheManager).Derived, versionId, derive, cancellationToken);
 
     /// <summary>
-    /// Reconciles the shared rows of the version once per process.
+    /// Reconciles the shared rows of the version once per process and returns whether they were written.
     /// </summary>
-    public Task EnsureSharedRowsReconciledAsync(string versionId, Func<Task<bool>> reconcile, ICacheManager? cacheManager) =>
-        GetOrRunAsync(GetState(cacheManager).ReconciledVersions, versionId, reconcile);
+    /// <remarks>
+    /// The reconciliation is shared by every caller and does not run on any one caller's token; each caller stops waiting when its own
+    /// <paramref name="cancellationToken"/> is cancelled.
+    /// </remarks>
+    public Task<bool> EnsureSharedRowsReconciledAsync(string versionId, Func<CancellationToken, Task<bool>> reconcile, ICacheManager? cacheManager, CancellationToken cancellationToken) =>
+        GetOrRunAsync(GetState(cacheManager).ReconciledVersions, versionId, reconcile, cancellationToken);
 
     /// <summary>
     /// Forgets everything, on this node and, when there is a cache manager, on the others.
@@ -66,19 +74,27 @@ internal sealed class SharedDefinitionTriggersCache
         return _state;
     }
 
-    private static async Task<T> GetOrRunAsync<T>(ConcurrentDictionary<string, Lazy<Task<T>>> entries, string key, Func<Task<T>> factory)
+    private static async Task<T> GetOrRunAsync<T>(ConcurrentDictionary<string, Lazy<Task<T>>> entries, string key, Func<CancellationToken, Task<T>> factory, CancellationToken cancellationToken)
     {
-        var entry = entries.GetOrAdd(key, _ => new(factory));
+        while (true)
+        {
+            Lazy<Task<T>>? ownEntry = null;
+            var entry = entries.GetOrAdd(key, _ => ownEntry = new(() => factory(CancellationToken.None)));
 
-        try
-        {
-            return await entry.Value;
-        }
-        catch
-        {
-            // A failed attempt is not remembered, so that the next activation tries again.
-            entries.TryRemove(new(key, entry));
-            throw;
+            try
+            {
+                return await entry.Value.WaitAsync(cancellationToken);
+            }
+            catch (Exception) when (!cancellationToken.IsCancellationRequested)
+            {
+                // A failed attempt is not remembered, so that the next caller tries again.
+                entries.TryRemove(new(key, entry));
+
+                // An attempt started by another caller can fail because that caller went away, for example when its scope was disposed
+                // after its activation was cancelled. Try again with this caller's services instead of failing with it.
+                if (ReferenceEquals(entry, ownEntry))
+                    throw;
+            }
         }
     }
 

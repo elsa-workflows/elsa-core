@@ -12,6 +12,7 @@ namespace Elsa.Workflows.Runtime.Features;
 /// Installs and configures workflow runtime caching features.
 /// </summary>
 [DependsOn(typeof(MemoryCacheFeature))]
+[DependsOn(typeof(WorkflowRuntimeFeature))]
 public class CachingWorkflowRuntimeFeature : FeatureBase
 {
     /// <inheritdoc />

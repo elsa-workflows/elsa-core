@@ -146,11 +146,13 @@ public class Tests(ITestOutputHelper testOutputHelper) : IAsyncDisposable
     }
 
     [Theory(DisplayName = "When a tenant stops overriding a tenant-agnostic definition, its triggers and scheduled rows are restored")]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task EndingOverrideRestoresSharedTriggers(bool delete)
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    public async Task EndingOverrideRestoresSharedTriggers(bool deletePublishedVersion, bool cacheTriggers)
     {
-        var services = Build(true);
+        var services = Build(true, cacheTriggers ? (Action<Elsa.Features.Services.IModule>)(elsa => elsa.UseWorkflowManagement(management => management.UseCache()).UseWorkflowRuntime(runtime => runtime.UseCache())) : null);
         await ActivateAsync(services);
         await PublishSharedAsync(1, new Sequence { Id = "root", Activities = { HttpActivity("/restore"), TimerActivity() } });
         var httpHash = Assert.Single((await RowsAsync(SharedDefinitionId)), x => x.Name == HttpStimulusNames.HttpEndpoint).Hash!;
@@ -158,15 +160,31 @@ public class Tests(ITestOutputHelper testOutputHelper) : IAsyncDisposable
         await PublishOwnDefinitionAsync("a", own);
         Assert.Empty(await FindTriggersAsync("a", httpHash));
 
-        await RetractOwnDefinitionAsync("a", own);
-
-        if (delete)
+        if (deletePublishedVersion)
             await InTenantAsync("a", sp => sp.GetRequiredService<IWorkflowDefinitionManager>().DeleteVersionAsync(own, CancellationToken.None));
+        else
+            await RetractOwnDefinitionAsync("a", own);
 
         Assert.Single(await FindTriggersAsync("a", httpHash));
         var timer = Assert.Single((await RowsAsync(SharedDefinitionId)), x => x.TenantId == "a");
         Assert.Equal(TimerName, timer.Name);
-        Assert.Contains(("schedule", timer.Id, "a"), _scheduler.Calls);
+        Assert.Equal("schedule", _scheduler.Calls.Last(x => x.TaskName == timer.Id).Action);
+    }
+
+    [Fact(DisplayName = "Deleting a draft of a tenant's own definition keeps the tenant's scheduled copies of the shared definition as they are")]
+    public async Task DeletingOwnDraftKeepsScheduledCopies()
+    {
+        var services = Build(true);
+        await ActivateAsync(services);
+        await PublishSharedAsync(1, new Sequence { Id = "root", Activities = { TimerActivity() } });
+        var timer = Assert.Single(await RowsAsync(SharedDefinitionId), x => x.TenantId == "a");
+        var draft = await SaveOwnDraftAsync("a");
+        var callsBeforeDeletion = _scheduler.Calls.Count;
+
+        await InTenantAsync("a", sp => sp.GetRequiredService<IWorkflowDefinitionManager>().DeleteVersionAsync(draft, CancellationToken.None));
+
+        Assert.Equal([timer.Id], (await RowsAsync(SharedDefinitionId)).Where(x => x.TenantId == "a").Select(x => x.Id));
+        Assert.DoesNotContain(("unschedule", timer.Id, "a"), _scheduler.Calls.Skip(callsBeforeDeletion));
     }
 
     [Fact(DisplayName = "Activation removes and unschedules the scheduled rows of a tenant-agnostic definition deleted while the tenant was inactive")]
@@ -237,6 +255,28 @@ public class Tests(ITestOutputHelper testOutputHelper) : IAsyncDisposable
 
         Assert.Equal(["a", "b"], (await RowsAsync(SharedDefinitionId)).Select(x => x.TenantId).Order());
         Assert.Contains(("unschedule", legacyTimer.Id, Tenant.AgnosticTenantId), _scheduler.Calls);
+    }
+
+    [Fact(DisplayName = "Activation keeps the timer of a tenant's own definition")]
+    public async Task ActivationKeepsTimerOfOwnDefinition()
+    {
+        var services = Build(false);
+        var ownVersion = await SeedDefinitionAsync("a", "a-v1", TimerActivity());
+        var ownTimer = new StoredTrigger
+        {
+            Id = "own-timer",
+            TenantId = "a",
+            WorkflowDefinitionId = SharedDefinitionId,
+            WorkflowDefinitionVersionId = ownVersion.Id,
+            Name = TimerName,
+            ActivityId = "timer"
+        };
+        services.GetRequiredService<MemoryStore<StoredTrigger>>().Save(ownTimer, x => x.Id);
+
+        await ActivateAsync(services);
+
+        Assert.Equal([ownTimer.Id], (await RowsAsync(SharedDefinitionId)).Select(x => x.Id));
+        Assert.DoesNotContain(("unschedule", ownTimer.Id, "a"), _scheduler.Calls);
     }
 
     [Fact(DisplayName = "Activating several tenants derives the triggers of a tenant-agnostic definition version once")]

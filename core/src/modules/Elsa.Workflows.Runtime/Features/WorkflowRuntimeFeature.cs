@@ -405,7 +405,7 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
             .AddScoped(BookmarkStore)
             .AddScoped(BookmarkQueueStore)
             .AddScoped(BookmarkQueueDeadLetterStore)
-            .AddScoped<ITriggerStore>(sp => new TenantOverrideTriggerStore(TriggerStore(sp), sp))
+            .AddScoped(TriggerStore)
             .AddScoped(WorkflowExecutionLogStore)
             .AddScoped(ActivityExecutionLogStore)
 
@@ -467,6 +467,9 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
             .AddScoped<IWorkflowActivationStrategy, CorrelatedSingletonStrategy>()
             .AddScoped<IWorkflowActivationStrategy, CorrelationStrategy>()
             ;
+
+        // Beneath the cache of CachingWorkflowRuntimeFeature, which depends on this feature and decorates the store after it.
+        Services.Decorate<ITriggerStore, TenantOverrideTriggerStore>();
 
         Services.TryAddScoped<IWorkflowDispatchOutbox>(sp => ActivatorUtilities.CreateInstance<WorkflowDispatchOutbox>(sp));
         Services.TryAddScoped(WorkflowDispatchOutboxStore);

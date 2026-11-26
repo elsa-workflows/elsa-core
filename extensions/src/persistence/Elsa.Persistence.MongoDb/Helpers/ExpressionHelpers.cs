@@ -21,7 +21,8 @@ internal static class ExpressionHelpers
             CreatedAt = workflowDefinition.CreatedAt,
             IsReadonly = workflowDefinition.IsReadonly,
             ProviderName = workflowDefinition.ProviderName,
-            ToolVersion = workflowDefinition.ToolVersion
+            ToolVersion = workflowDefinition.ToolVersion,
+            TenantId = workflowDefinition.TenantId
         };
 
     public static readonly Expression<Func<WorkflowInstance, WorkflowInstanceSummary>> WorkflowInstanceSummary =
