@@ -478,7 +478,7 @@ def build_helper(output: Path) -> Semantics:
 
 
 def execute(controller: Path, product: str, line: str, requested: str, output: Path, semantics: Semantics,
-            *, github_token: str | None = None) -> dict:
+            *, github_token: str | None = None, pinned: bool = False) -> dict:
     controller_identity = {'commit': metadata.git(controller, 'rev-parse', 'HEAD'),
                            'tree': metadata.git(controller, 'rev-parse', 'HEAD^{tree}'),
                            'execution': {key.removeprefix('GITHUB_').lower(): os.environ[key] for key in
@@ -502,7 +502,6 @@ def execute(controller: Path, product: str, line: str, requested: str, output: P
         (output / 'plan.json').write_text(json.dumps(plan, indent=2) + '\n')
         return plan
     observations = Observations(github_token)
-    pinned = os.environ.get('GITHUB_EVENT_NAME') == 'pull_request'
     observation = observe_core(controller, line, observations, pinned=pinned) if product == 'core' else None
     commit = observation['commit'] if observation else metadata.DESCENDANTS[(product, line)]
     binding = metadata.bind_source(controller, product, line, commit, observation)
@@ -542,6 +541,8 @@ def main() -> int:
     parser.add_argument('--version', required=True)
     parser.add_argument('--output', type=Path, required=True)
     args = parser.parse_args()
+    # Temporary (#9335): PR rehearsals plan core from CORE_PINS; manual runs observe the live branch tip.
+    pinned = os.environ.get('GITHUB_EVENT_NAME') == 'pull_request'
     if args.output.exists():
         print(json.dumps({'status': 'incomplete', 'category': 'plan_output_exists', 'published': False}))
         return 1
@@ -550,7 +551,7 @@ def main() -> int:
         try:
             semantics = build_helper(Path(temporary))
             plan = execute(args.controller.resolve(), args.product, args.line, args.version, args.output.resolve(),
-                           semantics, github_token=github_token)
+                           semantics, github_token=github_token, pinned=pinned)
         except (ValueError, OSError, KeyError, subprocess.TimeoutExpired, subprocess.CalledProcessError) as error:
             category = 'plan_input_or_metadata_unavailable'
             if type(error) is ValueError and str(error) in {

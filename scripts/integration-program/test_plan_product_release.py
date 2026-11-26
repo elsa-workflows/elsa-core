@@ -660,6 +660,28 @@ class ProductReleaseCliFailureTests(unittest.TestCase):
             self.assertEqual('source_ref_unavailable', json.loads(text)['category'])
             self.assertNotIn('test-token', text + stdout.getvalue())
 
+    def test_only_pull_request_runs_plan_core_from_the_pins(self):
+        for event, pinned in (('pull_request', True), ('workflow_dispatch', False)):
+            with self.subTest(event=event), tempfile.TemporaryDirectory() as directory:
+                with patch.dict(os.environ, {'GITHUB_EVENT_NAME': event}), \
+                     patch('sys.argv', ['planner', '--product', 'core', '--line', '3.9', '--version', '3.9.1',
+                                       '--output', str(Path(directory) / 'output')]), \
+                     patch.object(planner, 'build_helper', return_value=object()), \
+                     patch.object(planner, 'execute', return_value={'eligible': True}) as execute, \
+                     redirect_stdout(io.StringIO()):
+                    self.assertEqual(0, planner.main())
+                self.assertIs(pinned, execute.call_args.kwargs['pinned'])
+
+    def test_manual_core_plan_observes_the_live_branch_tip(self):
+        with tempfile.TemporaryDirectory() as directory, \
+             patch.object(planner.metadata, 'git', side_effect=lambda root, *args: '' if args[0] == 'status' else 'a' * 40), \
+             patch.object(planner, 'observe_core', side_effect=ValueError('source_ref_unavailable')) as observe:
+            semantics = type('Semantics', (), {'call': lambda self, operation, **_: [
+                {'major': 3, 'minor': 9, 'normalized': '3.9.1'}]})()
+            with self.assertRaisesRegex(ValueError, 'source_ref_unavailable'):
+                planner.execute(planner.ROOT, 'core', '3.9', '3.9.1', Path(directory) / 'out', semantics)
+        self.assertFalse(observe.call_args.kwargs['pinned'])
+
     def test_git_called_process_error_produces_path_free_incomplete_receipt_without_build(self):
         with tempfile.TemporaryDirectory() as directory:
             parent = Path(directory)
