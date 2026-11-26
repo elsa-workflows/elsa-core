@@ -82,6 +82,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
         OriginalBookmarks = originalBookmarks.ToList();
         WorkflowGraph = workflowGraph;
         var linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        ExecutionCancellationToken = linkedCancellationTokenSource.Token;
         _cancellationTokenSources.Add(linkedCancellationTokenSource);
         _cancellationRegistrations.Add(linkedCancellationTokenSource.Token.Register(CancelWorkflow));
     }
@@ -381,6 +382,12 @@ public partial class WorkflowExecutionContext : IExecutionContext
     public CancellationToken CancellationToken { get; }
 
     /// <summary>
+    /// The token that activity execution observes. It is cancelled by <see cref="Cancel"/> and by <see cref="CancellationToken"/>,
+    /// so a cancellation reaches running activities. Commits and notifications use <see cref="CancellationToken"/> instead.
+    /// </summary>
+    internal CancellationToken ExecutionCancellationToken { get; }
+
+    /// <summary>
     /// A list of <see cref="ActivityCompletionCallbackEntry"/> callbacks that are invoked when the associated child activity completes.
     /// </summary>
     public ICollection<ActivityCompletionCallbackEntry> CompletionCallbacks => new ReadOnlyCollection<ActivityCompletionCallbackEntry>(_completionCallbackEntries);
@@ -585,7 +592,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
         var parentContext = options?.Owner;
         var now = SystemClock.UtcNow;
         var id = IdentityGenerator.GenerateId();
-        var activityExecutionContext = new ActivityExecutionContext(id, this, parentContext, activity, activityDescriptor, now, tag, SystemClock, CancellationToken);
+        var activityExecutionContext = new ActivityExecutionContext(id, this, parentContext, activity, activityDescriptor, now, tag, SystemClock, ExecutionCancellationToken);
         var variablesToDeclare = options?.Variables ?? [];
         var variableContainer = new[]
         {
