@@ -91,9 +91,24 @@ class SelectionErrorsTests(unittest.TestCase):
         self.assertEqual("3.8.0", release_version("3.8.0-rc2"))
 
     def test_missing_pin_file_fails_closed(self):
-        missing = Path(tempfile.mkdtemp()) / "consolidated.json"
-        with self.assertRaisesRegex(SystemExit, "is missing"):
-            legacy_release_pin_versions(missing)
+        with tempfile.TemporaryDirectory() as temp:
+            missing = Path(temp) / "consolidated.json"
+            with self.assertRaisesRegex(SystemExit, "is missing"):
+                legacy_release_pin_versions(missing)
+
+    def test_invalid_json_pin_file_fails_closed(self):
+        with tempfile.TemporaryDirectory() as temp:
+            pin_file = Path(temp) / "consolidated.json"
+            pin_file.write_text("{not json", encoding="utf-8")
+            with self.assertRaisesRegex(SystemExit, "is unreadable"):
+                legacy_release_pin_versions(pin_file)
+
+    def test_non_object_pin_file_fails_closed(self):
+        with tempfile.TemporaryDirectory() as temp:
+            pin_file = Path(temp) / "consolidated.json"
+            pin_file.write_text("[]", encoding="utf-8")
+            with self.assertRaisesRegex(SystemExit, "must be an object"):
+                legacy_release_pin_versions(pin_file)
 
     def test_tag_run_for_legacy_pinned_364_is_blocked(self):
         self.assertIn("requires a pinned candidate", " ".join(errors("refs/tags/3.6.4", {"nuget"})))
