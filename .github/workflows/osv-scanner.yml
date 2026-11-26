@@ -18,18 +18,67 @@ permissions: {}
 
 jobs:
   osv-scan:
-    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@b1d267aea5211fa648d9d442fa64b90dbdcbdd36 # v2.7.0
-    with:
-      fail-on-vuln: false
-      scan-args: |-
-        --recursive
-        --lockfile=package-lock.json:scripts/integration-program/consolidated-build/studio-clientlib-lockfiles/designer.package-lock.json
-        --lockfile=package-lock.json:scripts/integration-program/consolidated-build/studio-clientlib-lockfiles/dom-interop.package-lock.json
-        --lockfile=package-lock.json:scripts/integration-program/consolidated-build/studio-clientlib-lockfiles/bpmn-js.package-lock.json
-        --lockfile=package-lock.json:scripts/integration-program/consolidated-build/studio-clientlib-lockfiles/bpmn-shared.package-lock.json
-        --lockfile=package-lock.json:scripts/integration-program/consolidated-build/studio-clientlib-lockfiles/bpmn-x6.package-lock.json
-        ./
+    runs-on: ubuntu-24.04
     permissions:
       actions: read
       contents: read
       security-events: write
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+
+      - name: Install OSV-Scanner
+        env:
+          OSV_VERSION: v2.7.1
+          OSV_SHA256: fb7dab19a8bd9bbe5c3189f09d4b7ee1820c9553a23bac202648a56efd2f6ee8
+        working-directory: ${{ runner.temp }}
+        run: |
+          curl --fail --silent --show-error --location --retry 3 \
+            --output osv-scanner "https://github.com/google/osv-scanner/releases/download/$OSV_VERSION/osv-scanner_linux_amd64"
+          echo "$OSV_SHA256  osv-scanner" | sha256sum --check
+          chmod +x osv-scanner
+
+      - name: Scan dependencies
+        id: scan
+        shell: bash
+        run: |
+          lock_dir=scripts/integration-program/consolidated-build/studio-clientlib-lockfiles
+          lock_args=()
+          for client in designer dom-interop bpmn-js bpmn-shared bpmn-x6; do
+            lockfile="$lock_dir/$client.package-lock.json"
+            test -s "$lockfile"
+            lock_args+=("--lockfile=package-lock.json:$lockfile")
+          done
+
+          # OSV 2.7 returns 1 when it finds vulnerabilities even if it also logged
+          # extraction errors. Reject partial inventories before uploading a report.
+          errors="$RUNNER_TEMP/osv-errors.log"
+          status=0
+          "$RUNNER_TEMP/osv-scanner" scan source --recursive "${lock_args[@]}" \
+            --verbosity error --format sarif --output-file "$RUNNER_TEMP/results.sarif" . 2>"$errors" || status=$?
+          if [[ -s "$errors" ]]; then
+            cat "$errors" >&2
+            echo "::error::OSV-Scanner emitted errors. The report may be incomplete."
+            exit 1
+          fi
+          case "$status" in
+            0) echo "OSV scan completed with no findings." ;;
+            1) echo "OSV scan completed with findings. See the SARIF report." ;;
+            *) echo "::error::OSV scan failed with exit code $status."; exit "$status" ;;
+          esac
+          jq -e '.version == "2.1.0" and (.runs | length > 0)' "$RUNNER_TEMP/results.sarif" >/dev/null
+
+      - name: Upload scan report
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: OSV Scanner SARIF file
+          path: ${{ runner.temp }}/results.sarif
+          if-no-files-found: error
+          retention-days: 5
+
+      - name: Upload to code scanning
+        if: ${{ !cancelled() && steps.scan.outcome == 'success' }}
+        uses: github/codeql-action/upload-sarif@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4.38.0
+        with:
+          sarif_file: ${{ runner.temp }}/results.sarif
