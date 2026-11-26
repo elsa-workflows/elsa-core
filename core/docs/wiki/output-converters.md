@@ -23,6 +23,18 @@ public sealed class NumberToTextConverter : IOutputConverter
 
         return ((decimal)context.Value).ToString(format, CultureInfo.InvariantCulture);
     }
+
+    public IEnumerable<string> ValidateSettings(JsonElement? settings)
+    {
+        if (settings is not { ValueKind: JsonValueKind.Object } objectSettings)
+            yield break;
+
+        if (!objectSettings.TryGetProperty("format", out var format))
+            yield break;
+
+        if (format.ValueKind is not JsonValueKind.String)
+            yield return "The format setting must be a string.";
+    }
 }
 
 using var schemaDocument = JsonDocument.Parse(
@@ -82,7 +94,7 @@ At definition validation and again at runtime, Elsa checks:
 - the converter ID is registered;
 - the declared output type is compatible with the converter source type;
 - the converter result type is assignable to the destination;
-- JSON Schema and converter-owned settings validation pass.
+- converter-owned settings validation (`ValidateSettings`) passes. `SettingsSchema` on the descriptor is metadata for Studio and other clients; it is not evaluated server-side. See the [3.10.1 upgrade note](../migrations/output-converter-settings-schema.md).
 
 Null native values bypass converter invocation and are delivered only to destinations that permit null. Conversion and result validation finish before Elsa writes the destination, so a failure leaves it unchanged.
 
