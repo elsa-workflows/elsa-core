@@ -6,11 +6,10 @@ existing `@elsa-workflows/elsa-studio-wasm` and
 It provides no npm upload, production version allocation, publisher authority,
 maintenance ref activation, archival or browser certification.
 
-The [workflow](../../.github/workflows/studio-npm-pair.yml) first ran on the reviewed
-`codex/elsa-integration-studio-npm-8679` proof branch. That branch is gone, so its push
-trigger was removed and the workflow now runs only by manual dispatch on main, which
-requires its exact reviewed SHA. The only accepted
-version is `0.0.0-proof.RUN.ATTEMPT`, bound to the workflow run and attempt.
+The [retired workflow](https://github.com/elsa-workflows/elsa-core/blob/be796b65e89a83941af78351582f988ed391d9f4/.github/workflows/studio-npm-pair.yml)
+first ran on the reviewed `codex/elsa-integration-studio-npm-8679` proof branch.
+Proof versions use `0.0.0-proof.RUN.ATTEMPT`, bound to the workflow run and attempt.
+Run the pair proof locally using the command below.
 Checkout credentials are disabled, permissions are read-only, and there is no
 OIDC, protected environment, registry token or publisher action. Source build
 processes receive an explicit environment allowlist and isolated npm config,
@@ -109,7 +108,6 @@ Focused contracts:
 ```sh
 PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts/integration-program -p test_prove_studio_npm_pair.py
 PYTHONDONTWRITEBYTECODE=1 python3 -O -m unittest discover -s scripts/integration-program -p test_prove_studio_npm_pair.py
-actionlint .github/workflows/studio-npm-pair.yml
 ```
 
 Synthetic contracts and the tiny actual offline npm lock/lifecycle fixture do

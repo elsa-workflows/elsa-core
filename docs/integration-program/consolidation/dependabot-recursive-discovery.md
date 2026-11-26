@@ -106,7 +106,7 @@ reconciles the current consumer inventory rather than dropping it from inventory
 net10.0 target. Its local targets select only that restore config, prevent source-reference
 substitution and set `IsPackable=false`.
 
-The [Apps source workflow](../../../.github/workflows/apps-source-validation.yml) owns
+The [Apps source workflow](../../../.github/workflows/pr.yml) owns
 root-context restore, product builds and the six nonpublishing image profiles. New Apps
 source contributions route through Core. No Apps updater job or preview version stream
 is activated here; any future updater authority/configuration decision remains separately
@@ -119,7 +119,7 @@ starting-set counts and existing release-unit inventory are unchanged.
 
 Task [#8748](https://github.com/elsa-workflows/elsa-core/issues/8748) retains nine Templates manifests outside the shared solution and the five updater batches. The explicit current inventory in `scripts/solution/solution-groups.json` separates the independent pack and test project from six embedded starter manifests and one standalone legacy host. Root `Elsa.Templates.slnf` selects `templates/Elsa.Templates.slnx`, with project paths relative to the product solution; root `Elsa.sln` has navigation items only. The census fails on unknown or unaccounted Templates projects, accidental shared-solution membership and build/data overlap. No Templates updater is activated.
 
-Templates uses scoped props, CPM, targets and official-only NuGet configuration. Its [source workflow](../../../.github/workflows/templates-source-validation.yml) owns real pack/install/generate/build proof. The [import record](../templates-source-import.md) preserves the exact original 65-file mapping and independent release/publisher handoff. The historical inventory table and five source-package starting-set counts above remain unchanged.
+Templates uses scoped props, CPM, targets and official-only NuGet configuration. Its [source workflow](../../../.github/workflows/pr.yml) owns real pack/install/generate/build proof. The [import record](../templates-source-import.md) preserves the exact original 65-file mapping and independent release/publisher handoff. The historical inventory table and five source-package starting-set counts above remain unchanged.
 
 ## Temporary Core experiment disposition
 
@@ -184,7 +184,7 @@ Run the inexpensive coverage and configuration gate with:
 ruby scripts/integration-program/test_dependabot_discovery.rb
 ```
 
-The [Integration program tools workflow](../../../.github/workflows/integration-program-tools.yml)
+The `integration-tools` suite in [PR checks](../../../.github/workflows/pr.yml)
 runs this check. Its Ruby step uses bundled Minitest, with a pinned 5.16.3 fallback.
 Synthetic regressions retain the terminal-glob failure and deeper-project case, and
 exercise deeper project parents, the excluded TLS host, solution expansion, explicit

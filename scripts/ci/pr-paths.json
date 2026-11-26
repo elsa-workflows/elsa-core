@@ -1,0 +1,427 @@
+{
+  "compile": {
+    "paths": [
+      "**/*",
+      "!docs/**",
+      "!**/*.md",
+      "!.agents/**",
+      "!.claude/**",
+      "!.specify/**"
+    ],
+    "branches": [
+      "main",
+      "patch/*",
+      "develop/*",
+      "release/*"
+    ],
+    "manual": true
+  },
+  "adr-index": {
+    "paths": [
+      "docs/adr/**",
+      "scripts/adr/**"
+    ],
+    "manual": false
+  },
+  "solution-groups": {
+    "paths": [
+      "Elsa.sln",
+      "*.slnf",
+      "**/*.csproj",
+      "**/*.slnx",
+      "scripts/solution/**"
+    ],
+    "manual": false
+  },
+  "product-entrypoints": {
+    "paths": [
+      "Elsa.Core.slnf",
+      "Elsa.Extensions.slnf",
+      "Elsa.Studio.slnf"
+    ],
+    "manual": true
+  },
+  "package-gates": {
+    "paths": [
+      ".github/workflows/packages.yml",
+      "scripts/validate_packages_*.py",
+      "scripts/validate_packages_id_set.txt",
+      "scripts/test_validate_packages_*.py",
+      "scripts/stage_consolidated_candidate_nupkgs.py",
+      ".github/release-pins/**",
+      "scripts/verify_consolidated_candidate.py",
+      "scripts/test_consolidated_candidate.py",
+      "scripts/test_stage_consolidated_candidate_nupkgs.py",
+      "scripts/integration-program/consolidated_candidate_input.py",
+      "scripts/integration-program/consolidated-pin-inventory-baseline.json",
+      "scripts/integration-program/persisted-workflow-upgrade/stable-original-envelope.json",
+      ".github/workflows/prepare-consolidated-release-candidate.yml",
+      "scripts/integration-program/prepare_consolidated_release_candidate.py",
+      "scripts/integration-program/test_prepare_consolidated_release_candidate.py",
+      "scripts/integration-program/consolidated-candidate-inventory-baseline.json",
+      "scripts/integration-program/prove_consolidated*.py",
+      "scripts/integration-program/prove_studio_npm_pair.py",
+      "scripts/integration-program/test_prove_studio_npm_pair.py",
+      "scripts/integration-program/test_prove_consolidated*.py",
+      "scripts/integration-program/consolidated-package-consumer/**",
+      "build/Build.cs",
+      "build/ConsolidatedPackageProof.targets",
+      "extensions/src/Directory.Build.*",
+      "studio/src/Directory.Build.*",
+      ".agents/skills/elsa-release/references/consolidated-feedz-profile.json",
+      ".agents/skills/elsa-release/references/elsa-profile.json",
+      ".agents/skills/elsa-release/references/runbook.md",
+      ".agents/skills/elsa-release/scripts/release_train.py",
+      ".agents/skills/elsa-release/tests/test_release_train.py"
+    ],
+    "push": true,
+    "manual": false
+  },
+  "docker-smoke": {
+    "paths": [
+      "docker/**",
+      ".dockerignore",
+      "scripts/test-ca-trust.sh",
+      "scripts/integration-program/build_studio_clientlibs.sh",
+      "scripts/integration-program/consolidated-build/studio-clientlib-lockfiles/**",
+      "studio/react/vendor/picomatch-build/**",
+      "studio/src/**/ClientLib/**",
+      "studio/src/hosts/Elsa.Studio.Host.Server/**",
+      "core/test/TlsSmoke/**"
+    ],
+    "branches": [
+      "main"
+    ],
+    "push": true,
+    "manual": true
+  },
+  "admission-proof": {
+    "paths": [
+      "core/src/modules/Elsa.Workflows.Core/**",
+      "core/src/modules/Elsa.Workflows.Runtime/**",
+      "core/src/modules/Elsa.Workflows.Admission*/**",
+      "core/src/modules/Elsa.Persistence.EFCore/Modules/Management/**",
+      "core/src/modules/Elsa.Alterations/**",
+      "core/src/modules/Elsa.Connections*/**",
+      "core/test/unit/Elsa.Workflows.Core.UnitTests/**",
+      "core/test/integration/Elsa.Workflows.IntegrationTests/**",
+      "core/test/integration/Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests/**",
+      "core/test/workers/Elsa.Workflows.Admission.WorkerProcess/**",
+      "scripts/integration-program/run_admission_proof.py",
+      "scripts/integration-program/test_admission_proof.py",
+      "scripts/integration-program/admission-proof-cases.json",
+      "scripts/integration-program/run_execution_cycle_proof.py",
+      "scripts/integration-program/run_current_import_affected_tests.py",
+      "scripts/integration-program/package_closure.py",
+      "Directory.*",
+      "core/src/Directory.*",
+      "core/test/Directory.*",
+      "global.json",
+      "NuGet.Config"
+    ],
+    "manual": true
+  },
+  "execution-cycle-proof": {
+    "paths": [
+      "core/src/modules/Elsa.Workflows.Core/**",
+      "core/src/modules/Elsa.Workflows.Runtime/**",
+      "core/src/modules/Elsa.Alterations/**",
+      "extensions/src/runtimes/Elsa.Workflows.Runtime.ProtoActor/**",
+      "extensions/src/actors/**",
+      "core/test/unit/Elsa.Workflows.Core.UnitTests/**",
+      "core/test/unit/Elsa.Workflows.Runtime.UnitTests/**",
+      "core/test/integration/Elsa.Workflows.IntegrationTests/**",
+      "core/test/integration/Elsa.Alterations.IntegrationTests/**",
+      "extensions/test/modules/runtimes/Elsa.Workflows.Runtime.ProtoActor.UnitTests/**",
+      "scripts/integration-program/run_execution_cycle_proof.py",
+      "scripts/integration-program/test_execution_cycle_proof.py"
+    ],
+    "manual": true
+  },
+  "dapper-providers": {
+    "paths": [
+      "extensions/src/persistence/Elsa.Persistence.Dapper/**",
+      "extensions/src/persistence/Elsa.Persistence.Dapper.Migrations/**",
+      "extensions/test/modules/persistence/Elsa.Persistence.Dapper.UnitTests/**",
+      "extensions/src/Directory.Packages.props",
+      "extensions/test/Directory.Packages.props"
+    ],
+    "manual": true
+  },
+  "mongo-atomic-proof": {
+    "paths": [
+      "extensions/src/persistence/Elsa.Persistence.MongoDb/**",
+      "extensions/test/modules/persistence/Elsa.MongoDb.UnitTests/**",
+      "core/test/integration/Elsa.Bpmn.Interchange.IntegrationTests/**",
+      "extensions/src/Directory.Packages.props",
+      "extensions/test/Directory.Packages.props",
+      "scripts/integration-program/run_mongo_atomic_proof.py",
+      "scripts/integration-program/test_mongo_atomic_proof.py",
+      "scripts/integration-program/run_execution_cycle_proof.py"
+    ],
+    "manual": true
+  },
+  "integration-tools": {
+    "paths": [
+      "**/*.sln",
+      "**/*.slnx",
+      "Elsa.Extensions.slnf",
+      "Elsa.Studio.slnf",
+      ".github/dependabot.yml",
+      ".config/dotnet-tools.json",
+      "**/*.csproj",
+      "**/*.proj",
+      "**/*.fsproj",
+      "**/*.vbproj",
+      "**/*.props",
+      "**/*.targets",
+      "**/[Nn]u[Gg]et.[Cc]onfig",
+      "**/global.json",
+      "docs/integration-program/consolidation/dependabot-recursive-discovery.md",
+      "scripts/integration-program/**",
+      "Elsa.Apps.slnf",
+      "Elsa.Templates.slnf",
+      "scripts/solution/solution-groups.json",
+      "extensions/src/Elsa.Testing.Extensions/**",
+      "extensions/samples/workbench/**",
+      "docs/integration-program/verify-hierarchy.py",
+      "docs/integration-program/hierarchy.json"
+    ],
+    "manual": true
+  },
+  "current-import-impact": {
+    "paths": [
+      ".github/**",
+      "build/**",
+      "scripts/integration-program/**",
+      "Elsa.Apps.slnf",
+      "Elsa.Templates.slnf",
+      "scripts/solution/solution-groups.json",
+      "core/samples/**",
+      "extensions/samples/**",
+      "studio/samples/**",
+      "core/src/**",
+      "extensions/src/**",
+      "studio/src/**",
+      "core/test/**",
+      "extensions/test/**",
+      "studio/test/**",
+      "docs/integration-program/release-units.json",
+      "**/*.sln",
+      "**/*.slnx",
+      "**/*.csproj",
+      "**/*.props",
+      "**/*.targets",
+      "**/*.rsp",
+      "**/NuGet.Config",
+      "**/nuget.config",
+      "**/packages.lock.json",
+      "**/global.json"
+    ],
+    "manual": true
+  },
+  "package-impact-closure": {
+    "paths": [
+      "scripts/integration-program/package_impact.py",
+      "scripts/integration-program/package_closure.py",
+      "scripts/integration-program/source_bindings.py",
+      "scripts/integration-program/refresh_canonical_dependency_graph.py",
+      "scripts/integration-program/release_unit_manifest.py",
+      "scripts/integration-program/check_publisher_handoff.py",
+      "scripts/integration-program/run_slack_package_proof.py",
+      "scripts/integration-program/run_mapped_slack_package_proof.py",
+      "scripts/integration-program/verify_mapped_slack_consumer_provenance.py",
+      "scripts/integration-program/create_mapped_slack_portable_bundle.py",
+      "scripts/integration-program/rehearse-import.py",
+      "scripts/integration-program/prepare_consolidated_build.py",
+      "scripts/integration-program/VerifyEmbeddedSources/**",
+      "scripts/integration-program/test_*.py",
+      "scripts/integration-program/consolidated-build/source-integration.patch",
+      "docs/integration-program/inventory/inventory.json",
+      "docs/integration-program/release-units.json",
+      "docs/integration-program/publisher-handoff.md",
+      "docs/integration-program/package-closure.md",
+      "docs/integration-program/consolidation/canonical-95a-impact-closure.json",
+      "docs/integration-program/slack-package-proof.md",
+      "docs/integration-program/consolidation/build-preparation.md",
+      "docs/integration-program/consolidation/mapped-slack-package-proof.md"
+    ],
+    "manual": true
+  },
+  "consolidated-package-proof": {
+    "paths": [
+      "scripts/integration-program/prove_consolidated*.py",
+      "scripts/integration-program/test_prove_consolidated*.py",
+      "scripts/integration-program/consolidated-package-consumer/**",
+      "scripts/integration-program/admission-package-consumer/**",
+      "scripts/integration-program/admission-package-consumer-contract.json",
+      "scripts/integration-program/verify_admission_package_consumers.py",
+      "scripts/integration-program/run_admission_proof.py",
+      "scripts/integration-program/run_secrets_postgresql_upgrade_fixture.py",
+      "scripts/integration-program/VerifyPackageSymbolPair/**",
+      "scripts/integration-program/build_studio_clientlibs.sh",
+      "scripts/integration-program/consolidated-build/studio-clientlib-lockfiles/**",
+      "studio/react/vendor/picomatch-build/**",
+      "build/**",
+      "core/src/**/*.csproj",
+      "extensions/src/**/*.csproj",
+      "studio/src/**/*.csproj",
+      "core/src/**/Directory.Build.*",
+      "extensions/src/**/Directory.Build.*",
+      "studio/src/**/Directory.Build.*",
+      "core/src/**/Directory.Packages.props",
+      "extensions/src/**/Directory.Packages.props",
+      "studio/src/**/Directory.Packages.props",
+      "Elsa.sln",
+      "Directory.Build.*",
+      "Directory.Packages.props",
+      "NuGet.Config",
+      "global.json",
+      "icon.png"
+    ],
+    "manual": true
+  },
+  "studio-package-provenance": {
+    "paths": [
+      "studio/src/Directory.Build.props",
+      "studio/src/Directory.Build.targets",
+      "studio/src/Directory.Packages.props",
+      "core/src/clients/Elsa.Api.Client/**",
+      "studio/src/framework/Elsa.Studio.Core/**",
+      "scripts/integration-program/verify_studio_package_provenance.py",
+      "Directory.Build.props",
+      "Directory.Packages.props",
+      "NuGet.Config",
+      "icon.png"
+    ],
+    "manual": true
+  },
+  "slack-package-proof": {
+    "paths": [
+      "extensions/src/communication/Elsa.Slack/**",
+      "extensions/src/Directory.Build.*",
+      "extensions/src/Directory.Packages.props",
+      "core/src/modules/**",
+      "core/src/common/**",
+      "core/src/Fody.props",
+      "core/src/Directory.Build.*",
+      "Directory.Build.*",
+      "Directory.Packages.props",
+      "docs/integration-program/release-units.json",
+      "scripts/integration-program/prove_slack_artifact_consumer.py",
+      "scripts/integration-program/verify_slack_source_link.py",
+      "scripts/integration-program/VerifyPackageSymbolPair/**",
+      "scripts/integration-program/run_mapped_slack_package_proof.py",
+      "scripts/integration-program/run_slack_package_proof.py",
+      "scripts/integration-program/release_unit_manifest.py",
+      "scripts/integration-program/package_impact.py",
+      "scripts/integration-program/verify_import_source_tip_refresh*.py",
+      "docs/integration-program/inventory/inventory.json"
+    ],
+    "manual": true
+  },
+  "product-release-plan": {
+    "paths": [
+      "scripts/integration-program/plan_product_release.py",
+      "scripts/integration-program/product_release_metadata.py",
+      "scripts/integration-program/ProductReleaseSemantics/**",
+      "scripts/integration-program/test_plan_product_release.py",
+      "docs/integration-program/product-release-plans.md"
+    ],
+    "manual": true
+  },
+  "secrets-contract": {
+    "paths": [
+      "scripts/integration-program/secrets-api-studio-contract.json",
+      "scripts/integration-program/verify_secrets_api_studio_contract.py",
+      "scripts/integration-program/test_secrets_api_studio_contract.py",
+      "scripts/integration-program/secrets-api-studio-contract/global.json",
+      "docs/integration-program/secrets-collision-compatibility.md",
+      "core/test/unit/Elsa.Secrets.UnitTests/SecretsApiContractTests.cs",
+      "core/test/integration/Elsa.Secrets.Api.IntegrationTests/**",
+      "core/test/integration/Elsa.Secrets.DefaultHost.IntegrationTests/**",
+      "extensions/samples/workbench/Elsa.Server.Web/**",
+      "core/src/modules/Elsa.Secrets/Features/**",
+      "core/src/modules/Elsa.Secrets/Endpoints/Secrets/**",
+      "core/src/modules/Elsa.Secrets/Models/SecretApiModels.cs",
+      "extensions/src/secrets/Elsa.Secrets.Api/Endpoints/Secrets/**",
+      "extensions/src/secrets/Elsa.Secrets.Api/**",
+      "extensions/src/secrets/Elsa.Secrets.Core/**",
+      "extensions/src/secrets/Elsa.Secrets.Management/**",
+      "extensions/src/secrets/Elsa.Secrets.Models/**",
+      "extensions/src/secrets/Elsa.Secrets.Scripting/**",
+      "studio/src/modules/Elsa.Studio.Secrets/Client/ISecretsApi.cs",
+      "studio/src/modules/Elsa.Studio.Secrets/Models/SecretModels.cs",
+      "Elsa.sln"
+    ],
+    "manual": false
+  },
+  "studio-clientlibs": {
+    "paths": [
+      "studio/src/**/ClientLib/**",
+      "studio/src/Directory.Packages.props",
+      "Directory.Packages.props",
+      "studio/src/Directory.Build.props",
+      "core/src/Directory.Build.props",
+      "scripts/integration-program/build_studio_clientlibs.sh",
+      "scripts/integration-program/consolidated-build/studio-bpmn-generator-layout.patch",
+      "scripts/integration-program/consolidated-build/studio-clientlib-lockfiles/**",
+      "studio/react/vendor/picomatch-build/**",
+      "studio/test/browser/DesignerHover/**",
+      "studio/test/browser/BpmnDesigner/**",
+      "studio/src/modules/Elsa.Studio.Bpmn/wwwroot/**",
+      "core/src/modules/Elsa.Bpmn/**",
+      "core/src/modules/Elsa.Bpmn.Interchange/**",
+      "core/test/integration/Elsa.Bpmn.Interchange.IntegrationTests/Assets/**"
+    ],
+    "manual": true
+  },
+  "react-studio": {
+    "paths": [
+      "studio/react/**",
+      "docs/integration-program/studio-react-source-import.*",
+      "scripts/integration-program/*studio_react_source_import.py",
+      ".github/workflows/studio-react-release.yml",
+      "docker/ElsaServer.Dockerfile",
+      "docker/ElsaServer-Datadog.Dockerfile"
+    ],
+    "manual": true
+  },
+  "apps": {
+    "paths": [
+      "apps/**",
+      "Elsa.sln",
+      "Elsa.Apps.slnf",
+      "scripts/solution/**",
+      "scripts/integration-program/verify_apps_source_import.py",
+      "scripts/integration-program/apps_consumer_inventory.py",
+      "scripts/integration-program/test_verify_apps_source_import.py",
+      "docs/integration-program/apps-source-import.json"
+    ],
+    "manual": true
+  },
+  "templates": {
+    "paths": [
+      "templates/**",
+      "Elsa.sln",
+      "global.json",
+      "Elsa.Templates.slnf",
+      "scripts/solution/**",
+      "scripts/integration-program/verify_templates_source_import.py",
+      "scripts/integration-program/templates_product_inventory.py",
+      "scripts/integration-program/test_verify_templates_source_import.py",
+      "scripts/integration-program/apps_consumer_inventory.py",
+      "docs/integration-program/templates-source-import.json"
+    ],
+    "manual": true
+  },
+  "persisted-upgrade": {
+    "paths": [
+      "scripts/integration-program/run_persisted_workflow_upgrade_fixture.py",
+      "scripts/integration-program/test_persisted_workflow_upgrade_fixture.py",
+      "scripts/integration-program/persisted-workflow-upgrade/Program.cs",
+      "scripts/integration-program/prove_consolidated_package_consumers.py"
+    ],
+    "manual": true
+  }
+}

@@ -19,6 +19,17 @@ public partial class WorkflowExecutionContext
         _cancellationTokenSources.Clear();
     }
     
+    /// <summary>
+    /// Whether the exception is this execution being cancelled through <see cref="Cancel"/>, as opposed to an operation that
+    /// was cancelled for another reason (e.g. a timeout), an <see cref="OperationCanceledException"/> thrown without a
+    /// cancelled token, or the caller's <see cref="CancellationToken"/> being cancelled (e.g. an aborted HTTP request),
+    /// which still ends the workflow as cancelled with an incident.
+    /// </summary>
+    internal bool IsExecutionCancellation(Exception exception) =>
+        exception is OperationCanceledException { CancellationToken.IsCancellationRequested: true }
+        && ExecutionCancellationToken.IsCancellationRequested
+        && !CancellationToken.IsCancellationRequested;
+
     private void CancelWorkflow()
     {
         Bookmarks.Clear();

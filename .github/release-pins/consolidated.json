@@ -24,5 +24,18 @@
       "Elsa.Platform.Integration"
     ],
     "ancestry_branch": "release/3.10.0"
+  },
+  "3.10.3": {
+    "run_id": 45551499881,
+    "artifact_id": 14995683323,
+    "source_sha": "02cb506d87d9c9d2a79e0a581db1b7665ab376f6",
+    "archive_sha256": "52e4427586ed4ae6a11bd52ec6039acabfaba09c376a70d946ce9e8af38e0b82",
+    "manifest_sha256": "ce85dd8a8f29c242ee9ba5a0ef9102fc64e4e27786854ffcb833694a4d6b3a6a",
+    "feedz_count": 231,
+    "nuget_count": 230,
+    "exclude_ids": [
+      "Elsa.Platform.Integration"
+    ],
+    "ancestry_branch": "release/3.10.0"
   }
 }

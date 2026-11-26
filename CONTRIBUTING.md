@@ -52,9 +52,17 @@ The Core filter excludes the cross-product `Elsa.Secrets.DefaultHost.Integration
 
 Ordinary independent product releases must not bump or republish unrelated products. The dated [first aligned 3.10 baseline and publisher-cutover ADR](docs/adr/2026-09-28-lockstep-consolidated-release-and-publisher-cutover.md) remains an operational handoff under [#8741](https://github.com/elsa-workflows/elsa-core/issues/8741); it does not make every future product release lockstep. A directory move or successful local build does not authorize publication or source-repository archival. Keep existing source issue/PR attribution and link any reviewed adoption to its original contribution.
 
-Apps is a released Elsa 3.9.0 package consumer with nine net10.0 projects, its own scoped package policy and no Core NuGet package outputs. See [Apps](apps/README.md) for local build/image commands and the [source import register](docs/integration-program/apps-source-import.md) for original contributions. The imported source publisher remains inert; the new Apps workflow validates local images without registry writes. Existing source publication and retirement ownership remain separate.
+Apps is a released Elsa 3.9.0 package consumer with nine net10.0 projects, its own scoped package policy and no Core NuGet package outputs. See [Apps](apps/README.md) for local build/image commands and the [source import register](docs/integration-program/apps-source-import.md) for original contributions. The imported source publisher remains inert; the Apps PR suites validate local images without registry writes. Existing source publication and retirement ownership remain separate.
 
 Templates retains the independent `Elsa.Templates` 3.9.0 pack identity and version, outside root NUKE/global packing. Its embedded starter projects are package data, not root solution build members. See [Templates](templates/docs/README.md) for pack/install/generate/build commands and the [source import register](docs/integration-program/templates-source-import.md) for provenance and contribution attribution.
+
+### CI and release workflows
+
+[PR checks](.github/workflows/pr.yml) runs the .NET solution build through NUKE and selects additional suites from the complete Git diff using [the suite path filters](scripts/ci/pr-paths.json). Update those filters when a suite takes on new inputs. Changes to the workflow or filters exercise all eligible PR suites. On pushes to `main`, only the package publication checks and Docker smoke tests are eligible, and both still use their input paths.
+
+Maintainers can run an individual suite from **Actions → PR checks → Run workflow**. The `persisted-upgrade` suite suspends workflows using released 3.8.4 and 3.9.0 packages and resumes and verifies them using released 3.10.2 packages across .NET 8, 9, and 10. The checked-in fixture uses public NuGet packages pinned to their source commits.
+
+Package candidates, package promotion, Community image publication, and React Studio Preview releases have their own workflow entry points and release approvals. The repository wiki is updated through ordinary documentation pull requests.
 
 ### Architecture Decision Records
 

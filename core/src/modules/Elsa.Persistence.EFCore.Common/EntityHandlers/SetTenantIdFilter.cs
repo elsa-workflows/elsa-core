@@ -28,7 +28,12 @@ public class SetTenantIdFilter : IEntityModelCreatingHandler
 
         modelBuilder.Entity(entityType.ClrType).Property(nameof(Entity.TenantId)).IsConcurrencyToken();
         var tenantFilter = CreateTenantFilterExpression(dbContext, entityType.ClrType);
+#if NET10_0_OR_GREATER
+        // EF 11 removed GetQueryFilter(); a null key selects the existing anonymous filter.
+        var existingFilter = entityType.FindDeclaredQueryFilter(null)?.Expression;
+#else
         var existingFilter = entityType.GetQueryFilter();
+#endif
         if (existingFilter is not null)
         {
             var parameter = tenantFilter.Parameters[0];

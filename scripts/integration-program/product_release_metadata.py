@@ -15,6 +15,11 @@ from prove_consolidated_packages import dependency_groups, framework_reference_g
 ROOT = Path(__file__).resolve().parents[2]
 SDK = '10.0.300'
 CORE_REFS = {'3.8': 'refs/heads/release/3.8.4', '3.9': 'refs/heads/release/3.9.0'}
+# TEMPORARY stopgap until the planner moves to SDK 10.0.400 (#9335); remove then.
+# Pull request rehearsals plan core from these commits on CORE_REFS, like the studio and
+# extensions descendants below, so a later commit on a release branch can't fail unrelated PRs.
+# Manual runs still observe the live branch tip.
+CORE_PINS = {'3.8': '33181ae3048f628f591a0155b5665a8e4d1bcea2', '3.9': 'b7352f3c25df38386b3156ce029b6364252ddfc5'}
 DESCENDANTS = {
     ('studio', '3.8'): '41ed15db7bfce7af5be2d362001518e8e692c22e',
     ('studio', '3.9'): 'e7cf096bc117d970dc0bbc11e26dabd2ea2e1b00',
@@ -91,7 +96,9 @@ def bind_source(controller: Path, product: str, line: str, commit: str, observat
         require(observation is not None and observation['ref'] == CORE_REFS[line] and
                 observation['commit'] == commit and observation['tree'] == git(controller, 'rev-parse', commit + '^{tree}'),
                 'source_selection')
-        return {'product': product, 'line': line, 'kind': 'observed-core-release-branch',
+        pinned = observation.get('pinned', False)
+        require(not pinned or commit == CORE_PINS[line], 'source_selection')
+        return {'product': product, 'line': line, 'kind': 'pinned-core-release-commit' if pinned else 'observed-core-release-branch',
                 'commit': commit, 'tree': observation['tree'], 'observation': observation}
     require(DESCENDANTS.get((product, line)) == commit, 'source_selection')
     rows = [row for row in maintenance.registered_core_candidates(maintenance.load_register())
