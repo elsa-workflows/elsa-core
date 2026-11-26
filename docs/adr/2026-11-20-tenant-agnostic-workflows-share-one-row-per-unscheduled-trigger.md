@@ -4,7 +4,7 @@ Date: 2026-11-20
 
 ## Status
 
-Proposed. Amends sections 1, 2, 4 and the first alternative of [Trigger and scheduling semantics for tenant-agnostic (`*`) workflows](2026-11-11-trigger-and-scheduling-semantics-for-tenant-agnostic-workflows.md).
+Accepted. Amends sections 1, 2, 4 and the first alternative of [Trigger and scheduling semantics for tenant-agnostic (`*`) workflows](2026-11-11-trigger-and-scheduling-semantics-for-tenant-agnostic-workflows.md).
 
 ## Context
 
