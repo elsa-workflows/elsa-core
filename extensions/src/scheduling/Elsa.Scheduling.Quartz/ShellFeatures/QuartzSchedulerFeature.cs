@@ -40,5 +40,7 @@ public class QuartzSchedulerFeature : IShellFeature
             .AddScoped<IWorkflowScheduler, QuartzWorkflowScheduler>()
             .AddSingleton<ICronParser, QuartzCronParser>()
             .AddQuartz();
+
+        JobFactoryRegistration.TryUseTenantAwareJobFactory(services);
     }
 }
