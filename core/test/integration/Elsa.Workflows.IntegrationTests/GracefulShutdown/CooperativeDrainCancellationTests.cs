@@ -51,6 +51,28 @@ public class CooperativeDrainCancellationTests(ITestOutputHelper testOutputHelpe
         Assert.Equal(2, _gate.Executions);
     }
 
+    [Fact(DisplayName = "Cancelling the caller's token during an activity that honours it still persists Finished/Cancelled with an incident")]
+    public async Task CallerTokenCancelPersistsFinishedCancelledWithIncident()
+    {
+        // Arrange
+        await StartAsync();
+        var client = await _services.GetRequiredService<IWorkflowRuntime>().CreateClientAsync();
+        Assert.False((await client.CreateInstanceAsync(new() { WorkflowDefinitionHandle = Handle<CooperativeWaitWorkflow>() })).CannotStart);
+        using var callerCancellation = new CancellationTokenSource();
+        var run = Task.Run(() => client.RunInstanceAsync(RunWorkflowInstanceRequest.Empty, callerCancellation.Token));
+        await _gate.Started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+        // Act
+        await callerCancellation.CancelAsync();
+        await _gate.Stopped.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await run.WaitAsync(TimeSpan.FromSeconds(5));
+
+        // Assert
+        var cancelled = await FindAsync(client.WorkflowInstanceId);
+        Assert.Equal((WorkflowStatus.Finished, WorkflowSubStatus.Cancelled), (cancelled!.Status, cancelled.SubStatus));
+        Assert.NotEmpty(cancelled.WorkflowState.Incidents);
+    }
+
     [Fact(DisplayName = "A user cancel still persists Finished/Cancelled")]
     public async Task UserCancelPersistsFinishedCancelled()
     {
