@@ -20,6 +20,10 @@ RUN --mount=type=secret,id=build-ca \
 # Description: Dockerfile for building and running Elsa Server with Datadog and OpenTelemetry auto-instrumentation
 
 FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+# Release version stamped into the assemblies (AssemblyVersion, FileVersion,
+# InformationalVersion). The publish workflow passes the image tag; local builds
+# without --build-arg VERSION keep the SDK default.
+ARG VERSION=
 WORKDIR /source
 # One source snapshot avoids duplicating the SDK filesystem for every product.
 # The root .dockerignore excludes local configuration, credentials and build outputs.
@@ -29,7 +33,7 @@ COPY --from=react-assets /frontend/module-assets/ ./studio/react/dotnet/modules/
 RUN --mount=type=secret,id=build-ca --mount=type=cache,target=/root/.nuget/packages \
     if [ -f /run/secrets/build-ca ]; then export SSL_CERT_FILE=/run/secrets/build-ca; fi; \
     dotnet publish core/src/apps/Elsa.Server.Web/Elsa.Server.Web.csproj -c Release \
-      -o /app/publish -p:UseAppHost=false -f net10.0
+      -o /app/publish -p:UseAppHost=false -f net10.0 ${VERSION:+-p:Version=$VERSION}
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
 WORKDIR /app
