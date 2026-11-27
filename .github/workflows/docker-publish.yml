@@ -43,8 +43,7 @@ on:
 permissions:
   contents: read
 
-# One group for every version and trigger. The highest-tag decision in
-# prepare and the floating X.Y / latest pushes must not overlap.
+# Serialize version-tag promotion and floating alias updates across all releases and retries.
 concurrency:
   group: docker-publish-floating-tags
   cancel-in-progress: false
@@ -57,15 +56,19 @@ jobs:
     outputs:
       version: ${{ steps.release.outputs.version }}
       source_ref: ${{ steps.release.outputs.source_ref }}
-      move_latest: ${{ steps.release.outputs.move_latest }}
-      move_minor: ${{ steps.release.outputs.move_minor }}
+      source_commit: ${{ steps.release.outputs.source_commit }}
+      matrix: ${{ steps.release.outputs.matrix }}
     steps:
-      - name: Validate version, require the matching git tag, and choose floating tags
+      - name: Validate the release ref and resolve the product commit
         id: release
         env:
           EVENT_NAME: ${{ github.event_name }}
           VERSION_INPUT: ${{ inputs.version || '' }}
           TAG_NAME: ${{ github.ref_name }}
+          COMMUNITY_IMAGES: >-
+            [{"name":"elsa-server","output":"server","dockerfile":"docker/ElsaServer.Dockerfile","image":"elsaworkflows/elsa-server-v3"},
+             {"name":"elsa-server-and-studio","output":"combined","dockerfile":"docker/ElsaServerAndStudio.Dockerfile","image":"elsaworkflows/elsa-server-and-studio-v3"},
+             {"name":"elsa-studio","output":"studio","dockerfile":"docker/ElsaStudio.Dockerfile","image":"elsaworkflows/elsa-studio-v3"}]
         run: |
           set -euo pipefail
 
@@ -84,11 +87,7 @@ jobs:
           STABLE_RE='^[0-9]+\.[0-9]+\.[0-9]+$'
           PREVIEW_RE='^[0-9]+\.[0-9]+\.[0-9]+-preview\.[0-9]+$'
 
-          if [[ "$VERSION" =~ $STABLE_RE ]]; then
-            STABLE=true
-          elif [[ "$VERSION" =~ $PREVIEW_RE ]]; then
-            STABLE=false
-          else
+          if [[ ! "$VERSION" =~ $STABLE_RE && ! "$VERSION" =~ $PREVIEW_RE ]]; then
             echo "Unsupported version '$VERSION'. Use 3.X.Y or 3.X.Y-preview.N." >&2
             exit 1
           fi
@@ -103,68 +102,57 @@ jobs:
           esac
 
           REMOTE="https://github.com/${GITHUB_REPOSITORY}.git"
-          if ! git ls-remote --exit-code --tags "$REMOTE" "refs/tags/${VERSION}" >/dev/null; then
+          TAG_REF="refs/tags/$VERSION"
+          if ! TAG_REFS=$(git ls-remote --exit-code --tags "$REMOTE" "$TAG_REF" "$TAG_REF^{}"); then
             echo "Git tag '$VERSION' does not exist on $GITHUB_REPOSITORY." >&2
             exit 1
           fi
 
-          MOVE_LATEST=false
-          MOVE_MINOR=false
-          if [ "$STABLE" = true ]; then
-            STABLE_TAGS=$(
-              git ls-remote --tags "$REMOTE" \
-                | awk '$2 ~ /^refs\/tags\/3\.[0-9]+\.[0-9]+$/ { sub(/^refs\/tags\//, "", $2); print $2 }' \
-                | sort -u
-            )
-            STABLE_TAGS=$(printf '%s\n%s\n' "$STABLE_TAGS" "$VERSION" | awk 'NF' | sort -u)
-            HIGHEST=$(printf '%s\n' "$STABLE_TAGS" | sort -V | tail -n1)
-            MINOR="${VERSION%.*}"
-            HIGHEST_LINE=$(printf '%s\n' "$STABLE_TAGS" | grep -E "^${MINOR}\\.[0-9]+$" | sort -V | tail -n1)
-
-            if [ "$VERSION" = "$HIGHEST" ]; then
-              MOVE_LATEST=true
+          TAG_OBJECT=$(awk -v ref="$TAG_REF" '$2 == ref { print $1 }' <<< "$TAG_REFS")
+          PEELED=$(awk -v ref="$TAG_REF^{}" '$2 == ref { print $1 }' <<< "$TAG_REFS")
+          SOURCE_COMMIT=${PEELED:-$TAG_OBJECT}
+          [[ "$SOURCE_COMMIT" =~ ^[a-f0-9]{40}$ ]]
+          # Shell comparisons preserve ref casing. A manual main run may target a maintenance tag.
+          if [[ "$GITHUB_REF" == "$TAG_REF" ]]; then
+            if [[ "$GITHUB_SHA" != "$TAG_OBJECT" && "$GITHUB_SHA" != "$SOURCE_COMMIT" ]]; then
+              echo "Release tag moved since the triggering event." >&2
+              exit 1
             fi
-            if [ "$VERSION" = "$HIGHEST_LINE" ]; then
-              MOVE_MINOR=true
-            fi
-
-            echo "Stable 3.x tags considered:"
-            printf '%s\n' "$STABLE_TAGS" | sort -V
-            echo "Highest 3.x=$HIGHEST highest ${MINOR}.=$HIGHEST_LINE"
+          elif [[ "$EVENT_NAME" != workflow_dispatch || "$GITHUB_REF" != refs/heads/main ]]; then
+            echo "Dispatch from main or the exact requested version tag." >&2
+            exit 1
           fi
+          # The 3.10 maintenance publisher distributes Server and combined only.
+          MATRIX=$(jq -c --arg version "$VERSION" \
+            '{include: map(select((.output != "studio") or ($version | startswith("3.10.") | not)))}' <<< "$COMMUNITY_IMAGES")
 
           {
             echo "version=$VERSION"
             echo "source_ref=$SOURCE_REF"
-            echo "move_latest=$MOVE_LATEST"
-            echo "move_minor=$MOVE_MINOR"
+            echo "source_commit=$SOURCE_COMMIT"
+            echo "matrix=$MATRIX"
           } >> "$GITHUB_OUTPUT"
 
-          echo "Publishing Community images as $VERSION from tag $SOURCE_REF (move_minor=$MOVE_MINOR move_latest=$MOVE_LATEST)"
+          echo "Staging Community images for $VERSION from $SOURCE_COMMIT"
 
   publish:
     name: Publish ${{ matrix.name }}
     needs: prepare
     runs-on: ubuntu-latest
     timeout-minutes: 120
+    # Each matrix leg sets one uniquely named output after its post-push verification passes.
+    outputs:
+      server: ${{ steps.verify.outputs.server }}
+      combined: ${{ steps.verify.outputs.combined }}
+      studio: ${{ steps.verify.outputs.studio }}
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - name: elsa-server
-            dockerfile: docker/ElsaServer.Dockerfile
-            image: elsaworkflows/elsa-server-v3
-          - name: elsa-server-and-studio
-            dockerfile: docker/ElsaServerAndStudio.Dockerfile
-            image: elsaworkflows/elsa-server-and-studio-v3
-          - name: elsa-studio
-            dockerfile: docker/ElsaStudio.Dockerfile
-            image: elsaworkflows/elsa-studio-v3
+      matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
     steps:
       - name: Checkout ${{ needs.prepare.outputs.source_ref }}
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
-          ref: ${{ needs.prepare.outputs.source_ref }}
+          ref: ${{ needs.prepare.outputs.source_commit }}
           persist-credentials: false
 
       - name: Record source commit
@@ -188,8 +176,6 @@ jobs:
             latest=false
           tags: |
             type=semver,pattern={{version}},value=${{ needs.prepare.outputs.version }}
-            type=semver,pattern={{major}}.{{minor}},value=${{ needs.prepare.outputs.version }},enable=${{ needs.prepare.outputs.move_minor == 'true' }}
-            type=raw,value=latest,enable=${{ needs.prepare.outputs.move_latest == 'true' }}
           labels: |
             org.opencontainers.image.source=https://github.com/elsa-workflows/elsa-core
             org.opencontainers.image.revision=${{ steps.source.outputs.sha }}
@@ -202,14 +188,170 @@ jobs:
           username: ${{ secrets.DOCKER_USER }}
           password: ${{ secrets.DOCKER_PASS }}
 
-      - name: Build and push ${{ matrix.name }}
+      - name: Stage ${{ matrix.name }} by digest
+        id: build
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
           context: .
           file: ${{ matrix.dockerfile }}
           platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          outputs: type=image,name=docker.io/${{ matrix.image }},push-by-digest=true,name-canonical=true,push=true
+          provenance: mode=max,version=v1,builder-id=https://github.com/elsa-workflows/elsa-core/actions/workflows/docker-publish.yml
+          # Docker's BuildKit Syft scanner, stable-1 pinned to the reviewed multi-platform index.
+          sbom: generator=docker/buildkit-syft-scanner@sha256:873a7458c3c8ac8e32c7b796c10e1600b07b963d2aa000a72a2d97aaaa2d6315
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=${{ matrix.name }}
           cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+
+      # A dispatch can publish an older product tag. The verifier belongs to the running workflow revision.
+      - name: Checkout release verification tooling
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.sha }}
+          path: release-tooling
+          sparse-checkout: scripts/docker
+          persist-credentials: false
+
+      - &install_oras
+        name: Install checksum-pinned ORAS
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP"
+          curl --fail --silent --show-error --location --retry 3 --output oras.tar.gz \
+            https://github.com/oras-project/oras/releases/download/v1.4.0/oras_1.4.0_linux_amd64.tar.gz
+          echo 'd8e1dce2fd8ce996f1d901845b688eb0cf505a6082897606f053825bb47935d1  oras.tar.gz' | sha256sum --check -
+          tar -xzf oras.tar.gz oras
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+
+      - name: Verify the published platform evidence and record the immutable image
+        id: verify
+        env:
+          OUTPUT_NAME: ${{ matrix.output }}
+          IMAGE: docker.io/${{ matrix.image }}
+          INDEX_DIGEST: ${{ steps.build.outputs.digest }}
+          PRODUCT_COMMIT: ${{ steps.source.outputs.sha }}
+          PRODUCT_VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          set -euo pipefail
+          if ! /usr/bin/python3 -c 'from jsonschema import Draft201909Validator'; then
+            sudo apt-get update -qq
+            sudo apt-get install --no-install-recommends -y python3-jsonschema
+          fi
+          /usr/bin/python3 "$GITHUB_WORKSPACE/release-tooling/scripts/docker/verify_community_image.py" \
+            "$IMAGE@$INDEX_DIGEST" --source-commit "$PRODUCT_COMMIT" --output predicates
+          {
+            echo "### Community image $PRODUCT_VERSION"
+            echo
+            echo "Image: \`$IMAGE@$INDEX_DIGEST\`"
+            echo "Product commit: \`$PRODUCT_COMMIT\`"
+            echo "Workflow commit: \`$GITHUB_SHA\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          echo "$OUTPUT_NAME=$INDEX_DIGEST" >> "$GITHUB_OUTPUT"
+
+  sign:
+    name: Attest ${{ matrix.name }} index
+    needs: [prepare, publish]
+    # Each verified image can be signed even when a sibling matrix leg failed.
+    if: >-
+      !cancelled() && needs.prepare.result == 'success' &&
+      github.repository == 'elsa-workflows/elsa-core'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      server: ${{ steps.verify.outputs.server }}
+      combined: ${{ steps.verify.outputs.combined }}
+      studio: ${{ steps.verify.outputs.studio }}
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
+    steps:
+      - name: Require a verified digest from the matching producer
+        env:
+          DIGEST: ${{ needs.publish.outputs[matrix.output] }}
+        run: '[[ "$DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]'
+
+      - name: Attest the published image index with GitHub OIDC
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-name: docker.io/${{ matrix.image }}
+          subject-digest: ${{ needs.publish.outputs[matrix.output] }}
+          push-to-registry: false
+          create-storage-record: false
+
+      - name: Verify the consumer-visible index attestation
+        id: verify
+        env:
+          OUTPUT_NAME: ${{ matrix.output }}
+          GH_TOKEN: ${{ github.token }}
+          IMAGE: docker.io/${{ matrix.image }}
+          DIGEST: ${{ needs.publish.outputs[matrix.output] }}
+        run: |
+          for attempt in 1 2 3 4; do
+            if gh attestation verify "oci://$IMAGE@$DIGEST" --repo "$GITHUB_REPOSITORY" \
+              --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/docker-publish.yml" \
+              --source-ref "$GITHUB_REF" --source-digest "$GITHUB_SHA"; then
+              echo "$OUTPUT_NAME=$DIGEST" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            if [[ $attempt -lt 4 ]]; then sleep 5; fi
+          done
+          exit 1
+
+  promote:
+    name: Tag ${{ matrix.name }} release
+    needs: [prepare, sign]
+    if: ${{ !cancelled() && needs.prepare.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
+    steps:
+      - name: Require the verified signer output
+        env:
+          DIGEST: ${{ needs.sign.outputs[matrix.output] }}
+        run: '[[ "$DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]'
+
+      - *install_oras
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          username: ${{ secrets.DOCKER_USER }}
+          password: ${{ secrets.DOCKER_PASS }}
+
+      - name: Promote the signed index and verify each alias
+        env:
+          IMAGE: docker.io/${{ matrix.image }}
+          DIGEST: ${{ needs.sign.outputs[matrix.output] }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+          PRODUCT_COMMIT: ${{ needs.prepare.outputs.source_commit }}
+        run: |
+          set -euo pipefail
+          tags=("$VERSION")
+          # An individual failed job can be rerun after a newer release, reusing old prepare outputs.
+          # Look up the tag and floating-alias eligibility in this promotion attempt.
+          refs=$(git ls-remote --tags "https://github.com/$GITHUB_REPOSITORY.git" 'refs/tags/3.*')
+          commit=$(awk -v ref="refs/tags/$VERSION" '$2 == ref { object=$1 } $2 == ref "^{}" { peeled=$1 }
+            END { print (peeled ? peeled : object) }' <<< "$refs")
+          if [[ "$commit" != "$PRODUCT_COMMIT" ]]; then
+            echo "Product tag no longer matches the staged commit." >&2
+            exit 1
+          fi
+          if [[ "$VERSION" != *-preview.* ]]; then
+            stable=$(awk '$2 ~ /^refs\/tags\/3\.[0-9]+\.[0-9]+$/ { sub(/^refs\/tags\//, "", $2); print $2 }' <<< "$refs" | sort -Vu)
+            minor=${VERSION%.*}
+            highest_minor=$(awk -F. -v minor="$minor" '$1 "." $2 == minor' <<< "$stable" | tail -1)
+            if [[ "$VERSION" == "$highest_minor" ]]; then tags+=("$minor"); fi
+            if [[ "$VERSION" == "$(tail -1 <<< "$stable")" ]]; then tags+=(latest); fi
+          fi
+          for tag in "${tags[@]}"; do
+            oras tag "$IMAGE@$DIGEST" "$tag"
+            [[ "$(oras resolve "$IMAGE:$tag")" == "$DIGEST" ]]
+            echo "Published \`$IMAGE:$tag\` at \`$DIGEST\`" >> "$GITHUB_STEP_SUMMARY"
+          done
