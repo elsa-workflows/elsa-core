@@ -257,6 +257,16 @@ jobs:
           python3 -B -O -m unittest scripts.test_stage_consolidated_candidate_nupkgs
           python3 -B -m unittest scripts.test_consolidated_candidate
           python3 -B -O -m unittest scripts.test_consolidated_candidate
+          python3 -B -m unittest scripts.test_nuget_release_evidence
+          python3 -B -O -m unittest scripts.test_nuget_release_evidence
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+      - name: Verify framework-specific release SBOM generation
+        working-directory: scripts/release-evidence
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          node --test package-boms.test.mjs
       - name: Test isolated candidate preparation and original archive contracts
         run: |
           python3 -B -m unittest discover -s scripts/integration-program -p 'test_prepare_consolidated_release_candidate.py'

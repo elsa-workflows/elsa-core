@@ -542,7 +542,7 @@ class WorkflowGateTests(unittest.TestCase):
         self.assertEqual(1, self.source.count(options))
         for mutated in (self.source.replace(options, options + "          - both\n"),
                         self.source.replace("        type: choice\n" + options, "        type: string\n"),
-                        self.source.replace("        default: all\n  push:", "        default: nuget\n  push:")):
+                        self.source.replace("        default: all\n      verify_release_evidence_version:", "        default: nuget\n      verify_release_evidence_version:")):
             self.assertTrue(any("'promote_target' must be a choice" in v for v in self.candidate_violations(mutated)))
         env = "          PROMOTE_TARGET: ${{ inputs.promote_target }}\n"
         self.assertEqual(1, self.source.count(env))
@@ -778,8 +778,8 @@ class WorkflowGateTests(unittest.TestCase):
     def test_build_npm_must_pin_setup_dotnet(self):
         self.assert_rejected(
             self.mutated(
-                "      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1\n        with:\n          dotnet-version: '10.0.300'\n",
-                "      - uses: actions/setup-dotnet@v4\n        with:\n          dotnet-version: 10.x\n",
+                "      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1\n        with:\n          dotnet-version: '10.0.300'\n\n      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0\n",
+                "      - uses: actions/setup-dotnet@v4\n        with:\n          dotnet-version: 10.x\n\n      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0\n",
             ),
             "build_npm must pin setup-dotnet to the studio-npm-pair SHA",
         )
@@ -805,8 +805,8 @@ class WorkflowGateTests(unittest.TestCase):
     def test_build_npm_must_pin_sdk_version(self):
         self.assert_rejected(
             self.mutated(
-                "          dotnet-version: '10.0.300'\n",
-                "          dotnet-version: 10.x\n",
+                "          dotnet-version: '10.0.300'\n\n      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0\n",
+                "          dotnet-version: 10.x\n\n      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0\n",
             ),
             "build_npm must pin setup-dotnet to 10.0.300",
         )

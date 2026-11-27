@@ -15,6 +15,8 @@ Every command takes --version and fails closed on an unknown version or a missin
                               print exclude_ids and the expected package count as step outputs.
     count --version V --feed feedz|nuget --dir DIR
                               fail unless DIR holds exactly the pinned number of .nupkg files.
+    evidence-eligible --version V
+                              print true if the pin has an index attestation, otherwise false.
 
 Every check raises SystemExit with a reason; a failed check means nothing may be pushed.
 """
@@ -93,6 +95,7 @@ class Pin:
     ancestry_branch: str
     tooling_sha: str | None = None
     legacy_release_artifact: bool = False
+    predates_index_attestation: bool = False
 
     @property
     def artifact_name(self) -> str:
@@ -131,6 +134,12 @@ def validate_pin_entry(version: str, entry: object) -> Pin:
         require(isinstance(entry["legacy_release_artifact"], bool),
                 f"Pin {version}.legacy_release_artifact must be a boolean.")
         allowed.add("legacy_release_artifact")
+    if isinstance(entry, dict) and "predates_index_attestation" in entry:
+        require(isinstance(entry["predates_index_attestation"], bool),
+                f"Pin {version}.predates_index_attestation must be a boolean.")
+        require(not legacy,
+                f"Pin {version} cannot set predates_index_attestation on a legacy_release_artifact pin.")
+        allowed.add("predates_index_attestation")
     unknown = sorted(set(entry) - allowed)
     require(not unknown, f"Pin entry for {version} has unknown fields: {', '.join(unknown)}.")
     for field in ("run_id", "artifact_id", "feedz_count", "nuget_count"):
@@ -174,7 +183,8 @@ def validate_pin_entry(version: str, entry: object) -> Pin:
                archive_sha256=entry["archive_sha256"], manifest_sha256="" if legacy else entry["manifest_sha256"],
                feedz_count=entry["feedz_count"], nuget_count=entry["nuget_count"],
                exclude_ids=tuple(exclude), ancestry_branch=entry["ancestry_branch"], tooling_sha=entry.get("tooling_sha"),
-               legacy_release_artifact=legacy)
+               legacy_release_artifact=legacy,
+               predates_index_attestation=entry.get("predates_index_attestation") is True)
 
 
 def load_pin(version: str, pin_file: Path = PIN_FILE) -> Pin:
@@ -401,6 +411,42 @@ def gh_api(endpoint: str, destination: Path) -> None:
         subprocess.run(["gh", "api", endpoint], check=True, stdout=out)
 
 
+CANDIDATE_INDEX = "release-evidence/candidate-index.json"
+
+
+def has_index_attestation(pin: Pin) -> bool:
+    """False for recovered legacy releases and candidates sealed before index attestations existed."""
+    return not pin.legacy_release_artifact and not pin.predates_index_attestation
+
+
+def missing_candidate_index_message(pin: Pin) -> str:
+    return f"Candidate {pin.version} is missing {CANDIDATE_INDEX}."
+
+
+def unexpected_candidate_index_message(pin: Pin) -> str:
+    return f"Candidate {pin.version} has {CANDIDATE_INDEX}; predates_index_attestation must not be set."
+
+
+def require_candidate_index(archive: zipfile.ZipFile, pin: Pin) -> bytes:
+    require(CANDIDATE_INDEX in archive.namelist(), missing_candidate_index_message(pin))
+    return archive.read(CANDIDATE_INDEX)
+
+
+def require_producer_attestation(pin: Pin, output: Path) -> None:
+    if pin.legacy_release_artifact:
+        return
+    import tempfile
+    from nuget_release_evidence import CANDIDATE, PRODUCER, verify_attestation
+    run = json.loads((output / "run.json").read_bytes())
+    with tempfile.TemporaryDirectory() as directory, zipfile.ZipFile(output / "candidate.zip") as archive:
+        if pin.predates_index_attestation:
+            require(CANDIDATE_INDEX not in archive.namelist(), unexpected_candidate_index_message(pin))
+            return
+        subject = Path(directory) / CANDIDATE
+        subject.write_bytes(require_candidate_index(archive, pin))
+        verify_attestation(subject, PRODUCER, run["head_sha"])
+
+
 def retrieve(pin: Pin, output: Path) -> None:
     require(any(os.environ.get(name) for name in TOKEN_NAMES), "Retrieve requires GH_TOKEN.")
     output.mkdir(parents=True, exist_ok=True)
@@ -414,6 +460,7 @@ def retrieve(pin: Pin, output: Path) -> None:
     check_ancestry(pin, json.loads((output / "compare.json").read_text()))
     gh_api(f"{base}/actions/artifacts/{pin.artifact_id}/zip", output / "candidate.zip")
     verify_transport(pin, output)
+    require_producer_attestation(pin, output)
     print(f"Fetched and verified candidate {pin.version} run {pin.run_id} artifact {pin.artifact_id} source {pin.source_sha}.")
 
 
@@ -426,7 +473,7 @@ def pin_output(pin: Pin, feed: str) -> str:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = parser.add_subparsers(dest="command", required=True)
-    for name in ("validate-pin", "retrieve", "verify", "pin-output", "count"):
+    for name in ("validate-pin", "retrieve", "verify", "pin-output", "count", "evidence-eligible"):
         command = sub.add_parser(name)
         command.add_argument("--version", required=True)
         if name == "retrieve":
@@ -451,6 +498,8 @@ def main(argv: list[str] | None = None) -> int:
               else f"Verified candidate {pin.version}.")
     elif args.command == "pin-output":
         sys.stdout.write(pin_output(pin, args.feed))
+    elif args.command == "evidence-eligible":
+        print("true" if has_index_attestation(pin) else "false")
     else:
         count_nupkgs(args.dir, expected_count(pin, args.feed))
     return 0
