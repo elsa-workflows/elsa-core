@@ -290,18 +290,22 @@ jobs:
           - name: elsa-server
             dockerfile: docker/ElsaServer.Dockerfile
             image: elsa-server-smoke
+            version_dll: Elsa.Workflows.Core.dll
             skip_otel: '0'
           - name: elsa-server-and-studio
             dockerfile: docker/ElsaServerAndStudio.Dockerfile
             image: elsa-server-and-studio-smoke
+            version_dll: Elsa.Workflows.Core.dll
             skip_otel: '0'
           - name: elsa-studio
             dockerfile: docker/ElsaStudio.Dockerfile
             image: elsa-studio-smoke
+            version_dll: Elsa.Studio.Core.dll
             skip_otel: '0'
           - name: elsa-server-datadog
             dockerfile: docker/ElsaServer-Datadog.Dockerfile
             image: elsa-server-datadog-smoke
+            version_dll: Elsa.Workflows.Core.dll
             skip_otel: '1'
     steps:
       - name: Checkout
@@ -319,7 +323,16 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Build ${{ matrix.name }} image
-        run: docker build -f ${{ matrix.dockerfile }} -t ${{ matrix.image }} .
+        run: docker build --build-arg VERSION=3.99.0-smoke.1 -f ${{ matrix.dockerfile }} -t ${{ matrix.image }} .
+
+      - name: Require the build-arg version in the image assemblies
+        run: |
+          set -euo pipefail
+          cid="$(docker create "${{ matrix.image }}")"
+          trap 'docker rm -f "$cid" >/dev/null 2>&1 || true' EXIT
+          docker cp "$cid:/app/${{ matrix.version_dll }}" /tmp/version-check.dll
+          # AssemblyInformationalVersion is stored as UTF-8 in the assembly metadata.
+          grep -aq '3\.99\.0-smoke\.1' /tmp/version-check.dll
 
       - name: Require the Studio image command to be the Studio host
         if: matrix.name == 'elsa-studio'

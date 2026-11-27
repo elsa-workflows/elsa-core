@@ -1,5 +1,9 @@
 ﻿FROM --platform=$BUILDPLATFORM node:22-bookworm AS node
 FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+# Release version stamped into the assemblies (AssemblyVersion, FileVersion,
+# InformationalVersion). The publish workflow passes the image tag; local builds
+# without --build-arg VERSION keep the SDK default.
+ARG VERSION=
 WORKDIR /source
 
 # Node 22 for Studio ClientLib bundles (designer.css and *.entry.js).
@@ -28,8 +32,8 @@ RUN dotnet restore "./studio/src/hosts/Elsa.Studio.Host.Server/Elsa.Studio.Host.
 
 # build and publish (UseAppHost=false creates platform independent binaries).
 WORKDIR /source/studio/src/hosts/Elsa.Studio.Host.Server
-RUN dotnet build "Elsa.Studio.Host.Server.csproj" -c Release -o /app/build -f net10.0
-RUN dotnet publish "Elsa.Studio.Host.Server.csproj" -c Release -o /app/publish /p:UseAppHost=false --no-restore -f net10.0
+RUN dotnet build "Elsa.Studio.Host.Server.csproj" -c Release -o /app/build -f net10.0 ${VERSION:+-p:Version=$VERSION}
+RUN dotnet publish "Elsa.Studio.Host.Server.csproj" -c Release -o /app/publish /p:UseAppHost=false --no-restore -f net10.0 ${VERSION:+-p:Version=$VERSION}
 
 # move binaries into smaller base image.
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
