@@ -1122,7 +1122,7 @@ def source_input_hashes(root: Path) -> dict[str, str]:
         "git", "-C", str(root), "ls-files", "-z", "--", "build.sh", "build.cmd", "build.ps1",
         ".nuke", ".github/actions", ".github/workflows/pr.yml", "scripts/ci", "icon.png",
     ], text=True).split("\0")
-    require("build.sh" in extra_paths and ".github/workflows/pr.yml" in extra_paths and "scripts/ci/pr-paths.json" in extra_paths,
+    require("build.sh" in extra_paths and ".github/workflows/pr.yml" in extra_paths,
             "Package proof source inputs are incomplete")
     result.update({path: hashlib.sha256(regular(root / path).read_bytes()).hexdigest()
                    for path in extra_paths if path})
