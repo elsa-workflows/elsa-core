@@ -42,7 +42,7 @@ namespace Elsa.Workflows.Runtime.ShellFeatures;
     DisplayName = "Workflow Runtime",
     Description = "Provides workflow execution runtime and scheduling capabilities",
     DependsOn = [typeof(WorkflowsFeature)])]
-public class WorkflowRuntimeFeature : IShellFeature
+public class WorkflowRuntimeFeature : IShellFeature, IPostConfigureShellServices
 {
     private IDictionary<string, DispatcherChannel> WorkflowDispatcherChannels { get; set; } = new Dictionary<string, DispatcherChannel>();
 
@@ -199,6 +199,16 @@ public class WorkflowRuntimeFeature : IShellFeature
 
         return this;
     }
+    /// <summary>
+    /// Hides the shared triggers of a tenant-agnostic workflow definition from a tenant that overrides it. It decorates the trigger store
+    /// that the enabled features registered, including a persistence feature that registers its store after this feature, and is applied
+    /// before <see cref="CachingWorkflowRuntimeFeature"/> adds its cache on top.
+    /// </summary>
+    public void PostConfigureServices(IServiceCollection services)
+    {
+        services.Decorate<ITriggerStore, TenantOverrideTriggerStore>();
+    }
+
 
     public void ConfigureServices(IServiceCollection services)
     {
@@ -269,6 +279,7 @@ public class WorkflowRuntimeFeature : IShellFeature
             .AddScoped<IActivityExecutionMapper, DefaultActivityExecutionMapper>()
             .AddScoped<IWorkflowDefinitionStorePopulator>(DefaultWorkflowDefinitionStorePopulator.Create)
             .AddSingleton<TenantAgnosticWorkflowsCache>()
+            .AddSingleton<SharedDefinitionTriggersCache>()
             .AddScoped<IRegistriesPopulator, DefaultRegistriesPopulator>()
             .AddScoped<IWorkflowDefinitionsRefresher, WorkflowDefinitionsRefresher>()
             .AddScoped<IWorkflowDefinitionsReloader, WorkflowDefinitionsReloader>()

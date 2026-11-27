@@ -68,6 +68,7 @@ public class StaticWorkflowDefinitionLinker(
                 MaterializerName = item.MaterializerName,
                 CreatedAt = item.CreatedAt,
                 IsReadonly = item.IsReadonly,
+                TenantId = item.TenantId,
                 IsMaterializerAvailable = materializerRegistry.IsMaterializerAvailable(item.MaterializerName)
             });
         }

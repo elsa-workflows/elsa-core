@@ -60,6 +60,12 @@ public class TriggerFilter
     internal bool RequireCompleteCleanup { get; set; }
 
     /// <summary>
+    /// Returns a shallow copy of this filter with every value, so that a value added to the filter later is copied too. The collections
+    /// are shared with this filter: a caller replaces a collection on the copy and never changes one.
+    /// </summary>
+    internal TriggerFilter Clone() => (TriggerFilter)MemberwiseClone();
+
+    /// <summary>
     /// Applies the filter to the specified query.
     /// </summary>
     public IQueryable<StoredTrigger> Apply(IQueryable<StoredTrigger> queryable)

@@ -195,9 +195,17 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
                     continue;
                 }
 
-                var addResult = await AddAsync(result, indexTriggers, cancellationToken);
+                var addResult = await AddAsync(result, indexTriggers, false, cancellationToken);
                 addResult.OnSuccess(workflowDefinition => workflowDefinitions.Add(workflowDefinition));
             }
+        }
+
+        // Every tenant runs this import on its activation. It also reconciles the tenant-agnostic definitions that no provider imported,
+        // such as those authored in a registered "*" tenant, and the scheduled rows of definitions retracted while the tenant was inactive.
+        if (indexTriggers && TriggerIndexer.AsTriggerIndexer(_triggerIndexer, _logger) is { } triggerIndexer)
+        {
+            var indexedVersionIds = workflowDefinitions.Where(x => x.IsPublished).Select(x => x.Id).ToHashSet();
+            await triggerIndexer.ReconcileSharedDefinitionsOnActivationAsync(indexedVersionIds, cancellationToken);
         }
 
         return workflowDefinitions;
@@ -291,13 +299,13 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
 
                 if (indexTriggers && storedDefinition.IsPublished)
                 {
-                    await IndexProvidedTriggersAsync(storedDefinition, cancellationToken);
+                    await IndexProvidedTriggersAsync(storedDefinition, false, cancellationToken);
                 }
 
                 continue;
             }
 
-            var addResult = await AddAsync(importedWorkflow.MaterializedWorkflow, indexTriggers, cancellationToken);
+            var addResult = await AddAsync(importedWorkflow.MaterializedWorkflow, indexTriggers, false, cancellationToken);
             addResult.OnSuccess(workflowDefinition => workflowDefinitions.Add(workflowDefinition));
         }
     }
@@ -406,24 +414,47 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
     }
 
     /// <inheritdoc />
-    public async Task<Result<WorkflowDefinition>> AddAsync(MaterializedWorkflow materializedWorkflow, bool indexTriggers, CancellationToken cancellationToken = default)
+    /// <remarks>
+    /// The scheduled triggers of a tenant-agnostic workflow are indexed for every active tenant.
+    /// </remarks>
+    public Task<Result<WorkflowDefinition>> AddAsync(MaterializedWorkflow materializedWorkflow, bool indexTriggers, CancellationToken cancellationToken = default)
+    {
+        return AddAsync(materializedWorkflow, indexTriggers, true, cancellationToken);
+    }
+
+    private async Task<Result<WorkflowDefinition>> AddAsync(MaterializedWorkflow materializedWorkflow, bool indexTriggers, bool allTenants, CancellationToken cancellationToken)
     {
         await AssignIdentities(materializedWorkflow.Workflow, cancellationToken);
         var result = await AddOrUpdateAsync(materializedWorkflow, cancellationToken);
 
         return await result.OnSuccessAsync(async workflowDefinition =>
         {
+            // The import saved the definition, possibly changed under the same version ID, so what was derived from that version is stale.
+            // A stored definition that already matched is reused without coming here.
+            if (workflowDefinition.TenantId == Tenant.AgnosticTenantId)
+                TriggerIndexer.AsTriggerIndexer(_triggerIndexer, null)?.ForgetSharedDefinitionVersion(workflowDefinition.Id);
+
             if (indexTriggers && workflowDefinition.IsPublished)
-                await IndexProvidedTriggersAsync(workflowDefinition, cancellationToken);
+                await IndexProvidedTriggersAsync(workflowDefinition, allTenants, cancellationToken);
         });
     }
 
-    private async Task IndexProvidedTriggersAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken)
+    /// <param name="workflowDefinition">The workflow definition.</param>
+    /// <param name="allTenants">
+    /// Whether the scheduled triggers of a tenant-agnostic definition are indexed for every active tenant. The import that every tenant
+    /// runs on its activation indexes them for that tenant only.
+    /// </param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    private async Task IndexProvidedTriggersAsync(WorkflowDefinition workflowDefinition, bool allTenants, CancellationToken cancellationToken)
     {
         using var grant = workflowDefinition.TenantId == Tenant.AgnosticTenantId
             ? SharedTenantWriteScope.Enter<StoredTrigger>()
             : null;
-        await _triggerIndexer.IndexTriggersAsync(workflowDefinition, cancellationToken);
+
+        if (TriggerIndexer.AsTriggerIndexer(_triggerIndexer, _logger) is { } triggerIndexer)
+            await triggerIndexer.IndexTriggersAsync(workflowDefinition, allTenants, cancellationToken);
+        else
+            await _triggerIndexer.IndexTriggersAsync(workflowDefinition, cancellationToken);
     }
 
     private async Task AssignIdentities(Workflow workflow, CancellationToken cancellationToken)

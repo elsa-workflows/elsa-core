@@ -6,6 +6,7 @@ using Elsa.Workflows;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.Runtime.Options;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 
@@ -77,6 +78,24 @@ public class DefaultTriggerSchedulerTests
             Assert.NotNull(properties);
             Assert.Equal(trigger.Hash, properties[TriggerWorkflowProperties.StimulusHash]);
         }
+    }
+
+    [Fact(DisplayName = "A trigger whose name is not a scheduled trigger name is neither scheduled nor unscheduled")]
+    public async Task ScheduleAsync_SelectsTriggersByScheduledTriggerNames()
+    {
+        var workflowScheduler = Substitute.For<IWorkflowScheduler>();
+        var runtimeOptions = Microsoft.Extensions.Options.Options.Create(new RuntimeOptions { ScheduledTriggerNames = { SchedulingStimulusNames.Cron } });
+        var scheduler = new DefaultTriggerScheduler(workflowScheduler, Substitute.For<ISystemClock>(), Substitute.For<ILogger<DefaultTriggerScheduler>>(), runtimeOptions);
+        var timerTrigger = CreateTrigger<Activities.Timer>("timer", new TimerTriggerPayload(DateTimeOffset.UtcNow, TimeSpan.FromHours(1)));
+        var cronTrigger = CreateTrigger<Cron>("cron", new CronTriggerPayload("0 0 * * * ?"));
+
+        await scheduler.ScheduleAsync([timerTrigger, cronTrigger], CancellationToken.None);
+        await scheduler.UnscheduleAsync([timerTrigger, cronTrigger], CancellationToken.None);
+
+        await workflowScheduler.Received(1).ScheduleCronAsync(cronTrigger.Id, Arg.Any<ScheduleNewWorkflowInstanceRequest>(), "0 0 * * * ?", Arg.Any<CancellationToken>());
+        await workflowScheduler.DidNotReceive().ScheduleRecurringAsync(Arg.Any<string>(), Arg.Any<ScheduleNewWorkflowInstanceRequest>(), Arg.Any<DateTimeOffset>(), Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>());
+        await workflowScheduler.Received(1).UnscheduleAsync(cronTrigger.Id, Arg.Any<CancellationToken>());
+        await workflowScheduler.DidNotReceive().UnscheduleAsync(timerTrigger.Id, Arg.Any<CancellationToken>());
     }
 
     private static StoredTrigger CreateTrigger<TActivity>(string id, object payload) where TActivity : IActivity => new()

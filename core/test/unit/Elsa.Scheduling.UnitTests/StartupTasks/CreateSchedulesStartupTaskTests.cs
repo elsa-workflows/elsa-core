@@ -8,6 +8,7 @@ using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
+using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
@@ -245,6 +246,25 @@ public class CreateSchedulesStartupTaskTests
         await _bookmarkManager.DidNotReceive().DeleteManyAsync(Arg.Any<BookmarkFilter>(), Arg.Any<CancellationToken>());
     }
 
+    [Fact(DisplayName = "Startup scheduling loads the triggers by the scheduled trigger names and still loads Delay bookmarks")]
+    public async Task ExecuteAsync_LoadsTriggersByScheduledTriggerNames()
+    {
+        var triggerFilters = new List<TriggerFilter>();
+        var bookmarkFilters = new List<BookmarkFilter>();
+        _triggerStore.FindManyAsync(Arg.Do<TriggerFilter>(triggerFilters.Add), Arg.Any<PageArgs>(), Arg.Any<CancellationToken>())
+            .Returns(new Page<StoredTrigger>(_triggers, _triggers.Length));
+        _bookmarkStore.FindManyAsync(Arg.Do<BookmarkFilter>(bookmarkFilters.Add), Arg.Any<PageArgs>(), Arg.Any<CancellationToken>())
+            .Returns(new Page<StoredBookmark>(_bookmarks, _bookmarks.Length));
+        var serviceProvider = CreateServiceProvider(services => services.Configure<RuntimeOptions>(options => options.ScheduledTriggerNames.Add("Custom.Scheduled")));
+        var task = new CreateSchedulesStartupTask(serviceProvider, OptionsFactory.Create(_options));
+
+        await task.ExecuteAsync(CancellationToken.None);
+
+        var triggerFilter = Assert.Single(triggerFilters);
+        Assert.Equal(["Custom.Scheduled", SchedulingStimulusNames.Cron, SchedulingStimulusNames.StartAt, SchedulingStimulusNames.Timer], triggerFilter.Names!.Order(StringComparer.Ordinal));
+        Assert.Contains(SchedulingStimulusNames.Delay, Assert.Single(bookmarkFilters).Names!);
+    }
+
     [Fact]
     public async Task ExecuteAsync_DoesNotPurgeWhenEverySchedulingBookmarkIsLive()
     {
@@ -262,6 +282,7 @@ public class CreateSchedulesStartupTaskTests
         services.AddSingleton(_bookmarkStore);
         services.AddSingleton(_triggerScheduler);
         services.AddSingleton(_bookmarkScheduler);
+        services.Configure<RuntimeOptions>(options => options.ScheduledTriggerNames.UnionWith([SchedulingStimulusNames.Cron, SchedulingStimulusNames.StartAt, SchedulingStimulusNames.Timer]));
 
         if (registerReconcileServices)
         {

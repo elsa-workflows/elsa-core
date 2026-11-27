@@ -18,17 +18,22 @@ namespace Elsa.Workflows.Runtime.ShellFeatures;
     Description = "Provides caching for workflow runtime operations",
     DependsOn = [typeof(MemoryCacheFeature), typeof(WorkflowRuntimeFeature)])]
 [UsedImplicitly]
-public class CachingWorkflowRuntimeFeature : IShellFeature
+public class CachingWorkflowRuntimeFeature : IShellFeature, IPostConfigureShellServices
 {
     public void ConfigureServices(IServiceCollection services)
     {
         services
-            // Decorators.
-            .Decorate<ITriggerStore, CachingTriggerStore>()
-
-            // Handlers.
             .AddNotificationHandler<InvalidateTriggersCache>()
             .AddNotificationHandler<InvalidateWorkflowsCache>();
+    }
+
+    /// <summary>
+    /// Caches the trigger store that the enabled features registered, including a persistence feature that registers its store after this
+    /// feature, on top of the decorators of <see cref="WorkflowRuntimeFeature"/>.
+    /// </summary>
+    public void PostConfigureServices(IServiceCollection services)
+    {
+        services.Decorate<ITriggerStore, CachingTriggerStore>();
     }
 }
 

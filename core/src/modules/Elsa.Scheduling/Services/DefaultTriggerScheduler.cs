@@ -5,20 +5,32 @@ using Elsa.Scheduling.Bookmarks;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.Runtime.Options;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Scheduling.Services;
 
 /// <summary>
 /// A default implementation of <see cref="ITriggerScheduler"/> that schedules triggers using <see cref="IWorkflowScheduler"/>.
+/// It schedules the timer, cron and start-at triggers among the triggers whose name is in <see cref="RuntimeOptions.ScheduledTriggerNames"/>.
 /// </summary>
-public class DefaultTriggerScheduler(IWorkflowScheduler workflowScheduler, ISystemClock systemClock, ILogger<DefaultTriggerScheduler> logger)
+public class DefaultTriggerScheduler(IWorkflowScheduler workflowScheduler, ISystemClock systemClock, ILogger<DefaultTriggerScheduler> logger, IOptions<RuntimeOptions> runtimeOptions)
     : ITriggerScheduler
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DefaultTriggerScheduler"/> class that schedules the triggers of the scheduling module.
+    /// </summary>
+    [Obsolete("Use the constructor that accepts IOptions<RuntimeOptions> instead. Removed in the next major version.")]
+    public DefaultTriggerScheduler(IWorkflowScheduler workflowScheduler, ISystemClock systemClock, ILogger<DefaultTriggerScheduler> logger)
+        : this(workflowScheduler, systemClock, logger, Microsoft.Extensions.Options.Options.Create(new RuntimeOptions { ScheduledTriggerNames = SchedulingStimulusNames.ScheduledTriggerNames.ToHashSet() }))
+    {
+    }
+
     /// <inheritdoc />
     public async Task ScheduleAsync(IEnumerable<StoredTrigger> triggers, CancellationToken cancellationToken = default)
     {
-        var triggerList = triggers.ToList();
+        var triggerList = SelectScheduledTriggers(triggers);
         var timerTriggers = triggerList.Filter<Activities.Timer>();
         var startAtTriggers = triggerList.Filter<StartAt>();
         var cronTriggers = triggerList.Filter<Cron>();
@@ -99,7 +111,7 @@ public class DefaultTriggerScheduler(IWorkflowScheduler workflowScheduler, ISyst
     /// <inheritdoc />
     public async Task UnscheduleAsync(IEnumerable<StoredTrigger> triggers, CancellationToken cancellationToken = default)
     {
-        var triggerList = triggers.ToList();
+        var triggerList = SelectScheduledTriggers(triggers);
         var timerTriggers = triggerList.Filter<Activities.Timer>();
         var startAtTriggers = triggerList.Filter<StartAt>();
         var cronTriggers = triggerList.Filter<Cron>();
@@ -107,5 +119,11 @@ public class DefaultTriggerScheduler(IWorkflowScheduler workflowScheduler, ISyst
         
         foreach (var trigger in filteredTriggers)
             await workflowScheduler.UnscheduleAsync(trigger.Id, cancellationToken);
+    }
+
+    private List<StoredTrigger> SelectScheduledTriggers(IEnumerable<StoredTrigger> triggers)
+    {
+        var scheduledTriggerNames = runtimeOptions.Value.ScheduledTriggerNames;
+        return triggers.Where(x => x.Name != null && scheduledTriggerNames.Contains(x.Name)).ToList();
     }
 }

@@ -33,7 +33,12 @@ public class TenantPrefixHttpEndpointRoutesProvider(ITenantsProvider tenantsProv
         var segments = new List<string?>();
         var routeDataValues = new RouteValueDictionary();
 
-        if (!string.IsNullOrEmpty(context.TenantId))
+        if (context.TenantId == Tenant.AgnosticTenantId)
+        {
+            // The endpoint of a tenant-agnostic workflow is stored once for all tenants, so it is routed under every tenant's prefix.
+            segments.Add("{tenantPrefix}");
+        }
+        else if (!string.IsNullOrEmpty(context.TenantId))
         {
             var tenant = await tenantsProvider.FindByIdAsync(context.TenantId);
             var tenantPrefix = tenant?.GetRoutePrefix();

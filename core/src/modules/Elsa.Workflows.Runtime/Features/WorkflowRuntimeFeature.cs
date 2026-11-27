@@ -351,6 +351,7 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
             .AddScoped<IActivityExecutionMapper, DefaultActivityExecutionMapper>()
             .AddScoped<IWorkflowDefinitionStorePopulator>(DefaultWorkflowDefinitionStorePopulator.Create)
             .AddSingleton<TenantAgnosticWorkflowsCache>()
+            .AddSingleton<SharedDefinitionTriggersCache>()
             .AddScoped<IRegistriesPopulator, DefaultRegistriesPopulator>()
             .AddScoped<IWorkflowDefinitionsRefresher, WorkflowDefinitionsRefresher>()
             .AddScoped<IWorkflowDefinitionsReloader, WorkflowDefinitionsReloader>()
@@ -466,6 +467,9 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
             .AddScoped<IWorkflowActivationStrategy, CorrelatedSingletonStrategy>()
             .AddScoped<IWorkflowActivationStrategy, CorrelationStrategy>()
             ;
+
+        // Beneath the cache of CachingWorkflowRuntimeFeature, which depends on this feature and decorates the store after it.
+        Services.Decorate<ITriggerStore, TenantOverrideTriggerStore>();
 
         Services.TryAddScoped<IWorkflowDispatchOutbox>(sp => ActivatorUtilities.CreateInstance<WorkflowDispatchOutbox>(sp));
         Services.TryAddScoped(WorkflowDispatchOutboxStore);

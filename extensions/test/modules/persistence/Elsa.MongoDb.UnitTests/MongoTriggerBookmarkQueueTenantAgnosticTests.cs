@@ -82,6 +82,34 @@ public sealed class MongoTriggerBookmarkQueueTenantAgnosticTests : IAsyncLifetim
         Assert.Equal(2, agnostic.TotalCount);
     }
 
+    [Theory]
+    [InlineData("tenant-a")]
+    [InlineData(Tenant.AgnosticTenantId)]
+    public async Task TriggerStore_DeleteMany_DeletesSharedRowOnlyInsideSharedWriteScope(string tenantId)
+    {
+        // Arrange
+        var shared = Trigger("trigger-shared");
+        shared.TenantId = Tenant.AgnosticTenantId;
+        await _triggerStore.SaveAsync(shared);
+        var filter = new TriggerFilter { Ids = ["trigger-shared"] };
+
+        // Act
+        long withoutScope;
+        long withScope;
+        using (var tenant = _tenantAccessor.PushContext(new Tenant { Id = tenantId }))
+        {
+            withoutScope = await _triggerStore.DeleteManyAsync(filter);
+
+            using (SharedTenantWriteScope.Enter<StoredTrigger>())
+                withScope = await _triggerStore.DeleteManyAsync(filter);
+        }
+
+        // Assert
+        Assert.Equal(0, withoutScope);
+        Assert.Equal(1, withScope);
+        Assert.Empty(await _triggerStore.FindManyAsync(new TriggerFilter { TenantAgnostic = true }));
+    }
+
     [Fact]
     public async Task BookmarkQueueStore_FindManyAndPage_TenantAgnostic_ReturnsBothTenants()
     {
