@@ -39,6 +39,33 @@ public class BookmarkQueueStoreFindManyPagedTests
         Assert.Equal(["q-a", "q-default", "q-t1", "q-t2"], agnostic.Select(x => x.Id));
     }
 
+    [Theory]
+    [InlineData(OrderDirection.Ascending)]
+    [InlineData(OrderDirection.Descending)]
+    public async Task MemoryQueueStore_OrdersTimestampTiesByIdAcrossPages(OrderDirection direction)
+    {
+        var store = new MemoryBookmarkQueueStore(new MemoryStore<BookmarkQueueItem>());
+        var tiedIds = Enumerable.Range(0, 55).Select(i => $"queue-{i:D2}").ToArray();
+        foreach (var id in tiedIds.Reverse())
+            await store.AddAsync(new() { Id = id, CreatedAt = DateTimeOffset.UnixEpoch });
+
+        const string newest = "newest";
+        await store.AddAsync(new() { Id = newest, CreatedAt = DateTimeOffset.UnixEpoch.AddDays(1) });
+        await store.AddAsync(new() { Id = "excluded", CreatedAt = DateTimeOffset.UnixEpoch.AddDays(2) });
+
+        var order = new BookmarkQueueItemOrder<DateTimeOffset>(x => x.CreatedAt, direction);
+        var filter = new BookmarkQueueFilter { Ids = [.. tiedIds, newest] };
+        var expected = direction == OrderDirection.Ascending ? tiedIds.Append(newest) : tiedIds.Prepend(newest);
+        var firstPage = PageArgs.FromRange(0, 50);
+        var secondPage = PageArgs.FromRange(50, 50);
+
+        Assert.Equal(expected.Take(50), (await store.FindManyAsync(filter, order, firstPage)).Select(item => item.Id));
+        Assert.Equal(expected.Skip(50), (await store.FindManyAsync(filter, order, secondPage)).Select(item => item.Id));
+        Assert.Equal(expected.Skip(50), (await store.PageAsync(secondPage, filter, order)).Items.Select(item => item.Id));
+        var unfiltered = await store.PageAsync(PageArgs.FromRange(direction == OrderDirection.Ascending ? 0 : 2, 2), order);
+        Assert.Equal(tiedIds.Take(2), unfiltered.Items.Select(item => item.Id));
+    }
+
     [Fact(DisplayName = "Memory dead-letter store pages, orders and filters without a total")]
     public async Task MemoryDeadLetterStore_FindManyPaged_OrdersFiltersAndPages()
     {

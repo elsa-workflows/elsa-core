@@ -78,6 +78,21 @@ public sealed class DapperBookmarkQueueStoreTenantAgnosticTests : IDisposable
         Assert.Empty(filtered);
     }
 
+    [Fact]
+    public async Task QueuePages_OrderEqualTimestampsById()
+    {
+        var (store, tenantScope) = CreateSeededStoreForTenant1();
+        using var _ = tenantScope;
+        var filter = new BookmarkQueueFilter { TenantAgnostic = true };
+        var order = new BookmarkQueueItemOrder<DateTimeOffset>(x => x.CreatedAt, OrderDirection.Descending);
+        var firstPage = PageArgs.FromRange(0, 1);
+        var secondPage = PageArgs.FromRange(1, 1);
+
+        Assert.Equal("q-t1", Assert.Single(await store.FindManyAsync(filter, order, firstPage)).Id);
+        Assert.Equal("q-t2", Assert.Single(await store.FindManyAsync(filter, order, secondPage)).Id);
+        Assert.Equal("q-t1", Assert.Single((await store.PageAsync(firstPage, filter, order)).Items).Id);
+    }
+
     [Fact(DisplayName = "FindManyAsync follows TenantAgnostic")]
     public async Task FindManyAsync_FollowsTenantAgnostic()
     {
@@ -160,7 +175,7 @@ public sealed class DapperBookmarkQueueStoreTenantAgnosticTests : IDisposable
                               );
                               """);
 
-            foreach (var (id, tenantId, createdAt) in Items)
+            foreach (var (id, tenantId, createdAt) in Items.Reverse())
             {
                 connection.Execute(
                     """

@@ -1,12 +1,13 @@
 import os
 import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from validate_packages_publication_selection import selection_errors
+from validate_packages_publication_selection import legacy_release_pin_versions, release_version, selection_errors
 
 SCRIPT = Path(__file__).with_name("validate_packages_publication_selection.py")
 
@@ -16,6 +17,7 @@ ACCEPTED = (
     ("refs/heads/feat/new-activity", {"feedz"}),
     ("refs/tags/3.8.4", set()),
     ("refs/tags/3.8.5", {"nuget"}),
+    # 3.6.4 tag nuget is blocked below in REJECTED.
     ("refs/tags/3.8.0-rc2", {"nuget"}),
     ("refs/tags/2.17.0", {"nuget"}),
     ("refs/tags/3.10.0", {"nuget"}),
@@ -35,6 +37,9 @@ REJECTED = (
     ("refs/heads/main", {"npm"}, "requires a release tag"),
     ("refs/heads/3.8.5", {"nuget"}, "requires a release tag"),
     ("refs/tags/3.8.5", {"feedz"}, "limited to 3.10.x prerelease"),
+    ("refs/tags/3.6.4", {"nuget"}, "requires a pinned candidate"),
+    ("refs/tags/03.6.4", {"nuget"}, "requires a pinned candidate"),
+    ("refs/tags/3.6.4", {"npm"}, "does not publish Studio npm"),
     ("refs/tags/3.11.0", {"nuget"}, "requires a sealed candidate"),
     ("refs/tags/03.11.0", {"nuget"}, "requires a sealed candidate"),
     ("refs/tags/3.11.0-preview.1", {"nuget"}, "requires a sealed candidate"),
@@ -65,7 +70,7 @@ REJECTED = (
 )
 
 
-def errors(ref, selected, exclude_ids=None, promote=None, target="all"):
+def errors(ref, selected, exclude_ids=None, promote=None, target="all", verify=None):
     return selection_errors(
         ref,
         feedz="feedz" in selected,
@@ -75,10 +80,40 @@ def errors(ref, selected, exclude_ids=None, promote=None, target="all"):
         exclude_ids=exclude_ids,
         promote=promote,
         target=target,
+        verify=verify,
     )
 
 
 class SelectionErrorsTests(unittest.TestCase):
+
+    def test_release_version_strips_leading_zeros_and_prerelease_suffix(self):
+        self.assertEqual("3.6.4", release_version("3.6.4"))
+        self.assertEqual("3.6.4", release_version("03.6.4"))
+        self.assertEqual("3.8.0", release_version("3.8.0-rc2"))
+
+    def test_missing_pin_file_fails_closed(self):
+        with tempfile.TemporaryDirectory() as temp:
+            missing = Path(temp) / "consolidated.json"
+            with self.assertRaisesRegex(SystemExit, "is missing"):
+                legacy_release_pin_versions(missing)
+
+    def test_invalid_json_pin_file_fails_closed(self):
+        with tempfile.TemporaryDirectory() as temp:
+            pin_file = Path(temp) / "consolidated.json"
+            pin_file.write_text("{not json", encoding="utf-8")
+            with self.assertRaisesRegex(SystemExit, "is unreadable"):
+                legacy_release_pin_versions(pin_file)
+
+    def test_non_object_pin_file_fails_closed(self):
+        with tempfile.TemporaryDirectory() as temp:
+            pin_file = Path(temp) / "consolidated.json"
+            pin_file.write_text("[]", encoding="utf-8")
+            with self.assertRaisesRegex(SystemExit, "must be an object"):
+                legacy_release_pin_versions(pin_file)
+
+    def test_tag_run_for_legacy_pinned_364_is_blocked(self):
+        self.assertIn("requires a pinned candidate", " ".join(errors("refs/tags/3.6.4", {"nuget"})))
+
     def test_accepts_matching_selections(self):
         for ref, selected in ACCEPTED:
             with self.subTest(ref=ref, selected=sorted(selected)):
@@ -118,6 +153,8 @@ class SelectionErrorsTests(unittest.TestCase):
         self.assertEqual([], errors("refs/heads/main", set(), promote="3.10.1"))
         self.assertEqual([], errors("refs/heads/main", set(), promote="3.10.2"))
         self.assertEqual([], errors("refs/heads/main", set(), promote="3.11.0"))
+        self.assertEqual([], errors("refs/heads/main", set(), promote="3.6.4"))
+        self.assertEqual([], errors("refs/heads/main", set(), promote="3.6.4", target="nuget"))
         self.assertIn("requires refs/heads/main", " ".join(errors("refs/heads/release/3.11.0", set(), promote="3.11.0")))
         for ref in ("refs/heads/release/3.10.0", "refs/heads/feature/x", "refs/tags/3.10.1", "refs/tags/3.10.0"):
             with self.subTest(ref=ref):
@@ -161,7 +198,7 @@ class SelectionErrorsTests(unittest.TestCase):
 class SelectionScriptTests(unittest.TestCase):
     """The job runs the script with the ref and inputs in its environment."""
 
-    def run_script(self, ref, feedz="false", nuget="false", npm="false", coverage="false", exclude_ids="", promote="", target="all"):
+    def run_script(self, ref, feedz="false", nuget="false", npm="false", coverage="false", exclude_ids="", promote="", target="all", verify=""):
         env = {
             **os.environ,
             "REF": ref,
@@ -172,6 +209,7 @@ class SelectionScriptTests(unittest.TestCase):
             "EXCLUDE_IDS": exclude_ids,
             "PROMOTE_CANDIDATE_VERSION": promote,
             "PROMOTE_TARGET": target,
+            "VERIFY_RELEASE_EVIDENCE_VERSION": verify,
         }
         return subprocess.run([sys.executable, str(SCRIPT)], env=env, capture_output=True, text=True)
 
@@ -226,6 +264,18 @@ class SelectionScriptTests(unittest.TestCase):
         rejected = self.run_script("refs/tags/3.10.0", nuget="false", exclude_ids="Elsa")
         self.assertEqual(1, rejected.returncode)
         self.assertIn("exclude_ids is only accepted", rejected.stderr)
+
+    def test_release_evidence_reverify_is_main_only_and_exclusive(self):
+        self.assertEqual([], errors("refs/heads/main", set(), verify="3.10.3"))
+        self.assertTrue(any("requires refs/heads/main" in error for error in errors("refs/tags/3.10.3", set(), verify="3.10.3")))
+        self.assertTrue(any("promote_candidate_version" in error for error in errors("refs/heads/main", set(), promote="3.10.3", verify="3.10.3")))
+        self.assertTrue(any("publish_nuget" in error for error in errors("refs/heads/main", {"nuget"}, verify="3.10.3")))
+        self.assertTrue(any("not a version" in error for error in errors("refs/heads/main", set(), verify="3.6.4")))
+        accepted = self.run_script("refs/heads/main", verify="3.10.3")
+        self.assertEqual(0, accepted.returncode, accepted.stderr)
+        rejected = self.run_script("refs/heads/main", promote="3.10.3", verify="3.10.3")
+        self.assertEqual(1, rejected.returncode)
+        self.assertIn("promote_candidate_version", rejected.stderr)
 
 
 if __name__ == "__main__":

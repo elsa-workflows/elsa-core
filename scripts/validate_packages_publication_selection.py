@@ -14,13 +14,18 @@ build and every publisher. The ref and inputs arrive as environment variables, n
                            inputs.promote_candidate_version (optional; empty means not a candidate promotion)
     PROMOTE_TARGET         inputs.promote_target (all, feedz or nuget; anything else fails closed; only
                            all is accepted without a promote_candidate_version)
+    VERIFY_RELEASE_EVIDENCE_VERSION
+                           inputs.verify_release_evidence_version (optional; empty means not a
+                           release-evidence re-verify)
 """
 
 from __future__ import annotations
 
+import json
 import os
 import re
 import sys
+from pathlib import Path
 
 from validate_packages_id_set import STABLE_310_PATTERN, is_stable_310, parse_exclude_ids
 
@@ -33,6 +38,33 @@ COVERAGE_REFS = ("refs/heads/main", "refs/heads/release/3.6.1")
 PROMOTE_REF = "refs/heads/main"
 PROMOTE_VERSION = re.compile(r"3\.(?:10|11)\.(?:0|[1-9][0-9]*)")
 PROMOTE_TARGETS = ("all", "feedz", "nuget")
+PIN_FILE = Path(__file__).resolve().parents[1] / ".github/release-pins/consolidated.json"
+
+
+def legacy_release_pin_versions(pin_file: Path = PIN_FILE) -> set[str]:
+    """Versions recovered from an original release artifact, pinned with legacy_release_artifact."""
+    try:
+        document = json.loads(pin_file.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        raise SystemExit(f"Release pin file {pin_file} is missing.")
+    except (OSError, json.JSONDecodeError) as error:
+        raise SystemExit(f"Release pin file {pin_file} is unreadable: {error}") from None
+    if not isinstance(document, dict):
+        raise SystemExit(f"Release pin file {pin_file} must be an object keyed by version.")
+    return {
+        version for version, entry in document.items()
+        if isinstance(entry, dict) and entry.get("legacy_release_artifact") is True
+    }
+
+
+def is_allowed_promote_version(version: str) -> bool:
+    return bool(PROMOTE_VERSION.fullmatch(version)) or version in legacy_release_pin_versions()
+
+
+def release_version(tag: str) -> str:
+    """Canonical major.minor.patch for a release tag, stripping leading zeros and any prerelease suffix."""
+    core = tag.split("-")[0]
+    return ".".join(str(int(part)) for part in core.split("."))
 
 
 def selection_errors(
@@ -45,19 +77,36 @@ def selection_errors(
     exclude_ids: str | None = None,
     promote: str | None = None,
     target: str = "all",
+    verify: str | None = None,
 ) -> list[str]:
     """Return why this selection must not run; an empty list means it may."""
     errors = []
+    promote = (promote or "").strip()
+    verify = (verify or "").strip()
     if target not in PROMOTE_TARGETS:
         # Fails closed on any unknown value, before any promotion or other publication is considered.
         return [f"promote_target {target!r} must be one of {', '.join(PROMOTE_TARGETS)}."]
-    if target != "all" and not promote:
+    if target != "all" and not promote and not verify:
         return [f"promote_target {target!r} is only accepted together with promote_candidate_version."]
+    if verify:
+        if ref != PROMOTE_REF:
+            errors.append(f"Release evidence re-verify requires {PROMOTE_REF}.")
+        if not PROMOTE_VERSION.fullmatch(verify):
+            errors.append(f"verify_release_evidence_version {verify!r} is not a version such as 3.10.3.")
+        if promote:
+            errors.append("verify_release_evidence_version cannot be combined with promote_candidate_version.")
+        if target != "all":
+            errors.append("verify_release_evidence_version cannot be combined with a promote_target other than all.")
+        for selected, name in ((feedz, "publish_preview_feedz"), (nuget, "publish_nuget"), (npm, "publish_npm"),
+                               (coverage, "deploy_coverage"), (parse_exclude_ids(exclude_ids), "exclude_ids")):
+            if selected:
+                errors.append(f"verify_release_evidence_version cannot be combined with {name}.")
+        return errors
     if promote:
         # Candidate promotion is its own mode: main only, a version, and none of the other publication switches.
         if ref != PROMOTE_REF:
             errors.append(f"Candidate promotion requires {PROMOTE_REF}.")
-        if not PROMOTE_VERSION.fullmatch(promote):
+        if not is_allowed_promote_version(promote):
             errors.append(f"promote_candidate_version {promote!r} is not a version such as 3.10.1.")
         for selected, name in ((feedz, "publish_preview_feedz"), (nuget, "publish_nuget"), (npm, "publish_npm"),
                                (coverage, "deploy_coverage"), (parse_exclude_ids(exclude_ids), "exclude_ids")):
@@ -77,6 +126,12 @@ def selection_errors(
         # Stable 3.10.x Feedz is owned only by the candidate promotion mode of packages.yml.
         # nuget.org still accepts any release-version tag, including stable 3.10.x.
         major, minor = (int(part) for part in tag.split(".")[:2])
+        published = release_version(tag)
+        legacy_pins = legacy_release_pin_versions()
+        if nuget and published in legacy_pins:
+            errors.append("NuGet publication for this version requires a pinned candidate on the protected promotion path.")
+        if npm and published in legacy_pins:
+            errors.append("This version does not publish Studio npm packages.")
         if (major, minor) == (3, 11) and nuget:
             errors.append("3.11 NuGet publication requires a sealed candidate on the protected promotion path.")
         feedz_from_tag = (major, minor) == (3, 10)
@@ -120,6 +175,7 @@ def main() -> int:
         exclude_ids=os.environ.get("EXCLUDE_IDS"),
         promote=os.environ.get("PROMOTE_CANDIDATE_VERSION", ""),
         target=os.environ.get("PROMOTE_TARGET", "all"),
+        verify=os.environ.get("VERIFY_RELEASE_EVIDENCE_VERSION", ""),
     )
     for error in errors:
         print(error, file=sys.stderr)

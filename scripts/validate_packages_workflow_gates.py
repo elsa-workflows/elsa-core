@@ -29,6 +29,8 @@ WORKFLOW = ROOT / ".github/workflows/packages.yml"
 SELECTION_JOB = "validate_publication_selection"
 # Each gated job is switched on by the workflow_dispatch input of the same name.
 GATED_JOBS = ("publish_preview_feedz", "publish_nuget", "publish_npm", "deploy_coverage")
+# The folded release-evidence attest job signs the release index only; it has no publisher secret or environment.
+ATTEST_RELEASE_EVIDENCE_JOB = "attest_release_evidence"
 MANUAL_DISPATCH = "github.event_name == 'workflow_dispatch'"
 # Top-level conjuncts a gated job's if: needs beyond the dispatch and its own input.
 REQUIRED_REF_CONDITIONS = {
@@ -54,6 +56,7 @@ SELECTION_ENV = {
     "EXCLUDE_IDS": "${{ inputs.exclude_ids }}",
     "PROMOTE_CANDIDATE_VERSION": "${{ inputs.promote_candidate_version }}",
     "PROMOTE_TARGET": "${{ inputs.promote_target }}",
+    "VERIFY_RELEASE_EVIDENCE_VERSION": "${{ inputs.verify_release_evidence_version }}",
 }
 GUARD_EXCLUDE_IDS = SELECTION_ENV["EXCLUDE_IDS"]
 # Probed against the script the selection job runs, not a copy of its rules.
@@ -71,6 +74,9 @@ REQUIRED_REJECTIONS = (
     ("candidate promotion from a release branch", "refs/heads/release/3.10.0", {"promote": "3.10.1"}),
     ("candidate promotion from a tag", "refs/tags/3.10.1", {"promote": "3.10.1"}),
     ("candidate promotion combined with publish_nuget", "refs/heads/main", {"promote": "3.10.1", "nuget": True}),
+    ("release evidence re-verify from a tag", "refs/tags/3.10.3", {"verify": "3.10.3"}),
+    ("release evidence re-verify combined with promotion", "refs/heads/main", {"verify": "3.10.3", "promote": "3.10.3"}),
+    ("release evidence re-verify combined with publish_nuget", "refs/heads/main", {"verify": "3.10.3", "nuget": True}),
 )
 REQUIRED_ACCEPTANCES = (
     ("Feedz from a 3.10.x prerelease tag", "refs/tags/3.10.0-rc1", {"feedz": True}),
@@ -79,6 +85,7 @@ REQUIRED_ACCEPTANCES = (
     ("exclude_ids on a stable 3.10 nuget dispatch", "refs/tags/3.10.0", {"nuget": True, "exclude_ids": "Elsa"}),
     ("candidate promotion from main", "refs/heads/main", {"promote": "3.10.1"}),
     ("3.11 candidate promotion from main", "refs/heads/main", {"promote": "3.11.0"}),
+    ("release evidence re-verify from main", "refs/heads/main", {"verify": "3.10.3"}),
 )
 PROMOTE_STABLE_REF = "startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-')"
 TAG_3100 = "github.ref == 'refs/tags/3.10.0'"
@@ -292,7 +299,8 @@ def capability_violations(workflow: dict) -> list[str]:
             found.append("the whole secrets context")
         if any(INDEXED_SECRETS.search(_blank_string_literals(expression)) for expression in expressions):
             found.append("an indexed secrets access")
-        if grants_id_token(node.get("permissions")):
+        job_name = scope[5:-1] if scope.startswith("job '") and scope.endswith("'") else None
+        if grants_id_token(node.get("permissions")) and job_name != ATTEST_RELEASE_EVIDENCE_JOB:
             found.append("id-token: write")
         if "environment" in node:
             found.append("an environment")

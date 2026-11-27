@@ -1,5 +1,6 @@
 import dataclasses
 import hashlib
+import io
 import json
 import os
 import re
@@ -8,6 +9,7 @@ import tempfile
 import unittest
 import unittest.mock
 import zipfile
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -309,6 +311,7 @@ GOOD_ENTRY = {
     "archive_sha256": "9c975053b3113b62eec664fcb498a776e7dedcfbbc578a1df391650541955c19",
     "manifest_sha256": "c20fc5eee0d579055c1fd045f93cf7ef3b24468ed066c3dc124c9d1192e77d6e",
     "feedz_count": 231, "nuget_count": 230, "exclude_ids": ["Elsa.Platform.Integration"], "ancestry_branch": "release/3.10.0",
+    "predates_index_attestation": True,
 }
 
 
@@ -445,7 +448,7 @@ class WorkflowShapeTests(unittest.TestCase):
         self.assertNotIn("environment", retrieve)
         self.assertNotIn("secrets.", job_text(retrieve))
         self.assertNotIn("id-token", retrieve["permissions"])
-        self.assertEqual({"actions": "read", "contents": "read"}, retrieve["permissions"])
+        self.assertEqual({"actions": "read", "attestations": "read", "contents": "read"}, retrieve["permissions"])
 
     def test_only_nuget_job_requests_an_id_token(self):
         self.assertEqual("write", self.jobs["publish_candidate_nuget"]["permissions"]["id-token"])
@@ -504,7 +507,7 @@ class WorkflowShapeTests(unittest.TestCase):
                 self.assertNotIn("if", step, f"{name}: {step.get('name')}")
             self.assertNotRegex(job_text(job), r"[0-9]+\.[0-9]+\.[0-9]+")
         self.assertNotIn("if", self.jobs["retrieve_candidate"])
-        self.assertNotIn("3.10.1", self.source.split("  # --- Candidate promotion")[1])
+        self.assertNotIn("3.10.1", self.source.split("  # --- Candidate promotion")[1].split("  # --- Release evidence")[0])
 
     PUBLISH_TARGETS = {"publish_candidate_feedz": "feedz", "publish_candidate_nuget": "nuget"}
 
@@ -586,14 +589,17 @@ class WorkflowShapeTests(unittest.TestCase):
                 self.assertNotIn("if", step)
 
     def test_no_tag_is_created_or_required_and_docker_is_untouched(self):
-        promotion = self.source.split("  # --- Candidate promotion")[1]
+        promotion = self.source.split("  # --- Candidate promotion")[1].split("  # --- Release evidence")[0]
         for text in ("git/ref/tags", "git tag", "refs/tags", "git push", "docker"):
             self.assertNotIn(text, promotion.lower() if text == "docker" else promotion)
 
     def test_normal_push_and_tag_behaviour_is_unchanged(self):
         # The only edits to the build path are the two test jobs skipping while a candidate is promoted.
         for name in ("test_unit_integration", "test_component"):
-            self.assertEqual("${{ inputs.promote_candidate_version == '' }}", self.jobs[name]["if"])
+            self.assertEqual(
+                "${{ inputs.promote_candidate_version == '' && inputs.verify_release_evidence_version == '' }}",
+                self.jobs[name]["if"],
+            )
 
     def test_the_per_version_workflows_are_gone(self):
         for name in DELETED_WORKFLOWS:
@@ -641,7 +647,7 @@ class WorkflowShapeTests(unittest.TestCase):
         import yaml
         source = (WORKFLOWS / "prepare-consolidated-release-candidate.yml").read_text(encoding="utf-8")
         jobs = yaml.safe_load(source)["jobs"]
-        self.assertEqual(["verify_source", "prepare", "retrieve", "consumers"], list(jobs))
+        self.assertEqual(["verify_source", "prepare", "retrieve", "consumers", "attest_candidate"], list(jobs))
         verify_job = jobs["verify_source"]
         self.assertEqual("verify_source", jobs["prepare"]["needs"])
         self.assertEqual({"contents": "read", "actions": "none"}, verify_job["permissions"])
@@ -681,6 +687,324 @@ class WorkflowShapeTests(unittest.TestCase):
                                  f"{name}: a setup or cache action follows the source checkout")
                 # After the source checkout only the build and its packaging guards run: no second checkout.
                 self.assertFalse([step for step in after if str(step.get("uses", "")).startswith("actions/checkout@")])
+
+
+LEGACY_PIN = verify.load_pin("3.6.4")
+LEGACY_SOURCE = LEGACY_PIN.source_sha
+LEGACY_ENTRY = {
+    "run_id": 45546881553, "artifact_id": 14993170259,
+    "source_sha": "874e670e4ca405359a058bfee2ed9ef2a859d98c",
+    "archive_sha256": "73da3a79cfd77afc81eddb1f8a948371a7937c48e35a63d64322a2716b3fb427",
+    "legacy_release_artifact": True, "feedz_count": 44, "nuget_count": 44,
+    "exclude_ids": [], "ancestry_branch": "release/3.6.4",
+}
+
+
+def good_legacy_run(*, conclusion="failure"):
+    return {"id": LEGACY_PIN.run_id, "run_attempt": 1, "head_sha": LEGACY_PIN.source_sha,
+            "head_branch": "3.6.4", "status": "completed", "conclusion": conclusion,
+            "event": "release", "path": ".github/workflows/packages.yml"}
+
+
+def good_legacy_artifact():
+    return {"id": LEGACY_PIN.artifact_id, "name": "elsa-nuget-packages", "expired": False,
+            "digest": f"sha256:{LEGACY_PIN.archive_sha256}",
+            "workflow_run": {"id": LEGACY_PIN.run_id, "head_sha": LEGACY_PIN.source_sha, "head_branch": "3.6.4"}}
+
+
+def make_nupkg(package_id, version, commit, url="https://github.com/elsa-workflows/elsa-core"):
+    nuspec = (
+        '<?xml version="1.0"?><package><metadata>'
+        f"<id>{package_id}</id><version>{version}</version>"
+        f'<repository type="git" url="{url}" commit="{commit}" />'
+        "</metadata></package>"
+    )
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as package:
+        package.writestr(f"{package_id}.nuspec", nuspec)
+    return buffer.getvalue()
+
+
+def build_legacy_archive(path: Path, *, version="3.6.4", nuspec_version=None, commit=LEGACY_SOURCE, ids=None,
+                         drop_snupkg=None, nested=False, duplicate_case=False, commit_for=None, extra=None):
+    from validate_packages_id_set import expected_ids_file, load_expected_ids
+    package_ids = list(ids or load_expected_ids(expected_ids_file("3.6.4")))
+    files = {}
+    metadata_version = version if nuspec_version is None else nuspec_version
+    for package_id in package_ids:
+        commit_value = (commit_for or {}).get(package_id, commit)
+        name = f"{package_id}.{version}.nupkg"
+        files[name] = make_nupkg(package_id, metadata_version, commit_value)
+        snupkg = f"{package_id}.{version}.snupkg"
+        if drop_snupkg != package_id:
+            files[snupkg] = f"symbol {package_id}".encode()
+    if duplicate_case:
+        files["elsa.3.6.4.nupkg"] = make_nupkg("Elsa", version, commit)
+        files["elsa.3.6.4.snupkg"] = b"dup"
+    if extra:
+        files.update(extra)
+    with zipfile.ZipFile(path, "w") as archive:
+        for name, data in files.items():
+            archive.writestr(f"nested/{name}" if nested else name, data)
+    return verify.sha256_file(path)
+
+
+class LegacyReleaseArtifactTests(unittest.TestCase):
+    def test_committed_legacy_pin_is_accepted(self):
+        pin = verify.load_pin("3.6.4")
+        self.assertTrue(pin.legacy_release_artifact)
+        self.assertEqual("elsa-nuget-packages", pin.artifact_name)
+        self.assertEqual((45546881553, 14993170259, 44, 44, ()),
+                         (pin.run_id, pin.artifact_id, pin.feedz_count, pin.nuget_count, pin.exclude_ids))
+        self.assertEqual("", pin.manifest_sha256)
+        self.assertEqual("release/3.6.4", pin.ancestry_branch)
+        self.assertEqual(LEGACY_ENTRY, {key: value for key, value in json.loads(verify.PIN_FILE.read_text())["3.6.4"].items()})
+
+    def test_legacy_pin_rejects_a_manifest_field(self):
+        with self.assertRaisesRegex(SystemExit, "unknown fields: manifest_sha256"):
+            verify.validate_pin_entry("3.6.4", {**LEGACY_ENTRY, "manifest_sha256": "a" * 64})
+
+    def test_legacy_run_accepts_a_failed_packages_release_and_rejects_dispatch(self):
+        verify.check_run(LEGACY_PIN, good_legacy_run())
+        verify.check_run(LEGACY_PIN, good_legacy_run(conclusion="success"))
+        verify.check_artifact(LEGACY_PIN, good_legacy_artifact())
+        for change in (
+            {"event": "workflow_dispatch"},
+            {"path": ".github/workflows/prepare-consolidated-release-candidate.yml"},
+            {"conclusion": "cancelled"},
+            {"head_sha": "1" * 40},
+        ):
+            with self.subTest(change=change), self.assertRaises(SystemExit):
+                verify.check_run(LEGACY_PIN, {**good_legacy_run(), **change})
+        with self.assertRaises(SystemExit):
+            verify.check_artifact(LEGACY_PIN, {**good_legacy_artifact(), "name": PIN.artifact_name})
+
+    def test_legacy_archive_is_staged_when_pairs_and_nuspecs_match(self):
+        with tempfile.TemporaryDirectory() as temp:
+            archive = Path(temp) / "candidate.zip"
+            digest = build_legacy_archive(archive)
+            pin = dataclasses.replace(LEGACY_PIN, archive_sha256=digest)
+            staged = Path(temp) / "stage"
+            written = verify.stage_legacy_release_packages(pin, archive, staged)
+            self.assertEqual(88, len(written))
+            self.assertEqual(44, len(list(staged.glob("*.nupkg"))))
+
+    def test_legacy_archive_hash_must_match_the_pin(self):
+        with tempfile.TemporaryDirectory() as temp:
+            archive = Path(temp) / "candidate.zip"
+            build_legacy_archive(archive)
+            with self.assertRaisesRegex(SystemExit, "archive sha256"):
+                verify.check_archive(LEGACY_PIN, archive)
+
+    def test_missing_symbol_package_is_rejected(self):
+        with tempfile.TemporaryDirectory() as temp:
+            archive = Path(temp) / "candidate.zip"
+            digest = build_legacy_archive(archive, drop_snupkg="Elsa")
+            pin = dataclasses.replace(LEGACY_PIN, archive_sha256=digest)
+            with self.assertRaisesRegex(SystemExit, "package and symbol pairs"):
+                verify.stage_legacy_release_packages(pin, archive, Path(temp) / "stage")
+
+    def test_wrong_repository_commit_is_rejected(self):
+        with tempfile.TemporaryDirectory() as temp:
+            archive = Path(temp) / "candidate.zip"
+            digest = build_legacy_archive(archive, commit_for={"Elsa": "1" * 40})
+            pin = dataclasses.replace(LEGACY_PIN, archive_sha256=digest)
+            with self.assertRaisesRegex(SystemExit, "identity or source"):
+                verify.stage_legacy_release_packages(pin, archive, Path(temp) / "stage")
+
+    def test_nested_package_path_is_rejected(self):
+        with tempfile.TemporaryDirectory() as temp:
+            archive = Path(temp) / "candidate.zip"
+            digest = build_legacy_archive(archive, nested=True)
+            pin = dataclasses.replace(LEGACY_PIN, archive_sha256=digest)
+            with self.assertRaises(SystemExit):
+                verify.stage_legacy_release_packages(pin, archive, Path(temp) / "stage")
+
+    def test_duplicate_package_id_is_rejected(self):
+        with tempfile.TemporaryDirectory() as temp:
+            archive = Path(temp) / "candidate.zip"
+            digest = build_legacy_archive(archive, duplicate_case=True)
+            pin = dataclasses.replace(LEGACY_PIN, archive_sha256=digest)
+            with self.assertRaisesRegex(SystemExit, "Duplicate package IDs|package and symbol pairs"):
+                verify.stage_legacy_release_packages(pin, archive, Path(temp) / "stage")
+
+    def test_wrong_package_version_is_rejected(self):
+        with tempfile.TemporaryDirectory() as temp:
+            archive = Path(temp) / "candidate.zip"
+            digest = build_legacy_archive(archive, version="3.6.5")
+            pin = dataclasses.replace(LEGACY_PIN, archive_sha256=digest)
+            with self.assertRaisesRegex(SystemExit, "identity or source"):
+                verify.stage_legacy_release_packages(pin, archive, Path(temp) / "stage")
+
+    def test_nuspec_version_mismatch_is_rejected(self):
+        with tempfile.TemporaryDirectory() as temp:
+            archive = Path(temp) / "candidate.zip"
+            digest = build_legacy_archive(archive, nuspec_version="3.6.5")
+            pin = dataclasses.replace(LEGACY_PIN, archive_sha256=digest)
+            with self.assertRaisesRegex(SystemExit, "identity or source"):
+                verify.stage_legacy_release_packages(pin, archive, Path(temp) / "stage")
+
+    def test_extra_package_pair_is_rejected(self):
+        from validate_packages_id_set import expected_ids_file, load_expected_ids
+        with tempfile.TemporaryDirectory() as temp:
+            archive = Path(temp) / "candidate.zip"
+            ids = [*load_expected_ids(expected_ids_file("3.6.4")), "Elsa.Extra"]
+            digest = build_legacy_archive(archive, ids=ids)
+            pin = dataclasses.replace(LEGACY_PIN, archive_sha256=digest)
+            with self.assertRaisesRegex(SystemExit, "package and symbol pairs"):
+                verify.stage_legacy_release_packages(pin, archive, Path(temp) / "stage")
+
+    def test_stray_file_is_rejected(self):
+        with tempfile.TemporaryDirectory() as temp:
+            archive = Path(temp) / "candidate.zip"
+            digest = build_legacy_archive(archive, extra={"readme.txt": b"nope"})
+            pin = dataclasses.replace(LEGACY_PIN, archive_sha256=digest)
+            with self.assertRaisesRegex(SystemExit, "package and symbol pairs"):
+                verify.stage_legacy_release_packages(pin, archive, Path(temp) / "stage")
+
+    def test_legacy_flag_is_rejected_on_310_and_later(self):
+        with self.assertRaisesRegex(SystemExit, "cannot use legacy_release_artifact"):
+            verify.validate_pin_entry("3.10.1", {**GOOD_ENTRY, "legacy_release_artifact": True})
+        entry = {
+            **dataclasses.asdict(PIN),
+            "ancestry_branch": "release/3.11.0",
+            "tooling_sha": "d" * 40,
+            "feedz_count": 251, "nuget_count": 251, "exclude_ids": [],
+            "legacy_release_artifact": True,
+        }
+        entry.pop("version")
+        with self.assertRaisesRegex(SystemExit, "cannot use legacy_release_artifact"):
+            verify.validate_pin_entry("3.11.0", entry)
+        verify.validate_pin_entry("3.6.4", LEGACY_ENTRY)
+
+
+class IndexAttestationPinTests(unittest.TestCase):
+    SYNTHETIC_3110 = {
+        "run_id": 9000000001,
+        "artifact_id": 9000000002,
+        "source_sha": "b" * 40,
+        "archive_sha256": "c" * 64,
+        "manifest_sha256": "d" * 64,
+        "feedz_count": 251,
+        "nuget_count": 251,
+        "exclude_ids": [],
+        "ancestry_branch": "release/3.11.0",
+        "tooling_sha": "e" * 40,
+    }
+
+    def setUp(self):
+        self.normal_entry = {key: value for key, value in GOOD_ENTRY.items() if key != "predates_index_attestation"}
+        self.transport = Path(tempfile.mkdtemp())
+        self.addCleanup(lambda: __import__("shutil").rmtree(self.transport, ignore_errors=True))
+
+    def synthetic_3110(self, **overrides):
+        entry = {**self.SYNTHETIC_3110, "predates_index_attestation": True}
+        entry.update(overrides)
+        return entry
+
+    def write_candidate_without_index(self):
+        (self.transport / "run.json").write_text(json.dumps({"head_sha": "e" * 40, "run_attempt": 1}))
+        with zipfile.ZipFile(self.transport / "candidate.zip", "w") as archive:
+            archive.writestr("verified-artifacts.json", "{}")
+
+    def require_skips_attestation(self, pin):
+        with unittest.mock.patch("nuget_release_evidence.verify_attestation") as mocked:
+            verify.require_producer_attestation(pin, self.transport)
+        mocked.assert_not_called()
+
+    def cli_eligible(self, version):
+        from io import StringIO
+        buffer = StringIO()
+        with unittest.mock.patch("sys.stdout", buffer):
+            self.assertEqual(0, verify.main(["evidence-eligible", "--version", version]))
+        return buffer.getvalue()
+
+    def test_committed_exempt_pins_skip_retrieve_and_select(self):
+        for version in ("3.6.4", "3.10.1", "3.10.2", "3.10.3"):
+            with self.subTest(version=version):
+                pin = verify.load_pin(version)
+                self.assertFalse(verify.has_index_attestation(pin))
+                if version == "3.6.4":
+                    self.assertTrue(pin.legacy_release_artifact)
+                    self.assertFalse(pin.predates_index_attestation)
+                else:
+                    self.assertTrue(pin.predates_index_attestation)
+                    self.assertFalse(pin.legacy_release_artifact)
+                self.assertEqual(0, verify.main(["validate-pin", "--version", version]))
+                self.assertEqual("false\n", self.cli_eligible(version))
+                self.write_candidate_without_index()
+                self.require_skips_attestation(pin)
+
+    def test_flagged_synthetic_3110_skips_retrieve(self):
+        pin = verify.validate_pin_entry("3.11.0", self.synthetic_3110())
+        self.assertEqual((pin.run_id, pin.artifact_id), (9000000001, 9000000002))
+        self.assertTrue(pin.predates_index_attestation)
+        self.assertFalse(verify.has_index_attestation(pin))
+        self.write_candidate_without_index()
+        self.require_skips_attestation(pin)
+
+    def test_flagged_pin_with_an_index_is_rejected(self):
+        pin = verify.validate_pin_entry("3.11.0", self.synthetic_3110())
+        (self.transport / "run.json").write_text(json.dumps({"head_sha": "e" * 40, "run_attempt": 1}))
+        with zipfile.ZipFile(self.transport / "candidate.zip", "w") as archive:
+            archive.writestr("release-evidence/candidate-index.json", b"{}")
+        with self.assertRaisesRegex(SystemExit, re.escape(verify.unexpected_candidate_index_message(pin))):
+            verify.require_producer_attestation(pin, self.transport)
+
+    def test_unflagged_pin_without_an_index_fails_retrieve_with_a_named_message(self):
+        entry = self.synthetic_3110()
+        del entry["predates_index_attestation"]
+        pin = verify.validate_pin_entry("3.11.0", entry)
+        self.assertTrue(verify.has_index_attestation(pin))
+        self.write_candidate_without_index()
+        with self.assertRaisesRegex(SystemExit, re.escape(verify.missing_candidate_index_message(pin))):
+            verify.require_producer_attestation(pin, self.transport)
+
+    def test_assemble_fails_with_the_same_named_message_when_the_index_is_missing(self):
+        import nuget_release_evidence as evidence
+        entry = self.synthetic_3110()
+        del entry["predates_index_attestation"]
+        pin = verify.validate_pin_entry("3.11.0", entry)
+        self.write_candidate_without_index()
+        with unittest.mock.patch.object(verify, "verify_transport", return_value=[]):
+            with self.assertRaisesRegex(ValueError, re.escape(verify.missing_candidate_index_message(pin))):
+                evidence.extract_index(pin, self.transport, self.transport / "stage", self.transport / "bundle.zip")
+
+    def test_a_normal_pin_requires_the_attestation_and_is_evidence_eligible(self):
+        pin = verify.validate_pin_entry("3.10.1", self.normal_entry)
+        self.assertFalse(pin.predates_index_attestation)
+        self.assertFalse(pin.legacy_release_artifact)
+        self.assertTrue(verify.has_index_attestation(pin))
+        (self.transport / "run.json").write_text(json.dumps({"head_sha": "e" * 40}))
+        with zipfile.ZipFile(self.transport / "candidate.zip", "w") as archive:
+            archive.writestr("release-evidence/candidate-index.json", b"{}")
+        with unittest.mock.patch("nuget_release_evidence.verify_attestation") as mocked:
+            verify.require_producer_attestation(pin, self.transport)
+        mocked.assert_called_once()
+
+    def test_loader_rejects_a_non_bool_flag_and_the_flag_on_a_legacy_pin(self):
+        for value in ("true", 1, None, "yes"):
+            with self.subTest(value=value), self.assertRaisesRegex(SystemExit, "predates_index_attestation must be a boolean"):
+                verify.validate_pin_entry("3.10.1", {**self.normal_entry, "predates_index_attestation": value})
+        with self.assertRaisesRegex(SystemExit, "cannot set predates_index_attestation on a legacy_release_artifact pin"):
+            verify.validate_pin_entry("3.6.4", {**LEGACY_ENTRY, "predates_index_attestation": True})
+
+    def test_admit_script_skips_ineligible_pins_and_has_no_version_regex(self):
+        import yaml
+        source = (Path(__file__).resolve().parents[1] / ".github/workflows/packages.yml").read_text(encoding="utf-8")
+        self.assertNotIn(r"^3\.(10|11)\.", source)
+        script = yaml.safe_load(source)["jobs"]["select_release_evidence"]["steps"][-1]["run"]
+        self.assertIn("evidence-eligible", script)
+        self.assertIn('eligible=$(python3 scripts/verify_consolidated_candidate.py evidence-eligible --version "$VERSION")', script)
+        self.assertIn('if [[ "$eligible" != true ]]; then', script)
+        self.assertNotIn('if [[ "$(python3', script)
+        self.assertIn("version=", script)
+        self.assertIn("VERIFY", script)
+        self.assertIn("has no index attestation; skipping release evidence.", script)
+        self.assertIn("Re-verify of $VERSION is not evidence-eligible: the pin has no index attestation.", script)
+        self.assertIn("3.12.0", source)
+        self.assertNotIn("for example 3.10.3", source)
+        self.assertIn("predates_index_attestation cannot be re-verified", source)
 
 
 if __name__ == "__main__":

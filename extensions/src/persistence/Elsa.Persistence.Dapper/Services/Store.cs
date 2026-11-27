@@ -242,12 +242,17 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantAccesso
     /// <param name="tenantAgnostic">Whether to ignore the tenant filter.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The records of the page.</returns>
-    public async Task<IEnumerable<T>> FindPageItemsAsync(Action<ParameterizedQuery>? filter, PageArgs pageArgs, string orderKey, OrderDirection orderDirection, bool tenantAgnostic, CancellationToken cancellationToken = default)
+    public Task<IEnumerable<T>> FindPageItemsAsync(Action<ParameterizedQuery>? filter, PageArgs pageArgs, string orderKey, OrderDirection orderDirection, bool tenantAgnostic, CancellationToken cancellationToken = default)
+    {
+        return FindPageItemsAsync(filter, pageArgs, [new(orderKey, orderDirection)], tenantAgnostic, cancellationToken);
+    }
+
+    internal async Task<IEnumerable<T>> FindPageItemsAsync(Action<ParameterizedQuery>? filter, PageArgs pageArgs, OrderField[] orderFields, bool tenantAgnostic, CancellationToken cancellationToken)
     {
         var query = dbConnectionProvider.CreateQuery().From(TableName);
         ApplyTenantFilter(query, tenantAgnostic);
         filter?.Invoke(query);
-        query = query.OrderBy(new OrderField(orderKey, orderDirection)).Page(pageArgs);
+        query = query.OrderBy(orderFields).Page(pageArgs);
 
         using var connection = dbConnectionProvider.GetConnection();
         return await query.QueryAsync<T>(connection);

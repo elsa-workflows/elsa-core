@@ -15,6 +15,8 @@ Every command takes --version and fails closed on an unknown version or a missin
                               print exclude_ids and the expected package count as step outputs.
     count --version V --feed feedz|nuget --dir DIR
                               fail unless DIR holds exactly the pinned number of .nupkg files.
+    evidence-eligible --version V
+                              print true if the pin has an index attestation, otherwise false.
 
 Every check raises SystemExit with a reason; a failed check means nothing may be pushed.
 """
@@ -22,6 +24,7 @@ Every check raises SystemExit with a reason; a failed check means nothing may be
 from __future__ import annotations
 
 import argparse
+import io
 import hashlib
 import json
 import os
@@ -29,6 +32,7 @@ import re
 import subprocess
 import sys
 import zipfile
+import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 
@@ -69,6 +73,14 @@ def sha256_file(path: Path) -> str:
         return hashlib.file_digest(stream, "sha256").hexdigest()
 
 
+LEGACY_PIN_FIELDS = ("run_id", "artifact_id", "source_sha", "archive_sha256",
+                     "feedz_count", "nuget_count", "exclude_ids", "ancestry_branch",
+                     "legacy_release_artifact")
+LEGACY_RELEASE_WORKFLOW = ".github/workflows/packages.yml"
+LEGACY_RELEASE_ARTIFACT_NAME = "elsa-nuget-packages"
+REPOSITORY_URL = f"https://github.com/{REPOSITORY}"
+
+
 @dataclass(frozen=True)
 class Pin:
     version: str
@@ -82,9 +94,13 @@ class Pin:
     exclude_ids: tuple[str, ...]
     ancestry_branch: str
     tooling_sha: str | None = None
+    legacy_release_artifact: bool = False
+    predates_index_attestation: bool = False
 
     @property
     def artifact_name(self) -> str:
+        if self.legacy_release_artifact:
+            return LEGACY_RELEASE_ARTIFACT_NAME
         return f"consolidated-candidate-{self.source_sha}-{self.run_id}-1"
 
 
@@ -92,21 +108,50 @@ def _is_positive_int(value: object) -> bool:
     return isinstance(value, int) and not isinstance(value, bool) and value > 0
 
 
+
+def predates_sealed_candidates(version: str) -> bool:
+    """True for trains that predate sealed candidates, i.e. below 3.10."""
+    core = version.split("-")[0]
+    try:
+        major, minor, *_ = (int(part) for part in core.split("."))
+    except ValueError:
+        return False
+    return (major, minor) < (3, 10)
+
+
 def validate_pin_entry(version: str, entry: object) -> Pin:
     """Check one pin entry field by field and return it; every problem is a SystemExit naming the field."""
     require(isinstance(entry, dict), f"Pin entry for {version} must be an object.")
-    fields = (*PIN_FIELDS, "tooling_sha") if version.startswith("3.11.") else PIN_FIELDS
+    legacy = entry.get("legacy_release_artifact") is True
+    if legacy:
+        require(predates_sealed_candidates(version),
+                f"Pin {version} cannot use legacy_release_artifact; 3.10 and later require a sealed candidate.")
+    fields = (*PIN_FIELDS, "tooling_sha") if version.startswith("3.11.") else (LEGACY_PIN_FIELDS if legacy else PIN_FIELDS)
     missing = [field for field in fields if field not in entry]
     require(not missing, f"Pin entry for {version} is missing: {', '.join(missing)}.")
-    unknown = sorted(set(entry) - set(fields))
+    allowed = set(fields)
+    if isinstance(entry, dict) and "legacy_release_artifact" in entry:
+        require(isinstance(entry["legacy_release_artifact"], bool),
+                f"Pin {version}.legacy_release_artifact must be a boolean.")
+        allowed.add("legacy_release_artifact")
+    if isinstance(entry, dict) and "predates_index_attestation" in entry:
+        require(isinstance(entry["predates_index_attestation"], bool),
+                f"Pin {version}.predates_index_attestation must be a boolean.")
+        require(not legacy,
+                f"Pin {version} cannot set predates_index_attestation on a legacy_release_artifact pin.")
+        allowed.add("predates_index_attestation")
+    unknown = sorted(set(entry) - allowed)
     require(not unknown, f"Pin entry for {version} has unknown fields: {', '.join(unknown)}.")
     for field in ("run_id", "artifact_id", "feedz_count", "nuget_count"):
         require(_is_positive_int(entry[field]), f"Pin {version}.{field} must be a positive integer.")
     require(isinstance(entry["source_sha"], str) and HEX40.fullmatch(entry["source_sha"]),
             f"Pin {version}.source_sha must be 40 lowercase hex characters.")
-    for field in ("archive_sha256", "manifest_sha256"):
+    digest_fields = ("archive_sha256",) if legacy else ("archive_sha256", "manifest_sha256")
+    for field in digest_fields:
         require(isinstance(entry[field], str) and HEX64.fullmatch(entry[field]),
                 f"Pin {version}.{field} must be 64 lowercase hex characters.")
+    if legacy:
+        require(entry.get("legacy_release_artifact") is True, f"Pin {version}.legacy_release_artifact must be true.")
     exclude = entry["exclude_ids"]
     require(isinstance(exclude, list) and all(isinstance(item, str) and PACKAGE_ID.fullmatch(item) for item in exclude)
             and len(set(exclude)) == len(exclude),
@@ -124,15 +169,22 @@ def validate_pin_entry(version: str, entry: object) -> Pin:
         expected = load_expected_ids(expected_ids_file(version))
         require(entry["feedz_count"] == len(expected) and entry["nuget_count"] == len(expected) and not exclude,
                 f"Pin {version} must use the full reviewed 3.11 inventory on both feeds, with no exclusions.")
+    if legacy:
+        from validate_packages_id_set import expected_ids_file, load_expected_ids
+        expected = load_expected_ids(expected_ids_file(version))
+        require(entry["feedz_count"] == len(expected) and entry["nuget_count"] == len(expected) and not exclude,
+                f"Pin {version} must use the reviewed legacy release inventory on both feeds, with no exclusions.")
     require(entry["nuget_count"] == entry["feedz_count"] - len(exclude),
             f"Pin {version}.nuget_count must be feedz_count minus the number of exclude_ids.")
     require(entry["run_id"] not in FORBIDDEN_RUNS and entry["artifact_id"] not in FORBIDDEN_ARTIFACTS
             and entry["source_sha"] not in FORBIDDEN_SOURCES,
             f"Pin {version} names the staged 3.10.0 candidate, which must never be promoted.")
     return Pin(version=version, run_id=entry["run_id"], artifact_id=entry["artifact_id"], source_sha=entry["source_sha"],
-               archive_sha256=entry["archive_sha256"], manifest_sha256=entry["manifest_sha256"],
+               archive_sha256=entry["archive_sha256"], manifest_sha256="" if legacy else entry["manifest_sha256"],
                feedz_count=entry["feedz_count"], nuget_count=entry["nuget_count"],
-               exclude_ids=tuple(exclude), ancestry_branch=entry["ancestry_branch"], tooling_sha=entry.get("tooling_sha"))
+               exclude_ids=tuple(exclude), ancestry_branch=entry["ancestry_branch"], tooling_sha=entry.get("tooling_sha"),
+               legacy_release_artifact=legacy,
+               predates_index_attestation=entry.get("predates_index_attestation") is True)
 
 
 def load_pin(version: str, pin_file: Path = PIN_FILE) -> Pin:
@@ -173,6 +225,9 @@ def check_run_head(pin: Pin, head_sha: object, head_branch: object, where: str) 
     ancestry check instead.
     """
     require(head_sha not in FORBIDDEN_SOURCES, f"{where} names the 3.10.0 source commit {head_sha}.")
+    if pin.legacy_release_artifact:
+        require(head_sha == pin.source_sha, f"{where} {head_sha!r} is not the pinned source {pin.source_sha}.")
+        return
     if pin.tooling_sha is not None:
         require(head_branch == "main" and head_sha == pin.tooling_sha,
                 f"{where} does not match the pinned main tooling commit.")
@@ -185,6 +240,12 @@ def check_run(pin: Pin, run: dict) -> None:
     check_run_id(pin, run.get("id"))
     require(run.get("run_attempt") == 1, "Candidate run attempt is not attempt 1.")
     check_run_head(pin, run.get("head_sha"), run.get("head_branch"), "Candidate run head_sha")
+    if pin.legacy_release_artifact:
+        require(run.get("status") == "completed" and run.get("conclusion") in {"success", "failure"},
+                "Legacy release run is not a completed attempt.")
+        require(run.get("event") == "release" and run.get("path") == LEGACY_RELEASE_WORKFLOW,
+                "Legacy release run was not produced by a packages.yml release event.")
+        return
     require(run.get("conclusion") == "success" and run.get("status") == "completed", "Candidate run did not succeed.")
     producer_paths = {".github/workflows/prepare-consolidated-release-candidate.yml"} if pin.tooling_sha else PRODUCER_WORKFLOWS
     require(run.get("event") == "workflow_dispatch" and run.get("path") in producer_paths,
@@ -269,6 +330,52 @@ def stage_packages(archive: Path, sealed: dict[str, str], output: Path) -> list[
     return staged
 
 
+def stage_legacy_release_packages(pin: Pin, archive: Path, output: Path) -> list[Path]:
+    """Extract a manifest-less release zip of flat .nupkg/.snupkg pairs bound to the pinned source."""
+    from validate_packages_id_set import expected_ids_file, load_expected_ids
+
+    expected = load_expected_ids(expected_ids_file(pin.version))
+    output.mkdir(parents=True, exist_ok=True)
+    staged: list[Path] = []
+    with zipfile.ZipFile(archive) as zipped:
+        entries = zipped.namelist()
+        packages = [name for name in entries if name.endswith(".nupkg")]
+        expected_entries = set(packages) | {f"{name[:-6]}.snupkg" for name in packages}
+        require(len(packages) == pin.feedz_count and len(entries) == pin.feedz_count * 2 and set(entries) == expected_entries,
+                f"Legacy release archive must contain exactly {pin.feedz_count} package and symbol pairs.")
+        package_ids = []
+        for name in packages:
+            require(Path(name).name == name and "\\" not in name and ".." not in PurePosixPath(name).parts,
+                    f"Unexpected package path in legacy release archive: {name}.")
+            with zipfile.ZipFile(io.BytesIO(zipped.read(name))) as package:
+                nuspecs = [path for path in package.namelist() if path.endswith(".nuspec") and "/" not in path]
+                require(len(nuspecs) == 1, f"Expected one nuspec in {name}.")
+                metadata = ET.fromstring(package.read(nuspecs[0])).find("{*}metadata")
+                require(metadata is not None, f"Missing nuspec metadata in {name}.")
+                package_id = metadata.findtext("{*}id")
+                repository = metadata.find("{*}repository")
+                require(
+                    bool(package_id) and name == f"{package_id}.{pin.version}.nupkg"
+                    and metadata.findtext("{*}version") == pin.version
+                    and repository is not None
+                    and repository.get("commit") == pin.source_sha
+                    and repository.get("url") == REPOSITORY_URL,
+                    f"Unexpected package identity or source in {name}.",
+                )
+                package_ids.append(package_id)
+        require(len({package_id.lower() for package_id in package_ids}) == len(packages),
+                "Duplicate package IDs in legacy release artifact.")
+        require(sorted(package_ids) == sorted(expected),
+                "Legacy release package IDs do not match the reviewed inventory.")
+        for name in sorted(expected_entries):
+            destination = output / Path(name).name
+            require(not destination.exists(), f"Duplicate candidate package {name}.")
+            with zipped.open(name) as reader, destination.open("xb") as writer:
+                writer.write(reader.read())
+            staged.append(destination)
+    return staged
+
+
 def verify_transport(pin: Pin, transport: Path, stage: Path | None = None) -> list[Path]:
     require(transport.is_dir(), "Transport directory missing.")
     for name in TRANSPORT_FILES:
@@ -282,6 +389,8 @@ def verify_transport(pin: Pin, transport: Path, stage: Path | None = None) -> li
     check_ancestry(pin, json.loads((transport / "compare.json").read_text()))
     archive = transport / "candidate.zip"
     check_archive(pin, archive)
+    if pin.legacy_release_artifact:
+        return stage_legacy_release_packages(pin, archive, stage) if stage else []
     sealed = sealed_packages(pin, read_manifest(pin, archive))
     return stage_packages(archive, sealed, stage) if stage else []
 
@@ -302,6 +411,42 @@ def gh_api(endpoint: str, destination: Path) -> None:
         subprocess.run(["gh", "api", endpoint], check=True, stdout=out)
 
 
+CANDIDATE_INDEX = "release-evidence/candidate-index.json"
+
+
+def has_index_attestation(pin: Pin) -> bool:
+    """False for recovered legacy releases and candidates sealed before index attestations existed."""
+    return not pin.legacy_release_artifact and not pin.predates_index_attestation
+
+
+def missing_candidate_index_message(pin: Pin) -> str:
+    return f"Candidate {pin.version} is missing {CANDIDATE_INDEX}."
+
+
+def unexpected_candidate_index_message(pin: Pin) -> str:
+    return f"Candidate {pin.version} has {CANDIDATE_INDEX}; predates_index_attestation must not be set."
+
+
+def require_candidate_index(archive: zipfile.ZipFile, pin: Pin) -> bytes:
+    require(CANDIDATE_INDEX in archive.namelist(), missing_candidate_index_message(pin))
+    return archive.read(CANDIDATE_INDEX)
+
+
+def require_producer_attestation(pin: Pin, output: Path) -> None:
+    if pin.legacy_release_artifact:
+        return
+    import tempfile
+    from nuget_release_evidence import CANDIDATE, PRODUCER, verify_attestation
+    run = json.loads((output / "run.json").read_bytes())
+    with tempfile.TemporaryDirectory() as directory, zipfile.ZipFile(output / "candidate.zip") as archive:
+        if pin.predates_index_attestation:
+            require(CANDIDATE_INDEX not in archive.namelist(), unexpected_candidate_index_message(pin))
+            return
+        subject = Path(directory) / CANDIDATE
+        subject.write_bytes(require_candidate_index(archive, pin))
+        verify_attestation(subject, PRODUCER, run["head_sha"])
+
+
 def retrieve(pin: Pin, output: Path) -> None:
     require(any(os.environ.get(name) for name in TOKEN_NAMES), "Retrieve requires GH_TOKEN.")
     output.mkdir(parents=True, exist_ok=True)
@@ -315,6 +460,7 @@ def retrieve(pin: Pin, output: Path) -> None:
     check_ancestry(pin, json.loads((output / "compare.json").read_text()))
     gh_api(f"{base}/actions/artifacts/{pin.artifact_id}/zip", output / "candidate.zip")
     verify_transport(pin, output)
+    require_producer_attestation(pin, output)
     print(f"Fetched and verified candidate {pin.version} run {pin.run_id} artifact {pin.artifact_id} source {pin.source_sha}.")
 
 
@@ -327,7 +473,7 @@ def pin_output(pin: Pin, feed: str) -> str:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = parser.add_subparsers(dest="command", required=True)
-    for name in ("validate-pin", "retrieve", "verify", "pin-output", "count"):
+    for name in ("validate-pin", "retrieve", "verify", "pin-output", "count", "evidence-eligible"):
         command = sub.add_parser(name)
         command.add_argument("--version", required=True)
         if name == "retrieve":
@@ -352,6 +498,8 @@ def main(argv: list[str] | None = None) -> int:
               else f"Verified candidate {pin.version}.")
     elif args.command == "pin-output":
         sys.stdout.write(pin_output(pin, args.feed))
+    elif args.command == "evidence-eligible":
+        print("true" if has_index_attestation(pin) else "false")
     else:
         count_nupkgs(args.dir, expected_count(pin, args.feed))
     return 0
