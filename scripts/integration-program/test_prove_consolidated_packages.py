@@ -523,6 +523,26 @@ class PackageProofTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Missing resolved RuntimeIdentifier"):
             proof.capture_compiler_evidence(self.directory, self.row, "net8.0", resolved, cache)
 
+    def test_source_input_hashes_accepts_a_tree_without_pr_paths_json(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            (root / "build.sh").write_text("#!/bin/sh\n", encoding="utf-8")
+            workflow = root / ".github/workflows/pr.yml"
+            workflow.parent.mkdir(parents=True)
+            workflow.write_text("name: pr\n", encoding="utf-8")
+            subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+            subprocess.run(["git", "config", "user.name", "Proof Test"], cwd=root, check=True)
+            subprocess.run(["git", "config", "user.email", "proof@example.invalid"], cwd=root, check=True)
+            subprocess.run(["git", "add", "build.sh", ".github/workflows/pr.yml"], cwd=root, check=True)
+            subprocess.run(["git", "-c", "commit.gpgsign=false", "commit", "-qm", "source inputs"],
+                           cwd=root, check=True, capture_output=True)
+            hashes = proof.source_input_hashes(root)
+        self.assertIn("build.sh", hashes)
+        self.assertIn(".github/workflows/pr.yml", hashes)
+        self.assertNotIn("scripts/ci/pr-paths.json", hashes)
+        self.assertEqual(64, len(hashes["build.sh"]))
+        self.assertEqual(hashlib.sha256(b"#!/bin/sh\n").hexdigest(), hashes["build.sh"])
+
     def test_inventory_rejects_changed_source_bytes_at_same_clean_head(self):
         output = self.directory / "evidence"
         with patch("sys.argv", ["prove", "--version", VERSION, "--output", str(output), "--inventory-only"]), \
