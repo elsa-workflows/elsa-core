@@ -178,6 +178,7 @@ jobs:
     outputs:
       transport-id: ${{ steps.transport.outputs.artifact-id }}
       envelope: ${{ steps.envelope.outputs.envelope }}
+      candidate-index-sha256: ${{ steps.envelope.outputs.index-digest }}
     steps:
       # No checkout: artifact-reading credentials execute only fixed requests
       # and validation, never repository Python/package/consumer code.
@@ -219,6 +220,9 @@ jobs:
           ' "$input/artifact.json" > /dev/null
           gh api "repos/elsa-workflows/elsa-core/actions/artifacts/$ARTIFACT_ID/zip" > "$input/candidate.zip"
           printf '%s  %s\n' "$ARCHIVE_DIGEST" "$input/candidate.zip" | sha256sum --check --status
+          # Hash the subject on the checkout-free runner before any candidate code executes.
+          index_digest=$(unzip -p "$input/candidate.zip" release-evidence/candidate-index.json | sha256sum | cut -d ' ' -f 1)
+          echo "index-digest=sha256:$index_digest" >> "$GITHUB_OUTPUT"
           test "$(stat --format=%s "$input/candidate.zip")" = "$(jq -r .size_in_bytes "$input/artifact.json")"
           jq -c --arg source "$SOURCE_SHA" --argjson run "$RUN_ID" --argjson attempt "$RUN_ATTEMPT" \
             --arg manifest "$MANIFEST_DIGEST" --arg observed "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --arg version "$VERSION" '{schema:1,published:false,version:$version,
@@ -301,3 +305,27 @@ jobs:
             ${{ runner.temp }}/candidate-consumer-receipt.json
           if-no-files-found: warn
           retention-days: 30
+
+  attest_candidate:
+    needs: [retrieve, consumers]
+    if: github.repository == 'elsa-workflows/elsa-core' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - name: Attest the exact candidate index verified by the clean consumer
+        id: sign
+        # Custody requires a successful attempt 1. Promotion separately enforces this attestation.
+        continue-on-error: true
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
+        with:
+          subject-name: nuget-candidate-index.json
+          subject-digest: ${{ needs.retrieve.outputs.candidate-index-sha256 }}
+          create-storage-record: false
+      - name: Record a recoverable signing failure
+        if: steps.sign.outcome == 'failure'
+        run: |
+          echo "::warning::Candidate signing failed. All promotions require this index attestation."
+          echo "Rerun only the attest_candidate job against the original run before promotion." >> "$GITHUB_STEP_SUMMARY"

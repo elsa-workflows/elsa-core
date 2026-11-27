@@ -14,6 +14,9 @@ build and every publisher. The ref and inputs arrive as environment variables, n
                            inputs.promote_candidate_version (optional; empty means not a candidate promotion)
     PROMOTE_TARGET         inputs.promote_target (all, feedz or nuget; anything else fails closed; only
                            all is accepted without a promote_candidate_version)
+    VERIFY_RELEASE_EVIDENCE_VERSION
+                           inputs.verify_release_evidence_version (optional; empty means not a
+                           release-evidence re-verify)
 """
 
 from __future__ import annotations
@@ -74,14 +77,31 @@ def selection_errors(
     exclude_ids: str | None = None,
     promote: str | None = None,
     target: str = "all",
+    verify: str | None = None,
 ) -> list[str]:
     """Return why this selection must not run; an empty list means it may."""
     errors = []
+    promote = (promote or "").strip()
+    verify = (verify or "").strip()
     if target not in PROMOTE_TARGETS:
         # Fails closed on any unknown value, before any promotion or other publication is considered.
         return [f"promote_target {target!r} must be one of {', '.join(PROMOTE_TARGETS)}."]
-    if target != "all" and not promote:
+    if target != "all" and not promote and not verify:
         return [f"promote_target {target!r} is only accepted together with promote_candidate_version."]
+    if verify:
+        if ref != PROMOTE_REF:
+            errors.append(f"Release evidence re-verify requires {PROMOTE_REF}.")
+        if not PROMOTE_VERSION.fullmatch(verify):
+            errors.append(f"verify_release_evidence_version {verify!r} is not a version such as 3.10.3.")
+        if promote:
+            errors.append("verify_release_evidence_version cannot be combined with promote_candidate_version.")
+        if target != "all":
+            errors.append("verify_release_evidence_version cannot be combined with a promote_target other than all.")
+        for selected, name in ((feedz, "publish_preview_feedz"), (nuget, "publish_nuget"), (npm, "publish_npm"),
+                               (coverage, "deploy_coverage"), (parse_exclude_ids(exclude_ids), "exclude_ids")):
+            if selected:
+                errors.append(f"verify_release_evidence_version cannot be combined with {name}.")
+        return errors
     if promote:
         # Candidate promotion is its own mode: main only, a version, and none of the other publication switches.
         if ref != PROMOTE_REF:
@@ -155,6 +175,7 @@ def main() -> int:
         exclude_ids=os.environ.get("EXCLUDE_IDS"),
         promote=os.environ.get("PROMOTE_CANDIDATE_VERSION", ""),
         target=os.environ.get("PROMOTE_TARGET", "all"),
+        verify=os.environ.get("VERIFY_RELEASE_EVIDENCE_VERSION", ""),
     )
     for error in errors:
         print(error, file=sys.stderr)
