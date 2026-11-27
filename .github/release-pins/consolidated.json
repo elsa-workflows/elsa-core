@@ -21,7 +21,8 @@
     "exclude_ids": [
       "Elsa.Platform.Integration"
     ],
-    "ancestry_branch": "release/3.10.0"
+    "ancestry_branch": "release/3.10.0",
+    "predates_index_attestation": true
   },
   "3.10.2": {
     "run_id": 44327700906,
@@ -34,7 +35,8 @@
     "exclude_ids": [
       "Elsa.Platform.Integration"
     ],
-    "ancestry_branch": "release/3.10.0"
+    "ancestry_branch": "release/3.10.0",
+    "predates_index_attestation": true
   },
   "3.10.3": {
     "run_id": 45551499881,
@@ -47,6 +49,7 @@
     "exclude_ids": [
       "Elsa.Platform.Integration"
     ],
-    "ancestry_branch": "release/3.10.0"
+    "ancestry_branch": "release/3.10.0",
+    "predates_index_attestation": true
   }
 }

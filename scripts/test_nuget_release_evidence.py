@@ -109,7 +109,8 @@ class ReleaseEvidenceTests(unittest.TestCase):
         from dataclasses import replace
         pin = evidence.candidates.load_pin("3.10.2")
         evidence.candidates.require_producer_attestation(pin, self.root)
-        pin = replace(pin, version=self.version, artifact_id=pin.artifact_id + 1)
+        pin = replace(pin, version=self.version, artifact_id=pin.artifact_id + 1,
+                      predates_index_attestation=False)
         (self.root / "run.json").write_text(json.dumps({"head_sha": self.index["tooling_commit"], "run_attempt": 1}))
         subject = json.dumps(self.index).encode()
         (self.root / "candidate.zip").write_bytes(archive({"release-evidence/candidate-index.json": subject}))

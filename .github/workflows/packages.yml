@@ -43,7 +43,7 @@ on:
           - nuget
         default: all
       verify_release_evidence_version:
-        description: Re-verify and attach release SBOMs for this already-published stable version against its reviewed candidate pin (for example 3.10.3). Main only; no publish, no rebuild, no tag. Leave empty for every other run.
+        description: Re-verify and attach release SBOMs for this already-published stable version against its reviewed candidate pin (for example 3.12.0). Main only; no publish, no rebuild, no tag. Pins flagged predates_index_attestation cannot be re-verified. Leave empty for every other run.
         required: false
         type: string
         default: ''
@@ -952,8 +952,18 @@ jobs:
           VERIFY: ${{ inputs.verify_release_evidence_version }}
         run: |
           set -euo pipefail
-          [[ "$VERSION" =~ ^3\.(10|11)\.(0|[1-9][0-9]*)$ ]]
           python3 scripts/verify_consolidated_candidate.py validate-pin --version "$VERSION"
+          if [[ "$(python3 scripts/verify_consolidated_candidate.py evidence-eligible --version "$VERSION")" != true ]]; then
+            if [[ -n "$VERIFY" ]]; then
+              echo "Re-verify of $VERSION is not evidence-eligible: the pin has no index attestation." >> "$GITHUB_STEP_SUMMARY"
+              exit 1
+            fi
+            echo "Pin $VERSION has no index attestation; skipping release evidence." >> "$GITHUB_STEP_SUMMARY"
+            echo "version=" >> "$GITHUB_OUTPUT"
+            echo "source=" >> "$GITHUB_OUTPUT"
+            echo "release=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           source=$(jq -er --arg version "$VERSION" '.[$version].source_sha' .github/release-pins/consolidated.json)
           release=false
           if gh api "repos/$GITHUB_REPOSITORY/releases/tags/$VERSION" >"$RUNNER_TEMP/release.json" 2>/dev/null; then

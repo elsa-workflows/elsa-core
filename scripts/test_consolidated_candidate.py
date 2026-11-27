@@ -311,6 +311,7 @@ GOOD_ENTRY = {
     "archive_sha256": "9c975053b3113b62eec664fcb498a776e7dedcfbbc578a1df391650541955c19",
     "manifest_sha256": "c20fc5eee0d579055c1fd045f93cf7ef3b24468ed066c3dc124c9d1192e77d6e",
     "feedz_count": 231, "nuget_count": 230, "exclude_ids": ["Elsa.Platform.Integration"], "ancestry_branch": "release/3.10.0",
+    "predates_index_attestation": True,
 }
 
 
@@ -875,6 +876,125 @@ class LegacyReleaseArtifactTests(unittest.TestCase):
         with self.assertRaisesRegex(SystemExit, "cannot use legacy_release_artifact"):
             verify.validate_pin_entry("3.11.0", entry)
         verify.validate_pin_entry("3.6.4", LEGACY_ENTRY)
+
+
+class IndexAttestationPinTests(unittest.TestCase):
+    SYNTHETIC_3110 = {
+        "run_id": 9000000001,
+        "artifact_id": 9000000002,
+        "source_sha": "b" * 40,
+        "archive_sha256": "c" * 64,
+        "manifest_sha256": "d" * 64,
+        "feedz_count": 251,
+        "nuget_count": 251,
+        "exclude_ids": [],
+        "ancestry_branch": "release/3.11.0",
+        "tooling_sha": "e" * 40,
+    }
+
+    def setUp(self):
+        self.normal_entry = {key: value for key, value in GOOD_ENTRY.items() if key != "predates_index_attestation"}
+        self.transport = Path(tempfile.mkdtemp())
+        self.addCleanup(lambda: __import__("shutil").rmtree(self.transport, ignore_errors=True))
+
+    def synthetic_3110(self, **overrides):
+        entry = {**self.SYNTHETIC_3110, "predates_index_attestation": True}
+        entry.update(overrides)
+        return entry
+
+    def write_candidate_without_index(self):
+        (self.transport / "run.json").write_text(json.dumps({"head_sha": "e" * 40, "run_attempt": 1}))
+        with zipfile.ZipFile(self.transport / "candidate.zip", "w") as archive:
+            archive.writestr("verified-artifacts.json", "{}")
+
+    def require_skips_attestation(self, pin):
+        with unittest.mock.patch("nuget_release_evidence.verify_attestation") as mocked:
+            verify.require_producer_attestation(pin, self.transport)
+        mocked.assert_not_called()
+
+    def cli_eligible(self, version):
+        from io import StringIO
+        buffer = StringIO()
+        with unittest.mock.patch("sys.stdout", buffer):
+            self.assertEqual(0, verify.main(["evidence-eligible", "--version", version]))
+        return buffer.getvalue()
+
+    def test_committed_exempt_pins_skip_retrieve_and_select(self):
+        for version in ("3.6.4", "3.10.1", "3.10.2", "3.10.3"):
+            with self.subTest(version=version):
+                pin = verify.load_pin(version)
+                self.assertFalse(verify.has_index_attestation(pin))
+                if version == "3.6.4":
+                    self.assertTrue(pin.legacy_release_artifact)
+                    self.assertFalse(pin.predates_index_attestation)
+                else:
+                    self.assertTrue(pin.predates_index_attestation)
+                    self.assertFalse(pin.legacy_release_artifact)
+                self.assertEqual(0, verify.main(["validate-pin", "--version", version]))
+                self.assertEqual("false\n", self.cli_eligible(version))
+                self.write_candidate_without_index()
+                self.require_skips_attestation(pin)
+
+    def test_flagged_synthetic_3110_skips_retrieve(self):
+        pin = verify.validate_pin_entry("3.11.0", self.synthetic_3110())
+        self.assertEqual((pin.run_id, pin.artifact_id), (9000000001, 9000000002))
+        self.assertTrue(pin.predates_index_attestation)
+        self.assertFalse(verify.has_index_attestation(pin))
+        self.write_candidate_without_index()
+        self.require_skips_attestation(pin)
+
+    def test_unflagged_pin_without_an_index_fails_retrieve_with_a_named_message(self):
+        entry = self.synthetic_3110()
+        del entry["predates_index_attestation"]
+        pin = verify.validate_pin_entry("3.11.0", entry)
+        self.assertTrue(verify.has_index_attestation(pin))
+        self.write_candidate_without_index()
+        with self.assertRaisesRegex(SystemExit, re.escape(verify.missing_candidate_index_message(pin))):
+            verify.require_producer_attestation(pin, self.transport)
+
+    def test_assemble_fails_with_the_same_named_message_when_the_index_is_missing(self):
+        import nuget_release_evidence as evidence
+        entry = self.synthetic_3110()
+        del entry["predates_index_attestation"]
+        pin = verify.validate_pin_entry("3.11.0", entry)
+        self.write_candidate_without_index()
+        with unittest.mock.patch.object(verify, "verify_transport", return_value=[]):
+            with self.assertRaisesRegex(ValueError, re.escape(verify.missing_candidate_index_message(pin))):
+                evidence.extract_index(pin, self.transport, self.transport / "stage", self.transport / "bundle.zip")
+
+    def test_a_normal_pin_requires_the_attestation_and_is_evidence_eligible(self):
+        pin = verify.validate_pin_entry("3.10.1", self.normal_entry)
+        self.assertFalse(pin.predates_index_attestation)
+        self.assertFalse(pin.legacy_release_artifact)
+        self.assertTrue(verify.has_index_attestation(pin))
+        (self.transport / "run.json").write_text(json.dumps({"head_sha": "e" * 40}))
+        with zipfile.ZipFile(self.transport / "candidate.zip", "w") as archive:
+            archive.writestr("release-evidence/candidate-index.json", b"{}")
+        with unittest.mock.patch("nuget_release_evidence.verify_attestation") as mocked:
+            verify.require_producer_attestation(pin, self.transport)
+        mocked.assert_called_once()
+
+    def test_loader_rejects_a_non_bool_flag_and_the_flag_on_a_legacy_pin(self):
+        for value in ("true", 1, None, "yes"):
+            with self.subTest(value=value), self.assertRaisesRegex(SystemExit, "predates_index_attestation must be a boolean"):
+                verify.validate_pin_entry("3.10.1", {**self.normal_entry, "predates_index_attestation": value})
+        with self.assertRaisesRegex(SystemExit, "cannot set predates_index_attestation on a legacy_release_artifact pin"):
+            verify.validate_pin_entry("3.6.4", {**LEGACY_ENTRY, "predates_index_attestation": True})
+
+    def test_admit_script_skips_ineligible_pins_and_has_no_version_regex(self):
+        import yaml
+        source = (Path(__file__).resolve().parents[1] / ".github/workflows/packages.yml").read_text(encoding="utf-8")
+        self.assertNotIn(r"^3\.(10|11)\.", source)
+        script = yaml.safe_load(source)["jobs"]["select_release_evidence"]["steps"][-1]["run"]
+        self.assertIn("evidence-eligible", script)
+        self.assertIn("version=", script)
+        self.assertIn("VERIFY", script)
+        self.assertIn("has no index attestation; skipping release evidence.", script)
+        self.assertIn("Re-verify of $VERSION is not evidence-eligible: the pin has no index attestation.", script)
+        self.assertIn("3.12.0", source)
+        self.assertNotIn("for example 3.10.3", source)
+        self.assertIn("predates_index_attestation cannot be re-verified", source)
+
 
 if __name__ == "__main__":
     unittest.main()

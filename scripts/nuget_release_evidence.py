@@ -232,9 +232,9 @@ def extract_index(pin, transport, stage, bundle):
     run = json.loads((transport / "run.json").read_bytes())
     with zipfile.ZipFile(transport / "candidate.zip") as archive:
         prefix = "release-evidence/"
-        require(prefix + "candidate-index.json" in archive.namelist(),
-                "This immutable candidate predates release SBOMs; rebuilding would change its identity")
-        index = json.loads(archive.read(prefix + "candidate-index.json"))
+        require(candidates.CANDIDATE_INDEX in archive.namelist(),
+                candidates.missing_candidate_index_message(pin))
+        index = json.loads(archive.read(candidates.CANDIDATE_INDEX))
         require((index["schema"], index["version"], index["source_commit"], index["tooling_commit"],
                  index["producer_run"], index["producer_attempt"]) ==
                 (1, pin.version, pin.source_sha, run["head_sha"], pin.run_id, run["run_attempt"]),
@@ -242,7 +242,7 @@ def extract_index(pin, transport, stage, bundle):
         verified = json.loads(archive.read("verified-artifacts.json"))["packages"]
         require(len(verified) == pin.feedz_count, "Candidate SBOM count differs from pin")
         documents = check_coverage(index, verified, lambda path: archive.read(prefix + path), archive.read, stage)
-        documents[CANDIDATE] = archive.read(prefix + "candidate-index.json")
+        documents[CANDIDATE] = archive.read(candidates.CANDIDATE_INDEX)
         # Stable ZIP headers make evidence-only retries byte-identical.
         with zipfile.ZipFile(bundle, "x") as zipped:
             for path, content in sorted(documents.items()):
