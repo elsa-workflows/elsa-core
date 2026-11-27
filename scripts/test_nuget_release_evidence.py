@@ -108,6 +108,8 @@ class ReleaseEvidenceTests(unittest.TestCase):
     def test_candidate_signing_recovery_requires_the_original_sealed_subject(self):
         from dataclasses import replace
         pin = evidence.candidates.load_pin("3.10.2")
+        (self.root / "run.json").write_text(json.dumps({"head_sha": "e" * 40, "run_attempt": 1}))
+        (self.root / "candidate.zip").write_bytes(archive({"verified-artifacts.json": b"{}"}))
         evidence.candidates.require_producer_attestation(pin, self.root)
         pin = replace(pin, version=self.version, artifact_id=pin.artifact_id + 1,
                       predates_index_attestation=False)

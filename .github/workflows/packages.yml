@@ -953,7 +953,8 @@ jobs:
         run: |
           set -euo pipefail
           python3 scripts/verify_consolidated_candidate.py validate-pin --version "$VERSION"
-          if [[ "$(python3 scripts/verify_consolidated_candidate.py evidence-eligible --version "$VERSION")" != true ]]; then
+          eligible=$(python3 scripts/verify_consolidated_candidate.py evidence-eligible --version "$VERSION")
+          if [[ "$eligible" != true ]]; then
             if [[ -n "$VERIFY" ]]; then
               echo "Re-verify of $VERSION is not evidence-eligible: the pin has no index attestation." >> "$GITHUB_STEP_SUMMARY"
               exit 1

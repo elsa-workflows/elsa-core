@@ -943,6 +943,14 @@ class IndexAttestationPinTests(unittest.TestCase):
         self.write_candidate_without_index()
         self.require_skips_attestation(pin)
 
+    def test_flagged_pin_with_an_index_is_rejected(self):
+        pin = verify.validate_pin_entry("3.11.0", self.synthetic_3110())
+        (self.transport / "run.json").write_text(json.dumps({"head_sha": "e" * 40, "run_attempt": 1}))
+        with zipfile.ZipFile(self.transport / "candidate.zip", "w") as archive:
+            archive.writestr("release-evidence/candidate-index.json", b"{}")
+        with self.assertRaisesRegex(SystemExit, re.escape(verify.unexpected_candidate_index_message(pin))):
+            verify.require_producer_attestation(pin, self.transport)
+
     def test_unflagged_pin_without_an_index_fails_retrieve_with_a_named_message(self):
         entry = self.synthetic_3110()
         del entry["predates_index_attestation"]
@@ -987,6 +995,9 @@ class IndexAttestationPinTests(unittest.TestCase):
         self.assertNotIn(r"^3\.(10|11)\.", source)
         script = yaml.safe_load(source)["jobs"]["select_release_evidence"]["steps"][-1]["run"]
         self.assertIn("evidence-eligible", script)
+        self.assertIn('eligible=$(python3 scripts/verify_consolidated_candidate.py evidence-eligible --version "$VERSION")', script)
+        self.assertIn('if [[ "$eligible" != true ]]; then', script)
+        self.assertNotIn('if [[ "$(python3', script)
         self.assertIn("version=", script)
         self.assertIn("VERIFY", script)
         self.assertIn("has no index attestation; skipping release evidence.", script)

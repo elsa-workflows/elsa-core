@@ -423,18 +423,25 @@ def missing_candidate_index_message(pin: Pin) -> str:
     return f"Candidate {pin.version} is missing {CANDIDATE_INDEX}."
 
 
+def unexpected_candidate_index_message(pin: Pin) -> str:
+    return f"Candidate {pin.version} has {CANDIDATE_INDEX}; predates_index_attestation must not be set."
+
+
 def require_candidate_index(archive: zipfile.ZipFile, pin: Pin) -> bytes:
     require(CANDIDATE_INDEX in archive.namelist(), missing_candidate_index_message(pin))
     return archive.read(CANDIDATE_INDEX)
 
 
 def require_producer_attestation(pin: Pin, output: Path) -> None:
-    if not has_index_attestation(pin):
+    if pin.legacy_release_artifact:
         return
     import tempfile
     from nuget_release_evidence import CANDIDATE, PRODUCER, verify_attestation
     run = json.loads((output / "run.json").read_bytes())
     with tempfile.TemporaryDirectory() as directory, zipfile.ZipFile(output / "candidate.zip") as archive:
+        if pin.predates_index_attestation:
+            require(CANDIDATE_INDEX not in archive.namelist(), unexpected_candidate_index_message(pin))
+            return
         subject = Path(directory) / CANDIDATE
         subject.write_bytes(require_candidate_index(archive, pin))
         verify_attestation(subject, PRODUCER, run["head_sha"])
