@@ -20,6 +20,8 @@ internal sealed class SharedDefinitionTriggersCache
     internal const string InvalidationTokenKey = "Elsa.Workflows.Runtime.SharedDefinitionTriggers";
 
     private State _state = new(null);
+    private long _epoch;
+    private readonly ConcurrentDictionary<string, long> _versionGenerations = new();
 
     /// <summary>
     /// The triggers of a published tenant-agnostic definition version: the shared ones, stamped <c>*</c>, and the scheduled ones, which
@@ -28,19 +30,37 @@ internal sealed class SharedDefinitionTriggersCache
     internal sealed record DerivedTriggers(Workflow Workflow, IReadOnlyCollection<StoredTrigger> SharedTriggers, IReadOnlyCollection<StoredTrigger> ScheduledTriggers);
 
     /// <summary>
+    /// Identifies what this process knew about a version when a caller started reading it. Forgetting the version, or everything, moves it
+    /// on, so that what was derived from an earlier read is neither admitted nor returned afterwards.
+    /// </summary>
+    internal readonly record struct Generation(long Epoch, long Version);
+
+    /// <summary>
+    /// Returns the current generation of the version. A caller takes it before it reads the definition it derives from.
+    /// </summary>
+    public Generation GetGeneration(string versionId) => new(Interlocked.Read(ref _epoch), _versionGenerations.GetValueOrDefault(versionId));
+
+    /// <summary>
     /// Returns whether the triggers of the version have been derived in this process.
     /// </summary>
-    public bool ContainsDerived(string versionId, ICacheManager? cacheManager) => GetState(cacheManager).Derived.ContainsKey(versionId);
+    public bool ContainsDerived(string versionId, ICacheManager? cacheManager) =>
+        GetState(cacheManager).Derived.TryGetValue(versionId, out var entry) && entry.Generation == GetGeneration(versionId);
 
     /// <summary>
     /// Returns the triggers of the version, deriving them once per process.
     /// </summary>
     /// <remarks>
     /// The derivation is shared by every caller and does not run on any one caller's token; each caller stops waiting when its own
-    /// <paramref name="cancellationToken"/> is cancelled.
+    /// <paramref name="cancellationToken"/> is cancelled. A caller whose <paramref name="generation"/> is no longer current read the
+    /// definition before the version was forgotten: its derivation is returned to it but neither stored nor shared.
     /// </remarks>
-    public Task<DerivedTriggers> GetOrDeriveAsync(string versionId, Func<CancellationToken, Task<DerivedTriggers>> derive, ICacheManager? cacheManager, CancellationToken cancellationToken) =>
-        GetOrRunAsync(GetState(cacheManager).Derived, versionId, derive, cancellationToken);
+    /// <param name="versionId">The version.</param>
+    /// <param name="generation">The generation the caller took before it read the definition that <paramref name="derive"/> derives from.</param>
+    /// <param name="derive">Derives the triggers.</param>
+    /// <param name="cacheManager">The cache manager, if any, whose token tells this node that another node cleared its cache.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    public Task<DerivedTriggers> GetOrDeriveAsync(string versionId, Generation generation, Func<CancellationToken, Task<DerivedTriggers>> derive, ICacheManager? cacheManager, CancellationToken cancellationToken) =>
+        GetOrRunAsync(GetState(cacheManager).Derived, versionId, generation, derive, cancellationToken);
 
     /// <summary>
     /// Reconciles the shared rows of the version once per process and returns whether they were written.
@@ -50,7 +70,7 @@ internal sealed class SharedDefinitionTriggersCache
     /// <paramref name="cancellationToken"/> is cancelled.
     /// </remarks>
     public Task<bool> EnsureSharedRowsReconciledAsync(string versionId, Func<CancellationToken, Task<bool>> reconcile, ICacheManager? cacheManager, CancellationToken cancellationToken) =>
-        GetOrRunAsync(GetState(cacheManager).ReconciledVersions, versionId, reconcile, cancellationToken);
+        GetOrRunAsync(GetState(cacheManager).ReconciledVersions, versionId, GetGeneration(versionId), reconcile, cancellationToken);
 
     /// <summary>
     /// Forgets what this node derived and reconciled for the version, for example after a provider import changed it in place. Every node
@@ -58,6 +78,8 @@ internal sealed class SharedDefinitionTriggersCache
     /// </summary>
     public void Forget(string versionId)
     {
+        // The generation moves on first, so that a derivation started from an earlier read is not admitted after the entries are removed.
+        _versionGenerations.AddOrUpdate(versionId, 1, (_, generation) => generation + 1);
         var state = _state;
         state.Derived.TryRemove(versionId, out _);
         state.ReconciledVersions.TryRemove(versionId, out _);
@@ -68,6 +90,7 @@ internal sealed class SharedDefinitionTriggersCache
     /// </summary>
     public async Task InvalidateAsync(ICacheManager? cacheManager, CancellationToken cancellationToken)
     {
+        Interlocked.Increment(ref _epoch);
         _state = new(null);
 
         if (cacheManager != null)
@@ -81,20 +104,36 @@ internal sealed class SharedDefinitionTriggersCache
         if (state.Token is { HasChanged: false } || state.Token == null && cacheManager == null)
             return state;
 
-        Interlocked.CompareExchange(ref _state, new(cacheManager?.GetToken(InvalidationTokenKey)), state);
+        // Another node cleared its cache (or this one never had a token yet): what was read before is not admitted afterwards.
+        if (Interlocked.CompareExchange(ref _state, new(cacheManager?.GetToken(InvalidationTokenKey)), state) == state && state.Token != null)
+            Interlocked.Increment(ref _epoch);
+
         return _state;
     }
 
-    private static async Task<T> GetOrRunAsync<T>(ConcurrentDictionary<string, Lazy<Task<T>>> entries, string key, Func<CancellationToken, Task<T>> factory, CancellationToken cancellationToken)
+    private async Task<T> GetOrRunAsync<T>(ConcurrentDictionary<string, Entry<T>> entries, string key, Generation generation, Func<CancellationToken, Task<T>> factory, CancellationToken cancellationToken)
     {
         while (true)
         {
-            Lazy<Task<T>>? ownEntry = null;
-            var entry = entries.GetOrAdd(key, _ => ownEntry = new(() => factory(CancellationToken.None)));
+            Entry<T>? ownEntry = null;
+            var entry = entries.GetOrAdd(key, _ => ownEntry = new(generation, new(() => factory(CancellationToken.None))));
+            var currentGeneration = GetGeneration(key);
+
+            if (entry.Generation != currentGeneration)
+            {
+                // Stored from a read that the version was forgotten after: not returned to anyone.
+                entries.TryRemove(new(key, entry));
+
+                // This caller's own read came before the version was forgotten: it gets its derivation, which nobody else sees.
+                if (generation != currentGeneration)
+                    return await factory(cancellationToken);
+
+                continue;
+            }
 
             try
             {
-                return await entry.Value.WaitAsync(cancellationToken);
+                return await entry.Task.Value.WaitAsync(cancellationToken);
             }
             catch (Exception) when (!cancellationToken.IsCancellationRequested)
             {
@@ -109,10 +148,12 @@ internal sealed class SharedDefinitionTriggersCache
         }
     }
 
+    private sealed record Entry<T>(Generation Generation, Lazy<Task<T>> Task);
+
     private sealed class State(IChangeToken? token)
     {
         public IChangeToken? Token { get; } = token;
-        public ConcurrentDictionary<string, Lazy<Task<DerivedTriggers>>> Derived { get; } = new();
-        public ConcurrentDictionary<string, Lazy<Task<bool>>> ReconciledVersions { get; } = new();
+        public ConcurrentDictionary<string, Entry<DerivedTriggers>> Derived { get; } = new();
+        public ConcurrentDictionary<string, Entry<bool>> ReconciledVersions { get; } = new();
     }
 }

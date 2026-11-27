@@ -49,6 +49,7 @@ public class Tests(ITestOutputHelper testOutputHelper) : IAsyncDisposable
     private readonly RecordingWorkflowScheduler _scheduler = new();
     private readonly MutableTenantsProvider _tenants = new();
     private readonly ConcurrentDictionary<(string TenantId, string VersionId), byte> _unresolvableVersions = new();
+    private readonly ConcurrentDictionary<(string TenantId, string VersionId), byte> _unpublishedVersions = new();
     private readonly string _databasePath = Path.Join(Path.GetTempPath(), $"elsa-tenant-agnostic-triggers-{Guid.NewGuid():N}.db");
     private ServiceProvider? _services;
 
@@ -333,6 +334,23 @@ public class Tests(ITestOutputHelper testOutputHelper) : IAsyncDisposable
         Assert.Contains(("unschedule", copyOfB.Id, "b"), _scheduler.Calls);
     }
 
+    [Fact(DisplayName = "The publish fan-out gives a tenant that holds the published version unpublished no copies, and removes the ones it has")]
+    public async Task PublishGivesNoCopiesToTenantThatHoldsVersionUnpublished()
+    {
+        var services = Build(true);
+        await ActivateAsync(services);
+        await PublishSharedAsync(1, new Sequence { Id = "root", Activities = { TimerActivity() } }, "shared-v1");
+        var copyOfB = Assert.Single(await RowsAsync(SharedDefinitionId), x => x.TenantId == "b");
+        _unpublishedVersions[("b", "shared-v2")] = 0;
+        var callsBeforePublish = _scheduler.Calls.Count;
+
+        await PublishSharedAsync(2, new Sequence { Id = "root", Activities = { TimerActivity() } }, "shared-v2");
+
+        Assert.DoesNotContain(await RowsAsync(SharedDefinitionId), x => x.TenantId == "b");
+        Assert.Contains(("unschedule", copyOfB.Id, "b"), _scheduler.Calls);
+        Assert.DoesNotContain(_scheduler.Calls.Skip(callsBeforePublish), x => x is { Action: "schedule", TenantId: "b" } && x.TaskName != copyOfB.Id);
+    }
+
     [Fact(DisplayName = "A replaced copy is unscheduled before its row is deleted, and its replacement is scheduled after its row is stored")]
     public async Task ReplacedCopyIsUnscheduledBeforeDeletionAndReplacementScheduledAfterStorage()
     {
@@ -346,9 +364,11 @@ public class Tests(ITestOutputHelper testOutputHelper) : IAsyncDisposable
         var newCopy = Assert.Single(await RowsAsync(SharedDefinitionId), x => x.TenantId == "a");
         var events = _scheduler.Events.ToList();
         var unscheduled = events.IndexOf($"unschedule:{oldCopy.Id}");
-        var replaced = events.FindIndex(x => x.StartsWith("replace:") && x.Split(':')[1].Split(',').Contains($"-{oldCopy.Id}"));
+        var removed = events.FindIndex(x => x.StartsWith("replace:") && x.Split(':')[1].Split(',').Contains($"-{oldCopy.Id}"));
+        var added = events.FindIndex(x => x.StartsWith("replace:") && x.Split(':')[1].Split(',').Contains($"+{newCopy.Id}"));
         var scheduled = events.IndexOf($"schedule:{newCopy.Id}");
-        Assert.True(unscheduled >= 0 && unscheduled < replaced && replaced < scheduled, string.Join(Environment.NewLine, events));
+        Assert.True(unscheduled >= 0 && unscheduled < removed, string.Join(Environment.NewLine, events));
+        Assert.True(added >= 0 && added < scheduled, string.Join(Environment.NewLine, events));
     }
 
     [Fact(DisplayName = "Activating several tenants derives the triggers of a tenant-agnostic definition version once")]
@@ -413,7 +433,7 @@ public class Tests(ITestOutputHelper testOutputHelper) : IAsyncDisposable
                 else
                 {
                     elsa
-                        .UseWorkflowManagement(management => management.UseWorkflowDefinitions(definitions => definitions.WorkflowDefinitionStore = sp => UnresolvableVersionsStore.Create(sp.GetRequiredService<MemoryWorkflowDefinitionStore>(), _unresolvableVersions)))
+                        .UseWorkflowManagement(management => management.UseWorkflowDefinitions(definitions => definitions.WorkflowDefinitionStore = sp => UnresolvableVersionsStore.Create(sp.GetRequiredService<MemoryWorkflowDefinitionStore>(), _unresolvableVersions, _unpublishedVersions)))
                         .UseWorkflowRuntime(runtime => runtime.TriggerStore = sp => new RecordingTriggerStore(sp.GetRequiredService<MemoryTriggerStore>(), _scheduler.Events));
                 }
 
@@ -641,28 +661,38 @@ public class Tests(ITestOutputHelper testOutputHelper) : IAsyncDisposable
     }
 
     /// <summary>
-    /// A definition store in which a tenant cannot find the versions listed for it, like a tenant whose database does not hold them.
+    /// A definition store in which a tenant cannot find the versions listed for it, like a tenant whose database does not hold them, or
+    /// finds them unpublished.
     /// </summary>
     public class UnresolvableVersionsStore : DispatchProxy
     {
         private IWorkflowDefinitionStore _store = null!;
         private ConcurrentDictionary<(string TenantId, string VersionId), byte> _unresolvableVersions = null!;
+        private ConcurrentDictionary<(string TenantId, string VersionId), byte> _unpublishedVersions = null!;
         private readonly DefaultTenantAccessor _tenantAccessor = new();
 
-        internal static IWorkflowDefinitionStore Create(IWorkflowDefinitionStore store, ConcurrentDictionary<(string TenantId, string VersionId), byte> unresolvableVersions)
+        internal static IWorkflowDefinitionStore Create(
+            IWorkflowDefinitionStore store,
+            ConcurrentDictionary<(string TenantId, string VersionId), byte> unresolvableVersions,
+            ConcurrentDictionary<(string TenantId, string VersionId), byte> unpublishedVersions)
         {
             var proxy = Create<IWorkflowDefinitionStore, UnresolvableVersionsStore>();
             var unresolvableStore = (UnresolvableVersionsStore)(object)proxy;
             unresolvableStore._store = store;
             unresolvableStore._unresolvableVersions = unresolvableVersions;
+            unresolvableStore._unpublishedVersions = unpublishedVersions;
             return proxy;
         }
 
         protected override object? Invoke(MethodInfo? targetMethod, object?[]? args)
         {
-            if (targetMethod!.Name == nameof(IWorkflowDefinitionStore.AnyAsync) && args![0] is WorkflowDefinitionFilter { Id: { } id, VersionOptions: null }
-                && _unresolvableVersions.ContainsKey((_tenantAccessor.TenantId, id)))
-                return Task.FromResult(false);
+            if (targetMethod!.Name == nameof(IWorkflowDefinitionStore.AnyAsync) && args![0] is WorkflowDefinitionFilter { Id: { } id } filter)
+            {
+                var key = (_tenantAccessor.TenantId, id);
+
+                if (_unresolvableVersions.ContainsKey(key) || filter.VersionOptions is { IsPublished: true } && _unpublishedVersions.ContainsKey(key))
+                    return Task.FromResult(false);
+            }
 
             try
             {

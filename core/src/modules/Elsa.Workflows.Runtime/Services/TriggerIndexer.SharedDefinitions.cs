@@ -110,6 +110,9 @@ public partial class TriggerIndexer
         var missingVersionIds = publishedVersions.Select(x => x.Id).Where(x => !shareWork || !cache.ContainsDerived(x, cacheManager)).ToList();
         var definitions = new Dictionary<string, WorkflowDefinition>();
 
+        // Taken before the definitions are read: a derivation from a read that the version was forgotten after is not shared.
+        var generations = publishedVersions.ToDictionary(x => x.Id, x => cache.GetGeneration(x.Id));
+
         if (missingVersionIds.Count > 0)
             definitions = (await WorkflowDefinitionStore.FindManyAsync(new WorkflowDefinitionFilter { Ids = missingVersionIds }, cancellationToken)).ToDictionary(x => x.Id);
 
@@ -121,7 +124,7 @@ public partial class TriggerIndexer
             {
                 var definition = definitions.GetValueOrDefault(version.Id);
                 result.Add(shareWork
-                    ? await cache.GetOrDeriveAsync(version.Id, sharedToken => DeriveTriggersAsync(version.Id, definition, sharedToken), cacheManager, cancellationToken)
+                    ? await cache.GetOrDeriveAsync(version.Id, generations[version.Id], sharedToken => DeriveTriggersAsync(version.Id, definition, sharedToken), cacheManager, cancellationToken)
                     : await DeriveTriggersAsync(version.Id, definition, cancellationToken));
             }
             catch (Exception e) when (e is not OperationCanceledException)
@@ -155,7 +158,7 @@ public partial class TriggerIndexer
     /// </summary>
     private Task<SharedDefinitionTriggersCache.DerivedTriggers> DeriveCurrentTriggersAsync(string versionId, bool shareWork, CancellationToken cancellationToken) =>
         shareWork
-            ? SharedTriggersCache.GetOrDeriveAsync(versionId, token => DeriveTriggersAsync(versionId, null, token), _serviceProvider.GetService<ICacheManager>(), cancellationToken)
+            ? SharedTriggersCache.GetOrDeriveAsync(versionId, SharedTriggersCache.GetGeneration(versionId), token => DeriveTriggersAsync(versionId, null, token), _serviceProvider.GetService<ICacheManager>(), cancellationToken)
             : DeriveTriggersAsync(versionId, null, cancellationToken);
 
     /// <summary>
@@ -376,8 +379,9 @@ public partial class TriggerIndexer
 
         await ForEachTenantAsync(async (indexer, tenantId) =>
         {
-            // A tenant whose database does not hold the version, such as one with its own database, could not start it, so it gets no copies.
-            var resolvable = scheduledTriggers.Count == 0 || await indexer.WorkflowDefinitionStore.AnyAsync(new WorkflowDefinitionFilter { Id = workflow.Identity.Id }, cancellationToken);
+            // A tenant whose database does not hold the version as published, such as one with its own database, could not start it, so it
+            // gets no copies.
+            var resolvable = scheduledTriggers.Count == 0 || await indexer.IsPublishedAsync(workflow.Identity.Id, cancellationToken);
             var result = await indexer.ReconcileTenantCopiesAsync(workflow, resolvable ? scheduledTriggers : [], false, cancellationToken);
 
             if (tenantId == currentTenantId)
