@@ -15,6 +15,7 @@ import { OutcomePickerEditor } from "./editors/outcome-picker-editor";
 import { OutputPickerEditor } from "./editors/output-picker-editor";
 import { RadioListEditor } from "./editors/radiolist-editor";
 import { SingleLineEditor } from "./editors/singleline-editor";
+import { PasswordEditor } from "./editors/password-editor";
 import { SwitchCasesEditor } from "./editors/switch-cases-editor";
 import { TypePickerEditor } from "./editors/type-picker-editor";
 import { VariablePickerEditor } from "./editors/variable-picker-editor";
@@ -27,6 +28,7 @@ import { InputPickerEditor } from "./editors/input-picker-editor";
 /** Built-in editors keyed by the server's UI hint names (`InputUIHints`). */
 export const builtInEditors: Record<string, ComponentType<UiHintEditorProps>> = {
   singleline: SingleLineEditor,
+  password: PasswordEditor,
   multiline: MultiLineEditor,
   checkbox: CheckboxEditor,
   dropdown: DropdownEditor,

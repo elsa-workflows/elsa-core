@@ -16,6 +16,7 @@ public static class ServiceCollectionExtensions
     {
         return services
             .AddUIHintHandler<SingleLineHandler>()
+            .AddUIHintHandler<PasswordHandler>()
             .AddUIHintHandler<CheckboxHandler>()
             .AddUIHintHandler<CheckListHandler>()
             .AddUIHintHandler<DictionaryHandler>()

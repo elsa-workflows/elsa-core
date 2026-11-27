@@ -86,6 +86,12 @@ public static class InputUIHints
     public const string SingleLine = "singleline";
 
     /// <summary>
+    /// Displays a single-line input that masks the literal value on screen.
+    /// Masking is presentational, and expressions stay editable so a real secret can be read from configuration or a secret store.
+    /// </summary>
+    public const string Password = "password";
+
+    /// <summary>
     /// Visualizes flow switch branches in a dedicated editor.
     /// </summary>
     public const string FlowSwitchEditor = "flow-switch-editor";

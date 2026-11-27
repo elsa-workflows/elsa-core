@@ -1,6 +1,7 @@
 using System.Reflection;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Models;
+using Elsa.Workflows.UIHints;
 using NSubstitute;
 using Xunit;
 
@@ -33,6 +34,16 @@ public class ActivityDescriberTests
 
         Assert.True(sensitiveInput.IsSensitive);
         Assert.False(publicInput.IsSensitive);
+    }
+
+    [Fact]
+    public async Task DescribeActivityAsync_PasswordUiHint_IsExposedOnTheInputDescriptor()
+    {
+        var descriptor = await _describer.DescribeActivityAsync(typeof(ActivityWithPasswordInput));
+
+        var password = descriptor.Inputs.Single(x => x.Name == nameof(ActivityWithPasswordInput.Password));
+
+        Assert.Equal(InputUIHints.Password, password.UIHint);
     }
 
     [Fact]
@@ -223,6 +234,12 @@ public class ActivityDescriberTests
 
         Assert.Equal("ExplicitName", descriptor.Name);
         Assert.Equal("Elsa.Workflows.Core.UnitTests.Services.ExplicitName<String>", descriptor.TypeName);
+    }
+
+    private sealed class ActivityWithPasswordInput : CodeActivity
+    {
+        [Input(UIHint = InputUIHints.Password)]
+        public Input<string?> Password { get; set; } = new(string.Empty);
     }
 
     private sealed class ActivityWithSensitiveInputs : CodeActivity
