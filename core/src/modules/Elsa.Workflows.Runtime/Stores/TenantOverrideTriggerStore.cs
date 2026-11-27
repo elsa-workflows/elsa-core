@@ -109,6 +109,7 @@ internal class TenantOverrideTriggerStore(ITriggerStore decoratedStore, IService
         if (definitionIds.Count == 0)
             return false;
 
+        // Unpaged, but bounded: only the rows of the definitions the tenant overrides that match the lookup.
         var overriddenFilter = filter.Clone();
         overriddenFilter.WorkflowDefinitionIds = definitionIds;
         var triggers = await decoratedStore.FindManyAsync(overriddenFilter, cancellationToken);

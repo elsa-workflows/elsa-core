@@ -51,4 +51,18 @@ public class SharedDefinitionTriggersCacheTests
         await Assert.ThrowsAsync<ObjectDisposedException>(() => first);
         Assert.True(await second);
     }
+
+    [Fact(DisplayName = "Forgetting a version drops both its derived triggers and its reconciled shared rows")]
+    public async Task Forget_ClearsDerivedTriggersAndReconciledVersion()
+    {
+        var reconciliations = 0;
+        await _cache.GetOrDeriveAsync("version", _ => Task.FromResult(Derived), null, CancellationToken.None);
+        await _cache.EnsureSharedRowsReconciledAsync("version", _ => Task.FromResult(++reconciliations > 0), null, CancellationToken.None);
+
+        _cache.Forget("version");
+
+        Assert.False(_cache.ContainsDerived("version", null));
+        await _cache.EnsureSharedRowsReconciledAsync("version", _ => Task.FromResult(++reconciliations > 0), null, CancellationToken.None);
+        Assert.Equal(2, reconciliations);
+    }
 }

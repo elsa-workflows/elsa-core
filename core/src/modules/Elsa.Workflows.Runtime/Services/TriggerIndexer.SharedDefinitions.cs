@@ -45,8 +45,16 @@ public partial class TriggerIndexer
     /// then removes and unschedules this tenant's scheduled rows whose definition version is no longer published.
     /// </summary>
     /// <remarks>
-    /// The triggers of a version are derived, and its shared rows reconciled, once per process (<see cref="SharedDefinitionTriggersCache"/>),
-    /// so a tenant's activation costs a fixed number of queries however many tenants and definitions there are.
+    /// <para>
+    /// On the shared database, the triggers of a version are derived, and its shared rows reconciled, once per process
+    /// (<see cref="SharedDefinitionTriggersCache"/>). When nothing needs changing for the tenant, its activation costs a fixed number of
+    /// queries however many tenants and definitions there are.
+    /// </para>
+    /// <para>
+    /// Each definition whose copies do need changing for the tenant (copies to add or to remove) costs more: the definition's lock, a
+    /// publication check and a re-read of the tenant's versions and rows of it. So does a tenant with its own database, which derives and
+    /// reconciles every definition itself.
+    /// </para>
     /// </remarks>
     /// <param name="indexedVersionIds">The IDs of the definition versions that the activation has already indexed.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
@@ -79,7 +87,7 @@ public partial class TriggerIndexer
             }
 
             var ownPublishedVersions = visiblePublishedVersions.Where(x => x.TenantId != Tenant.AgnosticTenantId).ToList();
-            await ReconcileTenantCopiesOnActivationAsync(reconciledTriggers, ownPublishedVersions, cancellationToken);
+            await ReconcileTenantCopiesOnActivationAsync(reconciledTriggers, ownPublishedVersions, shareWork, cancellationToken);
         }
 
         await RemoveUnpublishedScheduledTriggersAsync(cancellationToken);
@@ -113,8 +121,8 @@ public partial class TriggerIndexer
             {
                 var definition = definitions.GetValueOrDefault(version.Id);
                 result.Add(shareWork
-                    ? await cache.GetOrDeriveAsync(version.Id, sharedToken => DeriveAsync(version.Id, definition, sharedToken), cacheManager, cancellationToken)
-                    : await DeriveAsync(version.Id, definition, cancellationToken));
+                    ? await cache.GetOrDeriveAsync(version.Id, sharedToken => DeriveTriggersAsync(version.Id, definition, sharedToken), cacheManager, cancellationToken)
+                    : await DeriveTriggersAsync(version.Id, definition, cancellationToken));
             }
             catch (Exception e) when (e is not OperationCanceledException)
             {
@@ -123,22 +131,32 @@ public partial class TriggerIndexer
         }
 
         return result;
-
-        async Task<SharedDefinitionTriggersCache.DerivedTriggers> DeriveAsync(string versionId, WorkflowDefinition? definition, CancellationToken cancellationToken)
-        {
-            definition ??= await WorkflowDefinitionStore.FindAsync(new WorkflowDefinitionFilter { Id = versionId }, cancellationToken);
-
-            if (definition == null)
-                throw new InvalidOperationException($"Workflow definition version {versionId} was not found.");
-
-            var workflowGraph = await _workflowDefinitionService.MaterializeWorkflowAsync(definition, cancellationToken);
-            var scheduledNames = ScheduledTriggerNames;
-            var triggers = await GetTriggersInternalAsync(workflowGraph.Workflow, cancellationToken).ToListAsync(cancellationToken);
-            var sharedTriggers = triggers.Where(x => !IsScheduled(x, scheduledNames)).Select(x => CopyForTenant(x, Tenant.AgnosticTenantId)).ToList();
-            var scheduledTriggers = triggers.Where(x => IsScheduled(x, scheduledNames)).ToList();
-            return new(workflowGraph.Workflow, sharedTriggers, scheduledTriggers);
-        }
     }
+
+    private async Task<SharedDefinitionTriggersCache.DerivedTriggers> DeriveTriggersAsync(string versionId, WorkflowDefinition? definition, CancellationToken cancellationToken)
+    {
+        definition ??= await WorkflowDefinitionStore.FindAsync(new WorkflowDefinitionFilter { Id = versionId }, cancellationToken);
+
+        if (definition == null)
+            throw new InvalidOperationException($"Workflow definition version {versionId} was not found.");
+
+        var workflowGraph = await _workflowDefinitionService.MaterializeWorkflowAsync(definition, cancellationToken);
+        var scheduledNames = ScheduledTriggerNames;
+        var triggers = await GetTriggersInternalAsync(workflowGraph.Workflow, cancellationToken).ToListAsync(cancellationToken);
+        var sharedTriggers = triggers.Where(x => !IsScheduled(x, scheduledNames)).Select(x => CopyForTenant(x, Tenant.AgnosticTenantId)).ToList();
+        var scheduledTriggers = triggers.Where(x => IsScheduled(x, scheduledNames)).ToList();
+        return new(workflowGraph.Workflow, sharedTriggers, scheduledTriggers);
+    }
+
+    /// <summary>
+    /// Returns the current triggers of the version, for use under the definition's lock. A provider import that changed the version in
+    /// place and saved it before the lock was taken has made this process forget the earlier derivation, so the triggers are derived again
+    /// from the saved definition; a tenant with its own database always derives them again.
+    /// </summary>
+    private Task<SharedDefinitionTriggersCache.DerivedTriggers> DeriveCurrentTriggersAsync(string versionId, bool shareWork, CancellationToken cancellationToken) =>
+        shareWork
+            ? SharedTriggersCache.GetOrDeriveAsync(versionId, token => DeriveTriggersAsync(versionId, null, token), _serviceProvider.GetService<ICacheManager>(), cancellationToken)
+            : DeriveTriggersAsync(versionId, null, cancellationToken);
 
     /// <summary>
     /// Reconciles the shared rows of the version once per process and returns whether they are in place. A version that is no longer
@@ -168,10 +186,12 @@ public partial class TriggerIndexer
         {
             await using (await AcquireDefinitionLockAsync(workflow.Identity.DefinitionId, token))
             {
+                // Retracted or replaced since it was listed: whatever did that reconciled the rows.
                 if (!await IsPublishedAsync(workflow.Identity.Id, token))
                     return false;
 
-                await ReconcileSharedTriggersAsync(workflow, derived.SharedTriggers.Select(x => CopyForTenant(x, Tenant.AgnosticTenantId)).ToList(), token);
+                var current = await DeriveCurrentTriggersAsync(workflow.Identity.Id, shareWork, token);
+                await ReconcileSharedTriggersAsync(current.Workflow, current.SharedTriggers.Select(x => CopyForTenant(x, Tenant.AgnosticTenantId)).ToList(), token);
                 return true;
             }
         }
@@ -193,7 +213,8 @@ public partial class TriggerIndexer
     /// <param name="derivedTriggers">The triggers of the published versions.</param>
     /// <param name="ownPublishedVersions">The published versions of the tenant's own definitions.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    private async Task ReconcileTenantCopiesOnActivationAsync(IReadOnlyCollection<SharedDefinitionTriggersCache.DerivedTriggers> derivedTriggers, IReadOnlyCollection<WorkflowDefinitionSummary> ownPublishedVersions, CancellationToken cancellationToken)
+    /// <param name="shareWork">Whether the triggers of a version are derived once per process for all tenants.</param>
+    private async Task ReconcileTenantCopiesOnActivationAsync(IReadOnlyCollection<SharedDefinitionTriggersCache.DerivedTriggers> derivedTriggers, IReadOnlyCollection<WorkflowDefinitionSummary> ownPublishedVersions, bool shareWork, CancellationToken cancellationToken)
     {
         var tenantId = CurrentTenantId;
         var scheduledNames = ScheduledTriggerNames;
@@ -217,22 +238,21 @@ public partial class TriggerIndexer
 
             var diff = Diff.For(currentTriggers, newTriggers, _triggerEqualityComparer);
 
-            if (diff.Added.Count > 0)
-            {
-                // The tenant may publish a definition of its own with this ID meanwhile, and its publication removes the tenant's copies
-                // under this lock. Writing a copy therefore happens under the lock too, against the tenant's current definitions and rows.
-                // A version that was retracted or replaced meanwhile is left to whatever replaced it.
-                await using (await AcquireDefinitionLockAsync(definitionId, cancellationToken))
-                {
-                    if (await IsPublishedAsync(derived.Workflow.Identity.Id, cancellationToken))
-                        await ReconcileTenantCopiesAsync(derived.Workflow, derived.ScheduledTriggers, false, cancellationToken);
-                }
-
+            if (diff.Added.Count == 0 && diff.Removed.Count == 0)
                 continue;
-            }
 
-            if (diff.Removed.Count > 0)
-                await RemoveTriggersAsync(derived.Workflow, diff.Removed.ToList(), true, cancellationToken);
+            // The tenant may publish a definition of its own with this ID meanwhile: its publication removes the tenant's copies under this
+            // lock, and its own timer would look like a copy in the rows read above. So copies are added and removed under the lock too,
+            // against the tenant's versions and rows as they are now.
+            await using (await AcquireDefinitionLockAsync(definitionId, cancellationToken))
+            {
+                // Retracted or replaced since it was listed: whatever did that reconciled the copies.
+                if (!await IsPublishedAsync(derived.Workflow.Identity.Id, cancellationToken))
+                    continue;
+
+                var current = await DeriveCurrentTriggersAsync(derived.Workflow.Identity.Id, shareWork, cancellationToken);
+                await ReconcileTenantCopiesAsync(current.Workflow, current.ScheduledTriggers, false, cancellationToken);
+            }
         }
     }
 
@@ -478,7 +498,7 @@ public partial class TriggerIndexer
         {
             var removed = group.ToList();
 
-            // The version may have been published again meanwhile, which makes these rows current copies again.
+            // Classified without the lock: the version may have been published again meanwhile, which makes these rows current copies.
             await using (await AcquireDefinitionLockAsync(removed[0].WorkflowDefinitionId, cancellationToken))
             {
                 var version = (await WorkflowDefinitionStore.FindSummariesAsync(new WorkflowDefinitionFilter { Id = group.Key }, cancellationToken)).FirstOrDefault();

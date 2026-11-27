@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Reflection;
 using Elsa.Common.Features;
 using Elsa.Common.Multitenancy;
 using Elsa.Common.Services;
@@ -11,12 +12,19 @@ using Elsa.Workflows.Activities;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Filters;
+using Elsa.Workflows.Management.Stores;
 using Elsa.Workflows.Management.Notifications;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Activities;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Stimuli;
+using Elsa.Workflows.Runtime.Stores;
+using Elsa.Common.Entities;
+using Elsa.Common.Models;
+using Elsa.Workflows.Runtime.OrderDefinitions;
+using Microsoft.Extensions.Configuration;
 using Elsa.Mediator.Contracts;
 using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Management;
@@ -40,6 +48,7 @@ public class Tests(ITestOutputHelper testOutputHelper) : IAsyncDisposable
     private static readonly string EventName = ActivityTypeNameHelper.GenerateTypeName<Event>();
     private readonly RecordingWorkflowScheduler _scheduler = new();
     private readonly MutableTenantsProvider _tenants = new();
+    private readonly ConcurrentDictionary<(string TenantId, string VersionId), byte> _unresolvableVersions = new();
     private readonly string _databasePath = Path.Join(Path.GetTempPath(), $"elsa-tenant-agnostic-triggers-{Guid.NewGuid():N}.db");
     private ServiceProvider? _services;
 
@@ -285,6 +294,63 @@ public class Tests(ITestOutputHelper testOutputHelper) : IAsyncDisposable
         Assert.DoesNotContain(("unschedule", ownTimer.Id, "a"), _scheduler.Calls);
     }
 
+    [Fact(DisplayName = "A tenant with its own database derives the shared triggers itself and neither reads nor fills the per-process cache")]
+    public async Task OwnDatabaseTenantDoesNotShareDerivedTriggers()
+    {
+        var services = Build(false, elsa => elsa.AddActivity<CountingTrigger>(), addTenants: false);
+        _tenants.Add("own-1", ownDatabase: true);
+        await SeedDefinitionAsync(Tenant.AgnosticTenantId, "shared-v1", new CountingTrigger { Id = "counting", CanStartWorkflow = true });
+        var tenantService = services.GetRequiredService<ITenantService>();
+        CountingTrigger.Reset();
+
+        await ActivateAsync(services);
+        var afterOwnDatabaseTenant = CountingTrigger.Derivations;
+        _tenants.Add("shared-1");
+        await tenantService.RefreshAsync();
+        var afterSharedDatabaseTenant = CountingTrigger.Derivations;
+        _tenants.Add("own-2", ownDatabase: true);
+        await tenantService.RefreshAsync();
+
+        Assert.True(afterOwnDatabaseTenant > 0);
+        Assert.True(afterSharedDatabaseTenant > afterOwnDatabaseTenant, "The tenant with its own database filled the shared cache.");
+        Assert.True(CountingTrigger.Derivations > afterSharedDatabaseTenant, "The tenant with its own database read the shared cache.");
+    }
+
+    [Fact(DisplayName = "The publish fan-out gives a tenant that cannot resolve the published version no copies, and removes the ones it has")]
+    public async Task PublishGivesNoCopiesToTenantThatCannotResolveVersion()
+    {
+        var services = Build(true);
+        await ActivateAsync(services);
+        await PublishSharedAsync(1, new Sequence { Id = "root", Activities = { TimerActivity() } }, "shared-v1");
+        var copyOfB = Assert.Single(await RowsAsync(SharedDefinitionId), x => x.TenantId == "b");
+        _unresolvableVersions[("b", "shared-v2")] = 0;
+
+        await PublishSharedAsync(2, new Sequence { Id = "root", Activities = { TimerActivity() } }, "shared-v2");
+
+        var rows = await RowsAsync(SharedDefinitionId);
+        Assert.DoesNotContain(rows, x => x.TenantId == "b");
+        Assert.Single(rows, x => x.TenantId == "a" && x.WorkflowDefinitionVersionId == "shared-v2");
+        Assert.Contains(("unschedule", copyOfB.Id, "b"), _scheduler.Calls);
+    }
+
+    [Fact(DisplayName = "A replaced copy is unscheduled before its row is deleted, and its replacement is scheduled after its row is stored")]
+    public async Task ReplacedCopyIsUnscheduledBeforeDeletionAndReplacementScheduledAfterStorage()
+    {
+        var services = Build(true);
+        await ActivateAsync(services);
+        await PublishSharedAsync(1, new Sequence { Id = "root", Activities = { TimerActivity() } });
+        var oldCopy = Assert.Single(await RowsAsync(SharedDefinitionId), x => x.TenantId == "a");
+
+        await PublishSharedAsync(2, new Sequence { Id = "root", Activities = { TimerActivity() } });
+
+        var newCopy = Assert.Single(await RowsAsync(SharedDefinitionId), x => x.TenantId == "a");
+        var events = _scheduler.Events.ToList();
+        var unscheduled = events.IndexOf($"unschedule:{oldCopy.Id}");
+        var replaced = events.FindIndex(x => x.StartsWith("replace:") && x.Split(':')[1].Split(',').Contains($"-{oldCopy.Id}"));
+        var scheduled = events.IndexOf($"schedule:{newCopy.Id}");
+        Assert.True(unscheduled >= 0 && unscheduled < replaced && replaced < scheduled, string.Join(Environment.NewLine, events));
+    }
+
     [Fact(DisplayName = "Activating several tenants derives the triggers of a tenant-agnostic definition version once")]
     public async Task ActivationDerivesSharedTriggersOncePerProcess()
     {
@@ -315,15 +381,19 @@ public class Tests(ITestOutputHelper testOutputHelper) : IAsyncDisposable
     /// <param name="registerAgnosticTenant">Whether the host registers a "*" tenant.</param>
     /// <param name="configure">Configures Elsa further.</param>
     /// <param name="entityFrameworkCore">Whether definitions and triggers are stored with EF Core, which enforces shared-write authority, instead of in memory.</param>
-    private ServiceProvider Build(bool registerAgnosticTenant, Action<Elsa.Features.Services.IModule>? configure = null, bool entityFrameworkCore = false)
+    /// <param name="addTenants">Whether tenants "a" and "b" are registered.</param>
+    private ServiceProvider Build(bool registerAgnosticTenant, Action<Elsa.Features.Services.IModule>? configure = null, bool entityFrameworkCore = false, bool addTenants = true)
     {
         var connectionString = $"Data Source={_databasePath};Pooling=False";
 
         if (registerAgnosticTenant)
             _tenants.Add(Tenant.AgnosticTenantId);
 
-        _tenants.Add("a");
-        _tenants.Add("b");
+        if (addTenants)
+        {
+            _tenants.Add("a");
+            _tenants.Add("b");
+        }
 
         _services = (ServiceProvider)new TestApplicationBuilder(testOutputHelper)
             .ConfigureServices(services => services.Configure<TenantsOptions>(options => options.IsEnabled = true))
@@ -339,6 +409,12 @@ public class Tests(ITestOutputHelper testOutputHelper) : IAsyncDisposable
                     elsa
                         .UseWorkflowManagement(management => management.UseWorkflowDefinitions(definitions => definitions.UseEntityFrameworkCore(ef => ef.UseSqlite(connectionString))))
                         .UseWorkflowRuntime(runtime => runtime.UseEntityFrameworkCore(ef => ef.UseSqlite(connectionString)));
+                }
+                else
+                {
+                    elsa
+                        .UseWorkflowManagement(management => management.UseWorkflowDefinitions(definitions => definitions.WorkflowDefinitionStore = sp => UnresolvableVersionsStore.Create(sp.GetRequiredService<MemoryWorkflowDefinitionStore>(), _unresolvableVersions)))
+                        .UseWorkflowRuntime(runtime => runtime.TriggerStore = sp => new RecordingTriggerStore(sp.GetRequiredService<MemoryTriggerStore>(), _scheduler.Events));
                 }
 
                 configure?.Invoke(elsa);
@@ -375,12 +451,13 @@ public class Tests(ITestOutputHelper testOutputHelper) : IAsyncDisposable
     /// <summary>
     /// Publishes a version of the shared definition the way a host does that authors shared definitions in a "*" session.
     /// </summary>
-    private Task PublishSharedAsync(int version, IActivity root) => InTenantAsync(Tenant.AgnosticTenantId, async sp =>
+    private Task PublishSharedAsync(int version, IActivity root, string? versionId = null) => InTenantAsync(Tenant.AgnosticTenantId, async sp =>
     {
         using var definitionGrant = SharedTenantWriteScope.Enter<WorkflowDefinition>();
         using var triggerGrant = SharedTenantWriteScope.Enter<StoredTrigger>();
         var publisher = sp.GetRequiredService<IWorkflowDefinitionPublisher>();
         var definition = publisher.New(root);
+        definition.Id = versionId ?? definition.Id;
         definition.DefinitionId = SharedDefinitionId;
         definition.Version = version;
         definition.TenantId = Tenant.AgnosticTenantId;
@@ -498,7 +575,12 @@ public class Tests(ITestOutputHelper testOutputHelper) : IAsyncDisposable
     {
         private readonly ConcurrentDictionary<string, Tenant> _tenants = new();
 
-        public void Add(string id) => _tenants[id] = new() { Id = id, Name = id };
+        public void Add(string id, bool ownDatabase = false) => _tenants[id] = new()
+        {
+            Id = id,
+            Name = id,
+            Configuration = new ConfigurationBuilder().AddInMemoryCollection(ownDatabase ? new Dictionary<string, string?> { ["ConnectionStrings:Default"] = $"Data Source={id}" } : []).Build()
+        };
         public void Remove(string id) => _tenants.TryRemove(id, out _);
 
         public Task<IEnumerable<Tenant>> ListAsync(CancellationToken cancellationToken = default) => Task.FromResult<IEnumerable<Tenant>>(_tenants.Values.ToList());
@@ -517,6 +599,9 @@ public class Tests(ITestOutputHelper testOutputHelper) : IAsyncDisposable
 
         public IReadOnlyList<(string Action, string TaskName, string TenantId)> Calls => _calls.ToList();
 
+        /// <summary>The scheduler's calls and the trigger store's writes, in the order they happened.</summary>
+        public ConcurrentQueue<string> Events { get; } = new();
+
         public ValueTask ScheduleAtAsync(string taskName, ScheduleNewWorkflowInstanceRequest request, DateTimeOffset at, CancellationToken cancellationToken = default) => Record("schedule", taskName);
         public ValueTask ScheduleAtAsync(string taskName, ScheduleExistingWorkflowInstanceRequest request, DateTimeOffset at, CancellationToken cancellationToken = default) => Record("schedule", taskName);
         public ValueTask ScheduleRecurringAsync(string taskName, ScheduleNewWorkflowInstanceRequest request, DateTimeOffset startAt, TimeSpan interval, CancellationToken cancellationToken = default) => Record("schedule", taskName);
@@ -528,7 +613,65 @@ public class Tests(ITestOutputHelper testOutputHelper) : IAsyncDisposable
         private ValueTask Record(string action, string taskName)
         {
             _calls.Enqueue((action, taskName, _tenantAccessor.TenantId));
+            Events.Enqueue($"{action}:{taskName}");
             return ValueTask.CompletedTask;
+        }
+    }
+
+    /// <summary>
+    /// Records the rows the trigger store deletes and adds, as "replace:-removed,+added".
+    /// </summary>
+    private sealed class RecordingTriggerStore(ITriggerStore store, ConcurrentQueue<string> events) : ITriggerStore
+    {
+        public ValueTask SaveAsync(StoredTrigger record, CancellationToken cancellationToken = default) => store.SaveAsync(record, cancellationToken);
+        public ValueTask SaveManyAsync(IEnumerable<StoredTrigger> records, CancellationToken cancellationToken = default) => store.SaveManyAsync(records, cancellationToken);
+        public ValueTask<StoredTrigger?> FindAsync(TriggerFilter filter, CancellationToken cancellationToken = default) => store.FindAsync(filter, cancellationToken);
+        public ValueTask<IEnumerable<StoredTrigger>> FindManyAsync(TriggerFilter filter, CancellationToken cancellationToken = default) => store.FindManyAsync(filter, cancellationToken);
+        public ValueTask<Page<StoredTrigger>> FindManyAsync(TriggerFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default) => store.FindManyAsync(filter, pageArgs, cancellationToken);
+        public ValueTask<Page<StoredTrigger>> FindManyAsync<TProp>(TriggerFilter filter, PageArgs pageArgs, StoredTriggerOrder<TProp> order, CancellationToken cancellationToken = default) => store.FindManyAsync(filter, pageArgs, order, cancellationToken);
+        public ValueTask<long> DeleteManyAsync(TriggerFilter filter, CancellationToken cancellationToken = default) => store.DeleteManyAsync(filter, cancellationToken);
+
+        public async ValueTask ReplaceAsync(IEnumerable<StoredTrigger> removed, IEnumerable<StoredTrigger> added, CancellationToken cancellationToken = default)
+        {
+            var removedList = removed.ToList();
+            var addedList = added.ToList();
+            await store.ReplaceAsync(removedList, addedList, cancellationToken);
+            events.Enqueue("replace:" + string.Join(",", removedList.Select(x => "-" + x.Id).Concat(addedList.Select(x => "+" + x.Id))));
+        }
+    }
+
+    /// <summary>
+    /// A definition store in which a tenant cannot find the versions listed for it, like a tenant whose database does not hold them.
+    /// </summary>
+    public class UnresolvableVersionsStore : DispatchProxy
+    {
+        private IWorkflowDefinitionStore _store = null!;
+        private ConcurrentDictionary<(string TenantId, string VersionId), byte> _unresolvableVersions = null!;
+        private readonly DefaultTenantAccessor _tenantAccessor = new();
+
+        internal static IWorkflowDefinitionStore Create(IWorkflowDefinitionStore store, ConcurrentDictionary<(string TenantId, string VersionId), byte> unresolvableVersions)
+        {
+            var proxy = Create<IWorkflowDefinitionStore, UnresolvableVersionsStore>();
+            var unresolvableStore = (UnresolvableVersionsStore)(object)proxy;
+            unresolvableStore._store = store;
+            unresolvableStore._unresolvableVersions = unresolvableVersions;
+            return proxy;
+        }
+
+        protected override object? Invoke(MethodInfo? targetMethod, object?[]? args)
+        {
+            if (targetMethod!.Name == nameof(IWorkflowDefinitionStore.AnyAsync) && args![0] is WorkflowDefinitionFilter { Id: { } id, VersionOptions: null }
+                && _unresolvableVersions.ContainsKey((_tenantAccessor.TenantId, id)))
+                return Task.FromResult(false);
+
+            try
+            {
+                return targetMethod.Invoke(_store, args);
+            }
+            catch (TargetInvocationException e) when (e.InnerException != null)
+            {
+                throw e.InnerException;
+            }
         }
     }
 }
